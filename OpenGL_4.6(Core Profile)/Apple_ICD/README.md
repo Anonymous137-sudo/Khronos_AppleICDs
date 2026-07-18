@@ -44,10 +44,10 @@ Right now this subproject is an early in-development driver:
 - `OpenGL_4.6.framework` now carries public `Headers/` and a `Modules/` definition instead of only the binary and `Info.plist`
 - `gl*` entrypoints and the backend proc table are generated from a vendored Khronos-facing registry snapshot stored in this repo
 - `libgl2mtl.dylib` now implements the first real GL-visible backend behavior through standard Khronos entrypoints including `glGetString`, `glGetStringi`, `glGetError`, `glGetIntegerv`, `glGetBooleanv`, `glViewport`, `glScissor`, `glEnable`, `glDisable`, `glClearColor`, `glClearDepth`, `glClearStencil`, `glColorMask`, `glDepthMask`, `glClear`, `glReadBuffer`, `glReadPixels`, `glDrawArrays`, `glDrawElements`, `glDrawRangeElements`, `glFlush`, and `glFinish`
-- the texture-object path now includes `glActiveTexture`, `glBindTexture`, `glGenTextures`, `glDeleteTextures`, `glTexParameteri`, `glTexImage2D`, `glTexSubImage2D`, `glGetTexParameteriv`, `glGetTexLevelParameteriv`, `glGetTexImage`, and `glPixelStorei`
+- the texture-object path now includes `glActiveTexture`, `glBindTexture`, `glGenTextures`, `glDeleteTextures`, `glTexParameterf`, `glTexParameteri`, `glTexImage2D`, `glTexSubImage2D`, `glTexStorage2D`, `glGenerateMipmap`, `glGetTexParameteriv`, `glGetTexLevelParameteriv`, `glGetTexImage`, and `glPixelStorei`
 - the buffer-object path now includes `glGenBuffers`, `glBindBuffer`, `glBufferData`, `glBufferSubData`, and `glGetBufferParameteriv`
 - element-array state now flows through the backend with proper `GL_ELEMENT_ARRAY_BUFFER_BINDING` reporting, so indexed draw calls use VAO-owned EBO state instead of only non-indexed vertex pulls
-- texture-unit state, 2D texture storage, sampler uniform routing, row-aligned texture upload/readback, and a minimal textured-triangle raster path now flow through the backend
+- texture-unit state, immutable/mutable 2D texture storage, sampler uniform routing, generated mipmap chains, row-aligned texture upload/readback, and a minimal textured-triangle raster path now flow through the backend
 - offscreen memory and framework-owned pbuffers now bind through the backend storage path, so clear/readback tests exercise real pixel data instead of only metadata bookkeeping
 - `CGLTexImagePBuffer` and `AO46TexImagePBuffer` now have a real backend import lane when a 2D texture is bound
 - when a standard Khronos OpenGL token or function name already exists, the code now prefers that Khronos spelling directly; `AO46*` names are reserved for private driver plumbing
@@ -75,7 +75,7 @@ Before a live install to `/`, the installer hard-checks that SIP and Authenticat
 This tree includes runtime and bridge smoke harnesses:
 
 - `tests/AO46RuntimeCompatSmoke.c`
-  Exercises renderer enumeration, pixel-format negotiation, context creation, offscreen binding, core `gl*` state, clears, readback, draw calls, indexed draws, `glBufferSubData`, `glPixelStorei`, `glTexSubImage2D`, textured sampling, and pbuffer-to-texture import.
+  Exercises renderer enumeration, pixel-format negotiation, context creation, offscreen binding, core `gl*` state, clears, readback, draw calls, indexed draws, `glBufferSubData`, `glPixelStorei`, `glTexSubImage2D`, `glTexStorage2D`, `glGenerateMipmap`, textured sampling, and pbuffer-to-texture import.
 - `tests/AO46CGLShimCompatSmoke.c`
   Drives the Apple-path `CGL*` surface directly and verifies current-context and share-group routing.
 - `tests/AO46NSOpenGLCompatSmoke.m`

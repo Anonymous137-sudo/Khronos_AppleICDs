@@ -14,6 +14,13 @@ typedef struct GLBackendVertexArrayRec GLBackendVertexArray;
 typedef struct GLBackendTextureRec GLBackendTexture;
 
 typedef struct {
+    GLboolean defined;
+    GLsizei width;
+    GLsizei height;
+    uint8_t *data;
+} GLBackendTextureLevel;
+
+typedef struct {
     GLboolean enabled;
     GLint size;
     GLenum type;
@@ -75,15 +82,16 @@ typedef struct {
 struct GLBackendTextureRec {
     GLuint name;
     GLenum target;
-    GLboolean defined;
-    GLsizei width;
-    GLsizei height;
     GLint internal_format;
     GLint min_filter;
     GLint mag_filter;
     GLint wrap_s;
     GLint wrap_t;
-    uint8_t *data;
+    GLint base_level;
+    GLint max_level;
+    GLboolean immutable_format;
+    GLsizei immutable_levels;
+    GLBackendTextureLevel levels[GL_DRIVER_MAX_TEXTURE_LEVELS];
     GLBackendTexture *next;
 };
 
@@ -403,14 +411,189 @@ static void gl_backend_initialize_texture_state(GLBackendTexture *texture)
         return;
     }
 
-    texture->defined = GL_FALSE;
-    texture->width = 0;
-    texture->height = 0;
     texture->internal_format = GL_RGBA8;
     texture->min_filter = GL_NEAREST_MIPMAP_LINEAR;
     texture->mag_filter = GL_LINEAR;
     texture->wrap_s = GL_REPEAT;
     texture->wrap_t = GL_REPEAT;
+    texture->base_level = 0;
+    texture->max_level = 1000;
+    texture->immutable_format = GL_FALSE;
+    texture->immutable_levels = 0;
+}
+
+static bool gl_backend_texture_level_valid(GLint level)
+{
+    return level >= 0 && level < GL_DRIVER_MAX_TEXTURE_LEVELS;
+}
+
+static GLBackendTextureLevel *gl_backend_texture_level(GLBackendTexture *texture, GLint level)
+{
+    if (!texture || !gl_backend_texture_level_valid(level)) {
+        return NULL;
+    }
+
+    return &texture->levels[level];
+}
+
+static const GLBackendTextureLevel *gl_backend_texture_level_const(const GLBackendTexture *texture, GLint level)
+{
+    if (!texture || !gl_backend_texture_level_valid(level)) {
+        return NULL;
+    }
+
+    return &texture->levels[level];
+}
+
+static void gl_backend_texture_level_dimensions(GLsizei base_width,
+                                                GLsizei base_height,
+                                                GLint level,
+                                                GLsizei *out_width,
+                                                GLsizei *out_height)
+{
+    GLsizei width = base_width > 0 ? base_width : 1;
+    GLsizei height = base_height > 0 ? base_height : 1;
+
+    for (GLint current = 0; current < level; ++current) {
+        if (width > 1) {
+            width /= 2;
+        }
+        if (height > 1) {
+            height /= 2;
+        }
+    }
+
+    if (out_width) {
+        *out_width = width;
+    }
+    if (out_height) {
+        *out_height = height;
+    }
+}
+
+static GLsizei gl_backend_texture_max_mip_levels(GLsizei width, GLsizei height)
+{
+    GLsizei levels = 0;
+
+    if (width <= 0 || height <= 0) {
+        return 0;
+    }
+
+    do {
+        levels++;
+        if (width > 1) {
+            width /= 2;
+        }
+        if (height > 1) {
+            height /= 2;
+        }
+    } while ((width > 1 || height > 1) && levels < GL_DRIVER_MAX_TEXTURE_LEVELS);
+
+    return levels;
+}
+
+static void gl_backend_release_texture_level(GLBackendTextureLevel *level)
+{
+    if (!level) {
+        return;
+    }
+
+    free(level->data);
+    level->data = NULL;
+    level->defined = GL_FALSE;
+    level->width = 0;
+    level->height = 0;
+}
+
+static void gl_backend_release_texture_levels(GLBackendTexture *texture)
+{
+    if (!texture) {
+        return;
+    }
+
+    for (int level = 0; level < GL_DRIVER_MAX_TEXTURE_LEVELS; ++level) {
+        gl_backend_release_texture_level(&texture->levels[level]);
+    }
+}
+
+static bool gl_backend_texture_level_allocate(GLBackendTexture *texture,
+                                              GLint level,
+                                              GLsizei width,
+                                              GLsizei height,
+                                              bool preserve_contents)
+{
+    GLBackendTextureLevel *texture_level;
+    uint8_t *new_storage = NULL;
+
+    texture_level = gl_backend_texture_level(texture, level);
+    if (!texture_level) {
+        return false;
+    }
+
+    if (width <= 0 || height <= 0) {
+        gl_backend_release_texture_level(texture_level);
+        return true;
+    }
+
+    if (texture_level->width == width &&
+        texture_level->height == height &&
+        texture_level->data) {
+        if (!preserve_contents) {
+            memset(texture_level->data, 0, (size_t)width * (size_t)height * 4u);
+        }
+        texture_level->defined = GL_TRUE;
+        return true;
+    }
+
+    new_storage = calloc((size_t)width * (size_t)height, 4u);
+    if (!new_storage) {
+        return false;
+    }
+
+    if (preserve_contents && texture_level->data) {
+        GLsizei copy_width = texture_level->width < width ? texture_level->width : width;
+        GLsizei copy_height = texture_level->height < height ? texture_level->height : height;
+
+        for (GLsizei row = 0; row < copy_height; ++row) {
+            memcpy(new_storage + (size_t)row * (size_t)width * 4u,
+                   texture_level->data + (size_t)row * (size_t)texture_level->width * 4u,
+                   (size_t)copy_width * 4u);
+        }
+    }
+
+    free(texture_level->data);
+    texture_level->data = new_storage;
+    texture_level->width = width;
+    texture_level->height = height;
+    texture_level->defined = GL_TRUE;
+    return true;
+}
+
+static const GLBackendTextureLevel *gl_backend_texture_sample_level(const GLBackendTexture *texture)
+{
+    GLint level;
+
+    if (!texture) {
+        return NULL;
+    }
+
+    level = texture->base_level;
+    if (level < 0) {
+        level = 0;
+    }
+    if (level >= GL_DRIVER_MAX_TEXTURE_LEVELS) {
+        level = GL_DRIVER_MAX_TEXTURE_LEVELS - 1;
+    }
+
+    for (; level < GL_DRIVER_MAX_TEXTURE_LEVELS && level <= texture->max_level; ++level) {
+        const GLBackendTextureLevel *texture_level = gl_backend_texture_level_const(texture, level);
+
+        if (texture_level && texture_level->defined && texture_level->data) {
+            return texture_level;
+        }
+    }
+
+    return NULL;
 }
 
 static GLBackendTexture *gl_backend_create_texture_record(AO46BackendContextRef ctx, GLuint name)
@@ -469,7 +652,7 @@ static void gl_backend_remove_texture(AO46BackendContextRef ctx, GLBackendTextur
     while (slot && *slot) {
         if (*slot == texture) {
             *slot = texture->next;
-            free(texture->data);
+            gl_backend_release_texture_levels(texture);
             free(texture);
             return;
         }
@@ -1513,10 +1696,37 @@ static void gl_backend_tex_parameter_i(GLenum target, GLenum pname, GLint param)
                 texture->wrap_t = param;
             }
             return;
+        case GL_TEXTURE_BASE_LEVEL:
+            if (param < 0) {
+                gl_backend_set_error(ctx, GL_INVALID_VALUE);
+                return;
+            }
+            texture->base_level = param;
+            return;
+        case GL_TEXTURE_MAX_LEVEL:
+            if (param < 0) {
+                gl_backend_set_error(ctx, GL_INVALID_VALUE);
+                return;
+            }
+            texture->max_level = param;
+            return;
         default:
             gl_backend_set_error(ctx, GL_INVALID_ENUM);
             return;
     }
+}
+
+static void gl_backend_tex_parameter_f(GLenum target, GLenum pname, GLfloat param)
+{
+    GLint integral = (GLint)param;
+
+    if ((GLfloat)integral != param) {
+        AO46BackendContextRef ctx = gl_backend_current_context();
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    gl_backend_tex_parameter_i(target, pname, integral);
 }
 
 static void gl_backend_get_tex_parameter_iv(GLenum target, GLenum pname, GLint *params)
@@ -1547,6 +1757,18 @@ static void gl_backend_get_tex_parameter_iv(GLenum target, GLenum pname, GLint *
             return;
         case GL_TEXTURE_WRAP_T:
             params[0] = texture->wrap_t;
+            return;
+        case GL_TEXTURE_BASE_LEVEL:
+            params[0] = texture->base_level;
+            return;
+        case GL_TEXTURE_MAX_LEVEL:
+            params[0] = texture->max_level;
+            return;
+        case GL_TEXTURE_IMMUTABLE_FORMAT:
+            params[0] = texture->immutable_format;
+            return;
+        case GL_TEXTURE_IMMUTABLE_LEVELS:
+            params[0] = texture->immutable_levels;
             return;
         default:
             gl_backend_set_error(ctx, GL_INVALID_ENUM);
@@ -1592,7 +1814,7 @@ static void gl_backend_copy_texture_image_bgra8(uint8_t *dst,
     }
 }
 
-static void gl_backend_copy_texture_sub_image_bgra8(GLBackendTexture *texture,
+static void gl_backend_copy_texture_sub_image_bgra8(GLBackendTextureLevel *texture_level,
                                                     GLint xoffset,
                                                     GLint yoffset,
                                                     GLsizei width,
@@ -1604,19 +1826,63 @@ static void gl_backend_copy_texture_sub_image_bgra8(GLBackendTexture *texture,
     const uint8_t *src = pixels;
     size_t src_row_stride;
 
-    if (!texture || !texture->data || !pixels || width <= 0 || height <= 0) {
+    if (!texture_level || !texture_level->data || !pixels || width <= 0 || height <= 0) {
         return;
     }
 
     src_row_stride = gl_backend_aligned_row_stride(width, 4u, unpack_alignment);
     for (GLsizei y = 0; y < height; ++y) {
         for (GLsizei x = 0; x < width; ++x) {
-            uint8_t *dst_texel = texture->data +
-                                 (((size_t)(yoffset + y) * (size_t)texture->width) + (size_t)(xoffset + x)) * 4u;
+            uint8_t *dst_texel = texture_level->data +
+                                 (((size_t)(yoffset + y) * (size_t)texture_level->width) + (size_t)(xoffset + x)) * 4u;
 
             gl_backend_store_texel_bgra8(dst_texel,
                                          format,
                                          src + (size_t)y * src_row_stride + (size_t)x * 4u);
+        }
+    }
+}
+
+static void gl_backend_generate_mipmap_level_bgra8(GLBackendTextureLevel *dst,
+                                                   const GLBackendTextureLevel *src)
+{
+    if (!dst || !src || !dst->data || !src->data) {
+        return;
+    }
+
+    for (GLsizei y = 0; y < dst->height; ++y) {
+        for (GLsizei x = 0; x < dst->width; ++x) {
+            unsigned int sum[4] = { 0, 0, 0, 0 };
+
+            for (GLsizei sample_y = 0; sample_y < 2; ++sample_y) {
+                for (GLsizei sample_x = 0; sample_x < 2; ++sample_x) {
+                    GLsizei src_x = x * 2 + sample_x;
+                    GLsizei src_y = y * 2 + sample_y;
+                    const uint8_t *src_texel;
+
+                    if (src_x >= src->width) {
+                        src_x = src->width - 1;
+                    }
+                    if (src_y >= src->height) {
+                        src_y = src->height - 1;
+                    }
+
+                    src_texel = src->data + ((size_t)src_y * (size_t)src->width + (size_t)src_x) * 4u;
+                    sum[0] += src_texel[0];
+                    sum[1] += src_texel[1];
+                    sum[2] += src_texel[2];
+                    sum[3] += src_texel[3];
+                }
+            }
+
+            {
+                uint8_t *dst_texel = dst->data + ((size_t)y * (size_t)dst->width + (size_t)x) * 4u;
+
+                dst_texel[0] = (uint8_t)((sum[0] + 2u) / 4u);
+                dst_texel[1] = (uint8_t)((sum[1] + 2u) / 4u);
+                dst_texel[2] = (uint8_t)((sum[2] + 2u) / 4u);
+                dst_texel[3] = (uint8_t)((sum[3] + 2u) / 4u);
+            }
         }
     }
 }
@@ -1633,7 +1899,9 @@ static void gl_backend_tex_image_2d(GLenum target,
 {
     AO46BackendContextRef ctx = gl_backend_current_context();
     GLBackendTexture *texture;
-    uint8_t *storage = NULL;
+    GLBackendTextureLevel *texture_level;
+    GLint normalized_internalformat;
+    bool redefine_base_level = false;
 
     if (!ctx) {
         return;
@@ -1645,13 +1913,13 @@ static void gl_backend_tex_image_2d(GLenum target,
         return;
     }
 
-    if (level != 0 ||
+    if (!gl_backend_texture_level_valid(level) ||
         border != 0 ||
         width < 0 ||
         height < 0 ||
         width > ctx->core.state.max_texture_size ||
         height > ctx->core.state.max_texture_size) {
-        gl_backend_set_error(ctx, level != 0 || border != 0 ? GL_INVALID_VALUE : GL_INVALID_VALUE);
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
         return;
     }
 
@@ -1670,28 +1938,62 @@ static void gl_backend_tex_image_2d(GLenum target,
         return;
     }
 
-    if (width > 0 && height > 0) {
-        storage = calloc((size_t)width * (size_t)height, 4u);
-        if (!storage) {
-            gl_backend_set_error(ctx, GL_OUT_OF_MEMORY);
+    normalized_internalformat = internalformat == GL_RGBA ? GL_RGBA8 : internalformat;
+    if (texture->immutable_format) {
+        GLBackendTextureLevel *immutable_level = NULL;
+
+        if (level >= texture->immutable_levels) {
+            gl_backend_set_error(ctx, GL_INVALID_OPERATION);
             return;
         }
-        if (pixels) {
-            gl_backend_copy_texture_image_bgra8(storage,
-                                               width,
-                                               height,
-                                               format,
-                                               ctx->core.state.unpack_alignment,
-                                               pixels);
+
+        immutable_level = gl_backend_texture_level(texture, level);
+        if (!immutable_level ||
+            immutable_level->width != width ||
+            immutable_level->height != height ||
+            texture->internal_format != normalized_internalformat) {
+            gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+            return;
         }
     }
 
-    free(texture->data);
-    texture->data = storage;
-    texture->defined = (width > 0 && height > 0) ? GL_TRUE : GL_FALSE;
-    texture->width = width;
-    texture->height = height;
-    texture->internal_format = internalformat == GL_RGBA ? GL_RGBA8 : internalformat;
+    if (!texture->immutable_format && level == 0) {
+        GLBackendTextureLevel *base_level = gl_backend_texture_level(texture, 0);
+
+        redefine_base_level = !base_level ||
+                              base_level->width != width ||
+                              base_level->height != height ||
+                              texture->internal_format != normalized_internalformat;
+    }
+
+    if (redefine_base_level) {
+        for (int higher_level = 1; higher_level < GL_DRIVER_MAX_TEXTURE_LEVELS; ++higher_level) {
+            gl_backend_release_texture_level(&texture->levels[higher_level]);
+        }
+    }
+
+    texture_level = gl_backend_texture_level(texture, level);
+    if (!texture_level) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (!gl_backend_texture_level_allocate(texture, level, width, height, false)) {
+        gl_backend_set_error(ctx, GL_OUT_OF_MEMORY);
+        return;
+    }
+
+    if (width > 0 && height > 0 && pixels) {
+        gl_backend_copy_texture_image_bgra8(texture_level->data,
+                                            width,
+                                            height,
+                                            format,
+                                            ctx->core.state.unpack_alignment,
+                                            pixels);
+    }
+
+    texture_level->defined = (width > 0 && height > 0) ? GL_TRUE : GL_FALSE;
+    texture->internal_format = normalized_internalformat;
 }
 
 static void gl_backend_tex_sub_image_2d(GLenum target,
@@ -1706,6 +2008,7 @@ static void gl_backend_tex_sub_image_2d(GLenum target,
 {
     AO46BackendContextRef ctx = gl_backend_current_context();
     GLBackendTexture *texture;
+    GLBackendTextureLevel *texture_level;
 
     if (!ctx) {
         return;
@@ -1717,7 +2020,7 @@ static void gl_backend_tex_sub_image_2d(GLenum target,
         return;
     }
 
-    if (level != 0 || xoffset < 0 || yoffset < 0 || width < 0 || height < 0) {
+    if (!gl_backend_texture_level_valid(level) || xoffset < 0 || yoffset < 0 || width < 0 || height < 0) {
         gl_backend_set_error(ctx, GL_INVALID_VALUE);
         return;
     }
@@ -1732,12 +2035,13 @@ static void gl_backend_tex_sub_image_2d(GLenum target,
         return;
     }
 
-    if (!texture->defined || !texture->data) {
+    texture_level = gl_backend_texture_level(texture, level);
+    if (!texture_level || !texture_level->defined || !texture_level->data) {
         gl_backend_set_error(ctx, GL_INVALID_OPERATION);
         return;
     }
 
-    if (xoffset + width > texture->width || yoffset + height > texture->height) {
+    if (xoffset + width > texture_level->width || yoffset + height > texture_level->height) {
         gl_backend_set_error(ctx, GL_INVALID_VALUE);
         return;
     }
@@ -1747,7 +2051,7 @@ static void gl_backend_tex_sub_image_2d(GLenum target,
         return;
     }
 
-    gl_backend_copy_texture_sub_image_bgra8(texture,
+    gl_backend_copy_texture_sub_image_bgra8(texture_level,
                                             xoffset,
                                             yoffset,
                                             width,
@@ -1761,12 +2065,13 @@ static void gl_backend_get_tex_level_parameter_iv(GLenum target, GLint level, GL
 {
     AO46BackendContextRef ctx = gl_backend_current_context();
     GLBackendTexture *texture;
+    const GLBackendTextureLevel *texture_level;
 
     if (!ctx || !params) {
         return;
     }
 
-    if (level != 0) {
+    if (!gl_backend_texture_level_valid(level)) {
         gl_backend_set_error(ctx, GL_INVALID_VALUE);
         params[0] = 0;
         return;
@@ -1779,15 +2084,16 @@ static void gl_backend_get_tex_level_parameter_iv(GLenum target, GLint level, GL
         return;
     }
 
+    texture_level = gl_backend_texture_level_const(texture, level);
     switch (pname) {
         case GL_TEXTURE_WIDTH:
-            params[0] = texture->width;
+            params[0] = texture_level ? texture_level->width : 0;
             return;
         case GL_TEXTURE_HEIGHT:
-            params[0] = texture->height;
+            params[0] = texture_level ? texture_level->height : 0;
             return;
         case GL_TEXTURE_INTERNAL_FORMAT:
-            params[0] = texture->defined ? texture->internal_format : 0;
+            params[0] = (texture_level && texture_level->defined) ? texture->internal_format : 0;
             return;
         default:
             gl_backend_set_error(ctx, GL_INVALID_ENUM);
@@ -1800,6 +2106,7 @@ static void gl_backend_get_tex_image(GLenum target, GLint level, GLenum format, 
 {
     AO46BackendContextRef ctx = gl_backend_current_context();
     GLBackendTexture *texture;
+    const GLBackendTextureLevel *texture_level;
     size_t dst_row_stride;
 
     if (!ctx) {
@@ -1811,7 +2118,7 @@ static void gl_backend_get_tex_image(GLenum target, GLint level, GLenum format, 
         return;
     }
 
-    if (level != 0) {
+    if (!gl_backend_texture_level_valid(level)) {
         gl_backend_set_error(ctx, GL_INVALID_VALUE);
         return;
     }
@@ -1827,18 +2134,160 @@ static void gl_backend_get_tex_image(GLenum target, GLint level, GLenum format, 
     }
 
     texture = gl_backend_bound_texture(ctx, target);
-    if (!texture || !texture->defined || !texture->data) {
+    texture_level = gl_backend_texture_level_const(texture, level);
+    if (!texture || !texture_level || !texture_level->defined || !texture_level->data) {
         gl_backend_set_error(ctx, GL_INVALID_OPERATION);
         return;
     }
 
-    dst_row_stride = gl_backend_aligned_row_stride(texture->width, 4u, ctx->core.state.pack_alignment);
-    for (GLsizei y = 0; y < texture->height; ++y) {
-        for (GLsizei x = 0; x < texture->width; ++x) {
-            gl_backend_read_bgra8_pixel(texture->data + ((size_t)y * (size_t)texture->width + (size_t)x) * 4u,
+    dst_row_stride = gl_backend_aligned_row_stride(texture_level->width, 4u, ctx->core.state.pack_alignment);
+    for (GLsizei y = 0; y < texture_level->height; ++y) {
+        for (GLsizei x = 0; x < texture_level->width; ++x) {
+            gl_backend_read_bgra8_pixel(texture_level->data +
+                                            ((size_t)y * (size_t)texture_level->width + (size_t)x) * 4u,
                                         format,
                                         (uint8_t *)pixels + (size_t)y * dst_row_stride + (size_t)x * 4u);
         }
+    }
+}
+
+static void gl_backend_tex_storage_2d(GLenum target,
+                                      GLsizei levels,
+                                      GLenum internalformat,
+                                      GLsizei width,
+                                      GLsizei height)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendTexture *texture;
+    GLint normalized_internalformat;
+    GLsizei max_levels;
+
+    if (!ctx) {
+        return;
+    }
+
+    texture = gl_backend_bound_texture(ctx, target);
+    if (!texture) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (target != GL_TEXTURE_2D) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    if (levels <= 0 ||
+        width <= 0 ||
+        height <= 0 ||
+        width > ctx->core.state.max_texture_size ||
+        height > ctx->core.state.max_texture_size ||
+        levels > GL_DRIVER_MAX_TEXTURE_LEVELS) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (texture->immutable_format) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (internalformat != GL_RGBA8 && internalformat != GL_RGBA) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    max_levels = gl_backend_texture_max_mip_levels(width, height);
+    if (levels > max_levels) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    normalized_internalformat = internalformat == GL_RGBA ? GL_RGBA8 : internalformat;
+    gl_backend_release_texture_levels(texture);
+    texture->internal_format = normalized_internalformat;
+    texture->immutable_format = GL_TRUE;
+    texture->immutable_levels = levels;
+    texture->base_level = 0;
+    if (texture->max_level > levels - 1) {
+        texture->max_level = levels - 1;
+    }
+
+    for (GLint level_index = 0; level_index < levels; ++level_index) {
+        GLsizei level_width;
+        GLsizei level_height;
+
+        gl_backend_texture_level_dimensions(width, height, level_index, &level_width, &level_height);
+        if (!gl_backend_texture_level_allocate(texture, level_index, level_width, level_height, false)) {
+            gl_backend_set_error(ctx, GL_OUT_OF_MEMORY);
+            return;
+        }
+    }
+}
+
+static void gl_backend_generate_mipmap(GLenum target)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendTexture *texture;
+    const GLBackendTextureLevel *base_level;
+    GLsizei levels_to_generate;
+
+    if (!ctx) {
+        return;
+    }
+
+    texture = gl_backend_bound_texture(ctx, target);
+    if (!texture) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (target != GL_TEXTURE_2D) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    base_level = gl_backend_texture_level_const(texture, 0);
+    if (!base_level || !base_level->defined || !base_level->data) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    levels_to_generate = texture->immutable_format ?
+                         texture->immutable_levels :
+                         gl_backend_texture_max_mip_levels(base_level->width, base_level->height);
+    if (levels_to_generate <= 1) {
+        return;
+    }
+
+    if (levels_to_generate > GL_DRIVER_MAX_TEXTURE_LEVELS) {
+        levels_to_generate = GL_DRIVER_MAX_TEXTURE_LEVELS;
+    }
+
+    for (GLint level = 1; level < levels_to_generate; ++level) {
+        const GLBackendTextureLevel *src_level = gl_backend_texture_level_const(texture, level - 1);
+        GLBackendTextureLevel *dst_level = gl_backend_texture_level(texture, level);
+        GLsizei level_width;
+        GLsizei level_height;
+
+        if (!src_level || !src_level->defined || !src_level->data) {
+            gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+            return;
+        }
+
+        gl_backend_texture_level_dimensions(base_level->width, base_level->height, level, &level_width, &level_height);
+        if (!gl_backend_texture_level_allocate(texture, level, level_width, level_height, false)) {
+            gl_backend_set_error(ctx, GL_OUT_OF_MEMORY);
+            return;
+        }
+
+        dst_level = gl_backend_texture_level(texture, level);
+        if (!dst_level || !dst_level->data) {
+            gl_backend_set_error(ctx, GL_OUT_OF_MEMORY);
+            return;
+        }
+
+        gl_backend_generate_mipmap_level_bgra8(dst_level, src_level);
     }
 }
 
@@ -2355,6 +2804,7 @@ static void gl_backend_sample_texture_2d(const GLBackendTexture *texture,
                                          GLfloat t,
                                          GLfloat out_color[4])
 {
+    const GLBackendTextureLevel *texture_level;
     GLfloat wrapped_s;
     GLfloat wrapped_t;
     GLsizei x;
@@ -2366,32 +2816,29 @@ static void gl_backend_sample_texture_2d(const GLBackendTexture *texture,
     out_color[2] = 0.0f;
     out_color[3] = 1.0f;
 
-    if (!texture || !texture->defined || !texture->data || texture->width <= 0 || texture->height <= 0) {
-        return;
-    }
-
-    if (gl_backend_texture_filter_uses_mipmaps(texture->min_filter)) {
+    texture_level = gl_backend_texture_sample_level(texture);
+    if (!texture_level || !texture_level->defined || !texture_level->data || texture_level->width <= 0 || texture_level->height <= 0) {
         return;
     }
 
     wrapped_s = gl_backend_wrap_texture_coordinate(s, texture->wrap_s);
     wrapped_t = gl_backend_wrap_texture_coordinate(t, texture->wrap_t);
-    x = (GLsizei)floorf(wrapped_s * (GLfloat)(texture->width - 1) + 0.5f);
-    y = (GLsizei)floorf(wrapped_t * (GLfloat)(texture->height - 1) + 0.5f);
+    x = (GLsizei)floorf(wrapped_s * (GLfloat)(texture_level->width - 1) + 0.5f);
+    y = (GLsizei)floorf(wrapped_t * (GLfloat)(texture_level->height - 1) + 0.5f);
 
     if (x < 0) {
         x = 0;
-    } else if (x >= texture->width) {
-        x = texture->width - 1;
+    } else if (x >= texture_level->width) {
+        x = texture_level->width - 1;
     }
 
     if (y < 0) {
         y = 0;
-    } else if (y >= texture->height) {
-        y = texture->height - 1;
+    } else if (y >= texture_level->height) {
+        y = texture_level->height - 1;
     }
 
-    texel = texture->data + ((size_t)y * (size_t)texture->width + (size_t)x) * 4u;
+    texel = texture_level->data + ((size_t)y * (size_t)texture_level->width + (size_t)x) * 4u;
     out_color[0] = (GLfloat)texel[2] / 255.0f;
     out_color[1] = (GLfloat)texel[1] / 255.0f;
     out_color[2] = (GLfloat)texel[0] / 255.0f;
@@ -3365,6 +3812,7 @@ CGLError AO46BackendTexImagePBuffer(AO46BackendContextRef ctx,
                                     GLenum source)
 {
     GLBackendTexture *texture;
+    GLBackendTextureLevel *base_level;
 
     if (!ctx) {
         return kCGLBadContext;
@@ -3393,26 +3841,30 @@ CGLError AO46BackendTexImagePBuffer(AO46BackendContextRef ctx,
         return kCGLNoError;
     }
 
-    if (!texture->data || texture->width != width || texture->height != height) {
-        uint8_t *new_storage = calloc((size_t)width * (size_t)height, 4u);
-
-        if (!new_storage) {
+    if (texture->immutable_format) {
+        base_level = gl_backend_texture_level(texture, 0);
+        if (!base_level || base_level->width != width || base_level->height != height) {
+            return kCGLBadValue;
+        }
+    } else {
+        gl_backend_release_texture_level(&texture->levels[0]);
+        if (!gl_backend_texture_level_allocate(texture, 0, width, height, false)) {
             return kCGLBadAlloc;
         }
+    }
 
-        free(texture->data);
-        texture->data = new_storage;
+    base_level = gl_backend_texture_level(texture, 0);
+    if (!base_level || !base_level->data) {
+        return kCGLBadAlloc;
     }
 
     for (GLsizei y = 0; y < height; ++y) {
-        memcpy(texture->data + (size_t)y * (size_t)width * 4u,
+        memcpy(base_level->data + (size_t)y * (size_t)width * 4u,
                (const uint8_t *)storage + (size_t)y * (size_t)rowbytes,
                (size_t)width * 4u);
     }
 
-    texture->defined = GL_TRUE;
-    texture->width = width;
-    texture->height = height;
+    base_level->defined = GL_TRUE;
     texture->internal_format = internal_format == 0 ? GL_RGBA8 : (GLint)internal_format;
     return kCGLNoError;
 }
@@ -3468,6 +3920,9 @@ void *AO46BackendCustomProcAddress(const char *procname)
     if (strcmp(procname, "glPixelStorei") == 0) {
         return (void *)gl_backend_pixel_store_i;
     }
+    if (strcmp(procname, "glTexParameterf") == 0) {
+        return (void *)gl_backend_tex_parameter_f;
+    }
     if (strcmp(procname, "glTexParameteri") == 0) {
         return (void *)gl_backend_tex_parameter_i;
     }
@@ -3479,6 +3934,12 @@ void *AO46BackendCustomProcAddress(const char *procname)
     }
     if (strcmp(procname, "glTexSubImage2D") == 0) {
         return (void *)gl_backend_tex_sub_image_2d;
+    }
+    if (strcmp(procname, "glTexStorage2D") == 0) {
+        return (void *)gl_backend_tex_storage_2d;
+    }
+    if (strcmp(procname, "glGenerateMipmap") == 0) {
+        return (void *)gl_backend_generate_mipmap;
     }
     if (strcmp(procname, "glGetTexLevelParameteriv") == 0) {
         return (void *)gl_backend_get_tex_level_parameter_iv;

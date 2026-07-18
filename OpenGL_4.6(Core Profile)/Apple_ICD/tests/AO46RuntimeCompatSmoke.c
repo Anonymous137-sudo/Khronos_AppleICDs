@@ -695,6 +695,22 @@ int main(void)
             static const GLubyte aligned_texture_sub_upload[] = {
                   0,   0, 255, 255, 0, 0, 0, 0
             };
+            static const GLubyte mipmap_level0_upload[] = {
+                255,   0,   0, 255, 255,   0,   0, 255,   0, 255,   0, 255,   0, 255,   0, 255,
+                255,   0,   0, 255, 255,   0,   0, 255,   0, 255,   0, 255,   0, 255,   0, 255,
+                  0,   0, 255, 255,   0,   0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                  0,   0, 255, 255,   0,   0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+            };
+            GLuint mipmap_texture = 0;
+            GLint immutable_format = 0;
+            GLint immutable_levels = 0;
+            GLint mipmap_level1_width = 0;
+            GLint mipmap_level1_height = 0;
+            GLint mipmap_level2_width = 0;
+            GLint mipmap_level2_height = 0;
+            GLubyte mipmap_level1_readback[16] = { 0 };
+            GLubyte mipmap_level2_readback[4] = { 0 };
+            GLubyte mipmap_sampled_pixel[4] = { 0 };
 
             glGetIntegerv(GL_ACTIVE_TEXTURE, &active_texture);
             glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_texture_units);
@@ -803,6 +819,51 @@ int main(void)
             glDeleteTextures(1, &aligned_texture);
             glBindTexture(GL_TEXTURE_2D, texture);
 
+            glGenTextures(1, &mipmap_texture);
+            glBindTexture(GL_TEXTURE_2D, mipmap_texture);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLfloat)GL_NEAREST);
+            glTexStorage2D(GL_TEXTURE_2D, 3, GL_RGBA8, 4, 4);
+            glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_IMMUTABLE_FORMAT, &immutable_format);
+            glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_IMMUTABLE_LEVELS, &immutable_levels);
+            glGetTexLevelParameteriv(GL_TEXTURE_2D, 1, GL_TEXTURE_WIDTH, &mipmap_level1_width);
+            glGetTexLevelParameteriv(GL_TEXTURE_2D, 1, GL_TEXTURE_HEIGHT, &mipmap_level1_height);
+            glGetTexLevelParameteriv(GL_TEXTURE_2D, 2, GL_TEXTURE_WIDTH, &mipmap_level2_width);
+            glGetTexLevelParameteriv(GL_TEXTURE_2D, 2, GL_TEXTURE_HEIGHT, &mipmap_level2_height);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 4, 4, GL_RGBA, GL_UNSIGNED_BYTE, mipmap_level0_upload);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glGetTexImage(GL_TEXTURE_2D, 1, GL_RGBA, GL_UNSIGNED_BYTE, mipmap_level1_readback);
+            glGetTexImage(GL_TEXTURE_2D, 2, GL_RGBA, GL_UNSIGNED_BYTE, mipmap_level2_readback);
+            if (expect_true("glGenTextures produced mipmap texture", mipmap_texture != 0) ||
+                expect_true("glTexStorage2D marks texture immutable", immutable_format == GL_TRUE) ||
+                expect_true("glTexStorage2D preserves immutable level count", immutable_levels == 3) ||
+                expect_true("mipmap level 1 dimensions are 2x2",
+                            mipmap_level1_width == 2 && mipmap_level1_height == 2) ||
+                expect_true("mipmap level 2 dimensions are 1x1",
+                            mipmap_level2_width == 1 && mipmap_level2_height == 1) ||
+                expect_true("generated mip level 1 top-left texel is red",
+                            mipmap_level1_readback[0] == 255 &&
+                            mipmap_level1_readback[1] == 0 &&
+                            mipmap_level1_readback[2] == 0 &&
+                            mipmap_level1_readback[3] == 255) ||
+                expect_true("generated mip level 1 bottom-right texel is white",
+                            mipmap_level1_readback[12] == 255 &&
+                            mipmap_level1_readback[13] == 255 &&
+                            mipmap_level1_readback[14] == 255 &&
+                            mipmap_level1_readback[15] == 255) ||
+                expect_true("generated mip level 2 averages the quadrant colors",
+                            mipmap_level2_readback[0] == 128 &&
+                            mipmap_level2_readback[1] == 128 &&
+                            mipmap_level2_readback[2] == 128 &&
+                            mipmap_level2_readback[3] == 255) ||
+                expect_true("mipmap generation path leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+            glBindTexture(GL_TEXTURE_2D, texture);
+
             textured_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
             textured_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
             textured_program = glCreateProgram();
@@ -884,16 +945,36 @@ int main(void)
                 return 1;
             }
 
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glReadPixels(16, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, mipmap_sampled_pixel);
+            if (expect_true("mip-filtered textured draw completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("mip-filtered textured triangle still samples generated texels",
+                            mipmap_sampled_pixel[0] == 255 &&
+                            mipmap_sampled_pixel[1] == 255 &&
+                            mipmap_sampled_pixel[2] == 0 &&
+                            mipmap_sampled_pixel[3] == 255)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
             glDeleteVertexArrays(1, &textured_vao);
             glDeleteBuffers(1, &textured_vbo);
             glDeleteShader(textured_vertex_shader);
             glDeleteShader(textured_fragment_shader);
             glDeleteProgram(textured_program);
+            glDeleteTextures(1, &mipmap_texture);
             glDeleteTextures(1, &texture);
             if (expect_true("glIsVertexArray(textured_vao) clears after delete", glIsVertexArray(textured_vao) == GL_FALSE) ||
                 expect_true("glIsBuffer(textured_vbo) clears after delete", glIsBuffer(textured_vbo) == GL_FALSE) ||
                 expect_true("glIsProgram(textured_program) clears after delete", glIsProgram(textured_program) == GL_FALSE) ||
                 expect_true("glIsTexture(aligned_texture) clears after delete", glIsTexture(aligned_texture) == GL_FALSE) ||
+                expect_true("glIsTexture(mipmap_texture) clears after delete", glIsTexture(mipmap_texture) == GL_FALSE) ||
                 expect_true("glIsTexture(texture) clears after delete", glIsTexture(texture) == GL_FALSE)) {
                 AO46SetCurrentContext(NULL);
                 AO46DestroyContext(copy_ctx);
