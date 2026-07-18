@@ -1,0 +1,2043 @@
+#include "AppleOpenGL46Runtime.h"
+#include "AppleOpenGL46Backend.h"
+
+#include <OpenGL/CGLTypes.h>
+
+#include <pthread.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define AO46_RENDERER_ID 0x414F3436
+#define AO46_DEFAULT_DISPLAY_MASK 0x00000001u
+#define AO46_RENDERER_COUNT 1
+#define AO46_RENDERER_MAX_SAMPLE_BUFFERS 1
+#define AO46_RENDERER_MAX_SAMPLES 4
+#define AO46_RENDERER_SAMPLE_MODES kCGLMultisampleBit
+#define AO46_RENDERER_SAMPLE_ALPHA 1
+#define AO46_RENDERER_REGISTRY_ID_LOW AO46_RENDERER_ID
+#define AO46_RENDERER_REGISTRY_ID_HIGH 0
+
+static bool ao46_attrib_requires_nonzero_value(CGLPixelFormatAttribute attrib)
+{
+    switch (attrib) {
+        case kCGLPFAOpenGLProfile:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool ao46_attrib_has_value(CGLPixelFormatAttribute attrib)
+{
+    switch (attrib) {
+        case kCGLPFAColorSize:
+        case kCGLPFAAlphaSize:
+        case kCGLPFADepthSize:
+        case kCGLPFAStencilSize:
+        case kCGLPFASampleBuffers:
+        case kCGLPFASamples:
+        case kCGLPFAAuxBuffers:
+        case kCGLPFAAccumSize:
+        case kCGLPFAOpenGLProfile:
+        case kCGLPFARendererID:
+        case kCGLPFADisplayMask:
+        case kCGLPFAVirtualScreenCount:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool ao46_profile_is_supported(GLint profile)
+{
+    return profile == kCGLOGLPVersion_GL3_Core ||
+           profile == kCGLOGLPVersion_GL4_Core ||
+           profile == kCGLOGLPVersion_GL4_6_Core;
+}
+
+struct AO46PixelFormatRec {
+    GLuint retain_count;
+    GLint color_bits;
+    GLint alpha_bits;
+    GLint depth_bits;
+    GLint stencil_bits;
+    GLint sample_buffers;
+    GLint samples;
+    GLint aux_buffers;
+    GLint accum_size;
+    GLint virtual_screen_count;
+    GLint profile;
+    GLint renderer_id;
+    GLint display_mask;
+    bool all_renderers;
+    bool triple_buffer;
+    bool accelerated_compute;
+    bool accelerated;
+    bool stereo;
+    bool minimum_policy;
+    bool maximum_policy;
+    bool color_float;
+    bool multisample;
+    bool supersample;
+    bool sample_alpha;
+    bool no_recovery;
+    bool closest_policy;
+    bool backing_store;
+    bool backing_volatile;
+    bool allow_offline_renderers;
+    bool automatic_graphics_switching;
+    bool pbuffer;
+    bool remote_pbuffer;
+    bool single_renderer;
+    bool robust;
+    bool mp_safe;
+    bool multi_screen;
+    bool fullscreen;
+    bool offscreen;
+    bool window;
+    bool compliant;
+    bool aux_depth_stencil;
+    bool double_buffer;
+};
+
+struct AO46RendererInfoRec {
+    GLint display_mask;
+    GLint max_sample_buffers;
+    GLint max_samples;
+    GLint sample_modes;
+    GLint sample_alpha;
+    GLint registry_id_low;
+    GLint registry_id_high;
+};
+
+struct AO46PBufferRec {
+    GLuint retain_count;
+    GLsizei width;
+    GLsizei height;
+    GLenum target;
+    GLenum internal_format;
+    GLint max_level;
+    GLint rowbytes;
+    uint8_t *storage;
+};
+
+struct AO46ShareGroupRec {
+    GLuint retain_count;
+    GLint renderer_id;
+    GLint profile;
+};
+
+struct AO46ContextRec {
+    GLuint retain_count;
+    AO46BackendContextRef backend_ctx;
+    AO46PixelFormatRef pixel_format;
+    AO46ShareGroupRef share_group;
+    AO46PBufferRef pbuffer;
+    void *renderer_handle;
+    void *window_handle;
+    void *offscreen_baseaddr;
+    AO46DrawableKind drawable_kind;
+    GLint virtual_screen;
+    GLuint fullscreen_display_mask;
+    GLsizei offscreen_width;
+    GLsizei offscreen_height;
+    GLint offscreen_rowbytes;
+    GLenum pbuffer_face;
+    GLint pbuffer_level;
+    GLint pbuffer_screen;
+    GLint swap_rectangle[4];
+    GLint swap_interval;
+    GLint surface_order;
+    GLint surface_opacity;
+    GLint surface_backing_size[2];
+    GLint surface_volatile;
+    GLint swaps_in_flight;
+    GLint abort_on_gpu_restart_denied;
+    GLint context_priority_request;
+    GLint swap_rectangle_enabled;
+    GLint swap_limit_enabled;
+    GLint rasterization_enabled;
+    GLint state_validation_enabled;
+    GLint surface_backing_size_enabled;
+    GLint display_list_optimization_enabled;
+    GLint mp_engine_enabled;
+    GLint crash_on_removed_functions_enabled;
+    pthread_mutex_t lock;
+    bool lock_initialized;
+};
+
+static _Thread_local AO46ContextRef g_current_context;
+
+typedef struct {
+    GLint format_cache_size;
+    GLint retain_renderers;
+    GLint use_build_cache;
+    GLint use_error_handler;
+} AO46GlobalOptions;
+
+static const AO46GlobalOptions kAO46DefaultGlobalOptions = {
+    64,
+    1,
+    0,
+    0
+};
+
+static AO46GlobalOptions g_global_options = {
+    64,
+    1,
+    0,
+    0
+};
+
+static pthread_mutex_t g_global_options_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void ao46_store_int(GLint *value, GLint data)
+{
+    if (value) {
+        *value = data;
+    }
+}
+
+static GLint ao46_depth_or_stencil_mode_bits(GLint bits)
+{
+    switch (bits) {
+        case 0:
+            return kCGL0Bit;
+        case 1:
+            return kCGL1Bit;
+        case 2:
+            return kCGL2Bit;
+        case 3:
+            return kCGL3Bit;
+        case 4:
+            return kCGL4Bit;
+        case 5:
+            return kCGL5Bit;
+        case 6:
+            return kCGL6Bit;
+        case 8:
+            return kCGL8Bit;
+        case 10:
+            return kCGL10Bit;
+        case 12:
+            return kCGL12Bit;
+        case 16:
+            return kCGL16Bit;
+        case 24:
+            return kCGL24Bit;
+        case 32:
+            return kCGL32Bit;
+        default:
+            return 0;
+    }
+}
+
+static GLint ao46_color_mode_bits(GLint color_bits)
+{
+    switch (color_bits) {
+        case 16:
+            return kCGLRGB565Bit | kCGLARGB1555Bit;
+        case 24:
+            return kCGLRGB888Bit;
+        case 32:
+        default:
+            return kCGLARGB8888Bit | kCGLRGB888Bit;
+    }
+}
+
+static CGLError ao46_validate_nonnegative(GLint value)
+{
+    return value < 0 ? kCGLBadValue : kCGLNoError;
+}
+
+static void ao46_normalize_pixel_format(AO46PixelFormatRef pix)
+{
+    if (!pix) {
+        return;
+    }
+
+    if (pix->triple_buffer) {
+        pix->double_buffer = true;
+    }
+
+    if (pix->supersample && pix->sample_buffers == 0) {
+        pix->sample_buffers = 1;
+    }
+
+    if ((pix->multisample || pix->sample_alpha) && pix->sample_buffers == 0) {
+        pix->sample_buffers = 1;
+    }
+
+    if (pix->samples > 0 && pix->sample_buffers == 0) {
+        pix->sample_buffers = 1;
+    }
+
+    if (pix->sample_buffers > 0 && pix->samples == 0) {
+        pix->samples = 4;
+    }
+
+    if (pix->sample_buffers == 0) {
+        pix->samples = 0;
+    }
+
+    if (pix->virtual_screen_count <= 0) {
+        pix->virtual_screen_count = 1;
+    }
+}
+
+static AO46ShareGroupRef ao46_create_share_group(AO46PixelFormatRef pix)
+{
+    AO46ShareGroupRef group = (AO46ShareGroupRef)calloc(1, sizeof(*group));
+
+    if (!group) {
+        return NULL;
+    }
+
+    group->retain_count = 1;
+    group->renderer_id = pix ? pix->renderer_id : AO46_RENDERER_ID;
+    group->profile = pix ? pix->profile : kCGLOGLPVersion_GL4_Core;
+    return group;
+}
+
+static AO46ShareGroupRef ao46_retain_share_group(AO46ShareGroupRef group)
+{
+    if (group) {
+        group->retain_count++;
+    }
+
+    return group;
+}
+
+static void ao46_destroy_share_group(AO46ShareGroupRef group)
+{
+    if (!group) {
+        return;
+    }
+
+    if (group->retain_count > 1) {
+        group->retain_count--;
+        return;
+    }
+
+    free(group);
+}
+
+static bool ao46_share_context_is_compatible(AO46PixelFormatRef pix, AO46ContextRef share)
+{
+    if (!pix || !share || !share->pixel_format) {
+        return false;
+    }
+
+    return share->pixel_format->renderer_id == pix->renderer_id;
+}
+
+static void ao46_bind_current_context(AO46ContextRef ctx)
+{
+    AO46ContextRef previous = g_current_context;
+
+    if (ctx) {
+        AO46RetainContext(ctx);
+    }
+
+    g_current_context = ctx;
+    AO46BackendSetCurrentContext(ctx ? ctx->backend_ctx : NULL);
+
+    AO46DestroyContext(previous);
+}
+
+static bool ao46_context_is_valid(AO46ContextRef ctx)
+{
+    return ctx && ctx->backend_ctx;
+}
+
+static void ao46_destroy_context_lock(AO46ContextRef ctx)
+{
+    if (!ctx || !ctx->lock_initialized) {
+        return;
+    }
+
+    pthread_mutex_destroy(&ctx->lock);
+    ctx->lock_initialized = false;
+}
+
+static GLint *ao46_context_enable_slot(AO46ContextRef ctx, CGLContextEnable pname)
+{
+    if (!ctx) {
+        return NULL;
+    }
+
+    switch (pname) {
+        case kCGLCESwapRectangle:
+            return &ctx->swap_rectangle_enabled;
+        case kCGLCESwapLimit:
+            return &ctx->swap_limit_enabled;
+        case kCGLCERasterization:
+            return &ctx->rasterization_enabled;
+        case kCGLCEStateValidation:
+            return &ctx->state_validation_enabled;
+        case kCGLCESurfaceBackingSize:
+            return &ctx->surface_backing_size_enabled;
+        case kCGLCEDisplayListOptimization:
+            return &ctx->display_list_optimization_enabled;
+        case kCGLCEMPEngine:
+            return &ctx->mp_engine_enabled;
+        case kCGLCECrashOnRemovedFunctions:
+            return &ctx->crash_on_removed_functions_enabled;
+        default:
+            return NULL;
+    }
+}
+
+static void ao46_clear_legacy_drawable_state(AO46ContextRef ctx)
+{
+    if (!ctx) {
+        return;
+    }
+
+    if (ctx->pbuffer) {
+        AO46DestroyPBuffer(ctx->pbuffer);
+        ctx->pbuffer = NULL;
+    }
+
+    ctx->offscreen_baseaddr = NULL;
+    ctx->fullscreen_display_mask = 0;
+    ctx->offscreen_width = 0;
+    ctx->offscreen_height = 0;
+    ctx->offscreen_rowbytes = 0;
+    ctx->pbuffer_face = 0;
+    ctx->pbuffer_level = 0;
+    ctx->pbuffer_screen = 0;
+}
+
+static void ao46_copy_compatibility_state(AO46ContextRef src, AO46ContextRef dst)
+{
+    if (!src || !dst) {
+        return;
+    }
+
+    memcpy(dst->swap_rectangle, src->swap_rectangle, sizeof(dst->swap_rectangle));
+    dst->virtual_screen = src->virtual_screen;
+    dst->swap_interval = src->swap_interval;
+    dst->surface_order = src->surface_order;
+    dst->surface_opacity = src->surface_opacity;
+    memcpy(dst->surface_backing_size, src->surface_backing_size, sizeof(dst->surface_backing_size));
+    dst->surface_volatile = src->surface_volatile;
+    dst->swaps_in_flight = src->swaps_in_flight;
+    dst->abort_on_gpu_restart_denied = src->abort_on_gpu_restart_denied;
+    dst->context_priority_request = src->context_priority_request;
+    dst->swap_rectangle_enabled = src->swap_rectangle_enabled;
+    dst->swap_limit_enabled = src->swap_limit_enabled;
+    dst->rasterization_enabled = src->rasterization_enabled;
+    dst->state_validation_enabled = src->state_validation_enabled;
+    dst->surface_backing_size_enabled = src->surface_backing_size_enabled;
+    dst->display_list_optimization_enabled = src->display_list_optimization_enabled;
+    dst->mp_engine_enabled = src->mp_engine_enabled;
+    dst->crash_on_removed_functions_enabled = src->crash_on_removed_functions_enabled;
+}
+
+static void ao46_initialize_context_parameters(AO46ContextRef ctx)
+{
+    ctx->pbuffer = NULL;
+    ctx->offscreen_baseaddr = NULL;
+    ctx->virtual_screen = 0;
+    ctx->fullscreen_display_mask = 0;
+    ctx->offscreen_width = 0;
+    ctx->offscreen_height = 0;
+    ctx->offscreen_rowbytes = 0;
+    ctx->pbuffer_face = 0;
+    ctx->pbuffer_level = 0;
+    ctx->pbuffer_screen = 0;
+    memset(ctx->swap_rectangle, 0, sizeof(ctx->swap_rectangle));
+    ctx->swap_interval = 1;
+    ctx->surface_order = 1;
+    ctx->surface_opacity = 1;
+    ctx->surface_backing_size[0] = 0;
+    ctx->surface_backing_size[1] = 0;
+    ctx->surface_volatile = 0;
+    ctx->swaps_in_flight = 1;
+    ctx->abort_on_gpu_restart_denied = 0;
+    ctx->context_priority_request = kCGLCPContextPriorityRequestNormal;
+    ctx->swap_rectangle_enabled = 0;
+    ctx->swap_limit_enabled = 0;
+    ctx->rasterization_enabled = 1;
+    ctx->state_validation_enabled = 0;
+    ctx->surface_backing_size_enabled = 0;
+    ctx->display_list_optimization_enabled = 1;
+    ctx->mp_engine_enabled = 0;
+    ctx->crash_on_removed_functions_enabled = 0;
+}
+
+static void ao46_release_drawable(AO46ContextRef ctx)
+{
+    if (!ao46_context_is_valid(ctx)) {
+        return;
+    }
+
+    AO46BackendReleaseDrawable(ctx->backend_ctx);
+    ctx->renderer_handle = NULL;
+    ctx->window_handle = NULL;
+    ctx->drawable_kind = AO46DrawableKindNone;
+    ao46_clear_legacy_drawable_state(ctx);
+}
+
+static CGLError ao46_bind_renderer(AO46ContextRef ctx, AO46DrawableKind kind, void *window)
+{
+    void *renderer = NULL;
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (ctx->drawable_kind == kind) {
+        if (kind == AO46DrawableKindHeadless) {
+            return kCGLNoError;
+        }
+        if (kind == AO46DrawableKindWindow && ctx->window_handle == window) {
+            return kCGLNoError;
+        }
+    }
+
+    if (ctx->drawable_kind != AO46DrawableKindNone) {
+        ao46_release_drawable(ctx);
+    }
+
+    if (kind == AO46DrawableKindHeadless) {
+        if (AO46BackendCreateHeadlessDrawable(ctx->backend_ctx, &renderer) != kCGLNoError) {
+            return kCGLBadConnection;
+        }
+    } else if (kind == AO46DrawableKindWindow) {
+        if (!window) {
+            return kCGLBadDrawable;
+        }
+        if (AO46BackendCreateWindowDrawable(ctx->backend_ctx, window, &renderer) != kCGLNoError) {
+            return kCGLBadConnection;
+        }
+    } else {
+        return kCGLBadDrawable;
+    }
+
+    if (!renderer) {
+        return kCGLBadDrawable;
+    }
+
+    ctx->renderer_handle = renderer;
+    ctx->window_handle = kind == AO46DrawableKindWindow ? window : NULL;
+    ctx->drawable_kind = kind;
+    return kCGLNoError;
+}
+
+CGLError AO46EnsureRuntime(void)
+{
+    return AO46BackendEnsureReady();
+}
+
+CGLError AO46ChoosePixelFormat(const CGLPixelFormatAttribute *attribs,
+                               AO46PixelFormatRef *out_pix,
+                               GLint *out_npix)
+{
+    AO46PixelFormatRef pix;
+    size_t i;
+
+    if (!out_pix || !out_npix) {
+        return kCGLBadAddress;
+    }
+
+    *out_pix = NULL;
+    *out_npix = 0;
+
+    pix = (AO46PixelFormatRef)calloc(1, sizeof(*pix));
+    if (!pix) {
+        return kCGLBadAlloc;
+    }
+
+    pix->retain_count = 1;
+    pix->color_bits = 32;
+    pix->alpha_bits = 8;
+    pix->depth_bits = 24;
+    pix->stencil_bits = 8;
+    pix->sample_buffers = 0;
+    pix->samples = 0;
+    pix->aux_buffers = 0;
+    pix->accum_size = 0;
+    pix->virtual_screen_count = 1;
+    pix->profile = kCGLOGLPVersion_GL3_Core;
+    pix->renderer_id = AO46_RENDERER_ID;
+    pix->display_mask = (GLint)AO46_DEFAULT_DISPLAY_MASK;
+    pix->all_renderers = false;
+    pix->triple_buffer = false;
+    pix->accelerated_compute = true;
+    pix->accelerated = true;
+    pix->stereo = false;
+    pix->minimum_policy = false;
+    pix->maximum_policy = false;
+    pix->color_float = false;
+    pix->multisample = false;
+    pix->supersample = false;
+    pix->sample_alpha = false;
+    pix->no_recovery = false;
+    pix->closest_policy = false;
+    pix->backing_store = false;
+    pix->backing_volatile = false;
+    pix->allow_offline_renderers = false;
+    pix->automatic_graphics_switching = false;
+    pix->pbuffer = true;
+    pix->remote_pbuffer = false;
+    pix->single_renderer = true;
+    pix->robust = false;
+    pix->mp_safe = true;
+    pix->multi_screen = false;
+    pix->fullscreen = true;
+    pix->offscreen = true;
+    pix->window = true;
+    pix->compliant = true;
+    pix->aux_depth_stencil = false;
+    pix->double_buffer = true;
+
+    if (attribs) {
+        for (i = 0; attribs[i] != 0; ++i) {
+            CGLPixelFormatAttribute attrib = attribs[i];
+            GLint attrib_value = 0;
+
+            if (ao46_attrib_has_value(attrib)) {
+                if (ao46_attrib_requires_nonzero_value(attrib) && attribs[i + 1] == 0) {
+                    free(pix);
+                    return kCGLBadAttribute;
+                }
+
+                attrib_value = attribs[++i];
+            }
+
+            switch (attrib) {
+                case kCGLPFAAllRenderers:
+                    pix->all_renderers = true;
+                    break;
+                case kCGLPFATripleBuffer:
+                    pix->triple_buffer = true;
+                    pix->double_buffer = true;
+                    break;
+                case kCGLPFAStereo:
+                    pix->stereo = true;
+                    break;
+                case kCGLPFAColorSize:
+                    if (ao46_validate_nonnegative(attrib_value) != kCGLNoError) {
+                        free(pix);
+                        return kCGLBadValue;
+                    }
+                    pix->color_bits = attrib_value;
+                    break;
+                case kCGLPFAAlphaSize:
+                    if (ao46_validate_nonnegative(attrib_value) != kCGLNoError) {
+                        free(pix);
+                        return kCGLBadValue;
+                    }
+                    pix->alpha_bits = attrib_value;
+                    break;
+                case kCGLPFADepthSize:
+                    if (ao46_validate_nonnegative(attrib_value) != kCGLNoError) {
+                        free(pix);
+                        return kCGLBadValue;
+                    }
+                    pix->depth_bits = attrib_value;
+                    break;
+                case kCGLPFAStencilSize:
+                    if (ao46_validate_nonnegative(attrib_value) != kCGLNoError) {
+                        free(pix);
+                        return kCGLBadValue;
+                    }
+                    pix->stencil_bits = attrib_value;
+                    break;
+                case kCGLPFAAuxBuffers:
+                    if (ao46_validate_nonnegative(attrib_value) != kCGLNoError) {
+                        free(pix);
+                        return kCGLBadValue;
+                    }
+                    pix->aux_buffers = attrib_value;
+                    break;
+                case kCGLPFAAccumSize:
+                    if (ao46_validate_nonnegative(attrib_value) != kCGLNoError) {
+                        free(pix);
+                        return kCGLBadValue;
+                    }
+                    pix->accum_size = attrib_value;
+                    break;
+                case kCGLPFASampleBuffers:
+                    if (ao46_validate_nonnegative(attrib_value) != kCGLNoError) {
+                        free(pix);
+                        return kCGLBadValue;
+                    }
+                    pix->sample_buffers = attrib_value;
+                    break;
+                case kCGLPFASamples:
+                    if (ao46_validate_nonnegative(attrib_value) != kCGLNoError) {
+                        free(pix);
+                        return kCGLBadValue;
+                    }
+                    pix->samples = attrib_value;
+                    break;
+                case kCGLPFADoubleBuffer:
+                    pix->double_buffer = true;
+                    break;
+                case kCGLPFAMinimumPolicy:
+                    pix->minimum_policy = true;
+                    break;
+                case kCGLPFAMaximumPolicy:
+                    pix->maximum_policy = true;
+                    break;
+                case kCGLPFAColorFloat:
+                    pix->color_float = true;
+                    break;
+                case kCGLPFAMultisample:
+                    pix->multisample = true;
+                    break;
+                case kCGLPFASupersample:
+                    pix->supersample = true;
+                    break;
+                case kCGLPFASampleAlpha:
+                    pix->sample_alpha = true;
+                    break;
+                case kCGLPFANoRecovery:
+                    pix->no_recovery = true;
+                    break;
+                case kCGLPFAAccelerated:
+                    pix->accelerated = true;
+                    break;
+                case kCGLPFAClosestPolicy:
+                    pix->closest_policy = true;
+                    break;
+                case kCGLPFABackingStore:
+                    pix->backing_store = true;
+                    break;
+                case kCGLPFABackingVolatile:
+                    pix->backing_volatile = true;
+                    break;
+                case kCGLPFAAllowOfflineRenderers:
+                    pix->allow_offline_renderers = true;
+                    break;
+                case kCGLPFAAcceleratedCompute:
+                    pix->accelerated_compute = true;
+                    break;
+                case kCGLPFASupportsAutomaticGraphicsSwitching:
+                    pix->automatic_graphics_switching = true;
+                    break;
+                case kCGLPFAWindow:
+                    pix->window = true;
+                    break;
+                case kCGLPFAOffScreen:
+                    pix->offscreen = true;
+                    break;
+                case kCGLPFACompliant:
+                    pix->compliant = true;
+                    break;
+                case kCGLPFAPBuffer:
+                    pix->pbuffer = true;
+                    break;
+                case kCGLPFARemotePBuffer:
+                    pix->remote_pbuffer = true;
+                    break;
+                case kCGLPFASingleRenderer:
+                    pix->single_renderer = true;
+                    break;
+                case kCGLPFARobust:
+                    pix->robust = true;
+                    break;
+                case kCGLPFAMPSafe:
+                    pix->mp_safe = true;
+                    break;
+                case kCGLPFAMultiScreen:
+                    pix->multi_screen = true;
+                    break;
+                case kCGLPFAFullScreen:
+                    pix->fullscreen = true;
+                    break;
+                case kCGLPFAAuxDepthStencil:
+                    pix->aux_depth_stencil = true;
+                    break;
+                case kCGLPFAVirtualScreenCount:
+                    if (ao46_validate_nonnegative(attrib_value) != kCGLNoError) {
+                        free(pix);
+                        return kCGLBadValue;
+                    }
+                    if (attrib_value > 0) {
+                        pix->virtual_screen_count = attrib_value;
+                    }
+                    break;
+                case kCGLPFARendererID:
+                    if (attrib_value != AO46_RENDERER_ID) {
+                        free(pix);
+                        return kCGLBadRendererInfo;
+                    }
+                    pix->renderer_id = attrib_value;
+                    break;
+                case kCGLPFADisplayMask:
+                    pix->display_mask = attrib_value != 0 ? attrib_value : (GLint)AO46_DEFAULT_DISPLAY_MASK;
+                    break;
+                case kCGLPFAOpenGLProfile:
+                    if (!ao46_profile_is_supported(attrib_value)) {
+                        free(pix);
+                        return kCGLBadPixelFormat;
+                    }
+                    pix->profile = attrib_value;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    if (!ao46_profile_is_supported(pix->profile)) {
+        free(pix);
+        return kCGLBadPixelFormat;
+    }
+
+    ao46_normalize_pixel_format(pix);
+
+    *out_pix = pix;
+    *out_npix = 1;
+    return kCGLNoError;
+}
+
+void AO46DestroyPixelFormat(AO46PixelFormatRef pix)
+{
+    if (!pix) {
+        return;
+    }
+
+    if (pix->retain_count > 1) {
+        pix->retain_count--;
+        return;
+    }
+
+    free(pix);
+}
+
+AO46PixelFormatRef AO46RetainPixelFormat(AO46PixelFormatRef pix)
+{
+    if (pix) {
+        pix->retain_count++;
+    }
+    return pix;
+}
+
+GLuint AO46GetPixelFormatRetainCount(AO46PixelFormatRef pix)
+{
+    return pix ? pix->retain_count : 0;
+}
+
+CGLError AO46DescribePixelFormat(AO46PixelFormatRef pix,
+                                 GLint pix_num,
+                                 CGLPixelFormatAttribute attrib,
+                                 GLint *value)
+{
+    if (!pix || !value) {
+        return kCGLBadAddress;
+    }
+
+    if (pix_num != 0) {
+        return kCGLBadValue;
+    }
+
+    switch (attrib) {
+        case kCGLPFAAllRenderers:
+            *value = pix->all_renderers ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFATripleBuffer:
+            *value = pix->triple_buffer ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAStereo:
+            *value = pix->stereo ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAColorSize:
+            *value = pix->color_bits;
+            return kCGLNoError;
+        case kCGLPFAAlphaSize:
+            *value = pix->alpha_bits;
+            return kCGLNoError;
+        case kCGLPFADepthSize:
+            *value = pix->depth_bits;
+            return kCGLNoError;
+        case kCGLPFAStencilSize:
+            *value = pix->stencil_bits;
+            return kCGLNoError;
+        case kCGLPFAAuxBuffers:
+            *value = pix->aux_buffers;
+            return kCGLNoError;
+        case kCGLPFAAccumSize:
+            *value = pix->accum_size;
+            return kCGLNoError;
+        case kCGLPFASampleBuffers:
+            *value = pix->sample_buffers;
+            return kCGLNoError;
+        case kCGLPFASamples:
+            *value = pix->samples;
+            return kCGLNoError;
+        case kCGLPFAMinimumPolicy:
+            *value = pix->minimum_policy ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAMaximumPolicy:
+            *value = pix->maximum_policy ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAColorFloat:
+            *value = pix->color_float ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAMultisample:
+            *value = pix->multisample ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFASupersample:
+            *value = pix->supersample ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFASampleAlpha:
+            *value = pix->sample_alpha ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAOpenGLProfile:
+            *value = pix->profile;
+            return kCGLNoError;
+        case kCGLPFARendererID:
+            *value = pix->renderer_id;
+            return kCGLNoError;
+        case kCGLPFADisplayMask:
+            *value = pix->display_mask;
+            return kCGLNoError;
+        case kCGLPFAAccelerated:
+            *value = pix->accelerated ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAAcceleratedCompute:
+            *value = pix->accelerated_compute ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFANoRecovery:
+            *value = pix->no_recovery ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAClosestPolicy:
+            *value = pix->closest_policy ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFABackingStore:
+            *value = pix->backing_store ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFABackingVolatile:
+            *value = pix->backing_volatile ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAAllowOfflineRenderers:
+            *value = pix->allow_offline_renderers ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFASupportsAutomaticGraphicsSwitching:
+            *value = pix->automatic_graphics_switching ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAOffScreen:
+            *value = pix->offscreen ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAWindow:
+            *value = pix->window ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFACompliant:
+            *value = pix->compliant ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAPBuffer:
+            *value = pix->pbuffer ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFARemotePBuffer:
+            *value = pix->remote_pbuffer ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFASingleRenderer:
+            *value = pix->single_renderer ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFARobust:
+            *value = pix->robust ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAMPSafe:
+            *value = pix->mp_safe ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAMultiScreen:
+            *value = pix->multi_screen ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAFullScreen:
+            *value = pix->fullscreen ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFAVirtualScreenCount:
+            *value = pix->virtual_screen_count;
+            return kCGLNoError;
+        case kCGLPFAAuxDepthStencil:
+            *value = pix->aux_depth_stencil ? 1 : 0;
+            return kCGLNoError;
+        case kCGLPFADoubleBuffer:
+            *value = pix->double_buffer ? 1 : 0;
+            return kCGLNoError;
+        default:
+            return kCGLBadAttribute;
+    }
+}
+
+CGLError AO46QueryRendererInfo(GLuint display_mask,
+                               AO46RendererInfoRef *out_rend,
+                               GLint *out_nrend)
+{
+    AO46RendererInfoRef rend;
+    CGLError err;
+
+    if (!out_rend || !out_nrend) {
+        return kCGLBadAddress;
+    }
+
+    *out_rend = NULL;
+    *out_nrend = 0;
+
+    err = AO46EnsureRuntime();
+    if (err != kCGLNoError) {
+        return err;
+    }
+
+    rend = (AO46RendererInfoRef)calloc(1, sizeof(*rend));
+    if (!rend) {
+        return kCGLBadAlloc;
+    }
+
+    rend->display_mask = display_mask != 0 ? (GLint)display_mask : (GLint)AO46_DEFAULT_DISPLAY_MASK;
+    rend->max_sample_buffers = AO46_RENDERER_MAX_SAMPLE_BUFFERS;
+    rend->max_samples = AO46_RENDERER_MAX_SAMPLES;
+    rend->sample_modes = AO46_RENDERER_SAMPLE_MODES;
+    rend->sample_alpha = AO46_RENDERER_SAMPLE_ALPHA;
+    rend->registry_id_low = AO46_RENDERER_REGISTRY_ID_LOW;
+    rend->registry_id_high = AO46_RENDERER_REGISTRY_ID_HIGH;
+
+    *out_rend = rend;
+    *out_nrend = AO46_RENDERER_COUNT;
+    return kCGLNoError;
+}
+
+void AO46DestroyRendererInfo(AO46RendererInfoRef rend)
+{
+    free(rend);
+}
+
+CGLError AO46DescribeRenderer(AO46RendererInfoRef rend,
+                              GLint rend_num,
+                              CGLRendererProperty prop,
+                              GLint *value)
+{
+    if (!rend) {
+        return kCGLBadRendererInfo;
+    }
+
+    if (rend_num < 0 || rend_num >= AO46_RENDERER_COUNT) {
+        return kCGLBadValue;
+    }
+
+    switch (prop) {
+        case kCGLRPOffScreen:
+            ao46_store_int(value, 1);
+            return kCGLNoError;
+        case kCGLRPRendererID:
+            ao46_store_int(value, AO46_RENDERER_ID);
+            return kCGLNoError;
+        case kCGLRPAccelerated:
+        case kCGLRPWindow:
+        case kCGLRPCompliant:
+        case kCGLRPGPUVertProcCapable:
+        case kCGLRPGPUFragProcCapable:
+        case kCGLRPOnline:
+        case kCGLRPAcceleratedCompute:
+            ao46_store_int(value, 1);
+            return kCGLNoError;
+        case kCGLRPBackingStore:
+        case kCGLRPRemovable:
+        case kCGLRPFullScreen:
+        case kCGLRPMultiScreen:
+        case kCGLRPRobust:
+            ao46_store_int(value, 0);
+            return kCGLNoError;
+        case kCGLRPMPSafe:
+            ao46_store_int(value, 1);
+            return kCGLNoError;
+        case kCGLRPDisplayMask:
+            ao46_store_int(value, rend->display_mask);
+            return kCGLNoError;
+        case kCGLRPBufferModes:
+            ao46_store_int(value, kCGLMonoscopicBit | kCGLSingleBufferBit | kCGLDoubleBufferBit);
+            return kCGLNoError;
+        case kCGLRPColorModes:
+            ao46_store_int(value, ao46_color_mode_bits(32));
+            return kCGLNoError;
+        case kCGLRPAccumModes:
+            ao46_store_int(value, kCGL0Bit);
+            return kCGLNoError;
+        case kCGLRPDepthModes:
+            ao46_store_int(value, ao46_depth_or_stencil_mode_bits(24));
+            return kCGLNoError;
+        case kCGLRPStencilModes:
+            ao46_store_int(value, ao46_depth_or_stencil_mode_bits(8));
+            return kCGLNoError;
+        case kCGLRPMaxSampleBuffers:
+            ao46_store_int(value, rend->max_sample_buffers);
+            return kCGLNoError;
+        case kCGLRPMaxSamples:
+            ao46_store_int(value, rend->max_samples);
+            return kCGLNoError;
+        case kCGLRPSampleModes:
+            ao46_store_int(value, rend->sample_modes);
+            return kCGLNoError;
+        case kCGLRPSampleAlpha:
+            ao46_store_int(value, rend->sample_alpha);
+            return kCGLNoError;
+        case kCGLRPRegistryIDLow:
+            ao46_store_int(value, rend->registry_id_low);
+            return kCGLNoError;
+        case kCGLRPRegistryIDHigh:
+            ao46_store_int(value, rend->registry_id_high);
+            return kCGLNoError;
+        case kCGLRPMaxAuxBuffers:
+        case kCGLRPVideoMemoryMegabytes:
+        case kCGLRPTextureMemoryMegabytes:
+        case kCGLRPVideoMemory:
+        case kCGLRPTextureMemory:
+            ao46_store_int(value, 0);
+            return kCGLNoError;
+        case kCGLRPRendererCount:
+            ao46_store_int(value, AO46_RENDERER_COUNT);
+            return kCGLNoError;
+        case kCGLRPMajorGLVersion:
+            ao46_store_int(value, 4);
+            return kCGLNoError;
+        default:
+            return kCGLBadProperty;
+    }
+}
+
+CGLError AO46CreatePBuffer(GLsizei width,
+                           GLsizei height,
+                           GLenum target,
+                           GLenum internal_format,
+                           GLint max_level,
+                           AO46PBufferRef *out_pbuffer)
+{
+    AO46PBufferRef pbuffer;
+
+    if (!out_pbuffer) {
+        return kCGLBadAddress;
+    }
+
+    *out_pbuffer = NULL;
+
+    if (width <= 0 || height <= 0 || target == 0 || max_level < 0) {
+        return kCGLBadValue;
+    }
+
+    pbuffer = (AO46PBufferRef)calloc(1, sizeof(*pbuffer));
+    if (!pbuffer) {
+        return kCGLBadAlloc;
+    }
+
+    pbuffer->retain_count = 1;
+    pbuffer->width = width;
+    pbuffer->height = height;
+    pbuffer->target = target;
+    pbuffer->internal_format = internal_format;
+    pbuffer->max_level = max_level;
+    pbuffer->rowbytes = width * 4;
+    pbuffer->storage = (uint8_t *)calloc((size_t)height, (size_t)pbuffer->rowbytes);
+    if (!pbuffer->storage) {
+        free(pbuffer);
+        return kCGLBadAlloc;
+    }
+
+    *out_pbuffer = pbuffer;
+    return kCGLNoError;
+}
+
+void AO46DestroyPBuffer(AO46PBufferRef pbuffer)
+{
+    if (!pbuffer) {
+        return;
+    }
+
+    if (pbuffer->retain_count > 1) {
+        pbuffer->retain_count--;
+        return;
+    }
+
+    free(pbuffer->storage);
+    free(pbuffer);
+}
+
+AO46PBufferRef AO46RetainPBuffer(AO46PBufferRef pbuffer)
+{
+    if (pbuffer) {
+        pbuffer->retain_count++;
+    }
+
+    return pbuffer;
+}
+
+GLuint AO46GetPBufferRetainCount(AO46PBufferRef pbuffer)
+{
+    return pbuffer ? pbuffer->retain_count : 0;
+}
+
+CGLError AO46DescribePBuffer(AO46PBufferRef pbuffer,
+                             GLsizei *width,
+                             GLsizei *height,
+                             GLenum *target,
+                             GLenum *internal_format,
+                             GLint *mipmap)
+{
+    if (!pbuffer) {
+        return kCGLBadValue;
+    }
+
+    if (width) {
+        *width = pbuffer->width;
+    }
+    if (height) {
+        *height = pbuffer->height;
+    }
+    if (target) {
+        *target = pbuffer->target;
+    }
+    if (internal_format) {
+        *internal_format = pbuffer->internal_format;
+    }
+    if (mipmap) {
+        *mipmap = pbuffer->max_level;
+    }
+
+    return kCGLNoError;
+}
+
+CGLError AO46CreateContext(AO46PixelFormatRef pix,
+                           AO46ContextRef share,
+                           AO46ContextRef *out_ctx)
+{
+    AO46ContextRef ctx;
+    CGLError err;
+    GLenum depth_format;
+    GLenum depth_type;
+    GLenum stencil_format;
+    GLenum stencil_type;
+    pthread_mutexattr_t lock_attr;
+
+    if (!out_ctx) {
+        return kCGLBadAddress;
+    }
+
+    *out_ctx = NULL;
+
+    if (!pix) {
+        return kCGLBadPixelFormat;
+    }
+
+    if (share && !ao46_context_is_valid(share)) {
+        return kCGLBadContext;
+    }
+
+    if (share && !ao46_share_context_is_compatible(pix, share)) {
+        return kCGLBadMatch;
+    }
+
+    err = AO46EnsureRuntime();
+    if (err != kCGLNoError) {
+        return err;
+    }
+
+    ctx = (AO46ContextRef)calloc(1, sizeof(*ctx));
+    if (!ctx) {
+        return kCGLBadAlloc;
+    }
+
+    ao46_initialize_context_parameters(ctx);
+    ctx->retain_count = 1;
+    ctx->pixel_format = AO46RetainPixelFormat(pix);
+    ctx->share_group = share ? ao46_retain_share_group(share->share_group) : ao46_create_share_group(pix);
+
+    if (!ctx->share_group) {
+        AO46DestroyPixelFormat(ctx->pixel_format);
+        free(ctx);
+        return kCGLBadAlloc;
+    }
+
+    if (pthread_mutexattr_init(&lock_attr) != 0) {
+        ao46_destroy_share_group(ctx->share_group);
+        AO46DestroyPixelFormat(ctx->pixel_format);
+        free(ctx);
+        return kCGLBadAlloc;
+    }
+
+    if (pthread_mutexattr_settype(&lock_attr, PTHREAD_MUTEX_RECURSIVE) != 0 ||
+        pthread_mutex_init(&ctx->lock, &lock_attr) != 0) {
+        pthread_mutexattr_destroy(&lock_attr);
+        ao46_destroy_share_group(ctx->share_group);
+        AO46DestroyPixelFormat(ctx->pixel_format);
+        free(ctx);
+        return kCGLBadAlloc;
+    }
+
+    pthread_mutexattr_destroy(&lock_attr);
+    ctx->lock_initialized = true;
+
+    depth_format = pix->depth_bits > 0 ? GL_DEPTH_COMPONENT24 : 0;
+    depth_type = pix->depth_bits > 0 ? GL_UNSIGNED_INT : 0;
+    stencil_format = pix->stencil_bits > 0 ? GL_STENCIL_INDEX8 : 0;
+    stencil_type = pix->stencil_bits > 0 ? GL_UNSIGNED_BYTE : 0;
+
+    ctx->backend_ctx = AO46BackendCreateContext(GL_BGRA,
+                                                GL_UNSIGNED_INT_8_8_8_8_REV,
+                                                depth_format,
+                                                depth_type,
+                                                stencil_format,
+                                                stencil_type);
+
+    if (!ctx->backend_ctx) {
+        ao46_destroy_context_lock(ctx);
+        ao46_destroy_share_group(ctx->share_group);
+        AO46DestroyPixelFormat(ctx->pixel_format);
+        free(ctx);
+        return kCGLBadContext;
+    }
+
+    *out_ctx = ctx;
+    return kCGLNoError;
+}
+
+void AO46DestroyContext(AO46ContextRef ctx)
+{
+    if (!ctx) {
+        return;
+    }
+
+    if (ctx->retain_count > 1) {
+        ctx->retain_count--;
+        return;
+    }
+
+    if (g_current_context == ctx) {
+        g_current_context = NULL;
+        AO46BackendSetCurrentContext(NULL);
+    }
+
+    if (AO46BackendGetCurrentContext() == ctx->backend_ctx) {
+        AO46BackendSetCurrentContext(NULL);
+    }
+
+    if (ctx->backend_ctx) {
+        ao46_release_drawable(ctx);
+    }
+
+    if (ctx->backend_ctx) {
+        AO46BackendDestroyContext(ctx->backend_ctx);
+    }
+
+    ctx->renderer_handle = NULL;
+    ctx->window_handle = NULL;
+    ctx->drawable_kind = AO46DrawableKindNone;
+    ao46_destroy_context_lock(ctx);
+    ao46_destroy_share_group(ctx->share_group);
+    AO46DestroyPixelFormat(ctx->pixel_format);
+    free(ctx);
+}
+
+AO46ContextRef AO46RetainContext(AO46ContextRef ctx)
+{
+    if (ctx) {
+        ctx->retain_count++;
+    }
+    return ctx;
+}
+
+GLuint AO46GetContextRetainCount(AO46ContextRef ctx)
+{
+    return ctx ? ctx->retain_count : 0;
+}
+
+AO46PixelFormatRef AO46GetPixelFormatForContext(AO46ContextRef ctx)
+{
+    return ctx ? ctx->pixel_format : NULL;
+}
+
+AO46ShareGroupRef AO46GetShareGroupForContext(AO46ContextRef ctx)
+{
+    return ao46_context_is_valid(ctx) ? ctx->share_group : NULL;
+}
+
+CGLError AO46SetCurrentContext(AO46ContextRef ctx)
+{
+    CGLError err;
+
+    err = AO46EnsureRuntime();
+    if (err != kCGLNoError) {
+        return err;
+    }
+
+    if (ctx && !ctx->backend_ctx) {
+        return kCGLBadContext;
+    }
+
+    ao46_bind_current_context(ctx);
+    return kCGLNoError;
+}
+
+AO46ContextRef AO46GetCurrentContext(void)
+{
+    return g_current_context;
+}
+
+CGLError AO46CopyContext(AO46ContextRef src, AO46ContextRef dst, GLbitfield mask)
+{
+    (void)mask;
+
+    if (!ao46_context_is_valid(src) || !ao46_context_is_valid(dst)) {
+        return kCGLBadContext;
+    }
+
+    ao46_copy_compatibility_state(src, dst);
+    return kCGLNoError;
+}
+
+CGLError AO46TexImagePBuffer(AO46ContextRef ctx, AO46PBufferRef pbuffer, GLenum source)
+{
+    CGLError err;
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (!pbuffer) {
+        return kCGLBadValue;
+    }
+
+    if (!ctx->backend_ctx) {
+        return kCGLBadState;
+    }
+
+    err = AO46BackendTexImagePBuffer(ctx->backend_ctx,
+                                     pbuffer->storage,
+                                     pbuffer->width,
+                                     pbuffer->height,
+                                     pbuffer->rowbytes,
+                                     pbuffer->target,
+                                     pbuffer->internal_format,
+                                     source);
+    if (err == kCGLBadState) {
+        return kCGLNoError;
+    }
+
+    return err;
+}
+
+CGLError AO46SetOffScreen(AO46ContextRef ctx,
+                          GLsizei width,
+                          GLsizei height,
+                          GLint rowbytes,
+                          void *baseaddr)
+{
+    CGLError err;
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (width <= 0 || height <= 0 || rowbytes < 0 || !baseaddr) {
+        return kCGLBadOffScreen;
+    }
+
+    ao46_clear_legacy_drawable_state(ctx);
+
+    err = AO46CreateHeadlessDrawable(ctx);
+    if (err != kCGLNoError) {
+        return err;
+    }
+
+    ctx->offscreen_width = width;
+    ctx->offscreen_height = height;
+    ctx->offscreen_rowbytes = rowbytes;
+    ctx->offscreen_baseaddr = baseaddr;
+    return AO46BackendBindOffscreenStorage(ctx->backend_ctx, baseaddr, width, height, rowbytes);
+}
+
+CGLError AO46GetOffScreen(AO46ContextRef ctx,
+                          GLsizei *width,
+                          GLsizei *height,
+                          GLint *rowbytes,
+                          void **baseaddr)
+{
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (!baseaddr) {
+        return kCGLBadAddress;
+    }
+
+    if (!ctx->offscreen_baseaddr) {
+        return kCGLBadOffScreen;
+    }
+
+    if (width) {
+        *width = ctx->offscreen_width;
+    }
+    if (height) {
+        *height = ctx->offscreen_height;
+    }
+    if (rowbytes) {
+        *rowbytes = ctx->offscreen_rowbytes;
+    }
+    *baseaddr = ctx->offscreen_baseaddr;
+    return kCGLNoError;
+}
+
+CGLError AO46SetFullScreen(AO46ContextRef ctx)
+{
+    GLuint display_mask;
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    display_mask = ctx->pixel_format && ctx->pixel_format->display_mask != 0
+        ? (GLuint)ctx->pixel_format->display_mask
+        : AO46_DEFAULT_DISPLAY_MASK;
+    return AO46SetFullScreenOnDisplay(ctx, display_mask);
+}
+
+CGLError AO46SetFullScreenOnDisplay(AO46ContextRef ctx, GLuint display_mask)
+{
+    CGLError err;
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (display_mask == 0) {
+        return kCGLBadFullScreen;
+    }
+
+    ao46_clear_legacy_drawable_state(ctx);
+
+    err = AO46CreateHeadlessDrawable(ctx);
+    if (err != kCGLNoError) {
+        return err;
+    }
+
+    ctx->fullscreen_display_mask = display_mask;
+    ctx->virtual_screen = 0;
+    return kCGLNoError;
+}
+
+CGLError AO46SetPBuffer(AO46ContextRef ctx,
+                        AO46PBufferRef pbuffer,
+                        GLenum face,
+                        GLint level,
+                        GLint screen)
+{
+    CGLError err;
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (!pbuffer || level < 0 || screen < 0) {
+        return kCGLBadValue;
+    }
+
+    ao46_clear_legacy_drawable_state(ctx);
+
+    err = AO46CreateHeadlessDrawable(ctx);
+    if (err != kCGLNoError) {
+        return err;
+    }
+
+    ctx->pbuffer = AO46RetainPBuffer(pbuffer);
+    ctx->pbuffer_face = face;
+    ctx->pbuffer_level = level;
+    ctx->pbuffer_screen = screen;
+    ctx->virtual_screen = screen;
+    return AO46BackendBindOffscreenStorage(ctx->backend_ctx,
+                                           pbuffer->storage,
+                                           pbuffer->width,
+                                           pbuffer->height,
+                                           pbuffer->rowbytes);
+}
+
+CGLError AO46GetPBuffer(AO46ContextRef ctx,
+                        AO46PBufferRef *pbuffer,
+                        GLenum *face,
+                        GLint *level,
+                        GLint *screen)
+{
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (!pbuffer) {
+        return kCGLBadAddress;
+    }
+
+    if (!ctx->pbuffer) {
+        return kCGLBadState;
+    }
+
+    *pbuffer = ctx->pbuffer;
+    if (face) {
+        *face = ctx->pbuffer_face;
+    }
+    if (level) {
+        *level = ctx->pbuffer_level;
+    }
+    if (screen) {
+        *screen = ctx->pbuffer_screen;
+    }
+    return kCGLNoError;
+}
+
+CGLError AO46CreateHeadlessDrawable(AO46ContextRef ctx)
+{
+    CGLError err = AO46EnsureRuntime();
+    if (err != kCGLNoError) {
+        return err;
+    }
+    return ao46_bind_renderer(ctx, AO46DrawableKindHeadless, NULL);
+}
+
+CGLError AO46AttachWindowToContext(AO46ContextRef ctx, void *window)
+{
+    CGLError err = AO46EnsureRuntime();
+    if (err != kCGLNoError) {
+        return err;
+    }
+    return ao46_bind_renderer(ctx, AO46DrawableKindWindow, window);
+}
+
+CGLError AO46ClearDrawable(AO46ContextRef ctx)
+{
+    CGLError err = AO46EnsureRuntime();
+
+    if (err != kCGLNoError) {
+        return err;
+    }
+
+    if (!ctx) {
+        ctx = g_current_context;
+    }
+
+    if (!ctx) {
+        return kCGLBadContext;
+    }
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    ao46_release_drawable(ctx);
+    return kCGLNoError;
+}
+
+CGLError AO46EnableContext(AO46ContextRef ctx, CGLContextEnable pname)
+{
+    GLint *slot;
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    slot = ao46_context_enable_slot(ctx, pname);
+    if (!slot) {
+        return kCGLBadEnumeration;
+    }
+
+    *slot = 1;
+    return kCGLNoError;
+}
+
+CGLError AO46DisableContext(AO46ContextRef ctx, CGLContextEnable pname)
+{
+    GLint *slot;
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    slot = ao46_context_enable_slot(ctx, pname);
+    if (!slot) {
+        return kCGLBadEnumeration;
+    }
+
+    *slot = 0;
+    return kCGLNoError;
+}
+
+CGLError AO46IsContextEnabled(AO46ContextRef ctx, CGLContextEnable pname, GLint *enable)
+{
+    GLint *slot;
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (!enable) {
+        return kCGLBadAddress;
+    }
+
+    slot = ao46_context_enable_slot(ctx, pname);
+    if (!slot) {
+        return kCGLBadEnumeration;
+    }
+
+    *enable = *slot;
+    return kCGLNoError;
+}
+
+CGLError AO46SetContextParameter(AO46ContextRef ctx, CGLContextParameter pname, const GLint *params)
+{
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (pname != kCGLCPReclaimResources && !params) {
+        return kCGLBadAddress;
+    }
+
+    switch (pname) {
+        case kCGLCPSwapRectangle:
+            memcpy(ctx->swap_rectangle, params, sizeof(ctx->swap_rectangle));
+            return kCGLNoError;
+        case kCGLCPSwapInterval:
+            ctx->swap_interval = params[0];
+            return kCGLNoError;
+        case kCGLCPSurfaceOrder:
+            ctx->surface_order = params[0];
+            return kCGLNoError;
+        case kCGLCPSurfaceOpacity:
+            ctx->surface_opacity = params[0] ? 1 : 0;
+            return kCGLNoError;
+        case kCGLCPSurfaceBackingSize:
+            ctx->surface_backing_size[0] = params[0];
+            ctx->surface_backing_size[1] = params[1];
+            return kCGLNoError;
+        case kCGLCPSurfaceSurfaceVolatile:
+            ctx->surface_volatile = params[0] ? 1 : 0;
+            return kCGLNoError;
+        case kCGLCPMPSwapsInFlight:
+            if (params[0] < 0) {
+                return kCGLBadValue;
+            }
+            ctx->swaps_in_flight = params[0];
+            return kCGLNoError;
+        case kCGLCPAbortOnGPURestartStatusDenied:
+            ctx->abort_on_gpu_restart_denied = params[0] ? 1 : 0;
+            return kCGLNoError;
+        case kCGLCPContextPriorityRequest:
+            if (params[0] < kCGLCPContextPriorityRequestHigh ||
+                params[0] > kCGLCPContextPriorityRequestLow) {
+                return kCGLBadValue;
+            }
+            ctx->context_priority_request = params[0];
+            return kCGLNoError;
+        case kCGLCPReclaimResources:
+            return kCGLNoError;
+        default:
+            return kCGLBadEnumeration;
+    }
+}
+
+CGLError AO46GetContextParameter(AO46ContextRef ctx, CGLContextParameter pname, GLint *params)
+{
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (!params) {
+        return kCGLBadAddress;
+    }
+
+    switch (pname) {
+        case kCGLCPSwapRectangle:
+            memcpy(params, ctx->swap_rectangle, sizeof(ctx->swap_rectangle));
+            return kCGLNoError;
+        case kCGLCPSwapInterval:
+            params[0] = ctx->swap_interval;
+            return kCGLNoError;
+        case kCGLCPDispatchTableSize:
+            params[0] = 0;
+            return kCGLNoError;
+        case kCGLCPSurfaceOrder:
+            params[0] = ctx->surface_order;
+            return kCGLNoError;
+        case kCGLCPSurfaceOpacity:
+            params[0] = ctx->surface_opacity;
+            return kCGLNoError;
+        case kCGLCPSurfaceBackingSize:
+            params[0] = ctx->surface_backing_size[0];
+            params[1] = ctx->surface_backing_size[1];
+            return kCGLNoError;
+        case kCGLCPSurfaceSurfaceVolatile:
+            params[0] = ctx->surface_volatile;
+            return kCGLNoError;
+        case kCGLCPCurrentRendererID:
+            params[0] = AO46_RENDERER_ID;
+            return kCGLNoError;
+        case kCGLCPGPUVertexProcessing:
+        case kCGLCPGPUFragmentProcessing:
+            params[0] = 1;
+            return kCGLNoError;
+        case kCGLCPHasDrawable:
+            params[0] = ctx->drawable_kind != AO46DrawableKindNone ? 1 : 0;
+            return kCGLNoError;
+        case kCGLCPMPSwapsInFlight:
+            params[0] = ctx->swaps_in_flight;
+            return kCGLNoError;
+        case kCGLCPGPURestartStatus:
+            params[0] = 0;
+            return kCGLNoError;
+        case kCGLCPAbortOnGPURestartStatusDenied:
+            params[0] = ctx->abort_on_gpu_restart_denied;
+            return kCGLNoError;
+        case kCGLCPSupportGPURestart:
+        case kCGLCPSupportSeparateAddressSpace:
+            params[0] = 0;
+            return kCGLNoError;
+        case kCGLCPContextPriorityRequest:
+            params[0] = ctx->context_priority_request;
+            return kCGLNoError;
+        default:
+            return kCGLBadEnumeration;
+    }
+}
+
+CGLError AO46SetVirtualScreen(AO46ContextRef ctx, GLint screen)
+{
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (screen < 0) {
+        return kCGLBadValue;
+    }
+
+    ctx->virtual_screen = screen;
+    return kCGLNoError;
+}
+
+CGLError AO46GetVirtualScreen(AO46ContextRef ctx, GLint *screen)
+{
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (!screen) {
+        return kCGLBadAddress;
+    }
+
+    *screen = ctx->virtual_screen;
+    return kCGLNoError;
+}
+
+AO46DrawableKind AO46GetDrawableKind(AO46ContextRef ctx)
+{
+    return ctx ? ctx->drawable_kind : AO46DrawableKindNone;
+}
+
+void *AO46GetWindowHandleForContext(AO46ContextRef ctx)
+{
+    return ctx ? ctx->window_handle : NULL;
+}
+
+CGLError AO46UpdateContext(AO46ContextRef ctx)
+{
+    if (!ctx) {
+        ctx = g_current_context;
+    }
+
+    if (!ctx) {
+        return kCGLBadContext;
+    }
+
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (ctx->drawable_kind == AO46DrawableKindNone) {
+        return kCGLBadDrawable;
+    }
+
+    return kCGLNoError;
+}
+
+CGLError AO46FlushDrawable(AO46ContextRef ctx)
+{
+    CGLError err;
+
+    err = AO46EnsureRuntime();
+    if (err != kCGLNoError) {
+        return err;
+    }
+
+    if (!ctx) {
+        ctx = g_current_context;
+    }
+
+    if (!ctx) {
+        return kCGLBadContext;
+    }
+
+    if (ctx->drawable_kind == AO46DrawableKindNone) {
+        return kCGLBadDrawable;
+    }
+
+    AO46BackendSwapBuffers(ctx->backend_ctx);
+    return kCGLNoError;
+}
+
+CGLError AO46SetGlobalOption(CGLGlobalOption pname, const GLint *params)
+{
+    CGLError err = kCGLNoError;
+    GLint value = params ? params[0] : 0;
+
+    if (pthread_mutex_lock(&g_global_options_lock) != 0) {
+        return kCGLBadState;
+    }
+
+    switch (pname) {
+        case kCGLGOFormatCacheSize:
+            if (!params) {
+                err = kCGLBadAddress;
+                break;
+            }
+            if (value < 0) {
+                err = kCGLBadValue;
+                break;
+            }
+            g_global_options.format_cache_size = value;
+            break;
+        case kCGLGOClearFormatCache:
+            break;
+        case kCGLGORetainRenderers:
+            if (!params) {
+                err = kCGLBadAddress;
+                break;
+            }
+            g_global_options.retain_renderers = value ? 1 : 0;
+            break;
+        case kCGLGOUseBuildCache:
+            if (!params) {
+                err = kCGLBadAddress;
+                break;
+            }
+            g_global_options.use_build_cache = value ? 1 : 0;
+            break;
+        case kCGLGOResetLibrary:
+            g_global_options = kAO46DefaultGlobalOptions;
+            break;
+        case kCGLGOUseErrorHandler:
+            if (!params) {
+                err = kCGLBadAddress;
+                break;
+            }
+            g_global_options.use_error_handler = value ? 1 : 0;
+            break;
+        default:
+            err = kCGLBadEnumeration;
+            break;
+    }
+
+    if (pthread_mutex_unlock(&g_global_options_lock) != 0 && err == kCGLNoError) {
+        return kCGLBadState;
+    }
+
+    return err;
+}
+
+CGLError AO46GetGlobalOption(CGLGlobalOption pname, GLint *params)
+{
+    CGLError err = kCGLNoError;
+
+    if (!params) {
+        return kCGLBadAddress;
+    }
+
+    if (pthread_mutex_lock(&g_global_options_lock) != 0) {
+        return kCGLBadState;
+    }
+
+    switch (pname) {
+        case kCGLGOFormatCacheSize:
+            params[0] = g_global_options.format_cache_size;
+            break;
+        case kCGLGOClearFormatCache:
+            params[0] = 0;
+            break;
+        case kCGLGORetainRenderers:
+            params[0] = g_global_options.retain_renderers;
+            break;
+        case kCGLGOUseBuildCache:
+            params[0] = g_global_options.use_build_cache;
+            break;
+        case kCGLGOResetLibrary:
+            params[0] = 0;
+            break;
+        case kCGLGOUseErrorHandler:
+            params[0] = g_global_options.use_error_handler;
+            break;
+        default:
+            err = kCGLBadEnumeration;
+            break;
+    }
+
+    if (pthread_mutex_unlock(&g_global_options_lock) != 0 && err == kCGLNoError) {
+        return kCGLBadState;
+    }
+
+    return err;
+}
+
+CGLError AO46LockContext(AO46ContextRef ctx)
+{
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (!ctx->lock_initialized) {
+        return kCGLBadState;
+    }
+
+    if (pthread_mutex_lock(&ctx->lock) != 0) {
+        return kCGLBadState;
+    }
+
+    return kCGLNoError;
+}
+
+CGLError AO46UnlockContext(AO46ContextRef ctx)
+{
+    if (!ao46_context_is_valid(ctx)) {
+        return kCGLBadContext;
+    }
+
+    if (!ctx->lock_initialized) {
+        return kCGLBadState;
+    }
+
+    if (pthread_mutex_unlock(&ctx->lock) != 0) {
+        return kCGLBadState;
+    }
+
+    return kCGLNoError;
+}
+
+void *AO46GetProcAddress(const char *procname)
+{
+    CGLError err;
+
+    if (!procname) {
+        return NULL;
+    }
+
+    err = AO46EnsureRuntime();
+    if (err != kCGLNoError) {
+        return NULL;
+    }
+
+    return AO46BackendGetProcAddress(procname);
+}
+
+void *AO46GetProcAddressBytes(const GLubyte *procname)
+{
+    return AO46GetProcAddress((const char *)procname);
+}

@@ -1,0 +1,6 @@
+framework module OpenGL_4_6 {
+  umbrella header "OpenGL_4_6.h"
+
+  export *
+  module * { export * }
+}

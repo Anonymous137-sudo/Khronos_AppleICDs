@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+log_file=/var/log/OpenGLKHR_ICD_Installer.log
+
+{
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] OpenGLKHR ICD postinstall starting"
+    /usr/local/libexec/OpenGLKHR_ICD/openglkhr-icd-bootstrap update
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] OpenGLKHR ICD postinstall complete"
+} >>"$log_file" 2>&1

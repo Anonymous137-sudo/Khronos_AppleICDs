@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+
+exec /usr/local/libexec/OpenGLKHR_ICD/openglkhr-icd-bootstrap build "$@"

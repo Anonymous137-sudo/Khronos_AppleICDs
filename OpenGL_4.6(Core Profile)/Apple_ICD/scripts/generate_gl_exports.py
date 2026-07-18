@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+
+import pathlib
+import re
+import sys
+
+
+SIGNATURE_RE = re.compile(
+    r"(?ms)^([A-Za-z_][A-Za-z0-9_\s\*]*?)\s*(gl[A-Za-z0-9_]+)\(([^)]*)\)\s*\{"
+)
+
+NAME_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)\s*(?:\[[^\]]*\])?$")
+
+
+def split_params(params: str) -> list[str]:
+    params = params.strip()
+    if not params or params == "void":
+        return []
+    return [part.strip() for part in params.split(",")]
+
+
+def extract_name(param: str) -> str:
+    match = NAME_RE.search(param)
+    if not match:
+        raise ValueError(f"could not parse parameter name from: {param!r}")
+    return match.group(1)
+
+
+def fallback_for(return_type: str) -> str:
+    if return_type.strip() == "void":
+        return ""
+    return f"({return_type.strip()})0"
+
+
+def backend_symbol_name(name: str) -> str:
+    return f"AO46GL2MTL_{name}"
+
+
+def generate_wrapper(return_type: str, name: str, params: str) -> str:
+    return_type = " ".join(return_type.split())
+    params = " ".join(params.split())
+    param_list = split_params(params)
+    arg_names = ", ".join(extract_name(param) for param in param_list)
+    fn_params = params if params else "void"
+    fallback = fallback_for(return_type)
+
+    lines = [
+        f"{return_type} {name}({params})" if params else f"{return_type} {name}(void)",
+        "{",
+        f"    typedef {return_type} (*AO46Fn)({fn_params});",
+        "    static AO46Fn fn;",
+        "",
+        "    if (!fn) {",
+        f'        fn = (AO46Fn)AO46ClientGetProcAddress("{name}");',
+        "    }",
+        "",
+        "    if (!fn) {",
+        f'        fprintf(stderr, "AO46: missing GL symbol {name}\\n");',
+    ]
+
+    if return_type == "void":
+        lines.append("        return;")
+    else:
+        lines.append(f"        return {fallback};")
+
+    lines.extend(
+        [
+            "    }",
+            "",
+            f"    {'return ' if return_type != 'void' else ''}fn({arg_names});",
+            "}",
+            "",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def generate_backend_stub(return_type: str, name: str, params: str) -> str:
+    return_type = " ".join(return_type.split())
+    params = " ".join(params.split())
+    param_list = split_params(params)
+    fallback = fallback_for(return_type)
+    lines = [
+        f"static {return_type} {backend_symbol_name(name)}({params})" if params else
+        f"static {return_type} {backend_symbol_name(name)}(void)",
+        "{",
+    ]
+
+    for param in param_list:
+        lines.append(f"    (void){extract_name(param)};")
+
+    if return_type != "void":
+        lines.append(f"    return {fallback};")
+
+    lines.extend([
+        "}",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def generate_backend_lookup(names: list[str]) -> str:
+    lines = [
+        "void *AO46GL2MTLLookupProcAddress(const char *procname)",
+        "{",
+        "    void *custom_proc;",
+        "",
+        "    if (!procname) {",
+        "        return NULL;",
+        "    }",
+        "",
+        "    custom_proc = AO46BackendCustomProcAddress(procname);",
+        "    if (custom_proc) {",
+        "        return custom_proc;",
+        "    }",
+        "",
+    ]
+
+    for name in names:
+        lines.extend([
+            f'    if (strcmp(procname, "{name}") == 0) {{',
+            f"        return (void *){backend_symbol_name(name)};",
+            "    }",
+            "",
+        ])
+
+    lines.extend([
+        "    return NULL;",
+        "}",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def main() -> int:
+    if len(sys.argv) != 4:
+        print("usage: generate_gl_exports.py <gl_core.c> <output.c> <client|icd|runtime|backend>", file=sys.stderr)
+        return 1
+
+    source_path = pathlib.Path(sys.argv[1])
+    output_path = pathlib.Path(sys.argv[2])
+    mode = sys.argv[3]
+    source_text = source_path.read_text()
+
+    if mode == "client":
+        include_header = "AppleOpenGL46Client.h"
+        resolver = "AO46ClientGetProcAddress"
+    elif mode == "icd":
+        include_header = "AppleOpenGLICD.h"
+        resolver = "AO46ICDGetProcAddress"
+    elif mode == "runtime":
+        include_header = "AppleOpenGL46Runtime.h"
+        resolver = "AO46GetProcAddress"
+    elif mode == "backend":
+        include_header = "AppleOpenGL46Backend.h"
+        resolver = None
+    else:
+        print(f"unknown mode: {mode}", file=sys.stderr)
+        return 1
+
+    wrappers = []
+    names = []
+    for return_type, name, params in SIGNATURE_RE.findall(source_text):
+        names.append(name)
+        if mode == "backend":
+            wrappers.append(generate_backend_stub(return_type, name, params))
+        else:
+            wrapper = generate_wrapper(return_type, name, params)
+            wrapper = wrapper.replace("AO46ClientGetProcAddress", resolver)
+            wrappers.append(wrapper)
+
+    if not wrappers:
+        print(f"no OpenGL exports found in {source_path}", file=sys.stderr)
+        return 1
+
+    output = [
+        "/*",
+        " * Autogenerated by OpenGL_4.6(Core Profile)/Apple_ICD/scripts/generate_gl_exports.py",
+        " * Source: MGL/src/gl_core.c",
+        " */",
+        "",
+        f'#include "{include_header}"',
+        "",
+    ]
+
+    if mode == "backend":
+        output.extend([
+            "#include <stddef.h>",
+            "#include <string.h>",
+        ])
+    else:
+        output.append("#include <stdio.h>")
+
+    output.extend([
+        "",
+    ])
+
+    output.extend(wrappers)
+    if mode == "backend":
+        output.append(generate_backend_lookup(names))
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("\n".join(output))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

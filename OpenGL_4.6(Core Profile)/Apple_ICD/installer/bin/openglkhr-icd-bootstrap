@@ -1,0 +1,51 @@
+#!/bin/sh
+set -eu
+
+PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+mode=${1:-}
+config_file=/usr/local/share/OpenGLKHR_ICD/repository.conf
+
+if [ -r "$config_file" ]; then
+    # shellcheck disable=SC1090
+    . "$config_file"
+fi
+
+repo_root=${OPENGLKHR_REPO_ROOT:-/usr/local/src/Khronos_AppleICDs}
+repo_url=${OPENGLKHR_REPO_URL:-}
+repo_branch=${OPENGLKHR_REPO_BRANCH:-main}
+project_root="$repo_root/OpenGL_4.6(Core Profile)/Apple_ICD"
+
+if [ -z "$repo_url" ]; then
+    echo "missing OpenGLKHR repository URL; expected OPENGLKHR_REPO_URL in $config_file" >&2
+    exit 1
+fi
+
+mkdir -p "$(dirname "$repo_root")"
+
+case "$mode" in
+    build|update)
+        ;;
+    *)
+        echo "usage: $0 <build|update>" >&2
+        exit 1
+        ;;
+esac
+
+if [ ! -d "$repo_root/.git" ]; then
+    git clone --branch "$repo_branch" "$repo_url" "$repo_root"
+elif [ "$mode" = "update" ]; then
+    git -C "$repo_root" remote set-url origin "$repo_url"
+    git -C "$repo_root" fetch origin "$repo_branch"
+    if ! git -C "$repo_root" checkout "$repo_branch"; then
+        git -C "$repo_root" checkout -b "$repo_branch" "origin/$repo_branch"
+    fi
+    git -C "$repo_root" pull --ff-only origin "$repo_branch"
+fi
+
+if [ ! -d "$project_root" ]; then
+    echo "missing Apple_ICD project root after clone/update: $project_root" >&2
+    exit 1
+fi
+
+exec "$project_root/scripts/build_source_install.sh"

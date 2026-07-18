@@ -1,0 +1,5 @@
+dist/
+OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/build/
+OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/stage/
+OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/packages/
+.DS_Store
