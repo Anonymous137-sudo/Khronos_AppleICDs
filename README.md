@@ -10,6 +10,8 @@ Its goal is to provide a modern OpenGL 4.6 core-profile stack through a real sys
   Main source tree for `OpenGL_4.6.framework`, the Apple-path `OpenGL.framework` loader, the internal ICD/backend boundary, the user-space `libGL*.dylib` drivers, test coverage, and packaging scripts.
 - `docs/INSTALLATION.md`
   Live-install notes for developer machines, installer behavior, target paths, and update flow.
+- `docs/WORKFLOW_PLAN.md`
+  Active engineering workflow plan for taking the current driver framework to full OpenGL 4.6 Core Profile coverage.
 - `dist/`
   Built `OpenGLKHR_ICD_Installer.pkg` outputs.
 
