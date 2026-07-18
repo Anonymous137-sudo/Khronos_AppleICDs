@@ -59,14 +59,14 @@ Right now this subproject is a scaffold:
 - the AO46 `NSOpenGL` wrapper layer now also carries AppKit-facing drawable semantics such as `view` binding, `setView:`, and `createTexture:fromView:internalFormat:` on top of the existing framework/ICD path
 - `AO46NSOpenGLPixelFormat` now also supports Apple-style `NSData` reconstruction and keyed archiving, so older Cocoa code that persists pixel-format selections has a compatible bridge path
 - `OpenGL_4.6.framework` now carries public `Headers/` and a `Modules/` definition instead of only the binary and `Info.plist`
-- `gl*` entrypoints and the backend proc table are generated from `MGL/src/gl_core.c`, but the runtime no longer forwards into an external `libmgl.dylib`
+- `gl*` entrypoints and the backend proc table are generated from a vendored snapshot of `MGL/src/gl_core.c`, but the runtime no longer forwards into an external `libmgl.dylib`
 - `libgl2mtl.dylib` now implements the first actual GL-visible backend behavior through the standard Khronos entrypoints: `glGetString`, `glGetStringi`, `glGetError`, `glGetIntegerv`, `glGetBooleanv`, `glViewport`, `glScissor`, `glEnable`, `glDisable`, `glClearColor`, `glClearDepth`, `glClearStencil`, `glColorMask`, `glDepthMask`, `glClear`, `glReadBuffer`, `glReadPixels`, `glDrawArrays`, `glDrawElements`, `glDrawRangeElements`, `glFlush`, `glFinish`, and the first texture-object path through `glActiveTexture`, `glBindTexture`, `glGenTextures`, `glDeleteTextures`, `glTexParameteri`, `glTexImage2D`, `glGetTexLevelParameteriv`, and `glGetTexImage`
 - element-array state now flows through the backend with proper `GL_ELEMENT_ARRAY_BUFFER_BINDING` reporting, so indexed draw calls use VAO-owned EBO state instead of only non-indexed vertex pulls
 - texture-unit state, 2D texture storage, sampler uniform routing, and a minimal textured-triangle raster path now flow through the backend, so the framework can exercise real GL object upload/bind/sample semantics instead of only flat vertex-color draws
 - offscreen memory and framework-owned pbuffers now bind through the backend storage path, so clear/readback tests exercise real pixel data instead of only metadata bookkeeping
 - `CGLTexImagePBuffer` / `AO46TexImagePBuffer` now have a real backend import lane when a 2D texture is bound, while older compatibility probes still tolerate the pre-existing no-op case instead of hard-failing
 - when a standard Khronos OpenGL token or function name already exists, the code now prefers that Khronos spelling directly; `AO46*` names are reserved for private driver plumbing
-- the build no longer requires glslang headers just to compile the current Apple_ICD driver skeleton; only the OpenGL registry headers from the repo are needed at this stage
+- the build no longer requires glslang headers just to compile the current Apple_ICD driver skeleton; the OpenGL registry headers and export-generation source snapshot now live inside this repo tree
 - the full symbol surface is still TODO
 - the current `libgl2mtl.dylib` backend implementation is still a minimal internal scaffold; deeper Metal command translation, shader/pipeline work, and resource execution are still TODO
 - share-group identity is now tracked and exposed, but backend-level shared GL object/resource semantics are still TODO
