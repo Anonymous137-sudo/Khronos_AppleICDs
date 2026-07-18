@@ -87,7 +87,10 @@ int main(void)
     GLubyte background_pixel[4] = { 0 };
     GLubyte textured_pixel[4] = { 0 };
     GLubyte uploaded_texture_readback[16] = { 0 };
+    GLubyte aligned_texture_readback[16] = { 0 };
     GLubyte pbuffer_texture_pixel[4] = { 0 };
+    GLubyte moved_triangle_center_pixel[4] = { 0 };
+    GLubyte moved_triangle_corner_pixel[4] = { 0 };
     const GLubyte *gl_string = NULL;
     GLint viewport[4] = { 0, 0, 0, 0 };
     GLboolean color_mask[4] = { GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE };
@@ -107,6 +110,7 @@ int main(void)
     GLuint textured_vertex_shader = 0;
     GLuint textured_fragment_shader = 0;
     GLuint textured_program = 0;
+    GLuint aligned_texture = 0;
     GLuint textured_vbo = 0;
     GLuint textured_vao = 0;
     GLuint pbuffer_texture = 0;
@@ -132,6 +136,8 @@ int main(void)
     GLint texture_internal_format = 0;
     GLint texture_min_filter = 0;
     GLint texture_mag_filter = 0;
+    GLint pack_alignment = 0;
+    GLint unpack_alignment = 0;
     GLint max_texture_units = 0;
     GLint max_vertex_attribs = 0;
     GLint attrib_location = -1;
@@ -432,6 +438,11 @@ int main(void)
              0.6f, -0.6f, 0.0f, 1.0f, 0.0f, 1.0f,
              0.0f,  0.6f, 0.0f, 0.0f, 1.0f, 1.0f
         };
+        static const GLfloat shifted_triangle_vertices[] = {
+            -0.95f, -0.95f, 1.0f, 0.0f, 0.0f, 1.0f,
+            -0.15f, -0.95f, 0.0f, 1.0f, 0.0f, 1.0f,
+            -0.55f, -0.15f, 0.0f, 0.0f, 1.0f, 1.0f
+        };
         static const GLushort triangle_indices[] = { 0, 1, 2 };
 
         glViewport(0, 0, 32, 32);
@@ -619,6 +630,29 @@ int main(void)
             return 1;
         }
 
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(shifted_triangle_vertices), shifted_triangle_vertices);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glReadPixels(16, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, moved_triangle_center_pixel);
+        glReadPixels(6, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, moved_triangle_corner_pixel);
+        if (expect_true("glBufferSubData updates draw-time vertex data without GL error", glGetError() == GL_NO_ERROR) ||
+            expect_true("updated triangle vacates the old center pixel",
+                        moved_triangle_center_pixel[0] == 0 &&
+                        moved_triangle_center_pixel[1] == 0 &&
+                        moved_triangle_center_pixel[2] == 0 &&
+                        moved_triangle_center_pixel[3] == 255) ||
+            expect_true("updated triangle shades its new corner region",
+                        moved_triangle_corner_pixel[0] > 0 &&
+                        moved_triangle_corner_pixel[1] > 0 &&
+                        moved_triangle_corner_pixel[2] > 0 &&
+                        moved_triangle_corner_pixel[3] == 255)) {
+            AO46SetCurrentContext(NULL);
+            AO46DestroyContext(copy_ctx);
+            AO46DestroyContext(ctx);
+            AO46DestroyPixelFormat(pix);
+            return 1;
+        }
+
         {
             static const GLchar *textured_vertex_shader_source =
                 "#version 460 core\n"
@@ -653,6 +687,13 @@ int main(void)
                 255, 255,   0, 255,
                 255, 255,   0, 255,
                 255, 255,   0, 255
+            };
+            static const GLubyte aligned_texture_upload[] = {
+                255,   0,   0, 255, 0, 0, 0, 0,
+                  0, 255,   0, 255, 0, 0, 0, 0
+            };
+            static const GLubyte aligned_texture_sub_upload[] = {
+                  0,   0, 255, 255, 0, 0, 0, 0
             };
 
             glGetIntegerv(GL_ACTIVE_TEXTURE, &active_texture);
@@ -699,6 +740,68 @@ int main(void)
                 AO46DestroyPixelFormat(pix);
                 return 1;
             }
+
+            glGenTextures(1, &aligned_texture);
+            glBindTexture(GL_TEXTURE_2D, aligned_texture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
+            glGetIntegerv(GL_UNPACK_ALIGNMENT, &unpack_alignment);
+            glTexImage2D(GL_TEXTURE_2D,
+                         0,
+                         GL_RGBA8,
+                         1,
+                         2,
+                         0,
+                         GL_RGBA,
+                         GL_UNSIGNED_BYTE,
+                         aligned_texture_upload);
+            glTexSubImage2D(GL_TEXTURE_2D,
+                            0,
+                            0,
+                            1,
+                            1,
+                            1,
+                            GL_RGBA,
+                            GL_UNSIGNED_BYTE,
+                            aligned_texture_sub_upload);
+            glPixelStorei(GL_PACK_ALIGNMENT, 8);
+            glGetIntegerv(GL_PACK_ALIGNMENT, &pack_alignment);
+            memset(aligned_texture_readback, 0, sizeof(aligned_texture_readback));
+            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, aligned_texture_readback);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            glPixelStorei(GL_PACK_ALIGNMENT, 4);
+            if (expect_true("glGenTextures produced aligned upload texture", aligned_texture != 0) ||
+                expect_true("GL_UNPACK_ALIGNMENT round-trips", unpack_alignment == 8) ||
+                expect_true("GL_PACK_ALIGNMENT round-trips", pack_alignment == 8) ||
+                expect_true("aligned texture first row preserved",
+                            aligned_texture_readback[0] == 255 &&
+                            aligned_texture_readback[1] == 0 &&
+                            aligned_texture_readback[2] == 0 &&
+                            aligned_texture_readback[3] == 255) ||
+                expect_true("aligned texture second row replaced by glTexSubImage2D",
+                            aligned_texture_readback[8] == 0 &&
+                            aligned_texture_readback[9] == 0 &&
+                            aligned_texture_readback[10] == 255 &&
+                            aligned_texture_readback[11] == 255) ||
+                expect_true("pack alignment preserves row padding bytes",
+                            aligned_texture_readback[4] == 0 &&
+                            aligned_texture_readback[5] == 0 &&
+                            aligned_texture_readback[6] == 0 &&
+                            aligned_texture_readback[7] == 0 &&
+                            aligned_texture_readback[12] == 0 &&
+                            aligned_texture_readback[13] == 0 &&
+                            aligned_texture_readback[14] == 0 &&
+                            aligned_texture_readback[15] == 0) ||
+                expect_true("aligned texture path leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+            glDeleteTextures(1, &aligned_texture);
+            glBindTexture(GL_TEXTURE_2D, texture);
 
             textured_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
             textured_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -790,6 +893,7 @@ int main(void)
             if (expect_true("glIsVertexArray(textured_vao) clears after delete", glIsVertexArray(textured_vao) == GL_FALSE) ||
                 expect_true("glIsBuffer(textured_vbo) clears after delete", glIsBuffer(textured_vbo) == GL_FALSE) ||
                 expect_true("glIsProgram(textured_program) clears after delete", glIsProgram(textured_program) == GL_FALSE) ||
+                expect_true("glIsTexture(aligned_texture) clears after delete", glIsTexture(aligned_texture) == GL_FALSE) ||
                 expect_true("glIsTexture(texture) clears after delete", glIsTexture(texture) == GL_FALSE)) {
                 AO46SetCurrentContext(NULL);
                 AO46DestroyContext(copy_ctx);

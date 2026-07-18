@@ -59,6 +59,8 @@ typedef struct {
     GLenum error_code;
     GLenum draw_buffer;
     GLenum read_buffer;
+    GLint pack_alignment;
+    GLint unpack_alignment;
     GLint max_color_attachments;
     GLint max_vertex_attribs;
     GLint max_samples;

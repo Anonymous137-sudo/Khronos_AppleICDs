@@ -284,6 +284,20 @@ static void gl_backend_read_bgra8_pixel(const uint8_t *src, GLenum format, uint8
     dst[3] = src[3];
 }
 
+static bool gl_backend_valid_pixel_alignment(GLint alignment)
+{
+    return alignment == 1 || alignment == 2 || alignment == 4 || alignment == 8;
+}
+
+static size_t gl_backend_aligned_row_stride(GLsizei width, size_t bytes_per_pixel, GLint alignment)
+{
+    size_t row_bytes = (size_t)width * bytes_per_pixel;
+    size_t align = alignment > 0 ? (size_t)alignment : 1u;
+    size_t remainder = row_bytes % align;
+
+    return remainder == 0 ? row_bytes : row_bytes + align - remainder;
+}
+
 static GLuint gl_backend_next_name(GLuint *slot)
 {
     (*slot)++;
@@ -1558,19 +1572,51 @@ static void gl_backend_copy_texture_image_bgra8(uint8_t *dst,
                                                 GLsizei width,
                                                 GLsizei height,
                                                 GLenum format,
+                                                GLint unpack_alignment,
                                                 const void *pixels)
 {
     const uint8_t *src = pixels;
+    size_t src_row_stride;
 
     if (!dst || !pixels || width <= 0 || height <= 0) {
         return;
     }
 
+    src_row_stride = gl_backend_aligned_row_stride(width, 4u, unpack_alignment);
     for (GLsizei y = 0; y < height; ++y) {
         for (GLsizei x = 0; x < width; ++x) {
             gl_backend_store_texel_bgra8(dst + ((size_t)y * (size_t)width + (size_t)x) * 4u,
                                          format,
-                                         src + ((size_t)y * (size_t)width + (size_t)x) * 4u);
+                                         src + (size_t)y * src_row_stride + (size_t)x * 4u);
+        }
+    }
+}
+
+static void gl_backend_copy_texture_sub_image_bgra8(GLBackendTexture *texture,
+                                                    GLint xoffset,
+                                                    GLint yoffset,
+                                                    GLsizei width,
+                                                    GLsizei height,
+                                                    GLenum format,
+                                                    GLint unpack_alignment,
+                                                    const void *pixels)
+{
+    const uint8_t *src = pixels;
+    size_t src_row_stride;
+
+    if (!texture || !texture->data || !pixels || width <= 0 || height <= 0) {
+        return;
+    }
+
+    src_row_stride = gl_backend_aligned_row_stride(width, 4u, unpack_alignment);
+    for (GLsizei y = 0; y < height; ++y) {
+        for (GLsizei x = 0; x < width; ++x) {
+            uint8_t *dst_texel = texture->data +
+                                 (((size_t)(yoffset + y) * (size_t)texture->width) + (size_t)(xoffset + x)) * 4u;
+
+            gl_backend_store_texel_bgra8(dst_texel,
+                                         format,
+                                         src + (size_t)y * src_row_stride + (size_t)x * 4u);
         }
     }
 }
@@ -1631,7 +1677,12 @@ static void gl_backend_tex_image_2d(GLenum target,
             return;
         }
         if (pixels) {
-            gl_backend_copy_texture_image_bgra8(storage, width, height, format, pixels);
+            gl_backend_copy_texture_image_bgra8(storage,
+                                               width,
+                                               height,
+                                               format,
+                                               ctx->core.state.unpack_alignment,
+                                               pixels);
         }
     }
 
@@ -1641,6 +1692,69 @@ static void gl_backend_tex_image_2d(GLenum target,
     texture->width = width;
     texture->height = height;
     texture->internal_format = internalformat == GL_RGBA ? GL_RGBA8 : internalformat;
+}
+
+static void gl_backend_tex_sub_image_2d(GLenum target,
+                                        GLint level,
+                                        GLint xoffset,
+                                        GLint yoffset,
+                                        GLsizei width,
+                                        GLsizei height,
+                                        GLenum format,
+                                        GLenum type,
+                                        const void *pixels)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendTexture *texture;
+
+    if (!ctx) {
+        return;
+    }
+
+    texture = gl_backend_bound_texture(ctx, target);
+    if (!texture) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (level != 0 || xoffset < 0 || yoffset < 0 || width < 0 || height < 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (format != GL_RGBA && format != GL_BGRA) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    if (type != GL_UNSIGNED_BYTE) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    if (!texture->defined || !texture->data) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (xoffset + width > texture->width || yoffset + height > texture->height) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if ((width > 0 || height > 0) && !pixels) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    gl_backend_copy_texture_sub_image_bgra8(texture,
+                                            xoffset,
+                                            yoffset,
+                                            width,
+                                            height,
+                                            format,
+                                            ctx->core.state.unpack_alignment,
+                                            pixels);
 }
 
 static void gl_backend_get_tex_level_parameter_iv(GLenum target, GLint level, GLenum pname, GLint *params)
@@ -1686,6 +1800,7 @@ static void gl_backend_get_tex_image(GLenum target, GLint level, GLenum format, 
 {
     AO46BackendContextRef ctx = gl_backend_current_context();
     GLBackendTexture *texture;
+    size_t dst_row_stride;
 
     if (!ctx) {
         return;
@@ -1717,11 +1832,12 @@ static void gl_backend_get_tex_image(GLenum target, GLint level, GLenum format, 
         return;
     }
 
+    dst_row_stride = gl_backend_aligned_row_stride(texture->width, 4u, ctx->core.state.pack_alignment);
     for (GLsizei y = 0; y < texture->height; ++y) {
         for (GLsizei x = 0; x < texture->width; ++x) {
             gl_backend_read_bgra8_pixel(texture->data + ((size_t)y * (size_t)texture->width + (size_t)x) * 4u,
                                         format,
-                                        (uint8_t *)pixels + ((size_t)y * (size_t)texture->width + (size_t)x) * 4u);
+                                        (uint8_t *)pixels + (size_t)y * dst_row_stride + (size_t)x * 4u);
         }
     }
 }
@@ -1865,6 +1981,46 @@ static void gl_backend_buffer_data(GLenum target,
     buffer->data = storage;
     buffer->size = (size_t)size;
     buffer->usage = usage;
+}
+
+static void gl_backend_buffer_sub_data(GLenum target,
+                                       GLintptr offset,
+                                       GLsizeiptr size,
+                                       const void *data)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+
+    if (!ctx) {
+        return;
+    }
+
+    if (offset < 0 || size < 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer || !buffer->data) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if ((size_t)offset > buffer->size || (size_t)size > buffer->size - (size_t)offset) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (size == 0) {
+        return;
+    }
+
+    if (!data) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    memcpy(buffer->data + (size_t)offset, data, (size_t)size);
 }
 
 static void gl_backend_get_buffer_parameter_iv(GLenum target, GLenum pname, GLint *params)
@@ -2613,6 +2769,45 @@ static const GLubyte *gl_backend_get_string_i(GLenum name, GLuint index)
     return NULL;
 }
 
+static void gl_backend_pixel_store_i(GLenum pname, GLint param)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+
+    if (!ctx) {
+        return;
+    }
+
+    if (!gl_backend_valid_pixel_alignment(param)) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    switch (pname) {
+        case GL_PACK_ALIGNMENT:
+            ctx->core.state.pack_alignment = param;
+            return;
+        case GL_UNPACK_ALIGNMENT:
+            ctx->core.state.unpack_alignment = param;
+            return;
+        default:
+            gl_backend_set_error(ctx, GL_INVALID_ENUM);
+            return;
+    }
+}
+
+static void gl_backend_pixel_store_f(GLenum pname, GLfloat param)
+{
+    GLint integral = (GLint)param;
+
+    if ((GLfloat)integral != param) {
+        AO46BackendContextRef ctx = gl_backend_current_context();
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    gl_backend_pixel_store_i(pname, integral);
+}
+
 static GLenum gl_backend_get_error(void)
 {
     AO46BackendContextRef ctx = gl_backend_current_context();
@@ -2668,6 +2863,12 @@ static void gl_backend_get_integer_v(GLenum pname, GLint *data)
             return;
         case GL_ARRAY_BUFFER_BINDING:
             data[0] = (GLint)ctx->array_buffer_binding;
+            return;
+        case GL_PACK_ALIGNMENT:
+            data[0] = ctx->core.state.pack_alignment;
+            return;
+        case GL_UNPACK_ALIGNMENT:
+            data[0] = ctx->core.state.unpack_alignment;
             return;
         case GL_TEXTURE_BINDING_2D:
             data[0] = (GLint)ctx->texture_units[ctx->active_texture_unit_index].texture_2d_name;
@@ -2957,12 +3158,15 @@ static void gl_backend_read_pixels(GLint x,
     }
 
     if (!gl_backend_has_drawable_storage(ctx)) {
-        memset(pixels, 0, (size_t)width * (size_t)height * 4u);
+        memset(pixels,
+               0,
+               gl_backend_aligned_row_stride(width, 4u, ctx->core.state.pack_alignment) * (size_t)height);
         return;
     }
 
     for (GLint row = 0; row < height; ++row) {
-        uint8_t *dst_row = (uint8_t *)pixels + (size_t)row * (size_t)width * 4u;
+        uint8_t *dst_row = (uint8_t *)pixels +
+                           (size_t)row * gl_backend_aligned_row_stride(width, 4u, ctx->core.state.pack_alignment);
         GLint src_y = y + row;
 
         for (GLint col = 0; col < width; ++col) {
@@ -3258,6 +3462,12 @@ void *AO46BackendCustomProcAddress(const char *procname)
     if (strcmp(procname, "glBindTexture") == 0) {
         return (void *)gl_backend_bind_texture;
     }
+    if (strcmp(procname, "glPixelStoref") == 0) {
+        return (void *)gl_backend_pixel_store_f;
+    }
+    if (strcmp(procname, "glPixelStorei") == 0) {
+        return (void *)gl_backend_pixel_store_i;
+    }
     if (strcmp(procname, "glTexParameteri") == 0) {
         return (void *)gl_backend_tex_parameter_i;
     }
@@ -3266,6 +3476,9 @@ void *AO46BackendCustomProcAddress(const char *procname)
     }
     if (strcmp(procname, "glTexImage2D") == 0) {
         return (void *)gl_backend_tex_image_2d;
+    }
+    if (strcmp(procname, "glTexSubImage2D") == 0) {
+        return (void *)gl_backend_tex_sub_image_2d;
     }
     if (strcmp(procname, "glGetTexLevelParameteriv") == 0) {
         return (void *)gl_backend_get_tex_level_parameter_iv;
@@ -3326,6 +3539,9 @@ void *AO46BackendCustomProcAddress(const char *procname)
     }
     if (strcmp(procname, "glBufferData") == 0) {
         return (void *)gl_backend_buffer_data;
+    }
+    if (strcmp(procname, "glBufferSubData") == 0) {
+        return (void *)gl_backend_buffer_sub_data;
     }
     if (strcmp(procname, "glGetBufferParameteriv") == 0) {
         return (void *)gl_backend_get_buffer_parameter_iv;

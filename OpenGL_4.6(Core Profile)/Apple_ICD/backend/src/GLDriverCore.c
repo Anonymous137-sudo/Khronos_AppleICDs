@@ -47,6 +47,8 @@ void GLDriverInitializeContext(GLDriverContext *ctx,
     ctx->state.error_code = GL_NO_ERROR;
     ctx->state.draw_buffer = GL_BACK;
     ctx->state.read_buffer = GL_BACK;
+    ctx->state.pack_alignment = 4;
+    ctx->state.unpack_alignment = 4;
     ctx->state.max_color_attachments = GL_DRIVER_MAX_COLOR_ATTACHMENTS;
     ctx->state.max_vertex_attribs = GL_DRIVER_MAX_VERTEX_ATTRIBS;
     ctx->state.max_samples = 4;

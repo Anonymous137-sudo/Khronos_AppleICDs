@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
 if [ "$#" -ne 1 ]; then
     echo "usage: $0 <staged-layout-root>" >&2
     exit 1
@@ -8,6 +10,8 @@ fi
 
 stage_root=$1
 dest_root=${OPENGLKHR_DESTROOT:-/}
+
+sh "$script_dir/require_developer_mac.sh" "$dest_root"
 
 framework_root="$dest_root/System/Library/Frameworks"
 usr_local_lib="$dest_root/usr/local/lib"
