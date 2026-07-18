@@ -115,6 +115,9 @@ int main(void)
     GLuint textured_vao = 0;
     GLuint pbuffer_texture = 0;
     GLuint vbo = 0;
+    GLuint copy_vbo = 0;
+    GLuint dsa_vbo = 0;
+    GLuint dsa_immutable_vbo = 0;
     GLuint ebo = 0;
     GLuint vao = 0;
     GLint compile_status = 0;
@@ -125,6 +128,8 @@ int main(void)
     GLint active_uniform_count = 0;
     GLint current_program = 0;
     GLint array_buffer_binding = 0;
+    GLint copy_read_buffer_binding = 0;
+    GLint copy_write_buffer_binding = 0;
     GLint element_array_buffer_binding = 0;
     GLint texture_binding_2d = 0;
     GLint vertex_array_binding = 0;
@@ -443,6 +448,11 @@ int main(void)
             -0.15f, -0.95f, 0.0f, 1.0f, 0.0f, 1.0f,
             -0.55f, -0.15f, 0.0f, 0.0f, 1.0f, 1.0f
         };
+        static const GLfloat mapped_storage_triangle_vertices[] = {
+             0.15f, -0.95f, 1.0f, 0.0f, 0.0f, 1.0f,
+             0.95f, -0.95f, 0.0f, 1.0f, 0.0f, 1.0f,
+             0.55f, -0.15f, 0.0f, 0.0f, 1.0f, 1.0f
+        };
         static const GLushort triangle_indices[] = { 0, 1, 2 };
 
         glViewport(0, 0, 32, 32);
@@ -651,6 +661,638 @@ int main(void)
             AO46DestroyContext(ctx);
             AO46DestroyPixelFormat(pix);
             return 1;
+        }
+
+        {
+            const GLbitfield storage_flags = GL_DYNAMIC_STORAGE_BIT |
+                                             GL_MAP_READ_BIT |
+                                             GL_MAP_WRITE_BIT;
+            GLfloat *mapped_vertices = NULL;
+            const GLfloat *read_only_vertices = NULL;
+            void *mapped_pointer = NULL;
+            GLint buffer_mapped = 0;
+            GLint buffer_access_flags = 0;
+            GLint buffer_map_length = 0;
+            GLint buffer_map_offset = -1;
+            GLint buffer_immutable_storage = 0;
+            GLint buffer_storage_flags = 0;
+            GLboolean unmap_ok = GL_FALSE;
+            GLubyte mapped_storage_new_pixel[4] = { 0 };
+            GLubyte mapped_storage_old_pixel[4] = { 0 };
+            GLubyte mapped_storage_center_pixel[4] = { 0 };
+
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferStorage(GL_ARRAY_BUFFER, sizeof(mapped_storage_triangle_vertices), NULL, storage_flags);
+            glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_IMMUTABLE_STORAGE, &buffer_immutable_storage);
+            glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_STORAGE_FLAGS, &buffer_storage_flags);
+            if (expect_true("glBufferStorage creates immutable storage", buffer_immutable_storage == GL_TRUE) ||
+                expect_true("GL_BUFFER_STORAGE_FLAGS reflects immutable buffer flags",
+                            buffer_storage_flags == (GLint)storage_flags) ||
+                expect_true("glBufferStorage leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            mapped_vertices = (GLfloat *)glMapBufferRange(GL_ARRAY_BUFFER,
+                                                          0,
+                                                          sizeof(mapped_storage_triangle_vertices),
+                                                          GL_MAP_READ_BIT |
+                                                              GL_MAP_WRITE_BIT |
+                                                              GL_MAP_FLUSH_EXPLICIT_BIT);
+            glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_MAPPED, &buffer_mapped);
+            glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_ACCESS_FLAGS, &buffer_access_flags);
+            glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_MAP_LENGTH, &buffer_map_length);
+            glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_MAP_OFFSET, &buffer_map_offset);
+            glGetBufferPointerv(GL_ARRAY_BUFFER, GL_BUFFER_MAP_POINTER, &mapped_pointer);
+            if (expect_true("glMapBufferRange returns a writable pointer", mapped_vertices != NULL) ||
+                expect_true("GL_BUFFER_MAPPED reflects active mapping", buffer_mapped == GL_TRUE) ||
+                expect_true("GL_BUFFER_ACCESS_FLAGS reflects explicit map flags",
+                            buffer_access_flags == (GLint)(GL_MAP_READ_BIT |
+                                                           GL_MAP_WRITE_BIT |
+                                                           GL_MAP_FLUSH_EXPLICIT_BIT)) ||
+                expect_true("GL_BUFFER_MAP_LENGTH reports mapped byte count",
+                            buffer_map_length == (GLint)sizeof(mapped_storage_triangle_vertices)) ||
+                expect_true("GL_BUFFER_MAP_OFFSET reports zero-based mapping", buffer_map_offset == 0) ||
+                expect_true("glGetBufferPointerv reports the active mapped pointer",
+                            mapped_pointer == (void *)mapped_vertices) ||
+                expect_true("glMapBufferRange leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            memcpy(mapped_vertices, mapped_storage_triangle_vertices, sizeof(mapped_storage_triangle_vertices));
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            if (expect_true("draw rejects non-persistent mapped array-buffer fetches",
+                            glGetError() == GL_INVALID_OPERATION)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glFlushMappedBufferRange(GL_ARRAY_BUFFER, 0, sizeof(mapped_storage_triangle_vertices));
+            unmap_ok = glUnmapBuffer(GL_ARRAY_BUFFER);
+            glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_MAPPED, &buffer_mapped);
+            if (expect_true("glUnmapBuffer succeeds for explicit-flush storage", unmap_ok == GL_TRUE) ||
+                expect_true("GL_BUFFER_MAPPED clears after glUnmapBuffer", buffer_mapped == GL_FALSE) ||
+                expect_true("flush and unmap leave no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            read_only_vertices = (const GLfloat *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
+            if (expect_true("glMapBuffer(GL_READ_ONLY) returns immutable storage", read_only_vertices != NULL) ||
+                expect_true("read-only mapping round-trips the uploaded storage bytes",
+                            memcmp(read_only_vertices,
+                                   mapped_storage_triangle_vertices,
+                                   sizeof(mapped_storage_triangle_vertices)) == 0) ||
+                expect_true("read-only map leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            unmap_ok = glUnmapBuffer(GL_ARRAY_BUFFER);
+            if (expect_true("glUnmapBuffer succeeds for read-only mapping", unmap_ok == GL_TRUE) ||
+                expect_true("read-only unmap leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glReadPixels(25, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, mapped_storage_new_pixel);
+            glReadPixels(6, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, mapped_storage_old_pixel);
+            glReadPixels(16, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, mapped_storage_center_pixel);
+            if (expect_true("immutable-storage draw completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("mapped immutable-storage triangle shades its new right-side region",
+                            mapped_storage_new_pixel[0] > 0 &&
+                            mapped_storage_new_pixel[1] > 0 &&
+                            mapped_storage_new_pixel[2] > 0 &&
+                            mapped_storage_new_pixel[3] == 255) ||
+                expect_true("mapped immutable-storage triangle vacates the old left-side region",
+                            mapped_storage_old_pixel[0] == 0 &&
+                            mapped_storage_old_pixel[1] == 0 &&
+                            mapped_storage_old_pixel[2] == 0 &&
+                            mapped_storage_old_pixel[3] == 255) ||
+                expect_true("mapped immutable-storage triangle stays out of the old center region",
+                            mapped_storage_center_pixel[0] == 0 &&
+                            mapped_storage_center_pixel[1] == 0 &&
+                            mapped_storage_center_pixel[2] == 0 &&
+                            mapped_storage_center_pixel[3] == 255)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_vertices), triangle_vertices, GL_STATIC_DRAW);
+            if (expect_true("glBufferData rejects immutable buffer storage", glGetError() == GL_INVALID_OPERATION)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+        }
+
+        {
+            const GLfloat clear_position = 0.25f;
+            GLfloat zero_vertex_data[18] = { 0.0f };
+            const GLfloat *cleared_vertices = NULL;
+            GLubyte copied_triangle_new_pixel[4] = { 0 };
+            GLubyte copied_triangle_old_pixel[4] = { 0 };
+
+            glGenBuffers(1, &copy_vbo);
+            glBindBuffer(GL_COPY_READ_BUFFER, vbo);
+            glBindBuffer(GL_COPY_WRITE_BUFFER, copy_vbo);
+            glBufferData(GL_COPY_WRITE_BUFFER, sizeof(mapped_storage_triangle_vertices), NULL, GL_STATIC_DRAW);
+            glGetIntegerv(GL_COPY_READ_BUFFER_BINDING, &copy_read_buffer_binding);
+            glGetIntegerv(GL_COPY_WRITE_BUFFER_BINDING, &copy_write_buffer_binding);
+            glCopyBufferSubData(GL_COPY_READ_BUFFER,
+                                GL_COPY_WRITE_BUFFER,
+                                0,
+                                0,
+                                sizeof(mapped_storage_triangle_vertices));
+            if (expect_true("glGenBuffers produced copy destination buffer", copy_vbo != 0) ||
+                expect_true("GL_COPY_READ_BUFFER_BINDING reflects source buffer",
+                            copy_read_buffer_binding == (GLint)vbo) ||
+                expect_true("GL_COPY_WRITE_BUFFER_BINDING reflects destination buffer",
+                            copy_write_buffer_binding == (GLint)copy_vbo) ||
+                expect_true("glCopyBufferSubData completes without GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glBindBuffer(GL_ARRAY_BUFFER, copy_vbo);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6 * (GLsizei)sizeof(GLfloat), (const void *)0);
+            glVertexAttribPointer(1,
+                                  4,
+                                  GL_FLOAT,
+                                  GL_FALSE,
+                                  6 * (GLsizei)sizeof(GLfloat),
+                                  (const void *)(2 * sizeof(GLfloat)));
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glReadPixels(25, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, copied_triangle_new_pixel);
+            glReadPixels(6, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, copied_triangle_old_pixel);
+            if (expect_true("copied buffer draw completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("copied buffer reproduces the right-side triangle",
+                            copied_triangle_new_pixel[0] > 0 &&
+                            copied_triangle_new_pixel[1] > 0 &&
+                            copied_triangle_new_pixel[2] > 0 &&
+                            copied_triangle_new_pixel[3] == 255) ||
+                expect_true("copied buffer leaves the old left-side region clear",
+                            copied_triangle_old_pixel[0] == 0 &&
+                            copied_triangle_old_pixel[1] == 0 &&
+                            copied_triangle_old_pixel[2] == 0 &&
+                            copied_triangle_old_pixel[3] == 255)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glClearBufferSubData(GL_COPY_WRITE_BUFFER,
+                                 GL_R32F,
+                                 0,
+                                 2 * (GLsizeiptr)sizeof(GLfloat),
+                                 GL_RED,
+                                 GL_FLOAT,
+                                 &clear_position);
+            cleared_vertices = (const GLfloat *)glMapBuffer(GL_COPY_WRITE_BUFFER, GL_READ_ONLY);
+            if (expect_true("glClearBufferSubData completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("glMapBuffer reads back clear-subdata result", cleared_vertices != NULL) ||
+                expect_true("glClearBufferSubData rewrites the first vertex position pattern",
+                            cleared_vertices[0] == clear_position &&
+                            cleared_vertices[1] == clear_position) ||
+                expect_true("glUnmapBuffer succeeds after clear-subdata readback",
+                            glUnmapBuffer(GL_COPY_WRITE_BUFFER) == GL_TRUE) ||
+                expect_true("clear-subdata unmap leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glClearBufferData(GL_COPY_WRITE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, NULL);
+            cleared_vertices = (const GLfloat *)glMapBuffer(GL_COPY_WRITE_BUFFER, GL_READ_ONLY);
+            if (expect_true("glClearBufferData completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("glMapBuffer reads back full-buffer clear result", cleared_vertices != NULL) ||
+                expect_true("glClearBufferData zero-fills the destination buffer",
+                            memcmp(cleared_vertices,
+                                   zero_vertex_data,
+                                   sizeof(zero_vertex_data)) == 0) ||
+                expect_true("glUnmapBuffer succeeds after full clear readback",
+                            glUnmapBuffer(GL_COPY_WRITE_BUFFER) == GL_TRUE) ||
+                expect_true("full clear unmap leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glBindBuffer(GL_ARRAY_BUFFER, copy_vbo);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glReadPixels(25, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, copied_triangle_new_pixel);
+            if (expect_true("cleared copy buffer draw completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("fully cleared copy buffer no longer shades the copied triangle region",
+                            copied_triangle_new_pixel[0] == 0 &&
+                            copied_triangle_new_pixel[1] == 0 &&
+                            copied_triangle_new_pixel[2] == 0 &&
+                            copied_triangle_new_pixel[3] == 255)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+        }
+
+        {
+            static const GLbitfield named_storage_flags = GL_DYNAMIC_STORAGE_BIT |
+                                                          GL_MAP_READ_BIT |
+                                                          GL_MAP_WRITE_BIT;
+            const GLfloat named_clear_position = -0.35f;
+            GLfloat bindful_readback_vertices[18] = { 0.0f };
+            GLfloat named_readback_vertices[18] = { 0.0f };
+            GLfloat named_zero_vertices[18] = { 0.0f };
+            const GLfloat *mapped_named_vertices = NULL;
+            void *mapped_named_pointer = NULL;
+            GLint named_buffer_size = 0;
+            GLint named_buffer_usage = 0;
+            GLint named_buffer_mapped = 0;
+            GLint named_buffer_immutable_storage = 0;
+            GLint named_buffer_storage_flags = 0;
+            GLint pixel_pack_buffer_binding = 0;
+            GLint pixel_unpack_buffer_binding = 0;
+            GLint draw_indirect_buffer_binding = 0;
+            GLint dispatch_indirect_buffer_binding = 0;
+            GLint uniform_buffer_binding = 0;
+            GLint transform_feedback_buffer_binding = 0;
+            GLint atomic_counter_buffer_binding = 0;
+            GLint shader_storage_buffer_binding = 0;
+            GLint indexed_uniform_buffer_binding = 0;
+            GLint indexed_transform_feedback_buffer_binding = 0;
+            GLint indexed_atomic_counter_buffer_binding = 0;
+            GLint indexed_shader_storage_buffer_binding = 0;
+            GLint max_transform_feedback_buffers = 0;
+            GLint max_uniform_buffer_bindings = 0;
+            GLint max_atomic_counter_buffer_bindings = 0;
+            GLint max_shader_storage_buffer_bindings = 0;
+            GLint uniform_buffer_offset_alignment = 0;
+            GLint shader_storage_buffer_offset_alignment = 0;
+            GLint64 named_buffer_size64 = 0;
+            GLint64 named_buffer_storage_flags64 = 0;
+            GLint64 bound_uniform_buffer_size64 = 0;
+            GLint64 indexed_uniform_buffer_start64 = 0;
+            GLint64 indexed_uniform_buffer_size64 = 0;
+            GLint64 indexed_transform_feedback_buffer_start64 = 0;
+            GLint64 indexed_transform_feedback_buffer_size64 = 0;
+            GLint64 indexed_atomic_counter_buffer_start64 = 0;
+            GLint64 indexed_atomic_counter_buffer_size64 = 0;
+            GLint64 indexed_shader_storage_buffer_start64 = 0;
+            GLint64 indexed_shader_storage_buffer_size64 = 0;
+            GLubyte dsa_triangle_pixel[4] = { 0 };
+            GLubyte dsa_background_pixel[4] = { 0 };
+            GLubyte dsa_copied_triangle_pixel[4] = { 0 };
+            GLubyte dsa_cleared_triangle_pixel[4] = { 0 };
+
+            glBindBuffer(GL_COPY_READ_BUFFER, vbo);
+            glGetBufferSubData(GL_COPY_READ_BUFFER,
+                               0,
+                               sizeof(bindful_readback_vertices),
+                               bindful_readback_vertices);
+            if (expect_true("glGetBufferSubData completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("glGetBufferSubData reads back the source buffer contents",
+                            memcmp(bindful_readback_vertices,
+                                   mapped_storage_triangle_vertices,
+                                   sizeof(mapped_storage_triangle_vertices)) == 0)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glCreateBuffers(1, &dsa_vbo);
+            glCreateBuffers(1, &dsa_immutable_vbo);
+            glNamedBufferData(dsa_vbo,
+                              sizeof(shifted_triangle_vertices),
+                              shifted_triangle_vertices,
+                              GL_STATIC_DRAW);
+            glGetNamedBufferParameteriv(dsa_vbo, GL_BUFFER_SIZE, &named_buffer_size);
+            glGetNamedBufferParameteriv(dsa_vbo, GL_BUFFER_USAGE, &named_buffer_usage);
+            glGetNamedBufferSubData(dsa_vbo,
+                                    0,
+                                    sizeof(named_readback_vertices),
+                                    named_readback_vertices);
+            mapped_named_vertices = (const GLfloat *)glMapNamedBufferRange(dsa_vbo,
+                                                                           0,
+                                                                           sizeof(named_readback_vertices),
+                                                                           GL_MAP_READ_BIT);
+            glGetNamedBufferParameteriv(dsa_vbo, GL_BUFFER_MAPPED, &named_buffer_mapped);
+            glGetNamedBufferPointerv(dsa_vbo, GL_BUFFER_MAP_POINTER, &mapped_named_pointer);
+            if (expect_true("glCreateBuffers produced DSA buffers", dsa_vbo != 0 && dsa_immutable_vbo != 0) ||
+                expect_true("glIsBuffer(dsa_vbo)", glIsBuffer(dsa_vbo) == GL_TRUE) ||
+                expect_true("glNamedBufferData leaves no GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("glGetNamedBufferParameteriv reports DSA buffer size",
+                            named_buffer_size == (GLint)sizeof(shifted_triangle_vertices)) ||
+                expect_true("glGetNamedBufferParameteriv reports DSA buffer usage",
+                            named_buffer_usage == GL_STATIC_DRAW) ||
+                expect_true("glGetNamedBufferSubData round-trips DSA buffer bytes",
+                            memcmp(named_readback_vertices,
+                                   shifted_triangle_vertices,
+                                   sizeof(shifted_triangle_vertices)) == 0) ||
+                expect_true("glMapNamedBufferRange returns a DSA mapping", mapped_named_vertices != NULL) ||
+                expect_true("GL_BUFFER_MAPPED reflects a named mapping", named_buffer_mapped == GL_TRUE) ||
+                expect_true("glGetNamedBufferPointerv reports the active named mapping",
+                            mapped_named_pointer == (void *)mapped_named_vertices) ||
+                expect_true("glMapNamedBufferRange sees the uploaded DSA data",
+                            memcmp(mapped_named_vertices,
+                                   shifted_triangle_vertices,
+                                   sizeof(shifted_triangle_vertices)) == 0) ||
+                expect_true("glUnmapNamedBuffer succeeds for DSA readback",
+                            glUnmapNamedBuffer(dsa_vbo) == GL_TRUE) ||
+                expect_true("DSA readback unmap leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glBindBuffer(GL_ARRAY_BUFFER, dsa_vbo);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6 * (GLsizei)sizeof(GLfloat), (const void *)0);
+            glVertexAttribPointer(1,
+                                  4,
+                                  GL_FLOAT,
+                                  GL_FALSE,
+                                  6 * (GLsizei)sizeof(GLfloat),
+                                  (const void *)(2 * sizeof(GLfloat)));
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glReadPixels(6, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, dsa_triangle_pixel);
+            glReadPixels(25, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, dsa_background_pixel);
+            if (expect_true("DSA-uploaded draw completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("DSA-uploaded buffer shades the shifted triangle region",
+                            dsa_triangle_pixel[0] > 0 &&
+                            dsa_triangle_pixel[1] > 0 &&
+                            dsa_triangle_pixel[2] > 0 &&
+                            dsa_triangle_pixel[3] == 255) ||
+                expect_true("DSA-uploaded buffer leaves the opposite region clear",
+                            dsa_background_pixel[0] == 0 &&
+                            dsa_background_pixel[1] == 0 &&
+                            dsa_background_pixel[2] == 0 &&
+                            dsa_background_pixel[3] == 255)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glCopyNamedBufferSubData(vbo, dsa_vbo, 0, 0, sizeof(mapped_storage_triangle_vertices));
+            glGetNamedBufferSubData(dsa_vbo,
+                                    0,
+                                    sizeof(named_readback_vertices),
+                                    named_readback_vertices);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glReadPixels(25, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, dsa_copied_triangle_pixel);
+            if (expect_true("glCopyNamedBufferSubData completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("glCopyNamedBufferSubData updates the DSA buffer contents",
+                            memcmp(named_readback_vertices,
+                                   mapped_storage_triangle_vertices,
+                                   sizeof(mapped_storage_triangle_vertices)) == 0) ||
+                expect_true("copied DSA buffer shades the right-side triangle region",
+                            dsa_copied_triangle_pixel[0] > 0 &&
+                            dsa_copied_triangle_pixel[1] > 0 &&
+                            dsa_copied_triangle_pixel[2] > 0 &&
+                            dsa_copied_triangle_pixel[3] == 255)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glClearNamedBufferSubData(dsa_vbo,
+                                      GL_R32F,
+                                      0,
+                                      2 * (GLsizeiptr)sizeof(GLfloat),
+                                      GL_RED,
+                                      GL_FLOAT,
+                                      &named_clear_position);
+            glGetNamedBufferSubData(dsa_vbo, 0, 2 * (GLsizeiptr)sizeof(GLfloat), named_readback_vertices);
+            if (expect_true("glClearNamedBufferSubData completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("glClearNamedBufferSubData rewrites the first named vertex position pattern",
+                            named_readback_vertices[0] == named_clear_position &&
+                            named_readback_vertices[1] == named_clear_position)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glClearNamedBufferData(dsa_vbo, GL_R32F, GL_RED, GL_FLOAT, NULL);
+            glGetNamedBufferSubData(dsa_vbo, 0, sizeof(named_readback_vertices), named_readback_vertices);
+            glBindBuffer(GL_ARRAY_BUFFER, dsa_vbo);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glReadPixels(25, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, dsa_cleared_triangle_pixel);
+            if (expect_true("glClearNamedBufferData completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("glClearNamedBufferData zero-fills the DSA buffer",
+                            memcmp(named_readback_vertices,
+                                   named_zero_vertices,
+                                   sizeof(named_zero_vertices)) == 0) ||
+                expect_true("cleared DSA buffer no longer shades the copied triangle region",
+                            dsa_cleared_triangle_pixel[0] == 0 &&
+                            dsa_cleared_triangle_pixel[1] == 0 &&
+                            dsa_cleared_triangle_pixel[2] == 0 &&
+                            dsa_cleared_triangle_pixel[3] == 255)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glNamedBufferStorage(dsa_immutable_vbo,
+                                 sizeof(mapped_storage_triangle_vertices),
+                                 mapped_storage_triangle_vertices,
+                                 named_storage_flags);
+            glGetNamedBufferParameteriv(dsa_immutable_vbo,
+                                        GL_BUFFER_IMMUTABLE_STORAGE,
+                                        &named_buffer_immutable_storage);
+            glGetNamedBufferParameteriv(dsa_immutable_vbo,
+                                        GL_BUFFER_STORAGE_FLAGS,
+                                        &named_buffer_storage_flags);
+            mapped_named_vertices = (const GLfloat *)glMapNamedBuffer(dsa_immutable_vbo, GL_READ_ONLY);
+            if (expect_true("glNamedBufferStorage completes without GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("glNamedBufferStorage creates immutable DSA storage",
+                            named_buffer_immutable_storage == GL_TRUE) ||
+                expect_true("GL_BUFFER_STORAGE_FLAGS reflects named immutable flags",
+                            named_buffer_storage_flags == (GLint)named_storage_flags) ||
+                expect_true("glMapNamedBuffer returns immutable DSA storage", mapped_named_vertices != NULL) ||
+                expect_true("glMapNamedBuffer reads back named immutable bytes",
+                            memcmp(mapped_named_vertices,
+                                   mapped_storage_triangle_vertices,
+                                   sizeof(mapped_storage_triangle_vertices)) == 0) ||
+                expect_true("glUnmapNamedBuffer succeeds for immutable DSA storage",
+                            glUnmapNamedBuffer(dsa_immutable_vbo) == GL_TRUE) ||
+                expect_true("immutable DSA unmap leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glNamedBufferData(dsa_immutable_vbo,
+                              sizeof(triangle_vertices),
+                              triangle_vertices,
+                              GL_STATIC_DRAW);
+            if (expect_true("glNamedBufferData rejects immutable named storage",
+                            glGetError() == GL_INVALID_OPERATION)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glBindBuffer(GL_PIXEL_PACK_BUFFER, dsa_vbo);
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, dsa_immutable_vbo);
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, dsa_vbo);
+            glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, dsa_immutable_vbo);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 1, dsa_immutable_vbo);
+            glBindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, 0, dsa_immutable_vbo, 8, 24);
+            glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 3, dsa_immutable_vbo);
+            glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 2, dsa_immutable_vbo, 0, 32);
+            glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &pixel_pack_buffer_binding);
+            glGetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING, &pixel_unpack_buffer_binding);
+            glGetIntegerv(GL_DRAW_INDIRECT_BUFFER_BINDING, &draw_indirect_buffer_binding);
+            glGetIntegerv(GL_DISPATCH_INDIRECT_BUFFER_BINDING, &dispatch_indirect_buffer_binding);
+            glGetIntegerv(GL_UNIFORM_BUFFER_BINDING, &uniform_buffer_binding);
+            glGetIntegerv(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING, &transform_feedback_buffer_binding);
+            glGetIntegerv(GL_ATOMIC_COUNTER_BUFFER_BINDING, &atomic_counter_buffer_binding);
+            glGetIntegerv(GL_SHADER_STORAGE_BUFFER_BINDING, &shader_storage_buffer_binding);
+            glGetIntegeri_v(GL_UNIFORM_BUFFER_BINDING, 1, &indexed_uniform_buffer_binding);
+            glGetIntegeri_v(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING, 0, &indexed_transform_feedback_buffer_binding);
+            glGetIntegeri_v(GL_ATOMIC_COUNTER_BUFFER_BINDING, 3, &indexed_atomic_counter_buffer_binding);
+            glGetIntegeri_v(GL_SHADER_STORAGE_BUFFER_BINDING, 2, &indexed_shader_storage_buffer_binding);
+            glGetInteger64i_v(GL_UNIFORM_BUFFER_START, 1, &indexed_uniform_buffer_start64);
+            glGetInteger64i_v(GL_UNIFORM_BUFFER_SIZE, 1, &indexed_uniform_buffer_size64);
+            glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_START, 0, &indexed_transform_feedback_buffer_start64);
+            glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_SIZE, 0, &indexed_transform_feedback_buffer_size64);
+            glGetInteger64i_v(GL_ATOMIC_COUNTER_BUFFER_START, 3, &indexed_atomic_counter_buffer_start64);
+            glGetInteger64i_v(GL_ATOMIC_COUNTER_BUFFER_SIZE, 3, &indexed_atomic_counter_buffer_size64);
+            glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_START, 2, &indexed_shader_storage_buffer_start64);
+            glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_SIZE, 2, &indexed_shader_storage_buffer_size64);
+            glGetBufferParameteri64v(GL_UNIFORM_BUFFER, GL_BUFFER_SIZE, &bound_uniform_buffer_size64);
+            glGetNamedBufferParameteri64v(dsa_immutable_vbo, GL_BUFFER_SIZE, &named_buffer_size64);
+            glGetNamedBufferParameteri64v(dsa_immutable_vbo,
+                                          GL_BUFFER_STORAGE_FLAGS,
+                                          &named_buffer_storage_flags64);
+            glGetIntegerv(GL_MAX_TRANSFORM_FEEDBACK_BUFFERS, &max_transform_feedback_buffers);
+            glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &max_uniform_buffer_bindings);
+            glGetIntegerv(GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS,
+                          &max_atomic_counter_buffer_bindings);
+            glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS,
+                          &max_shader_storage_buffer_bindings);
+            glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniform_buffer_offset_alignment);
+            glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT,
+                          &shader_storage_buffer_offset_alignment);
+            if (expect_true("broader buffer target binds leave no GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("GL_PIXEL_PACK_BUFFER_BINDING reflects bindful state",
+                            pixel_pack_buffer_binding == (GLint)dsa_vbo) ||
+                expect_true("GL_PIXEL_UNPACK_BUFFER_BINDING reflects bindful state",
+                            pixel_unpack_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                expect_true("GL_DRAW_INDIRECT_BUFFER_BINDING reflects bindful state",
+                            draw_indirect_buffer_binding == (GLint)dsa_vbo) ||
+                expect_true("GL_DISPATCH_INDIRECT_BUFFER_BINDING reflects bindful state",
+                            dispatch_indirect_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                expect_true("GL_UNIFORM_BUFFER_BINDING reflects indexed bind-base state",
+                            uniform_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                expect_true("GL_TRANSFORM_FEEDBACK_BUFFER_BINDING reflects indexed bind-range state",
+                            transform_feedback_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                expect_true("GL_ATOMIC_COUNTER_BUFFER_BINDING reflects indexed bind-base state",
+                            atomic_counter_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                expect_true("GL_SHADER_STORAGE_BUFFER_BINDING reflects indexed bind-range state",
+                            shader_storage_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                expect_true("glGetIntegeri_v reports indexed uniform binding",
+                            indexed_uniform_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                expect_true("glGetIntegeri_v reports indexed transform-feedback binding",
+                            indexed_transform_feedback_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                expect_true("glGetIntegeri_v reports indexed atomic-counter binding",
+                            indexed_atomic_counter_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                expect_true("glGetIntegeri_v reports indexed shader-storage binding",
+                            indexed_shader_storage_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                expect_true("glGetInteger64i_v reports indexed uniform full-range state",
+                            indexed_uniform_buffer_start64 == 0 &&
+                            indexed_uniform_buffer_size64 ==
+                                (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
+                expect_true("glGetInteger64i_v reports indexed transform-feedback range state",
+                            indexed_transform_feedback_buffer_start64 == 8 &&
+                            indexed_transform_feedback_buffer_size64 == 24) ||
+                expect_true("glGetInteger64i_v reports indexed atomic-counter full-range state",
+                            indexed_atomic_counter_buffer_start64 == 0 &&
+                            indexed_atomic_counter_buffer_size64 ==
+                                (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
+                expect_true("glGetInteger64i_v reports indexed shader-storage range state",
+                            indexed_shader_storage_buffer_start64 == 0 &&
+                            indexed_shader_storage_buffer_size64 == 32) ||
+                expect_true("glGetBufferParameteri64v reports the generic uniform buffer size",
+                            bound_uniform_buffer_size64 ==
+                                (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
+                expect_true("glGetNamedBufferParameteri64v reports named immutable size",
+                            named_buffer_size64 ==
+                                (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
+                expect_true("glGetNamedBufferParameteri64v reports named storage flags",
+                            named_buffer_storage_flags64 == (GLint64)named_storage_flags) ||
+                expect_true("GL_MAX_TRANSFORM_FEEDBACK_BUFFERS is nonzero",
+                            max_transform_feedback_buffers > 0) ||
+                expect_true("GL_MAX_UNIFORM_BUFFER_BINDINGS covers queried index",
+                            max_uniform_buffer_bindings > 1) ||
+                expect_true("GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS covers queried index",
+                            max_atomic_counter_buffer_bindings > 3) ||
+                expect_true("GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS covers queried index",
+                            max_shader_storage_buffer_bindings > 2) ||
+                expect_true("GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT is nonzero",
+                            uniform_buffer_offset_alignment > 0) ||
+                expect_true("GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT is nonzero",
+                            shader_storage_buffer_offset_alignment > 0)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
         }
 
         {
@@ -985,6 +1627,9 @@ int main(void)
         }
 
         glDeleteVertexArrays(1, &vao);
+        glDeleteBuffers(1, &dsa_immutable_vbo);
+        glDeleteBuffers(1, &dsa_vbo);
+        glDeleteBuffers(1, &copy_vbo);
         glDeleteBuffers(1, &ebo);
         glDeleteBuffers(1, &vbo);
         glDeleteShader(vertex_shader);
@@ -993,6 +1638,10 @@ int main(void)
         glDeleteProgram(program);
         if (expect_true("shader delete status reflects pending deletion", delete_status == GL_TRUE) ||
             expect_true("glIsVertexArray(vao) clears after delete", glIsVertexArray(vao) == GL_FALSE) ||
+            expect_true("glIsBuffer(dsa_immutable_vbo) clears after delete",
+                        glIsBuffer(dsa_immutable_vbo) == GL_FALSE) ||
+            expect_true("glIsBuffer(dsa_vbo) clears after delete", glIsBuffer(dsa_vbo) == GL_FALSE) ||
+            expect_true("glIsBuffer(copy_vbo) clears after delete", glIsBuffer(copy_vbo) == GL_FALSE) ||
             expect_true("glIsBuffer(ebo) clears after delete", glIsBuffer(ebo) == GL_FALSE) ||
             expect_true("glIsBuffer(vbo) clears after delete", glIsBuffer(vbo) == GL_FALSE) ||
             expect_true("glIsProgram(program) clears after delete", glIsProgram(program) == GL_FALSE) ||

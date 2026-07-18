@@ -64,9 +64,21 @@ struct GLBackendBufferRec {
     GLuint name;
     GLenum usage;
     size_t size;
+    GLboolean immutable_storage;
+    GLbitfield storage_flags;
+    GLboolean mapped;
+    GLbitfield map_access;
+    size_t map_offset;
+    size_t map_length;
     uint8_t *data;
     GLBackendBuffer *next;
 };
+
+typedef struct {
+    GLuint buffer_name;
+    GLintptr offset;
+    GLsizeiptr size;
+} GLBackendIndexedBufferBinding;
 
 struct GLBackendVertexArrayRec {
     GLuint name;
@@ -110,6 +122,16 @@ struct AO46BackendContextRec {
     GLuint next_vertex_array_name;
     GLuint next_texture_name;
     GLuint array_buffer_binding;
+    GLuint copy_read_buffer_binding;
+    GLuint copy_write_buffer_binding;
+    GLuint pixel_pack_buffer_binding;
+    GLuint pixel_unpack_buffer_binding;
+    GLuint uniform_buffer_binding;
+    GLuint transform_feedback_buffer_binding;
+    GLuint atomic_counter_buffer_binding;
+    GLuint shader_storage_buffer_binding;
+    GLuint draw_indirect_buffer_binding;
+    GLuint dispatch_indirect_buffer_binding;
     GLuint current_program_name;
     GLuint current_vertex_array_name;
     GLuint active_texture_unit_index;
@@ -117,6 +139,10 @@ struct AO46BackendContextRec {
     GLBackendProgram *programs;
     GLBackendBuffer *buffers;
     GLBackendVertexArray *vertex_arrays;
+    GLBackendIndexedBufferBinding transform_feedback_buffer_bindings[GL_DRIVER_MAX_TRANSFORM_FEEDBACK_BUFFERS];
+    GLBackendIndexedBufferBinding uniform_buffer_bindings[GL_DRIVER_MAX_UNIFORM_BUFFER_BINDINGS];
+    GLBackendIndexedBufferBinding atomic_counter_buffer_bindings[GL_DRIVER_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS];
+    GLBackendIndexedBufferBinding shader_storage_buffer_bindings[GL_DRIVER_MAX_SHADER_STORAGE_BUFFER_BINDINGS];
     GLBackendTextureUnit texture_units[GL_DRIVER_MAX_TEXTURE_UNITS];
     GLBackendTexture *textures;
 };
@@ -377,6 +403,48 @@ static GLBackendBuffer *gl_backend_find_buffer(AO46BackendContextRef ctx, GLuint
     return NULL;
 }
 
+static GLBackendBuffer *gl_backend_create_buffer_record(AO46BackendContextRef ctx, GLuint name)
+{
+    GLBackendBuffer *buffer;
+
+    if (!ctx || name == 0) {
+        return NULL;
+    }
+
+    buffer = gl_backend_find_buffer(ctx, name);
+    if (buffer) {
+        return buffer;
+    }
+
+    buffer = calloc(1, sizeof(*buffer));
+    if (!buffer) {
+        gl_backend_set_error(ctx, GL_OUT_OF_MEMORY);
+        return NULL;
+    }
+
+    buffer->name = name;
+    buffer->next = ctx->buffers;
+    ctx->buffers = buffer;
+    if (name > ctx->next_buffer_name) {
+        ctx->next_buffer_name = name;
+    }
+    return buffer;
+}
+
+static bool gl_backend_existing_buffer_name(AO46BackendContextRef ctx, GLuint buffer_name)
+{
+    if (!ctx) {
+        return false;
+    }
+
+    if (buffer_name == 0 || !gl_backend_find_buffer(ctx, buffer_name)) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return false;
+    }
+
+    return true;
+}
+
 static GLBackendVertexArray *gl_backend_find_vertex_array(AO46BackendContextRef ctx, GLuint name)
 {
     GLBackendVertexArray *vertex_array = ctx ? ctx->vertex_arrays : NULL;
@@ -479,17 +547,185 @@ static GLsizei gl_backend_texture_max_mip_levels(GLsizei width, GLsizei height)
         return 0;
     }
 
-    do {
+    while (levels < GL_DRIVER_MAX_TEXTURE_LEVELS) {
         levels++;
+        if (width == 1 && height == 1) {
+            break;
+        }
+
         if (width > 1) {
             width /= 2;
         }
         if (height > 1) {
             height /= 2;
         }
-    } while ((width > 1 || height > 1) && levels < GL_DRIVER_MAX_TEXTURE_LEVELS);
+    }
 
     return levels;
+}
+
+static bool gl_backend_buffer_usage_valid(GLenum usage)
+{
+    switch (usage) {
+        case GL_STREAM_DRAW:
+        case GL_STREAM_READ:
+        case GL_STREAM_COPY:
+        case GL_STATIC_DRAW:
+        case GL_STATIC_READ:
+        case GL_STATIC_COPY:
+        case GL_DYNAMIC_DRAW:
+        case GL_DYNAMIC_READ:
+        case GL_DYNAMIC_COPY:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool gl_backend_buffer_storage_flags_valid(GLbitfield flags)
+{
+    const GLbitfield valid_flags = GL_DYNAMIC_STORAGE_BIT |
+                                   GL_MAP_READ_BIT |
+                                   GL_MAP_WRITE_BIT |
+                                   GL_MAP_PERSISTENT_BIT |
+                                   GL_MAP_COHERENT_BIT |
+                                   GL_CLIENT_STORAGE_BIT;
+
+    return (flags & ~valid_flags) == 0;
+}
+
+static bool gl_backend_buffer_map_access_bits_valid(GLbitfield access)
+{
+    const GLbitfield valid_bits = GL_MAP_READ_BIT |
+                                  GL_MAP_WRITE_BIT |
+                                  GL_MAP_PERSISTENT_BIT |
+                                  GL_MAP_COHERENT_BIT |
+                                  GL_MAP_INVALIDATE_RANGE_BIT |
+                                  GL_MAP_INVALIDATE_BUFFER_BIT |
+                                  GL_MAP_FLUSH_EXPLICIT_BIT |
+                                  GL_MAP_UNSYNCHRONIZED_BIT;
+
+    return (access & ~valid_bits) == 0;
+}
+
+static bool gl_backend_buffer_gl_accessible(const GLBackendBuffer *buffer)
+{
+    return buffer && (!buffer->mapped || (buffer->map_access & GL_MAP_PERSISTENT_BIT) != 0);
+}
+
+static void gl_backend_buffer_clear_mapping(GLBackendBuffer *buffer)
+{
+    if (!buffer) {
+        return;
+    }
+
+    buffer->mapped = GL_FALSE;
+    buffer->map_access = 0;
+    buffer->map_offset = 0;
+    buffer->map_length = 0;
+}
+
+static void *gl_backend_buffer_map_pointer(GLBackendBuffer *buffer)
+{
+    if (!buffer || !buffer->mapped || !buffer->data) {
+        return NULL;
+    }
+
+    return buffer->data + buffer->map_offset;
+}
+
+static GLbitfield gl_backend_map_buffer_legacy_access(GLenum access)
+{
+    switch (access) {
+        case GL_READ_ONLY:
+            return GL_MAP_READ_BIT;
+        case GL_WRITE_ONLY:
+            return GL_MAP_WRITE_BIT;
+        case GL_READ_WRITE:
+            return GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
+        default:
+            return 0;
+    }
+}
+
+static bool gl_backend_buffer_clear_format_info(GLenum internalformat,
+                                                GLenum format,
+                                                GLenum type,
+                                                size_t *clear_value_size)
+{
+    size_t value_size = 0;
+
+    switch (internalformat) {
+        case GL_R8:
+            if (format != GL_RED || type != GL_UNSIGNED_BYTE) {
+                return false;
+            }
+            value_size = 1u;
+            break;
+        case GL_R8UI:
+            if (format != GL_RED_INTEGER || type != GL_UNSIGNED_BYTE) {
+                return false;
+            }
+            value_size = 1u;
+            break;
+        case GL_R16UI:
+            if (format != GL_RED_INTEGER || type != GL_UNSIGNED_SHORT) {
+                return false;
+            }
+            value_size = sizeof(GLushort);
+            break;
+        case GL_R32UI:
+            if (format != GL_RED_INTEGER || type != GL_UNSIGNED_INT) {
+                return false;
+            }
+            value_size = sizeof(GLuint);
+            break;
+        case GL_R32I:
+            if (format != GL_RED_INTEGER || type != GL_INT) {
+                return false;
+            }
+            value_size = sizeof(GLint);
+            break;
+        case GL_R32F:
+            if (format != GL_RED || type != GL_FLOAT) {
+                return false;
+            }
+            value_size = sizeof(GLfloat);
+            break;
+        case GL_RGBA8:
+            if (format != GL_RGBA || type != GL_UNSIGNED_BYTE) {
+                return false;
+            }
+            value_size = 4u;
+            break;
+        case GL_RGBA32F:
+            if (format != GL_RGBA || type != GL_FLOAT) {
+                return false;
+            }
+            value_size = 4u * sizeof(GLfloat);
+            break;
+        default:
+            return false;
+    }
+
+    if (clear_value_size) {
+        *clear_value_size = value_size;
+    }
+    return true;
+}
+
+static void gl_backend_buffer_fill_pattern(uint8_t *dst,
+                                           size_t dst_size,
+                                           const void *pattern,
+                                           size_t pattern_size)
+{
+    if (!dst || !pattern || pattern_size == 0) {
+        return;
+    }
+
+    for (size_t offset = 0; offset < dst_size; offset += pattern_size) {
+        memcpy(dst + offset, pattern, pattern_size);
+    }
 }
 
 static void gl_backend_release_texture_level(GLBackendTextureLevel *level)
@@ -718,6 +954,68 @@ static void gl_backend_extract_sampler_name(const char *source, char *dst, size_
     dst[length] = '\0';
 }
 
+static bool gl_backend_buffer_indexed_target_valid(GLenum target)
+{
+    switch (target) {
+        case GL_TRANSFORM_FEEDBACK_BUFFER:
+        case GL_UNIFORM_BUFFER:
+        case GL_ATOMIC_COUNTER_BUFFER:
+        case GL_SHADER_STORAGE_BUFFER:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool gl_backend_buffer_target_valid(GLenum target)
+{
+    switch (target) {
+        case GL_ARRAY_BUFFER:
+        case GL_ELEMENT_ARRAY_BUFFER:
+        case GL_COPY_READ_BUFFER:
+        case GL_COPY_WRITE_BUFFER:
+        case GL_PIXEL_PACK_BUFFER:
+        case GL_PIXEL_UNPACK_BUFFER:
+        case GL_TRANSFORM_FEEDBACK_BUFFER:
+        case GL_UNIFORM_BUFFER:
+        case GL_ATOMIC_COUNTER_BUFFER:
+        case GL_SHADER_STORAGE_BUFFER:
+        case GL_DRAW_INDIRECT_BUFFER:
+        case GL_DISPATCH_INDIRECT_BUFFER:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static size_t gl_backend_buffer_indexed_binding_count(GLenum target)
+{
+    switch (target) {
+        case GL_TRANSFORM_FEEDBACK_BUFFER:
+            return GL_DRIVER_MAX_TRANSFORM_FEEDBACK_BUFFERS;
+        case GL_UNIFORM_BUFFER:
+            return GL_DRIVER_MAX_UNIFORM_BUFFER_BINDINGS;
+        case GL_ATOMIC_COUNTER_BUFFER:
+            return GL_DRIVER_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS;
+        case GL_SHADER_STORAGE_BUFFER:
+            return GL_DRIVER_MAX_SHADER_STORAGE_BUFFER_BINDINGS;
+        default:
+            return 0;
+    }
+}
+
+static size_t gl_backend_buffer_indexed_offset_alignment(GLenum target)
+{
+    switch (target) {
+        case GL_UNIFORM_BUFFER:
+            return GL_DRIVER_UNIFORM_BUFFER_OFFSET_ALIGNMENT;
+        case GL_SHADER_STORAGE_BUFFER:
+            return GL_DRIVER_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT;
+        default:
+            return 1u;
+    }
+}
+
 static GLuint *gl_backend_buffer_binding_slot(AO46BackendContextRef ctx, GLenum target)
 {
     GLBackendVertexArray *vertex_array;
@@ -732,6 +1030,56 @@ static GLuint *gl_backend_buffer_binding_slot(AO46BackendContextRef ctx, GLenum 
         case GL_ELEMENT_ARRAY_BUFFER:
             vertex_array = gl_backend_find_vertex_array(ctx, ctx->current_vertex_array_name);
             return vertex_array ? &vertex_array->element_array_buffer_name : NULL;
+        case GL_COPY_READ_BUFFER:
+            return &ctx->copy_read_buffer_binding;
+        case GL_COPY_WRITE_BUFFER:
+            return &ctx->copy_write_buffer_binding;
+        case GL_PIXEL_PACK_BUFFER:
+            return &ctx->pixel_pack_buffer_binding;
+        case GL_PIXEL_UNPACK_BUFFER:
+            return &ctx->pixel_unpack_buffer_binding;
+        case GL_TRANSFORM_FEEDBACK_BUFFER:
+            return &ctx->transform_feedback_buffer_binding;
+        case GL_UNIFORM_BUFFER:
+            return &ctx->uniform_buffer_binding;
+        case GL_ATOMIC_COUNTER_BUFFER:
+            return &ctx->atomic_counter_buffer_binding;
+        case GL_SHADER_STORAGE_BUFFER:
+            return &ctx->shader_storage_buffer_binding;
+        case GL_DRAW_INDIRECT_BUFFER:
+            return &ctx->draw_indirect_buffer_binding;
+        case GL_DISPATCH_INDIRECT_BUFFER:
+            return &ctx->dispatch_indirect_buffer_binding;
+        default:
+            return NULL;
+    }
+}
+
+static GLBackendIndexedBufferBinding *gl_backend_buffer_indexed_binding_slot(AO46BackendContextRef ctx,
+                                                                             GLenum target,
+                                                                             GLuint index)
+{
+    if (!ctx) {
+        return NULL;
+    }
+
+    switch (target) {
+        case GL_TRANSFORM_FEEDBACK_BUFFER:
+            return index < GL_DRIVER_MAX_TRANSFORM_FEEDBACK_BUFFERS ?
+                       &ctx->transform_feedback_buffer_bindings[index] :
+                       NULL;
+        case GL_UNIFORM_BUFFER:
+            return index < GL_DRIVER_MAX_UNIFORM_BUFFER_BINDINGS ?
+                       &ctx->uniform_buffer_bindings[index] :
+                       NULL;
+        case GL_ATOMIC_COUNTER_BUFFER:
+            return index < GL_DRIVER_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS ?
+                       &ctx->atomic_counter_buffer_bindings[index] :
+                       NULL;
+        case GL_SHADER_STORAGE_BUFFER:
+            return index < GL_DRIVER_MAX_SHADER_STORAGE_BUFFER_BINDINGS ?
+                       &ctx->shader_storage_buffer_bindings[index] :
+                       NULL;
         default:
             return NULL;
     }
@@ -2305,19 +2653,20 @@ static void gl_backend_gen_buffers(GLsizei n, GLuint *buffers)
     }
 
     for (GLsizei index = 0; index < n; ++index) {
-        GLBackendBuffer *buffer = calloc(1, sizeof(*buffer));
+        GLuint name = gl_backend_next_name(&ctx->next_buffer_name);
 
-        if (!buffer) {
-            gl_backend_set_error(ctx, GL_OUT_OF_MEMORY);
+        if (!gl_backend_create_buffer_record(ctx, name)) {
             buffers[index] = 0;
             continue;
         }
 
-        buffer->name = gl_backend_next_name(&ctx->next_buffer_name);
-        buffer->next = ctx->buffers;
-        ctx->buffers = buffer;
-        buffers[index] = buffer->name;
+        buffers[index] = name;
     }
+}
+
+static void gl_backend_create_buffers(GLsizei n, GLuint *buffers)
+{
+    gl_backend_gen_buffers(n, buffers);
 }
 
 static GLboolean gl_backend_is_buffer(GLuint buffer_name)
@@ -2343,22 +2692,74 @@ static void gl_backend_delete_buffers(GLsizei n, const GLuint *buffers)
     for (GLsizei index = 0; index < n; ++index) {
         GLBackendBuffer *buffer = gl_backend_find_buffer(ctx, buffers[index]);
         GLBackendVertexArray *vertex_array;
+        const GLuint buffer_name = buffers[index];
 
         if (!buffer) {
             continue;
         }
 
-        if (ctx->array_buffer_binding == buffer->name) {
+        if (ctx->array_buffer_binding == buffer_name) {
             ctx->array_buffer_binding = 0;
+        }
+        if (ctx->copy_read_buffer_binding == buffer_name) {
+            ctx->copy_read_buffer_binding = 0;
+        }
+        if (ctx->copy_write_buffer_binding == buffer_name) {
+            ctx->copy_write_buffer_binding = 0;
+        }
+        if (ctx->pixel_pack_buffer_binding == buffer_name) {
+            ctx->pixel_pack_buffer_binding = 0;
+        }
+        if (ctx->pixel_unpack_buffer_binding == buffer_name) {
+            ctx->pixel_unpack_buffer_binding = 0;
+        }
+        if (ctx->uniform_buffer_binding == buffer_name) {
+            ctx->uniform_buffer_binding = 0;
+        }
+        if (ctx->transform_feedback_buffer_binding == buffer_name) {
+            ctx->transform_feedback_buffer_binding = 0;
+        }
+        if (ctx->atomic_counter_buffer_binding == buffer_name) {
+            ctx->atomic_counter_buffer_binding = 0;
+        }
+        if (ctx->shader_storage_buffer_binding == buffer_name) {
+            ctx->shader_storage_buffer_binding = 0;
+        }
+        if (ctx->draw_indirect_buffer_binding == buffer_name) {
+            ctx->draw_indirect_buffer_binding = 0;
+        }
+        if (ctx->dispatch_indirect_buffer_binding == buffer_name) {
+            ctx->dispatch_indirect_buffer_binding = 0;
+        }
+
+        for (size_t binding = 0; binding < GL_DRIVER_MAX_TRANSFORM_FEEDBACK_BUFFERS; ++binding) {
+            if (ctx->transform_feedback_buffer_bindings[binding].buffer_name == buffer_name) {
+                memset(&ctx->transform_feedback_buffer_bindings[binding], 0, sizeof(ctx->transform_feedback_buffer_bindings[binding]));
+            }
+        }
+        for (size_t binding = 0; binding < GL_DRIVER_MAX_UNIFORM_BUFFER_BINDINGS; ++binding) {
+            if (ctx->uniform_buffer_bindings[binding].buffer_name == buffer_name) {
+                memset(&ctx->uniform_buffer_bindings[binding], 0, sizeof(ctx->uniform_buffer_bindings[binding]));
+            }
+        }
+        for (size_t binding = 0; binding < GL_DRIVER_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS; ++binding) {
+            if (ctx->atomic_counter_buffer_bindings[binding].buffer_name == buffer_name) {
+                memset(&ctx->atomic_counter_buffer_bindings[binding], 0, sizeof(ctx->atomic_counter_buffer_bindings[binding]));
+            }
+        }
+        for (size_t binding = 0; binding < GL_DRIVER_MAX_SHADER_STORAGE_BUFFER_BINDINGS; ++binding) {
+            if (ctx->shader_storage_buffer_bindings[binding].buffer_name == buffer_name) {
+                memset(&ctx->shader_storage_buffer_bindings[binding], 0, sizeof(ctx->shader_storage_buffer_bindings[binding]));
+            }
         }
 
         vertex_array = ctx->vertex_arrays;
         while (vertex_array) {
-            if (vertex_array->element_array_buffer_name == buffer->name) {
+            if (vertex_array->element_array_buffer_name == buffer_name) {
                 vertex_array->element_array_buffer_name = 0;
             }
             for (int attrib = 0; attrib < GL_DRIVER_MAX_VERTEX_ATTRIBS; ++attrib) {
-                if (vertex_array->attribs[attrib].buffer_name == buffer->name) {
+                if (vertex_array->attribs[attrib].buffer_name == buffer_name) {
                     vertex_array->attribs[attrib].buffer_name = 0;
                 }
             }
@@ -2384,12 +2785,98 @@ static void gl_backend_bind_buffer(GLenum target, GLuint buffer_name)
         return;
     }
 
-    if (buffer_name != 0 && !gl_backend_find_buffer(ctx, buffer_name)) {
-        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+    if (buffer_name != 0 && !gl_backend_create_buffer_record(ctx, buffer_name)) {
         return;
     }
 
     *binding = buffer_name;
+}
+
+static void gl_backend_bind_buffer_indexed(GLenum target,
+                                           GLuint index,
+                                           GLuint buffer_name,
+                                           GLintptr offset,
+                                           GLsizeiptr size,
+                                           bool whole_buffer)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendIndexedBufferBinding *binding;
+    GLuint *generic_binding;
+    GLBackendBuffer *buffer;
+    size_t alignment;
+
+    if (!ctx) {
+        return;
+    }
+
+    if (!gl_backend_buffer_indexed_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    binding = gl_backend_buffer_indexed_binding_slot(ctx, target, index);
+    if (!binding) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    generic_binding = gl_backend_buffer_binding_slot(ctx, target);
+    if (!generic_binding) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    if (buffer_name == 0) {
+        memset(binding, 0, sizeof(*binding));
+        *generic_binding = 0;
+        return;
+    }
+
+    buffer = gl_backend_find_buffer(ctx, buffer_name);
+    if (!buffer || !buffer->data || buffer->size == 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (whole_buffer) {
+        offset = 0;
+        size = (GLsizeiptr)buffer->size;
+    } else {
+        if (offset < 0 || size <= 0) {
+            gl_backend_set_error(ctx, GL_INVALID_VALUE);
+            return;
+        }
+
+        if ((size_t)offset > buffer->size || (size_t)size > buffer->size - (size_t)offset) {
+            gl_backend_set_error(ctx, GL_INVALID_VALUE);
+            return;
+        }
+
+        alignment = gl_backend_buffer_indexed_offset_alignment(target);
+        if (alignment > 1u && ((size_t)offset % alignment) != 0) {
+            gl_backend_set_error(ctx, GL_INVALID_VALUE);
+            return;
+        }
+    }
+
+    binding->buffer_name = buffer_name;
+    binding->offset = offset;
+    binding->size = size;
+    *generic_binding = buffer_name;
+}
+
+static void gl_backend_bind_buffer_base(GLenum target, GLuint index, GLuint buffer_name)
+{
+    gl_backend_bind_buffer_indexed(target, index, buffer_name, 0, 0, true);
+}
+
+static void gl_backend_bind_buffer_range(GLenum target,
+                                         GLuint index,
+                                         GLuint buffer_name,
+                                         GLintptr offset,
+                                         GLsizeiptr size)
+{
+    gl_backend_bind_buffer_indexed(target, index, buffer_name, offset, size, false);
 }
 
 static void gl_backend_buffer_data(GLenum target,
@@ -2410,8 +2897,23 @@ static void gl_backend_buffer_data(GLenum target,
         return;
     }
 
+    if (!gl_backend_buffer_usage_valid(usage)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
     buffer = gl_backend_bound_buffer(ctx, target);
     if (!buffer) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (buffer->immutable_storage || buffer->mapped) {
         gl_backend_set_error(ctx, GL_INVALID_OPERATION);
         return;
     }
@@ -2430,6 +2932,9 @@ static void gl_backend_buffer_data(GLenum target,
     buffer->data = storage;
     buffer->size = (size_t)size;
     buffer->usage = usage;
+    buffer->immutable_storage = GL_FALSE;
+    buffer->storage_flags = 0;
+    gl_backend_buffer_clear_mapping(buffer);
 }
 
 static void gl_backend_buffer_sub_data(GLenum target,
@@ -2449,8 +2954,24 @@ static void gl_backend_buffer_sub_data(GLenum target,
         return;
     }
 
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
     buffer = gl_backend_bound_buffer(ctx, target);
     if (!buffer || !buffer->data) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (!gl_backend_buffer_gl_accessible(buffer)) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (buffer->immutable_storage &&
+        (buffer->storage_flags & GL_DYNAMIC_STORAGE_BIT) == 0) {
         gl_backend_set_error(ctx, GL_INVALID_OPERATION);
         return;
     }
@@ -2472,12 +2993,292 @@ static void gl_backend_buffer_sub_data(GLenum target,
     memcpy(buffer->data + (size_t)offset, data, (size_t)size);
 }
 
-static void gl_backend_get_buffer_parameter_iv(GLenum target, GLenum pname, GLint *params)
+static void gl_backend_buffer_storage(GLenum target,
+                                      GLsizeiptr size,
+                                      const void *data,
+                                      GLbitfield flags)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+    uint8_t *storage;
+
+    if (!ctx) {
+        return;
+    }
+
+    if (size < 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (!gl_backend_buffer_storage_flags_valid(flags)) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if ((flags & GL_MAP_PERSISTENT_BIT) != 0 &&
+        (flags & (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT)) == 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if ((flags & GL_MAP_COHERENT_BIT) != 0 &&
+        (flags & GL_MAP_PERSISTENT_BIT) == 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (buffer->immutable_storage || buffer->mapped) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    storage = size > 0 ? calloc((size_t)size, 1) : NULL;
+    if (size > 0 && !storage) {
+        gl_backend_set_error(ctx, GL_OUT_OF_MEMORY);
+        return;
+    }
+
+    if (size > 0 && data) {
+        memcpy(storage, data, (size_t)size);
+    }
+
+    free(buffer->data);
+    buffer->data = storage;
+    buffer->size = (size_t)size;
+    buffer->usage = GL_STATIC_DRAW;
+    buffer->immutable_storage = GL_TRUE;
+    buffer->storage_flags = flags;
+    gl_backend_buffer_clear_mapping(buffer);
+}
+
+static void *gl_backend_map_buffer_range(GLenum target,
+                                         GLintptr offset,
+                                         GLsizeiptr length,
+                                         GLbitfield access)
 {
     AO46BackendContextRef ctx = gl_backend_current_context();
     GLBackendBuffer *buffer;
 
+    if (!ctx) {
+        return NULL;
+    }
+
+    if (offset < 0 || length < 0 || !gl_backend_buffer_map_access_bits_valid(access)) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return NULL;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return NULL;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return NULL;
+    }
+
+    if ((size_t)offset > buffer->size || (size_t)length > buffer->size - (size_t)offset) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return NULL;
+    }
+
+    if (length == 0 ||
+        buffer->mapped ||
+        (access & (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT)) == 0 ||
+        ((access & GL_MAP_READ_BIT) != 0 &&
+         (access & (GL_MAP_INVALIDATE_RANGE_BIT |
+                    GL_MAP_INVALIDATE_BUFFER_BIT |
+                    GL_MAP_UNSYNCHRONIZED_BIT)) != 0) ||
+        ((access & GL_MAP_FLUSH_EXPLICIT_BIT) != 0 &&
+         (access & GL_MAP_WRITE_BIT) == 0)) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return NULL;
+    }
+
+    if (buffer->immutable_storage) {
+        GLbitfield required_bits = access &
+                                   (GL_MAP_READ_BIT |
+                                    GL_MAP_WRITE_BIT |
+                                    GL_MAP_PERSISTENT_BIT |
+                                    GL_MAP_COHERENT_BIT);
+
+        if ((required_bits & ~buffer->storage_flags) != 0) {
+            gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+            return NULL;
+        }
+    } else if ((access & (GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT)) != 0) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return NULL;
+    }
+
+    buffer->mapped = GL_TRUE;
+    buffer->map_access = access;
+    buffer->map_offset = (size_t)offset;
+    buffer->map_length = (size_t)length;
+    return gl_backend_buffer_map_pointer(buffer);
+}
+
+static void *gl_backend_map_buffer(GLenum target, GLenum access)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+    GLbitfield range_access;
+
+    if (!ctx) {
+        return NULL;
+    }
+
+    range_access = gl_backend_map_buffer_legacy_access(access);
+    if (range_access == 0) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return NULL;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return NULL;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return NULL;
+    }
+
+    return gl_backend_map_buffer_range(target, 0, (GLsizeiptr)buffer->size, range_access);
+}
+
+static GLboolean gl_backend_unmap_buffer(GLenum target)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+
+    if (!ctx) {
+        return GL_FALSE;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return GL_FALSE;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer || !buffer->mapped) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return GL_FALSE;
+    }
+
+    gl_backend_buffer_clear_mapping(buffer);
+    return GL_TRUE;
+}
+
+static void gl_backend_flush_mapped_buffer_range(GLenum target,
+                                                 GLintptr offset,
+                                                 GLsizeiptr length)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+
+    if (!ctx) {
+        return;
+    }
+
+    if (offset < 0 || length < 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (!buffer->mapped || (buffer->map_access & GL_MAP_FLUSH_EXPLICIT_BIT) == 0) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if ((size_t)offset > buffer->map_length ||
+        (size_t)length > buffer->map_length - (size_t)offset) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+}
+
+static bool gl_backend_get_buffer_parameter_value(AO46BackendContextRef ctx,
+                                                  const GLBackendBuffer *buffer,
+                                                  GLenum pname,
+                                                  GLint64 *value)
+{
+    if (!ctx || !buffer || !value) {
+        return false;
+    }
+
+    switch (pname) {
+        case GL_BUFFER_SIZE:
+            *value = (GLint64)buffer->size;
+            return true;
+        case GL_BUFFER_USAGE:
+            *value = (GLint64)buffer->usage;
+            return true;
+        case GL_BUFFER_MAPPED:
+            *value = (GLint64)buffer->mapped;
+            return true;
+        case GL_BUFFER_ACCESS_FLAGS:
+            *value = (GLint64)buffer->map_access;
+            return true;
+        case GL_BUFFER_MAP_LENGTH:
+            *value = (GLint64)buffer->map_length;
+            return true;
+        case GL_BUFFER_MAP_OFFSET:
+            *value = (GLint64)buffer->map_offset;
+            return true;
+        case GL_BUFFER_IMMUTABLE_STORAGE:
+            *value = (GLint64)buffer->immutable_storage;
+            return true;
+        case GL_BUFFER_STORAGE_FLAGS:
+            *value = (GLint64)buffer->storage_flags;
+            return true;
+        default:
+            gl_backend_set_error(ctx, GL_INVALID_ENUM);
+            *value = 0;
+            return false;
+    }
+}
+
+static void gl_backend_get_buffer_parameter_iv(GLenum target, GLenum pname, GLint *params)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+    GLint64 value = 0;
+
     if (!ctx || !params) {
+        return;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        params[0] = 0;
         return;
     }
 
@@ -2488,18 +3289,575 @@ static void gl_backend_get_buffer_parameter_iv(GLenum target, GLenum pname, GLin
         return;
     }
 
-    switch (pname) {
-        case GL_BUFFER_SIZE:
-            params[0] = (GLint)buffer->size;
-            return;
-        case GL_BUFFER_USAGE:
-            params[0] = (GLint)buffer->usage;
-            return;
-        default:
-            gl_backend_set_error(ctx, GL_INVALID_ENUM);
-            params[0] = 0;
-            return;
+    if (gl_backend_get_buffer_parameter_value(ctx, buffer, pname, &value)) {
+        params[0] = (GLint)value;
     }
+}
+
+static void gl_backend_get_buffer_parameter_i64_v(GLenum target, GLenum pname, GLint64 *params)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+
+    if (!ctx || !params) {
+        return;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        params[0] = 0;
+        return;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        params[0] = 0;
+        return;
+    }
+
+    gl_backend_get_buffer_parameter_value(ctx, buffer, pname, params);
+}
+
+static void gl_backend_get_buffer_pointer_v(GLenum target, GLenum pname, void **params)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+
+    if (!ctx || !params) {
+        return;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        params[0] = NULL;
+        return;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        params[0] = NULL;
+        return;
+    }
+
+    if (pname != GL_BUFFER_MAP_POINTER) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        params[0] = NULL;
+        return;
+    }
+
+    params[0] = gl_backend_buffer_map_pointer(buffer);
+}
+
+static void gl_backend_get_buffer_sub_data(GLenum target,
+                                           GLintptr offset,
+                                           GLsizeiptr size,
+                                           void *data)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+
+    if (!ctx) {
+        return;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (!gl_backend_buffer_gl_accessible(buffer)) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (offset < 0 || size < 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if ((size_t)offset > buffer->size || (size_t)size > buffer->size - (size_t)offset) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (size == 0 || !data) {
+        return;
+    }
+
+    memcpy(data, buffer->data + (size_t)offset, (size_t)size);
+}
+
+static void gl_backend_copy_buffer_sub_data(GLenum read_target,
+                                            GLenum write_target,
+                                            GLintptr read_offset,
+                                            GLintptr write_offset,
+                                            GLsizeiptr size)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *src;
+    GLBackendBuffer *dst;
+
+    if (!ctx) {
+        return;
+    }
+
+    if (!gl_backend_buffer_target_valid(read_target) ||
+        !gl_backend_buffer_target_valid(write_target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    src = gl_backend_bound_buffer(ctx, read_target);
+    dst = gl_backend_bound_buffer(ctx, write_target);
+    if (!src || !dst) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (!gl_backend_buffer_gl_accessible(src) ||
+        !gl_backend_buffer_gl_accessible(dst)) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (read_offset < 0 || write_offset < 0 || size < 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if ((size_t)read_offset > src->size ||
+        (size_t)size > src->size - (size_t)read_offset) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if ((size_t)write_offset > dst->size ||
+        (size_t)size > dst->size - (size_t)write_offset) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (src == dst && size > 0) {
+        size_t src_begin = (size_t)read_offset;
+        size_t src_end = src_begin + (size_t)size;
+        size_t dst_begin = (size_t)write_offset;
+        size_t dst_end = dst_begin + (size_t)size;
+
+        if (!(src_end <= dst_begin || dst_end <= src_begin)) {
+            gl_backend_set_error(ctx, GL_INVALID_VALUE);
+            return;
+        }
+    }
+
+    if (size == 0) {
+        return;
+    }
+
+    if (src == dst) {
+        memmove(dst->data + (size_t)write_offset,
+                src->data + (size_t)read_offset,
+                (size_t)size);
+        return;
+    }
+
+    memcpy(dst->data + (size_t)write_offset,
+           src->data + (size_t)read_offset,
+           (size_t)size);
+}
+
+static void gl_backend_clear_buffer_region(GLenum target,
+                                           GLenum internalformat,
+                                           GLintptr offset,
+                                           GLsizeiptr size,
+                                           GLenum format,
+                                           GLenum type,
+                                           const void *data)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+    uint8_t clear_value[16] = { 0 };
+    size_t clear_value_size = 0;
+
+    if (!ctx) {
+        return;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer || !buffer->data) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (!gl_backend_buffer_gl_accessible(buffer)) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    if (offset < 0 || size < 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if ((size_t)offset > buffer->size || (size_t)size > buffer->size - (size_t)offset) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (!gl_backend_buffer_clear_format_info(internalformat, format, type, &clear_value_size)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    if (((size_t)offset % clear_value_size) != 0 || ((size_t)size % clear_value_size) != 0) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        return;
+    }
+
+    if (size == 0) {
+        return;
+    }
+
+    if (data) {
+        memcpy(clear_value, data, clear_value_size);
+    }
+
+    gl_backend_buffer_fill_pattern(buffer->data + (size_t)offset,
+                                   (size_t)size,
+                                   clear_value,
+                                   clear_value_size);
+}
+
+static void gl_backend_clear_buffer_data(GLenum target,
+                                         GLenum internalformat,
+                                         GLenum format,
+                                         GLenum type,
+                                         const void *data)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLBackendBuffer *buffer;
+
+    if (!ctx) {
+        return;
+    }
+
+    if (!gl_backend_buffer_target_valid(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_ENUM);
+        return;
+    }
+
+    buffer = gl_backend_bound_buffer(ctx, target);
+    if (!buffer) {
+        gl_backend_set_error(ctx, GL_INVALID_OPERATION);
+        return;
+    }
+
+    gl_backend_clear_buffer_region(target, internalformat, 0, (GLsizeiptr)buffer->size, format, type, data);
+}
+
+static void gl_backend_clear_buffer_sub_data(GLenum target,
+                                             GLenum internalformat,
+                                             GLintptr offset,
+                                             GLsizeiptr size,
+                                             GLenum format,
+                                             GLenum type,
+                                             const void *data)
+{
+    gl_backend_clear_buffer_region(target, internalformat, offset, size, format, type, data);
+}
+
+static void gl_backend_named_buffer_storage(GLuint buffer_name,
+                                            GLsizeiptr size,
+                                            const void *data,
+                                            GLbitfield flags)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_write_binding;
+
+    if (!ctx || !gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        return;
+    }
+
+    saved_copy_write_binding = ctx->copy_write_buffer_binding;
+    ctx->copy_write_buffer_binding = buffer_name;
+    gl_backend_buffer_storage(GL_COPY_WRITE_BUFFER, size, data, flags);
+    ctx->copy_write_buffer_binding = saved_copy_write_binding;
+}
+
+static void gl_backend_named_buffer_data(GLuint buffer_name,
+                                         GLsizeiptr size,
+                                         const void *data,
+                                         GLenum usage)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_write_binding;
+
+    if (!ctx || !gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        return;
+    }
+
+    saved_copy_write_binding = ctx->copy_write_buffer_binding;
+    ctx->copy_write_buffer_binding = buffer_name;
+    gl_backend_buffer_data(GL_COPY_WRITE_BUFFER, size, data, usage);
+    ctx->copy_write_buffer_binding = saved_copy_write_binding;
+}
+
+static void gl_backend_named_buffer_sub_data(GLuint buffer_name,
+                                             GLintptr offset,
+                                             GLsizeiptr size,
+                                             const void *data)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_write_binding;
+
+    if (!ctx || !gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        return;
+    }
+
+    saved_copy_write_binding = ctx->copy_write_buffer_binding;
+    ctx->copy_write_buffer_binding = buffer_name;
+    gl_backend_buffer_sub_data(GL_COPY_WRITE_BUFFER, offset, size, data);
+    ctx->copy_write_buffer_binding = saved_copy_write_binding;
+}
+
+static void gl_backend_copy_named_buffer_sub_data(GLuint read_buffer_name,
+                                                  GLuint write_buffer_name,
+                                                  GLintptr read_offset,
+                                                  GLintptr write_offset,
+                                                  GLsizeiptr size)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_read_binding;
+    GLuint saved_copy_write_binding;
+
+    if (!ctx ||
+        !gl_backend_existing_buffer_name(ctx, read_buffer_name) ||
+        !gl_backend_existing_buffer_name(ctx, write_buffer_name)) {
+        return;
+    }
+
+    saved_copy_read_binding = ctx->copy_read_buffer_binding;
+    saved_copy_write_binding = ctx->copy_write_buffer_binding;
+    ctx->copy_read_buffer_binding = read_buffer_name;
+    ctx->copy_write_buffer_binding = write_buffer_name;
+    gl_backend_copy_buffer_sub_data(GL_COPY_READ_BUFFER,
+                                    GL_COPY_WRITE_BUFFER,
+                                    read_offset,
+                                    write_offset,
+                                    size);
+    ctx->copy_read_buffer_binding = saved_copy_read_binding;
+    ctx->copy_write_buffer_binding = saved_copy_write_binding;
+}
+
+static void gl_backend_clear_named_buffer_data(GLuint buffer_name,
+                                               GLenum internalformat,
+                                               GLenum format,
+                                               GLenum type,
+                                               const void *data)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_write_binding;
+
+    if (!ctx || !gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        return;
+    }
+
+    saved_copy_write_binding = ctx->copy_write_buffer_binding;
+    ctx->copy_write_buffer_binding = buffer_name;
+    gl_backend_clear_buffer_data(GL_COPY_WRITE_BUFFER, internalformat, format, type, data);
+    ctx->copy_write_buffer_binding = saved_copy_write_binding;
+}
+
+static void gl_backend_clear_named_buffer_sub_data(GLuint buffer_name,
+                                                   GLenum internalformat,
+                                                   GLintptr offset,
+                                                   GLsizeiptr size,
+                                                   GLenum format,
+                                                   GLenum type,
+                                                   const void *data)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_write_binding;
+
+    if (!ctx || !gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        return;
+    }
+
+    saved_copy_write_binding = ctx->copy_write_buffer_binding;
+    ctx->copy_write_buffer_binding = buffer_name;
+    gl_backend_clear_buffer_sub_data(GL_COPY_WRITE_BUFFER,
+                                     internalformat,
+                                     offset,
+                                     size,
+                                     format,
+                                     type,
+                                     data);
+    ctx->copy_write_buffer_binding = saved_copy_write_binding;
+}
+
+static void *gl_backend_map_named_buffer(GLuint buffer_name, GLenum access)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_write_binding;
+    void *mapped_pointer;
+
+    if (!ctx || !gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        return NULL;
+    }
+
+    saved_copy_write_binding = ctx->copy_write_buffer_binding;
+    ctx->copy_write_buffer_binding = buffer_name;
+    mapped_pointer = gl_backend_map_buffer(GL_COPY_WRITE_BUFFER, access);
+    ctx->copy_write_buffer_binding = saved_copy_write_binding;
+    return mapped_pointer;
+}
+
+static void *gl_backend_map_named_buffer_range(GLuint buffer_name,
+                                               GLintptr offset,
+                                               GLsizeiptr length,
+                                               GLbitfield access)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_write_binding;
+    void *mapped_pointer;
+
+    if (!ctx || !gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        return NULL;
+    }
+
+    saved_copy_write_binding = ctx->copy_write_buffer_binding;
+    ctx->copy_write_buffer_binding = buffer_name;
+    mapped_pointer = gl_backend_map_buffer_range(GL_COPY_WRITE_BUFFER, offset, length, access);
+    ctx->copy_write_buffer_binding = saved_copy_write_binding;
+    return mapped_pointer;
+}
+
+static GLboolean gl_backend_unmap_named_buffer(GLuint buffer_name)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_write_binding;
+    GLboolean unmap_ok;
+
+    if (!ctx || !gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        return GL_FALSE;
+    }
+
+    saved_copy_write_binding = ctx->copy_write_buffer_binding;
+    ctx->copy_write_buffer_binding = buffer_name;
+    unmap_ok = gl_backend_unmap_buffer(GL_COPY_WRITE_BUFFER);
+    ctx->copy_write_buffer_binding = saved_copy_write_binding;
+    return unmap_ok;
+}
+
+static void gl_backend_flush_mapped_named_buffer_range(GLuint buffer_name,
+                                                       GLintptr offset,
+                                                       GLsizeiptr length)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_write_binding;
+
+    if (!ctx || !gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        return;
+    }
+
+    saved_copy_write_binding = ctx->copy_write_buffer_binding;
+    ctx->copy_write_buffer_binding = buffer_name;
+    gl_backend_flush_mapped_buffer_range(GL_COPY_WRITE_BUFFER, offset, length);
+    ctx->copy_write_buffer_binding = saved_copy_write_binding;
+}
+
+static void gl_backend_get_named_buffer_parameter_iv(GLuint buffer_name, GLenum pname, GLint *params)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_read_binding;
+
+    if (!ctx || !params) {
+        return;
+    }
+
+    if (!gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        params[0] = 0;
+        return;
+    }
+
+    saved_copy_read_binding = ctx->copy_read_buffer_binding;
+    ctx->copy_read_buffer_binding = buffer_name;
+    gl_backend_get_buffer_parameter_iv(GL_COPY_READ_BUFFER, pname, params);
+    ctx->copy_read_buffer_binding = saved_copy_read_binding;
+}
+
+static void gl_backend_get_named_buffer_parameter_i64_v(GLuint buffer_name,
+                                                        GLenum pname,
+                                                        GLint64 *params)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_read_binding;
+
+    if (!ctx || !params) {
+        return;
+    }
+
+    if (!gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        params[0] = 0;
+        return;
+    }
+
+    saved_copy_read_binding = ctx->copy_read_buffer_binding;
+    ctx->copy_read_buffer_binding = buffer_name;
+    gl_backend_get_buffer_parameter_i64_v(GL_COPY_READ_BUFFER, pname, params);
+    ctx->copy_read_buffer_binding = saved_copy_read_binding;
+}
+
+static void gl_backend_get_named_buffer_pointer_v(GLuint buffer_name,
+                                                  GLenum pname,
+                                                  void **params)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_read_binding;
+
+    if (!ctx || !params) {
+        return;
+    }
+
+    if (!gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        params[0] = NULL;
+        return;
+    }
+
+    saved_copy_read_binding = ctx->copy_read_buffer_binding;
+    ctx->copy_read_buffer_binding = buffer_name;
+    gl_backend_get_buffer_pointer_v(GL_COPY_READ_BUFFER, pname, params);
+    ctx->copy_read_buffer_binding = saved_copy_read_binding;
+}
+
+static void gl_backend_get_named_buffer_sub_data(GLuint buffer_name,
+                                                 GLintptr offset,
+                                                 GLsizeiptr size,
+                                                 void *data)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    GLuint saved_copy_read_binding;
+
+    if (!ctx || !gl_backend_existing_buffer_name(ctx, buffer_name)) {
+        return;
+    }
+
+    saved_copy_read_binding = ctx->copy_read_buffer_binding;
+    ctx->copy_read_buffer_binding = buffer_name;
+    gl_backend_get_buffer_sub_data(GL_COPY_READ_BUFFER, offset, size, data);
+    ctx->copy_read_buffer_binding = saved_copy_read_binding;
 }
 
 static void gl_backend_gen_vertex_arrays(GLsizei n, GLuint *arrays)
@@ -2683,7 +4041,13 @@ static bool gl_backend_fetch_attrib(GLBackendBuffer *buffer,
     out_values[2] = 0.0f;
     out_values[3] = default_w;
 
-    if (!buffer || !attrib || !buffer->data || attrib->type != GL_FLOAT || attrib->size < 1 || attrib->size > 4) {
+    if (!buffer ||
+        !attrib ||
+        !buffer->data ||
+        !gl_backend_buffer_gl_accessible(buffer) ||
+        attrib->type != GL_FLOAT ||
+        attrib->size < 1 ||
+        attrib->size > 4) {
         return false;
     }
 
@@ -3004,7 +4368,11 @@ static bool gl_backend_read_element_index(const GLBackendBuffer *buffer,
     size_t byte_offset;
     const uint8_t *src;
 
-    if (!buffer || !buffer->data || !out_index || element_index < 0) {
+    if (!buffer ||
+        !buffer->data ||
+        !gl_backend_buffer_gl_accessible(buffer) ||
+        !out_index ||
+        element_index < 0) {
         return false;
     }
 
@@ -3311,6 +4679,36 @@ static void gl_backend_get_integer_v(GLenum pname, GLint *data)
         case GL_ARRAY_BUFFER_BINDING:
             data[0] = (GLint)ctx->array_buffer_binding;
             return;
+        case GL_COPY_READ_BUFFER_BINDING:
+            data[0] = (GLint)ctx->copy_read_buffer_binding;
+            return;
+        case GL_COPY_WRITE_BUFFER_BINDING:
+            data[0] = (GLint)ctx->copy_write_buffer_binding;
+            return;
+        case GL_PIXEL_PACK_BUFFER_BINDING:
+            data[0] = (GLint)ctx->pixel_pack_buffer_binding;
+            return;
+        case GL_PIXEL_UNPACK_BUFFER_BINDING:
+            data[0] = (GLint)ctx->pixel_unpack_buffer_binding;
+            return;
+        case GL_TRANSFORM_FEEDBACK_BUFFER_BINDING:
+            data[0] = (GLint)ctx->transform_feedback_buffer_binding;
+            return;
+        case GL_UNIFORM_BUFFER_BINDING:
+            data[0] = (GLint)ctx->uniform_buffer_binding;
+            return;
+        case GL_ATOMIC_COUNTER_BUFFER_BINDING:
+            data[0] = (GLint)ctx->atomic_counter_buffer_binding;
+            return;
+        case GL_SHADER_STORAGE_BUFFER_BINDING:
+            data[0] = (GLint)ctx->shader_storage_buffer_binding;
+            return;
+        case GL_DRAW_INDIRECT_BUFFER_BINDING:
+            data[0] = (GLint)ctx->draw_indirect_buffer_binding;
+            return;
+        case GL_DISPATCH_INDIRECT_BUFFER_BINDING:
+            data[0] = (GLint)ctx->dispatch_indirect_buffer_binding;
+            return;
         case GL_PACK_ALIGNMENT:
             data[0] = ctx->core.state.pack_alignment;
             return;
@@ -3341,11 +4739,145 @@ static void gl_backend_get_integer_v(GLenum pname, GLint *data)
         case GL_MAX_VERTEX_ATTRIBS:
             data[0] = ctx->core.state.max_vertex_attribs;
             return;
+        case GL_MAX_TRANSFORM_FEEDBACK_BUFFERS:
+            data[0] = GL_DRIVER_MAX_TRANSFORM_FEEDBACK_BUFFERS;
+            return;
+        case GL_MAX_UNIFORM_BUFFER_BINDINGS:
+            data[0] = GL_DRIVER_MAX_UNIFORM_BUFFER_BINDINGS;
+            return;
+        case GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS:
+            data[0] = GL_DRIVER_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS;
+            return;
+        case GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS:
+            data[0] = GL_DRIVER_MAX_SHADER_STORAGE_BUFFER_BINDINGS;
+            return;
+        case GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT:
+            data[0] = GL_DRIVER_UNIFORM_BUFFER_OFFSET_ALIGNMENT;
+            return;
+        case GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT:
+            data[0] = GL_DRIVER_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT;
+            return;
         case GL_IMPLEMENTATION_COLOR_READ_FORMAT:
             data[0] = GL_RGBA;
             return;
         case GL_IMPLEMENTATION_COLOR_READ_TYPE:
             data[0] = GL_UNSIGNED_BYTE;
+            return;
+        default:
+            gl_backend_set_error(ctx, GL_INVALID_ENUM);
+            data[0] = 0;
+            return;
+    }
+}
+
+static bool gl_backend_get_indexed_buffer_query_slot(AO46BackendContextRef ctx,
+                                                     GLenum pname,
+                                                     GLuint index,
+                                                     const GLBackendIndexedBufferBinding **binding)
+{
+    GLenum target = 0;
+
+    if (!ctx || !binding) {
+        return false;
+    }
+
+    switch (pname) {
+        case GL_TRANSFORM_FEEDBACK_BUFFER_BINDING:
+        case GL_TRANSFORM_FEEDBACK_BUFFER_START:
+        case GL_TRANSFORM_FEEDBACK_BUFFER_SIZE:
+            target = GL_TRANSFORM_FEEDBACK_BUFFER;
+            break;
+        case GL_UNIFORM_BUFFER_BINDING:
+        case GL_UNIFORM_BUFFER_START:
+        case GL_UNIFORM_BUFFER_SIZE:
+            target = GL_UNIFORM_BUFFER;
+            break;
+        case GL_ATOMIC_COUNTER_BUFFER_BINDING:
+        case GL_ATOMIC_COUNTER_BUFFER_START:
+        case GL_ATOMIC_COUNTER_BUFFER_SIZE:
+            target = GL_ATOMIC_COUNTER_BUFFER;
+            break;
+        case GL_SHADER_STORAGE_BUFFER_BINDING:
+        case GL_SHADER_STORAGE_BUFFER_START:
+        case GL_SHADER_STORAGE_BUFFER_SIZE:
+            target = GL_SHADER_STORAGE_BUFFER;
+            break;
+        default:
+            gl_backend_set_error(ctx, GL_INVALID_ENUM);
+            *binding = NULL;
+            return false;
+    }
+
+    if (index >= gl_backend_buffer_indexed_binding_count(target)) {
+        gl_backend_set_error(ctx, GL_INVALID_VALUE);
+        *binding = NULL;
+        return false;
+    }
+
+    *binding = gl_backend_buffer_indexed_binding_slot(ctx, target, index);
+    return *binding != NULL;
+}
+
+static void gl_backend_get_integer_i_v(GLenum pname, GLuint index, GLint *data)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    const GLBackendIndexedBufferBinding *binding = NULL;
+
+    if (!ctx || !data) {
+        return;
+    }
+
+    if (!gl_backend_get_indexed_buffer_query_slot(ctx, pname, index, &binding) || !binding) {
+        data[0] = 0;
+        return;
+    }
+
+    switch (pname) {
+        case GL_TRANSFORM_FEEDBACK_BUFFER_BINDING:
+        case GL_UNIFORM_BUFFER_BINDING:
+        case GL_ATOMIC_COUNTER_BUFFER_BINDING:
+        case GL_SHADER_STORAGE_BUFFER_BINDING:
+            data[0] = (GLint)binding->buffer_name;
+            return;
+        default:
+            gl_backend_set_error(ctx, GL_INVALID_ENUM);
+            data[0] = 0;
+            return;
+    }
+}
+
+static void gl_backend_get_integer64_i_v(GLenum pname, GLuint index, GLint64 *data)
+{
+    AO46BackendContextRef ctx = gl_backend_current_context();
+    const GLBackendIndexedBufferBinding *binding = NULL;
+
+    if (!ctx || !data) {
+        return;
+    }
+
+    if (!gl_backend_get_indexed_buffer_query_slot(ctx, pname, index, &binding) || !binding) {
+        data[0] = 0;
+        return;
+    }
+
+    switch (pname) {
+        case GL_TRANSFORM_FEEDBACK_BUFFER_BINDING:
+        case GL_UNIFORM_BUFFER_BINDING:
+        case GL_ATOMIC_COUNTER_BUFFER_BINDING:
+        case GL_SHADER_STORAGE_BUFFER_BINDING:
+            data[0] = (GLint64)binding->buffer_name;
+            return;
+        case GL_TRANSFORM_FEEDBACK_BUFFER_START:
+        case GL_UNIFORM_BUFFER_START:
+        case GL_ATOMIC_COUNTER_BUFFER_START:
+        case GL_SHADER_STORAGE_BUFFER_START:
+            data[0] = (GLint64)binding->offset;
+            return;
+        case GL_TRANSFORM_FEEDBACK_BUFFER_SIZE:
+        case GL_UNIFORM_BUFFER_SIZE:
+        case GL_ATOMIC_COUNTER_BUFFER_SIZE:
+        case GL_SHADER_STORAGE_BUFFER_SIZE:
+            data[0] = (GLint64)binding->size;
             return;
         default:
             gl_backend_set_error(ctx, GL_INVALID_ENUM);
@@ -3989,6 +5521,9 @@ void *AO46BackendCustomProcAddress(const char *procname)
     if (strcmp(procname, "glGenBuffers") == 0) {
         return (void *)gl_backend_gen_buffers;
     }
+    if (strcmp(procname, "glCreateBuffers") == 0) {
+        return (void *)gl_backend_create_buffers;
+    }
     if (strcmp(procname, "glDeleteBuffers") == 0) {
         return (void *)gl_backend_delete_buffers;
     }
@@ -3998,14 +5533,95 @@ void *AO46BackendCustomProcAddress(const char *procname)
     if (strcmp(procname, "glBindBuffer") == 0) {
         return (void *)gl_backend_bind_buffer;
     }
+    if (strcmp(procname, "glBindBufferBase") == 0) {
+        return (void *)gl_backend_bind_buffer_base;
+    }
+    if (strcmp(procname, "glBindBufferRange") == 0) {
+        return (void *)gl_backend_bind_buffer_range;
+    }
     if (strcmp(procname, "glBufferData") == 0) {
         return (void *)gl_backend_buffer_data;
     }
     if (strcmp(procname, "glBufferSubData") == 0) {
         return (void *)gl_backend_buffer_sub_data;
     }
+    if (strcmp(procname, "glBufferStorage") == 0) {
+        return (void *)gl_backend_buffer_storage;
+    }
     if (strcmp(procname, "glGetBufferParameteriv") == 0) {
         return (void *)gl_backend_get_buffer_parameter_iv;
+    }
+    if (strcmp(procname, "glGetBufferParameteri64v") == 0) {
+        return (void *)gl_backend_get_buffer_parameter_i64_v;
+    }
+    if (strcmp(procname, "glMapBuffer") == 0) {
+        return (void *)gl_backend_map_buffer;
+    }
+    if (strcmp(procname, "glMapBufferRange") == 0) {
+        return (void *)gl_backend_map_buffer_range;
+    }
+    if (strcmp(procname, "glUnmapBuffer") == 0) {
+        return (void *)gl_backend_unmap_buffer;
+    }
+    if (strcmp(procname, "glFlushMappedBufferRange") == 0) {
+        return (void *)gl_backend_flush_mapped_buffer_range;
+    }
+    if (strcmp(procname, "glGetBufferPointerv") == 0) {
+        return (void *)gl_backend_get_buffer_pointer_v;
+    }
+    if (strcmp(procname, "glGetBufferSubData") == 0) {
+        return (void *)gl_backend_get_buffer_sub_data;
+    }
+    if (strcmp(procname, "glCopyBufferSubData") == 0) {
+        return (void *)gl_backend_copy_buffer_sub_data;
+    }
+    if (strcmp(procname, "glClearBufferData") == 0) {
+        return (void *)gl_backend_clear_buffer_data;
+    }
+    if (strcmp(procname, "glClearBufferSubData") == 0) {
+        return (void *)gl_backend_clear_buffer_sub_data;
+    }
+    if (strcmp(procname, "glNamedBufferStorage") == 0) {
+        return (void *)gl_backend_named_buffer_storage;
+    }
+    if (strcmp(procname, "glNamedBufferData") == 0) {
+        return (void *)gl_backend_named_buffer_data;
+    }
+    if (strcmp(procname, "glNamedBufferSubData") == 0) {
+        return (void *)gl_backend_named_buffer_sub_data;
+    }
+    if (strcmp(procname, "glCopyNamedBufferSubData") == 0) {
+        return (void *)gl_backend_copy_named_buffer_sub_data;
+    }
+    if (strcmp(procname, "glClearNamedBufferData") == 0) {
+        return (void *)gl_backend_clear_named_buffer_data;
+    }
+    if (strcmp(procname, "glClearNamedBufferSubData") == 0) {
+        return (void *)gl_backend_clear_named_buffer_sub_data;
+    }
+    if (strcmp(procname, "glMapNamedBuffer") == 0) {
+        return (void *)gl_backend_map_named_buffer;
+    }
+    if (strcmp(procname, "glMapNamedBufferRange") == 0) {
+        return (void *)gl_backend_map_named_buffer_range;
+    }
+    if (strcmp(procname, "glUnmapNamedBuffer") == 0) {
+        return (void *)gl_backend_unmap_named_buffer;
+    }
+    if (strcmp(procname, "glFlushMappedNamedBufferRange") == 0) {
+        return (void *)gl_backend_flush_mapped_named_buffer_range;
+    }
+    if (strcmp(procname, "glGetNamedBufferParameteriv") == 0) {
+        return (void *)gl_backend_get_named_buffer_parameter_iv;
+    }
+    if (strcmp(procname, "glGetNamedBufferParameteri64v") == 0) {
+        return (void *)gl_backend_get_named_buffer_parameter_i64_v;
+    }
+    if (strcmp(procname, "glGetNamedBufferPointerv") == 0) {
+        return (void *)gl_backend_get_named_buffer_pointer_v;
+    }
+    if (strcmp(procname, "glGetNamedBufferSubData") == 0) {
+        return (void *)gl_backend_get_named_buffer_sub_data;
     }
     if (strcmp(procname, "glGenVertexArrays") == 0) {
         return (void *)gl_backend_gen_vertex_arrays;
@@ -4048,6 +5664,12 @@ void *AO46BackendCustomProcAddress(const char *procname)
     }
     if (strcmp(procname, "glGetIntegerv") == 0) {
         return (void *)gl_backend_get_integer_v;
+    }
+    if (strcmp(procname, "glGetIntegeri_v") == 0) {
+        return (void *)gl_backend_get_integer_i_v;
+    }
+    if (strcmp(procname, "glGetInteger64i_v") == 0) {
+        return (void *)gl_backend_get_integer64_i_v;
     }
     if (strcmp(procname, "glGetBooleanv") == 0) {
         return (void *)gl_backend_get_boolean_v;

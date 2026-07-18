@@ -54,8 +54,8 @@ It adopts the repo-to-full-OpenGL-4.6 engineering map originally assessed agains
    Still required: precise object-family semantics for buffers, VAOs, textures, samplers, shaders, programs, pipelines, framebuffers, renderbuffers, queries, transform feedback, and sync objects, including sharing rules, zombie objects, default objects, labels, immutable-state rules, and thread-safe lookup.
 
 6. `Partial` Buffer-object subsystem
-   Scope: `glGenBuffers`, `glBindBuffer`, `glBufferData`, `glBufferSubData`, `glGetBufferParameteriv`, indexed-draw buffer use, and VAO-owned EBO state.
-   Still required: broader buffer targets, mapping APIs, immutable storage, persistent/coherent mapping behavior, buffer copies and clears, indexed bindings, DSA buffer APIs, robust readback, and a real Metal buffer allocation/synchronization strategy.
+   Scope: `glGenBuffers`, `glCreateBuffers`, `glBindBuffer`, `glBindBufferBase`, `glBindBufferRange`, `glBufferData`, `glBufferSubData`, `glBufferStorage`, `glMapBuffer`, `glMapBufferRange`, `glUnmapBuffer`, `glFlushMappedBufferRange`, `glGetBufferParameteriv`, `glGetBufferParameteri64v`, `glGetBufferPointerv`, `glGetBufferSubData`, `glCopyBufferSubData`, `glClearBufferData`, `glClearBufferSubData`, `glNamedBufferStorage`, `glNamedBufferData`, `glNamedBufferSubData`, `glCopyNamedBufferSubData`, `glClearNamedBufferData`, `glClearNamedBufferSubData`, `glMapNamedBuffer`, `glMapNamedBufferRange`, `glUnmapNamedBuffer`, `glFlushMappedNamedBufferRange`, `glGetNamedBufferParameteriv`, `glGetNamedBufferParameteri64v`, `glGetNamedBufferPointerv`, `glGetNamedBufferSubData`, indexed binding queries via `glGetIntegeri_v` and `glGetInteger64i_v`, broader generic buffer targets, indexed-draw buffer use, and VAO-owned EBO state.
+   Still required: persistent/coherent mapping behavior, deeper target-specific semantics for PBO/indirect/uniform/storage consumers, broader 64-bit/object query coverage, and a real Metal buffer allocation/synchronization strategy.
 
 7. `Partial` Vertex arrays and attribute input
    Scope: VAO state and basic floating-point attribute pulling exist for the current draw path.
