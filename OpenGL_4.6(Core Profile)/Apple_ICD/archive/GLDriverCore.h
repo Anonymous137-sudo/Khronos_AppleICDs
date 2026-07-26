@@ -1,7 +1,7 @@
 #ifndef GL_DRIVER_CORE_H
 #define GL_DRIVER_CORE_H
 
-#include "glcorearb.h"
+#include <GL/glcorearb.h>
 
 #ifdef __cplusplus
 extern "C" {

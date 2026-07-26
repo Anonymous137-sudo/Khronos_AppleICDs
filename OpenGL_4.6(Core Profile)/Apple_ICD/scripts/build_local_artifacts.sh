@@ -6,10 +6,12 @@ project_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 
 build_dir=${1:-"$project_root/artifacts/build"}
 stage_dir=${2:-"$project_root/artifacts/stage"}
+mesa_build_dir=${OPENGLKHR_MESA_BUILD_DIR:-"$project_root/../mesa/build"}
 
 rm -rf "$build_dir" "$stage_dir"
 
-cmake -S "$project_root" -B "$build_dir"
+"$script_dir/bootstrap_mesa.sh"
+cmake -S "$project_root" -B "$build_dir" -DAO46_MESA_BUILD_DIR="$mesa_build_dir"
 cmake --build "$build_dir"
 "$script_dir/stage_personal_layout.sh" "$build_dir" "$stage_dir"
 

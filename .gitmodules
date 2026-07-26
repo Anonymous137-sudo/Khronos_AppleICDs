@@ -1,0 +1,3 @@
+[submodule "OpenGL_4.6(Core Profile)/mesa"]
+	path = OpenGL_4.6(Core Profile)/mesa
+	url = https://gitlab.freedesktop.org/mesa/mesa.git

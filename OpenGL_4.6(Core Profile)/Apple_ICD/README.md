@@ -50,7 +50,7 @@ Right now this subproject is an early in-development driver:
 - element-array state now flows through the backend with proper `GL_ELEMENT_ARRAY_BUFFER_BINDING` reporting, so indexed draw calls use VAO-owned EBO state instead of only non-indexed vertex pulls
 - texture-unit state, immutable/mutable 2D texture storage, sampler uniform routing, generated mipmap chains, row-aligned texture upload/readback, and a minimal textured-triangle raster path now flow through the backend
 - offscreen memory and framework-owned pbuffers now bind through the backend storage path, so clear/readback tests exercise real pixel data instead of only metadata bookkeeping
-- `CGLTexImagePBuffer` and `AO46TexImagePBuffer` now have a real backend import lane when a 2D texture is bound
+- `CGLTexImagePBuffer` and `AO46TexImagePBuffer` now have a real backend import lane for the currently attached pbuffer image when a compatible texture is bound
 - when a standard Khronos OpenGL token or function name already exists, the code now prefers that Khronos spelling directly; `AO46*` names are reserved for private driver plumbing
 - the current `libgl2mtl.dylib` backend implementation is still a minimal internal scaffold; deeper Metal command translation, shader/pipeline work, synchronization, and resource execution are still TODO
 

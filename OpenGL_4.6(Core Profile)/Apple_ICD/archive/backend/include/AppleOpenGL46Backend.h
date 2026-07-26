@@ -1,8 +1,9 @@
 #ifndef APPLE_OPENGL46_BACKEND_H
 #define APPLE_OPENGL46_BACKEND_H
 
+#include <stddef.h>
 #include <OpenGL/CGLTypes.h>
-#include "glcorearb.h"
+#include <GL/glcorearb.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,13 +11,27 @@ extern "C" {
 
 typedef struct AO46BackendContextRec *AO46BackendContextRef;
 
+typedef struct AO46BackendContextCreateInfo
+{
+    GLenum color_format;
+    GLenum color_type;
+    GLenum depth_format;
+    GLenum depth_type;
+    GLenum stencil_format;
+    GLenum stencil_type;
+
+    GLint gl_major;
+    GLint gl_minor;
+    GLbitfield context_flags;
+
+    AO46BackendContextRef share_context;
+
+}AO46BackendContextCreateInfo;
+
+
+
 CGLError AO46BackendEnsureReady(void);
-AO46BackendContextRef AO46BackendCreateContext(GLenum color_format,
-                                               GLenum color_type,
-                                               GLenum depth_format,
-                                               GLenum depth_type,
-                                               GLenum stencil_format,
-                                               GLenum stencil_type);
+AO46BackendContextRef AO46BackendCreateContext(const AO46BackendContextCreateInfo *info);
 void AO46BackendDestroyContext(AO46BackendContextRef ctx);
 void AO46BackendSetCurrentContext(AO46BackendContextRef ctx);
 AO46BackendContextRef AO46BackendGetCurrentContext(void);

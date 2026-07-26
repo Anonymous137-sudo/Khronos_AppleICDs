@@ -1726,8 +1726,8 @@ int main(void)
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, triangle_storage);
     memcpy(pbuffer_texture_pixel, triangle_storage, sizeof(pbuffer_texture_pixel));
     glDeleteTextures(1, &pbuffer_texture);
-    if (expect_true("pbuffer import defines texture width", texture_width == 32) ||
-        expect_true("pbuffer import defines texture height", texture_height == 32) ||
+    if (expect_true("pbuffer import defines texture width from attached mip image", texture_width == 8) ||
+        expect_true("pbuffer import defines texture height from attached mip image", texture_height == 8) ||
         expect_true("pbuffer import copies drawable color into texture",
                     pbuffer_texture_pixel[0] == 0 &&
                     pbuffer_texture_pixel[1] == 191 &&

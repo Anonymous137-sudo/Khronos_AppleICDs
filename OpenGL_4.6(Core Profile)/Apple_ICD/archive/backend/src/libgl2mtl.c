@@ -1,4 +1,4 @@
-#include "AppleOpenGL46Backend.h"
+/*#include "AppleOpenGL46Backend.h"
 #include "GLDriverCore.h"
 
 #include <math.h>
@@ -5723,6 +5723,16 @@ void *AO46BackendCustomProcAddress(const char *procname)
     return NULL;
 }
 
+void *AO46GL2MTLLookupProcAddress(const char *procname)
+{
+    return AO46BackendCustomProcAddress(procname);
+}
+
+void *AO46BackendGetProcAddress(const char *procname)
+{
+    return AO46GL2MTLLookupProcAddress(procname);
+}
+
 void *AO46BackendGetProcAddress(const char *procname)
 {
     return AO46GL2MTLLookupProcAddress(procname);
@@ -5732,3 +5742,5 @@ const char *AO46BackendIdentity(void)
 {
     return "libgl2mtl.dylib";
 }
+
+*/

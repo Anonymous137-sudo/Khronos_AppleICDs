@@ -2,7 +2,7 @@
 #define APPLE_OPENGL46_RUNTIME_H
 
 #include <OpenGL/CGLTypes.h>
-#include "glcorearb.h"
+#include <GL/glcorearb.h>
 
 #ifdef __cplusplus
 extern "C" {
