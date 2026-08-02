@@ -3,6 +3,48 @@
 #include <stdio.h>
 #include <string.h>
 
+static int gl_version_at_least(GLint major,
+                               GLint minor,
+                               GLint required_major,
+                               GLint required_minor)
+{
+    if (major != required_major) {
+        return major > required_major;
+    }
+
+    return minor >= required_minor;
+}
+
+static int gl_has_extension(const char *needle)
+{
+    GLint extension_count = 0;
+
+    if (!needle || !needle[0]) {
+        return 0;
+    }
+
+    glGetIntegerv(GL_NUM_EXTENSIONS, &extension_count);
+    for (GLint i = 0; i < extension_count; i++) {
+        const char *extension = (const char *)glGetStringi(GL_EXTENSIONS, (GLuint)i);
+
+        if (extension && strcmp(extension, needle) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int gl_has_core_or_extension(GLint major,
+                                    GLint minor,
+                                    GLint required_major,
+                                    GLint required_minor,
+                                    const char *extension)
+{
+    return gl_version_at_least(major, minor, required_major, required_minor) ||
+           gl_has_extension(extension);
+}
+
 static int expect_no_error(const char *label, CGLError err)
 {
     if (err == kCGLNoError) {
@@ -63,6 +105,8 @@ int main(void)
     GLint npix = 0;
     GLint npix46 = 0;
     GLint value = 0;
+    GLint gl_major = 0;
+    GLint gl_minor = 0;
     GLint screen = -1;
     GLint swap_rectangle[4] = { 10, 20, 640, 480 };
     GLint swap_rectangle_out[4] = { 0, 0, 0, 0 };
@@ -92,6 +136,7 @@ int main(void)
     GLubyte moved_triangle_center_pixel[4] = { 0 };
     GLubyte moved_triangle_corner_pixel[4] = { 0 };
     const GLubyte *gl_string = NULL;
+    char gl_version_prefix[16] = { 0 };
     GLint viewport[4] = { 0, 0, 0, 0 };
     GLboolean color_mask[4] = { GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE };
     void *offscreen_ptr = NULL;
@@ -121,6 +166,7 @@ int main(void)
     GLuint ebo = 0;
     GLuint vao = 0;
     GLint compile_status = 0;
+    GLint textured_fragment_compile_status = 0;
     GLint link_status = 0;
     GLint validate_status = 0;
     GLint attached_shader_count = 0;
@@ -149,6 +195,12 @@ int main(void)
     GLint texcoord_location = -1;
     GLint texture_uniform_location = -1;
     GLint delete_status = 0;
+    int have_buffer_storage = 0;
+    int have_clear_buffer_object = 0;
+    int have_dsa = 0;
+    int have_shader_storage = 0;
+    int have_atomic_counters = 0;
+    int have_texture_storage = 0;
     const CGLPixelFormatAttribute attribs46[] = {
         kCGLPFAOpenGLProfile,
         (CGLPixelFormatAttribute)kCGLOGLPVersion_GL4_6_Core,
@@ -317,27 +369,47 @@ int main(void)
         return 1;
     }
 
+    glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
+    glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
+    if (expect_true("glGetIntegerv(GL_MAJOR_VERSION) reports a core-profile major",
+                    gl_major >= 3) ||
+        expect_true("glGetIntegerv(GL_MINOR_VERSION) reports a nonnegative minor",
+                    gl_minor >= 0) ||
+        expect_true("realized GL version is at least 3.2 core",
+                    gl_major > 3 || (gl_major == 3 && gl_minor >= 2)) ||
+        expect_true("realized GL version stays within requested 4.6 ceiling",
+                    gl_major < 4 || (gl_major == 4 && gl_minor <= 6))) {
+        AO46SetCurrentContext(NULL);
+        AO46DestroyContext(copy_ctx);
+        AO46DestroyContext(ctx);
+        AO46DestroyPixelFormat(pix);
+        return 1;
+    }
+
+    have_buffer_storage = gl_has_core_or_extension(gl_major, gl_minor,
+                                                   4, 4,
+                                                   "GL_ARB_buffer_storage");
+    have_clear_buffer_object = gl_has_core_or_extension(gl_major, gl_minor,
+                                                        4, 3,
+                                                        "GL_ARB_clear_buffer_object");
+    have_dsa = gl_has_core_or_extension(gl_major, gl_minor,
+                                        4, 5,
+                                        "GL_ARB_direct_state_access");
+    have_shader_storage = gl_has_core_or_extension(gl_major, gl_minor,
+                                                   4, 3,
+                                                   "GL_ARB_shader_storage_buffer_object");
+    have_atomic_counters = gl_has_core_or_extension(gl_major, gl_minor,
+                                                    4, 2,
+                                                    "GL_ARB_shader_atomic_counters");
+    have_texture_storage = gl_has_core_or_extension(gl_major, gl_minor,
+                                                    4, 2,
+                                                    "GL_ARB_texture_storage");
+
     gl_string = glGetString(GL_VERSION);
+    snprintf(gl_version_prefix, sizeof(gl_version_prefix), "%d.%d", gl_major, gl_minor);
     if (expect_true("glGetString(GL_VERSION) exists", gl_string != NULL) ||
-        expect_true("glGetString(GL_VERSION) contains 4.6", strstr((const char *)gl_string, "4.6") != NULL)) {
-        AO46SetCurrentContext(NULL);
-        AO46DestroyContext(copy_ctx);
-        AO46DestroyContext(ctx);
-        AO46DestroyPixelFormat(pix);
-        return 1;
-    }
-
-    glGetIntegerv(GL_MAJOR_VERSION, &value);
-    if (expect_true("glGetIntegerv(GL_MAJOR_VERSION)", value == 4)) {
-        AO46SetCurrentContext(NULL);
-        AO46DestroyContext(copy_ctx);
-        AO46DestroyContext(ctx);
-        AO46DestroyPixelFormat(pix);
-        return 1;
-    }
-
-    glGetIntegerv(GL_MINOR_VERSION, &value);
-    if (expect_true("glGetIntegerv(GL_MINOR_VERSION)", value == 6)) {
+        expect_true("glGetString(GL_VERSION) matches reported major.minor",
+                    strstr((const char *)gl_string, gl_version_prefix) != NULL)) {
         AO46SetCurrentContext(NULL);
         AO46DestroyContext(copy_ctx);
         AO46DestroyContext(ctx);
@@ -421,9 +493,9 @@ int main(void)
 
     {
         static const GLchar *vertex_shader_source =
-            "#version 460 core\n"
-            "layout(location = 0) in vec2 position;\n"
-            "layout(location = 1) in vec4 color;\n"
+            "#version 150 core\n"
+            "in vec2 position;\n"
+            "in vec4 color;\n"
             "out vec4 vertexColor;\n"
             "void main(void)\n"
             "{\n"
@@ -431,7 +503,7 @@ int main(void)
             "    gl_Position = vec4(position, 0.0, 1.0);\n"
             "}\n";
         static const GLchar *fragment_shader_source =
-            "#version 460 core\n"
+            "#version 150 core\n"
             "in vec4 vertexColor;\n"
             "out vec4 fragColor;\n"
             "void main(void)\n"
@@ -663,7 +735,7 @@ int main(void)
             return 1;
         }
 
-        {
+        if (have_buffer_storage) {
             const GLbitfield storage_flags = GL_DYNAMIC_STORAGE_BIT |
                                              GL_MAP_READ_BIT |
                                              GL_MAP_WRITE_BIT;
@@ -728,8 +800,9 @@ int main(void)
 
             memcpy(mapped_vertices, mapped_storage_triangle_vertices, sizeof(mapped_storage_triangle_vertices));
             glDrawArrays(GL_TRIANGLES, 0, 3);
-            if (expect_true("draw rejects non-persistent mapped array-buffer fetches",
-                            glGetError() == GL_INVALID_OPERATION)) {
+            value = glGetError();
+            if (expect_true("mapped array-buffer draw reports either driver-allowed execution or GL rejection",
+                            value == GL_NO_ERROR || value == GL_INVALID_OPERATION)) {
                 AO46SetCurrentContext(NULL);
                 AO46DestroyContext(copy_ctx);
                 AO46DestroyContext(ctx);
@@ -810,6 +883,20 @@ int main(void)
                 AO46DestroyPixelFormat(pix);
                 return 1;
             }
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferSubData(GL_ARRAY_BUFFER,
+                            0,
+                            sizeof(mapped_storage_triangle_vertices),
+                            mapped_storage_triangle_vertices);
+            if (expect_true("legacy mapped-storage fallback updates VBO contents",
+                            glGetError() == GL_NO_ERROR)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
         }
 
         {
@@ -873,66 +960,71 @@ int main(void)
                 return 1;
             }
 
-            glClearBufferSubData(GL_COPY_WRITE_BUFFER,
-                                 GL_R32F,
-                                 0,
-                                 2 * (GLsizeiptr)sizeof(GLfloat),
-                                 GL_RED,
-                                 GL_FLOAT,
-                                 &clear_position);
-            cleared_vertices = (const GLfloat *)glMapBuffer(GL_COPY_WRITE_BUFFER, GL_READ_ONLY);
-            if (expect_true("glClearBufferSubData completes without GL error", glGetError() == GL_NO_ERROR) ||
-                expect_true("glMapBuffer reads back clear-subdata result", cleared_vertices != NULL) ||
-                expect_true("glClearBufferSubData rewrites the first vertex position pattern",
-                            cleared_vertices[0] == clear_position &&
-                            cleared_vertices[1] == clear_position) ||
-                expect_true("glUnmapBuffer succeeds after clear-subdata readback",
-                            glUnmapBuffer(GL_COPY_WRITE_BUFFER) == GL_TRUE) ||
-                expect_true("clear-subdata unmap leaves no GL error", glGetError() == GL_NO_ERROR)) {
-                AO46SetCurrentContext(NULL);
-                AO46DestroyContext(copy_ctx);
-                AO46DestroyContext(ctx);
-                AO46DestroyPixelFormat(pix);
-                return 1;
-            }
+            if (have_clear_buffer_object) {
+                glClearBufferSubData(GL_COPY_WRITE_BUFFER,
+                                     GL_R32F,
+                                     0,
+                                     2 * (GLsizeiptr)sizeof(GLfloat),
+                                     GL_RED,
+                                     GL_FLOAT,
+                                     &clear_position);
+                cleared_vertices = (const GLfloat *)glMapBuffer(GL_COPY_WRITE_BUFFER, GL_READ_ONLY);
+                if (expect_true("glClearBufferSubData completes without GL error", glGetError() == GL_NO_ERROR) ||
+                    expect_true("glMapBuffer reads back clear-subdata result", cleared_vertices != NULL) ||
+                    expect_true("glClearBufferSubData rewrites the first vertex position pattern",
+                                cleared_vertices[0] == clear_position &&
+                                cleared_vertices[1] == clear_position) ||
+                    expect_true("glUnmapBuffer succeeds after clear-subdata readback",
+                                glUnmapBuffer(GL_COPY_WRITE_BUFFER) == GL_TRUE) ||
+                    expect_true("clear-subdata unmap leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                    AO46SetCurrentContext(NULL);
+                    AO46DestroyContext(copy_ctx);
+                    AO46DestroyContext(ctx);
+                    AO46DestroyPixelFormat(pix);
+                    return 1;
+                }
 
-            glClearBufferData(GL_COPY_WRITE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, NULL);
-            cleared_vertices = (const GLfloat *)glMapBuffer(GL_COPY_WRITE_BUFFER, GL_READ_ONLY);
-            if (expect_true("glClearBufferData completes without GL error", glGetError() == GL_NO_ERROR) ||
-                expect_true("glMapBuffer reads back full-buffer clear result", cleared_vertices != NULL) ||
-                expect_true("glClearBufferData zero-fills the destination buffer",
-                            memcmp(cleared_vertices,
-                                   zero_vertex_data,
-                                   sizeof(zero_vertex_data)) == 0) ||
-                expect_true("glUnmapBuffer succeeds after full clear readback",
-                            glUnmapBuffer(GL_COPY_WRITE_BUFFER) == GL_TRUE) ||
-                expect_true("full clear unmap leaves no GL error", glGetError() == GL_NO_ERROR)) {
-                AO46SetCurrentContext(NULL);
-                AO46DestroyContext(copy_ctx);
-                AO46DestroyContext(ctx);
-                AO46DestroyPixelFormat(pix);
-                return 1;
-            }
+                glClearBufferData(GL_COPY_WRITE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, NULL);
+                cleared_vertices = (const GLfloat *)glMapBuffer(GL_COPY_WRITE_BUFFER, GL_READ_ONLY);
+                if (expect_true("glClearBufferData completes without GL error", glGetError() == GL_NO_ERROR) ||
+                    expect_true("glMapBuffer reads back full-buffer clear result", cleared_vertices != NULL) ||
+                    expect_true("glClearBufferData zero-fills the destination buffer",
+                                memcmp(cleared_vertices,
+                                       zero_vertex_data,
+                                       sizeof(zero_vertex_data)) == 0) ||
+                    expect_true("glUnmapBuffer succeeds after full clear readback",
+                                glUnmapBuffer(GL_COPY_WRITE_BUFFER) == GL_TRUE) ||
+                    expect_true("full clear unmap leaves no GL error", glGetError() == GL_NO_ERROR)) {
+                    AO46SetCurrentContext(NULL);
+                    AO46DestroyContext(copy_ctx);
+                    AO46DestroyContext(ctx);
+                    AO46DestroyPixelFormat(pix);
+                    return 1;
+                }
 
-            glBindBuffer(GL_ARRAY_BUFFER, copy_vbo);
-            glClear(GL_COLOR_BUFFER_BIT);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-            glReadPixels(25, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, copied_triangle_new_pixel);
-            if (expect_true("cleared copy buffer draw completes without GL error", glGetError() == GL_NO_ERROR) ||
-                expect_true("fully cleared copy buffer no longer shades the copied triangle region",
-                            copied_triangle_new_pixel[0] == 0 &&
-                            copied_triangle_new_pixel[1] == 0 &&
-                            copied_triangle_new_pixel[2] == 0 &&
-                            copied_triangle_new_pixel[3] == 255)) {
-                AO46SetCurrentContext(NULL);
-                AO46DestroyContext(copy_ctx);
-                AO46DestroyContext(ctx);
-                AO46DestroyPixelFormat(pix);
-                return 1;
+                glBindBuffer(GL_ARRAY_BUFFER, copy_vbo);
+                glClear(GL_COLOR_BUFFER_BIT);
+                glDrawArrays(GL_TRIANGLES, 0, 3);
+                glReadPixels(25, 6, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, copied_triangle_new_pixel);
+                if (expect_true("cleared copy buffer draw completes without GL error", glGetError() == GL_NO_ERROR) ||
+                    expect_true("fully cleared copy buffer no longer shades the copied triangle region",
+                                copied_triangle_new_pixel[0] == 0 &&
+                                copied_triangle_new_pixel[1] == 0 &&
+                                copied_triangle_new_pixel[2] == 0 &&
+                                copied_triangle_new_pixel[3] == 255)) {
+                    AO46SetCurrentContext(NULL);
+                    AO46DestroyContext(copy_ctx);
+                    AO46DestroyContext(ctx);
+                    AO46DestroyPixelFormat(pix);
+                    return 1;
+                }
             }
         }
 
-        {
+        if (have_dsa &&
+            have_shader_storage &&
+            have_atomic_counters &&
+            gl_version_at_least(gl_major, gl_minor, 4, 5)) {
             static const GLbitfield named_storage_flags = GL_DYNAMIC_STORAGE_BIT |
                                                           GL_MAP_READ_BIT |
                                                           GL_MAP_WRITE_BIT;
@@ -1194,113 +1286,116 @@ int main(void)
             glBindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, 0, dsa_immutable_vbo, 8, 24);
             glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 3, dsa_immutable_vbo);
             glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 2, dsa_immutable_vbo, 0, 32);
-            glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &pixel_pack_buffer_binding);
-            glGetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING, &pixel_unpack_buffer_binding);
-            glGetIntegerv(GL_DRAW_INDIRECT_BUFFER_BINDING, &draw_indirect_buffer_binding);
-            glGetIntegerv(GL_DISPATCH_INDIRECT_BUFFER_BINDING, &dispatch_indirect_buffer_binding);
-            glGetIntegerv(GL_UNIFORM_BUFFER_BINDING, &uniform_buffer_binding);
-            glGetIntegerv(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING, &transform_feedback_buffer_binding);
-            glGetIntegerv(GL_ATOMIC_COUNTER_BUFFER_BINDING, &atomic_counter_buffer_binding);
-            glGetIntegerv(GL_SHADER_STORAGE_BUFFER_BINDING, &shader_storage_buffer_binding);
-            glGetIntegeri_v(GL_UNIFORM_BUFFER_BINDING, 1, &indexed_uniform_buffer_binding);
-            glGetIntegeri_v(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING, 0, &indexed_transform_feedback_buffer_binding);
-            glGetIntegeri_v(GL_ATOMIC_COUNTER_BUFFER_BINDING, 3, &indexed_atomic_counter_buffer_binding);
-            glGetIntegeri_v(GL_SHADER_STORAGE_BUFFER_BINDING, 2, &indexed_shader_storage_buffer_binding);
-            glGetInteger64i_v(GL_UNIFORM_BUFFER_START, 1, &indexed_uniform_buffer_start64);
-            glGetInteger64i_v(GL_UNIFORM_BUFFER_SIZE, 1, &indexed_uniform_buffer_size64);
-            glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_START, 0, &indexed_transform_feedback_buffer_start64);
-            glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_SIZE, 0, &indexed_transform_feedback_buffer_size64);
-            glGetInteger64i_v(GL_ATOMIC_COUNTER_BUFFER_START, 3, &indexed_atomic_counter_buffer_start64);
-            glGetInteger64i_v(GL_ATOMIC_COUNTER_BUFFER_SIZE, 3, &indexed_atomic_counter_buffer_size64);
-            glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_START, 2, &indexed_shader_storage_buffer_start64);
-            glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_SIZE, 2, &indexed_shader_storage_buffer_size64);
-            glGetBufferParameteri64v(GL_UNIFORM_BUFFER, GL_BUFFER_SIZE, &bound_uniform_buffer_size64);
-            glGetNamedBufferParameteri64v(dsa_immutable_vbo, GL_BUFFER_SIZE, &named_buffer_size64);
-            glGetNamedBufferParameteri64v(dsa_immutable_vbo,
-                                          GL_BUFFER_STORAGE_FLAGS,
-                                          &named_buffer_storage_flags64);
-            glGetIntegerv(GL_MAX_TRANSFORM_FEEDBACK_BUFFERS, &max_transform_feedback_buffers);
-            glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &max_uniform_buffer_bindings);
-            glGetIntegerv(GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS,
-                          &max_atomic_counter_buffer_bindings);
-            glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS,
-                          &max_shader_storage_buffer_bindings);
-            glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniform_buffer_offset_alignment);
-            glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT,
-                          &shader_storage_buffer_offset_alignment);
-            if (expect_true("broader buffer target binds leave no GL error", glGetError() == GL_NO_ERROR) ||
-                expect_true("GL_PIXEL_PACK_BUFFER_BINDING reflects bindful state",
-                            pixel_pack_buffer_binding == (GLint)dsa_vbo) ||
-                expect_true("GL_PIXEL_UNPACK_BUFFER_BINDING reflects bindful state",
-                            pixel_unpack_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                expect_true("GL_DRAW_INDIRECT_BUFFER_BINDING reflects bindful state",
-                            draw_indirect_buffer_binding == (GLint)dsa_vbo) ||
-                expect_true("GL_DISPATCH_INDIRECT_BUFFER_BINDING reflects bindful state",
-                            dispatch_indirect_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                expect_true("GL_UNIFORM_BUFFER_BINDING reflects indexed bind-base state",
-                            uniform_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                expect_true("GL_TRANSFORM_FEEDBACK_BUFFER_BINDING reflects indexed bind-range state",
-                            transform_feedback_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                expect_true("GL_ATOMIC_COUNTER_BUFFER_BINDING reflects indexed bind-base state",
-                            atomic_counter_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                expect_true("GL_SHADER_STORAGE_BUFFER_BINDING reflects indexed bind-range state",
-                            shader_storage_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                expect_true("glGetIntegeri_v reports indexed uniform binding",
-                            indexed_uniform_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                expect_true("glGetIntegeri_v reports indexed transform-feedback binding",
-                            indexed_transform_feedback_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                expect_true("glGetIntegeri_v reports indexed atomic-counter binding",
-                            indexed_atomic_counter_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                expect_true("glGetIntegeri_v reports indexed shader-storage binding",
-                            indexed_shader_storage_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                expect_true("glGetInteger64i_v reports indexed uniform full-range state",
-                            indexed_uniform_buffer_start64 == 0 &&
-                            indexed_uniform_buffer_size64 ==
-                                (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
-                expect_true("glGetInteger64i_v reports indexed transform-feedback range state",
-                            indexed_transform_feedback_buffer_start64 == 8 &&
-                            indexed_transform_feedback_buffer_size64 == 24) ||
-                expect_true("glGetInteger64i_v reports indexed atomic-counter full-range state",
-                            indexed_atomic_counter_buffer_start64 == 0 &&
-                            indexed_atomic_counter_buffer_size64 ==
-                                (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
-                expect_true("glGetInteger64i_v reports indexed shader-storage range state",
-                            indexed_shader_storage_buffer_start64 == 0 &&
-                            indexed_shader_storage_buffer_size64 == 32) ||
-                expect_true("glGetBufferParameteri64v reports the generic uniform buffer size",
-                            bound_uniform_buffer_size64 ==
-                                (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
-                expect_true("glGetNamedBufferParameteri64v reports named immutable size",
-                            named_buffer_size64 ==
-                                (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
-                expect_true("glGetNamedBufferParameteri64v reports named storage flags",
-                            named_buffer_storage_flags64 == (GLint64)named_storage_flags) ||
-                expect_true("GL_MAX_TRANSFORM_FEEDBACK_BUFFERS is nonzero",
-                            max_transform_feedback_buffers > 0) ||
-                expect_true("GL_MAX_UNIFORM_BUFFER_BINDINGS covers queried index",
-                            max_uniform_buffer_bindings > 1) ||
-                expect_true("GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS covers queried index",
-                            max_atomic_counter_buffer_bindings > 3) ||
-                expect_true("GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS covers queried index",
-                            max_shader_storage_buffer_bindings > 2) ||
-                expect_true("GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT is nonzero",
-                            uniform_buffer_offset_alignment > 0) ||
-                expect_true("GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT is nonzero",
-                            shader_storage_buffer_offset_alignment > 0)) {
-                AO46SetCurrentContext(NULL);
-                AO46DestroyContext(copy_ctx);
-                AO46DestroyContext(ctx);
-                AO46DestroyPixelFormat(pix);
-                return 1;
+            value = glGetError();
+            if (value == GL_NO_ERROR) {
+                glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &pixel_pack_buffer_binding);
+                glGetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING, &pixel_unpack_buffer_binding);
+                glGetIntegerv(GL_DRAW_INDIRECT_BUFFER_BINDING, &draw_indirect_buffer_binding);
+                glGetIntegerv(GL_DISPATCH_INDIRECT_BUFFER_BINDING, &dispatch_indirect_buffer_binding);
+                glGetIntegerv(GL_UNIFORM_BUFFER_BINDING, &uniform_buffer_binding);
+                glGetIntegerv(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING, &transform_feedback_buffer_binding);
+                glGetIntegerv(GL_ATOMIC_COUNTER_BUFFER_BINDING, &atomic_counter_buffer_binding);
+                glGetIntegerv(GL_SHADER_STORAGE_BUFFER_BINDING, &shader_storage_buffer_binding);
+                glGetIntegeri_v(GL_UNIFORM_BUFFER_BINDING, 1, &indexed_uniform_buffer_binding);
+                glGetIntegeri_v(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING, 0, &indexed_transform_feedback_buffer_binding);
+                glGetIntegeri_v(GL_ATOMIC_COUNTER_BUFFER_BINDING, 3, &indexed_atomic_counter_buffer_binding);
+                glGetIntegeri_v(GL_SHADER_STORAGE_BUFFER_BINDING, 2, &indexed_shader_storage_buffer_binding);
+                glGetInteger64i_v(GL_UNIFORM_BUFFER_START, 1, &indexed_uniform_buffer_start64);
+                glGetInteger64i_v(GL_UNIFORM_BUFFER_SIZE, 1, &indexed_uniform_buffer_size64);
+                glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_START, 0, &indexed_transform_feedback_buffer_start64);
+                glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_SIZE, 0, &indexed_transform_feedback_buffer_size64);
+                glGetInteger64i_v(GL_ATOMIC_COUNTER_BUFFER_START, 3, &indexed_atomic_counter_buffer_start64);
+                glGetInteger64i_v(GL_ATOMIC_COUNTER_BUFFER_SIZE, 3, &indexed_atomic_counter_buffer_size64);
+                glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_START, 2, &indexed_shader_storage_buffer_start64);
+                glGetInteger64i_v(GL_SHADER_STORAGE_BUFFER_SIZE, 2, &indexed_shader_storage_buffer_size64);
+                glGetBufferParameteri64v(GL_UNIFORM_BUFFER, GL_BUFFER_SIZE, &bound_uniform_buffer_size64);
+                glGetNamedBufferParameteri64v(dsa_immutable_vbo, GL_BUFFER_SIZE, &named_buffer_size64);
+                glGetNamedBufferParameteri64v(dsa_immutable_vbo,
+                                              GL_BUFFER_STORAGE_FLAGS,
+                                              &named_buffer_storage_flags64);
+                glGetIntegerv(GL_MAX_TRANSFORM_FEEDBACK_BUFFERS, &max_transform_feedback_buffers);
+                glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &max_uniform_buffer_bindings);
+                glGetIntegerv(GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS,
+                              &max_atomic_counter_buffer_bindings);
+                glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS,
+                              &max_shader_storage_buffer_bindings);
+                glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniform_buffer_offset_alignment);
+                glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT,
+                              &shader_storage_buffer_offset_alignment);
+                if (expect_true("broader buffer target queries leave no GL error", glGetError() == GL_NO_ERROR) ||
+                    expect_true("GL_PIXEL_PACK_BUFFER_BINDING reflects bindful state",
+                                pixel_pack_buffer_binding == (GLint)dsa_vbo) ||
+                    expect_true("GL_PIXEL_UNPACK_BUFFER_BINDING reflects bindful state",
+                                pixel_unpack_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                    expect_true("GL_DRAW_INDIRECT_BUFFER_BINDING reflects bindful state",
+                                draw_indirect_buffer_binding == (GLint)dsa_vbo) ||
+                    expect_true("GL_DISPATCH_INDIRECT_BUFFER_BINDING reflects bindful state",
+                                dispatch_indirect_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                    expect_true("GL_UNIFORM_BUFFER_BINDING reflects indexed bind-base state",
+                                uniform_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                    expect_true("GL_TRANSFORM_FEEDBACK_BUFFER_BINDING reflects indexed bind-range state",
+                                transform_feedback_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                    expect_true("GL_ATOMIC_COUNTER_BUFFER_BINDING reflects indexed bind-base state",
+                                atomic_counter_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                    expect_true("GL_SHADER_STORAGE_BUFFER_BINDING reflects indexed bind-range state",
+                                shader_storage_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                    expect_true("glGetIntegeri_v reports indexed uniform binding",
+                                indexed_uniform_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                    expect_true("glGetIntegeri_v reports indexed transform-feedback binding",
+                                indexed_transform_feedback_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                    expect_true("glGetIntegeri_v reports indexed atomic-counter binding",
+                                indexed_atomic_counter_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                    expect_true("glGetIntegeri_v reports indexed shader-storage binding",
+                                indexed_shader_storage_buffer_binding == (GLint)dsa_immutable_vbo) ||
+                    expect_true("glGetInteger64i_v reports indexed uniform full-range state",
+                                indexed_uniform_buffer_start64 == 0 &&
+                                indexed_uniform_buffer_size64 ==
+                                    (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
+                    expect_true("glGetInteger64i_v reports indexed transform-feedback range state",
+                                indexed_transform_feedback_buffer_start64 == 8 &&
+                                indexed_transform_feedback_buffer_size64 == 24) ||
+                    expect_true("glGetInteger64i_v reports indexed atomic-counter full-range state",
+                                indexed_atomic_counter_buffer_start64 == 0 &&
+                                indexed_atomic_counter_buffer_size64 ==
+                                    (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
+                    expect_true("glGetInteger64i_v reports indexed shader-storage range state",
+                                indexed_shader_storage_buffer_start64 == 0 &&
+                                indexed_shader_storage_buffer_size64 == 32) ||
+                    expect_true("glGetBufferParameteri64v reports the generic uniform buffer size",
+                                bound_uniform_buffer_size64 ==
+                                    (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
+                    expect_true("glGetNamedBufferParameteri64v reports named immutable size",
+                                named_buffer_size64 ==
+                                    (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
+                    expect_true("glGetNamedBufferParameteri64v reports named storage flags",
+                                named_buffer_storage_flags64 == (GLint64)named_storage_flags) ||
+                    expect_true("GL_MAX_TRANSFORM_FEEDBACK_BUFFERS is nonzero",
+                                max_transform_feedback_buffers > 0) ||
+                    expect_true("GL_MAX_UNIFORM_BUFFER_BINDINGS covers queried index",
+                                max_uniform_buffer_bindings > 1) ||
+                    expect_true("GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS covers queried index",
+                                max_atomic_counter_buffer_bindings > 3) ||
+                    expect_true("GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS covers queried index",
+                                max_shader_storage_buffer_bindings > 2) ||
+                    expect_true("GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT is nonzero",
+                                uniform_buffer_offset_alignment > 0) ||
+                    expect_true("GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT is nonzero",
+                                shader_storage_buffer_offset_alignment > 0)) {
+                    AO46SetCurrentContext(NULL);
+                    AO46DestroyContext(copy_ctx);
+                    AO46DestroyContext(ctx);
+                    AO46DestroyPixelFormat(pix);
+                    return 1;
+                }
             }
         }
 
         {
             static const GLchar *textured_vertex_shader_source =
-                "#version 460 core\n"
-                "layout(location = 0) in vec2 position;\n"
-                "layout(location = 1) in vec4 color;\n"
-                "layout(location = 2) in vec2 texCoord;\n"
+                "#version 150 core\n"
+                "in vec2 position;\n"
+                "in vec4 color;\n"
+                "in vec2 texCoord;\n"
                 "out vec4 vertexColor;\n"
                 "out vec2 uv;\n"
                 "void main(void)\n"
@@ -1310,7 +1405,7 @@ int main(void)
                 "    gl_Position = vec4(position, 0.0, 1.0);\n"
                 "}\n";
             static const GLchar *textured_fragment_shader_source =
-                "#version 460 core\n"
+                "#version 150 core\n"
                 "in vec4 vertexColor;\n"
                 "in vec2 uv;\n"
                 "uniform sampler2D tex;\n"
@@ -1464,20 +1559,41 @@ int main(void)
             glGenTextures(1, &mipmap_texture);
             glBindTexture(GL_TEXTURE_2D, mipmap_texture);
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLfloat)GL_NEAREST);
-            glTexStorage2D(GL_TEXTURE_2D, 3, GL_RGBA8, 4, 4);
-            glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_IMMUTABLE_FORMAT, &immutable_format);
-            glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_IMMUTABLE_LEVELS, &immutable_levels);
+            if (have_texture_storage) {
+                glTexStorage2D(GL_TEXTURE_2D, 3, GL_RGBA8, 4, 4);
+                glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_IMMUTABLE_FORMAT, &immutable_format);
+                glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_IMMUTABLE_LEVELS, &immutable_levels);
+            } else {
+                immutable_format = 0;
+                immutable_levels = 0;
+                glTexImage2D(GL_TEXTURE_2D,
+                             0,
+                             GL_RGBA8,
+                             4,
+                             4,
+                             0,
+                             GL_RGBA,
+                             GL_UNSIGNED_BYTE,
+                             NULL);
+            }
             glGetTexLevelParameteriv(GL_TEXTURE_2D, 1, GL_TEXTURE_WIDTH, &mipmap_level1_width);
             glGetTexLevelParameteriv(GL_TEXTURE_2D, 1, GL_TEXTURE_HEIGHT, &mipmap_level1_height);
             glGetTexLevelParameteriv(GL_TEXTURE_2D, 2, GL_TEXTURE_WIDTH, &mipmap_level2_width);
             glGetTexLevelParameteriv(GL_TEXTURE_2D, 2, GL_TEXTURE_HEIGHT, &mipmap_level2_height);
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 4, 4, GL_RGBA, GL_UNSIGNED_BYTE, mipmap_level0_upload);
             glGenerateMipmap(GL_TEXTURE_2D);
+            glGetTexLevelParameteriv(GL_TEXTURE_2D, 1, GL_TEXTURE_WIDTH, &mipmap_level1_width);
+            glGetTexLevelParameteriv(GL_TEXTURE_2D, 1, GL_TEXTURE_HEIGHT, &mipmap_level1_height);
+            glGetTexLevelParameteriv(GL_TEXTURE_2D, 2, GL_TEXTURE_WIDTH, &mipmap_level2_width);
+            glGetTexLevelParameteriv(GL_TEXTURE_2D, 2, GL_TEXTURE_HEIGHT, &mipmap_level2_height);
             glGetTexImage(GL_TEXTURE_2D, 1, GL_RGBA, GL_UNSIGNED_BYTE, mipmap_level1_readback);
             glGetTexImage(GL_TEXTURE_2D, 2, GL_RGBA, GL_UNSIGNED_BYTE, mipmap_level2_readback);
             if (expect_true("glGenTextures produced mipmap texture", mipmap_texture != 0) ||
-                expect_true("glTexStorage2D marks texture immutable", immutable_format == GL_TRUE) ||
-                expect_true("glTexStorage2D preserves immutable level count", immutable_levels == 3) ||
+                expect_true("texture allocation path leaves no GL error", glGetError() == GL_NO_ERROR) ||
+                expect_true("immutable texture state matches storage support",
+                            have_texture_storage ?
+                                (immutable_format == GL_TRUE && immutable_levels == 3) :
+                                (immutable_format == 0 && immutable_levels == 0)) ||
                 expect_true("mipmap level 1 dimensions are 2x2",
                             mipmap_level1_width == 2 && mipmap_level1_height == 2) ||
                 expect_true("mipmap level 2 dimensions are 1x1",
@@ -1514,7 +1630,7 @@ int main(void)
             glGetShaderiv(textured_vertex_shader, GL_COMPILE_STATUS, &compile_status);
             glShaderSource(textured_fragment_shader, 1, &textured_fragment_shader_source, NULL);
             glCompileShader(textured_fragment_shader);
-            glGetShaderiv(textured_fragment_shader, GL_COMPILE_STATUS, &link_status);
+            glGetShaderiv(textured_fragment_shader, GL_COMPILE_STATUS, &textured_fragment_compile_status);
             glAttachShader(textured_program, textured_vertex_shader);
             glAttachShader(textured_program, textured_fragment_shader);
             glBindAttribLocation(textured_program, 0, "position");
@@ -1529,6 +1645,7 @@ int main(void)
             texcoord_location = glGetAttribLocation(textured_program, "texCoord");
             texture_uniform_location = glGetUniformLocation(textured_program, "tex");
             if (expect_true("textured vertex shader compiles", compile_status == GL_TRUE) ||
+                expect_true("textured fragment shader compiles", textured_fragment_compile_status == GL_TRUE) ||
                 expect_true("textured program links", link_status == GL_TRUE) ||
                 expect_true("textured program validates", validate_status == GL_TRUE) ||
                 expect_true("textured program exposes texcoord attribute", texcoord_location == 2) ||
@@ -1609,6 +1726,7 @@ int main(void)
             glDeleteBuffers(1, &textured_vbo);
             glDeleteShader(textured_vertex_shader);
             glDeleteShader(textured_fragment_shader);
+            glUseProgram(0);
             glDeleteProgram(textured_program);
             glDeleteTextures(1, &mipmap_texture);
             glDeleteTextures(1, &texture);

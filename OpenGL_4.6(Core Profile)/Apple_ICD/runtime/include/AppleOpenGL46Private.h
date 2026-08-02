@@ -2,6 +2,7 @@
 #define APPLE_OPENGL46_PRIVATE_H
 
 #include <stdbool.h>
+#include <pthread.h>
 
 #include "AppleOpenGL46Runtime.h"
 
@@ -28,6 +29,23 @@ struct AO46ContextRec {
     GLenum pbuffer_face;
     GLint pbuffer_level;
     GLint pbuffer_screen;
+    GLint swap_rectangle[4];
+    GLint swap_interval;
+    GLint surface_order;
+    GLint surface_opacity;
+    GLint surface_backing_size[2];
+    GLint surface_volatile;
+    GLint swaps_in_flight;
+    GLint abort_on_gpu_restart_denied;
+    GLint context_priority_request;
+    GLint swap_rectangle_enabled;
+    GLint swap_limit_enabled;
+    GLint rasterization_enabled;
+    GLint state_validation_enabled;
+    GLint surface_backing_size_enabled;
+    GLint display_list_optimization_enabled;
+    GLint mp_engine_enabled;
+    GLint crash_on_removed_functions_enabled;
     struct st_context *st;
     struct pipe_context *pipe;
     struct pipe_surface *present_surface;
@@ -35,6 +53,8 @@ struct AO46ContextRec {
     struct AO46MesaDrawable *drawable;
     bool offscreen;
     void *metal_drawable;
+    pthread_mutex_t lock;
+    bool lock_initialized;
 };
 
 struct AO46PBufferRec {

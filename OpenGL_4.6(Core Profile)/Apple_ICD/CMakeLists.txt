@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 project(Apple_ICD LANGUAGES C OBJC CXX)
 
+include(CTest)
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -72,6 +74,52 @@ if(EXISTS "${AO46_MESA_PYTHON}")
     set(AO46_PYTHON_EXECUTABLE "${AO46_MESA_PYTHON}")
 else()
     set(AO46_PYTHON_EXECUTABLE "${Python3_EXECUTABLE}")
+endif()
+
+set(GLAPI_PUBLIC_GEN_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/glapi"
+)
+set(GLAPI_PUBLIC_SYMBOLS_FILE
+    "${GLAPI_PUBLIC_GEN_DIR}/glapi-symbols.txt"
+)
+set(GLAPI_PUBLIC_MAPI_HEADER
+    "${GLAPI_PUBLIC_GEN_DIR}/glapi_mapi_tmp.h"
+)
+
+file(MAKE_DIRECTORY "${GLAPI_PUBLIC_GEN_DIR}")
+
+execute_process(
+    COMMAND
+        "${AO46_PYTHON_EXECUTABLE}"
+        "${ROOT_DIR}/cmake/generate_glapi_symbols.py"
+        "${MESA_ROOT}/src/mesa/glapi/glapi/registry/gl.xml"
+        "${GLAPI_PUBLIC_SYMBOLS_FILE}"
+    RESULT_VARIABLE GLAPI_PUBLIC_SYMBOLS_RESULT
+    ERROR_VARIABLE GLAPI_PUBLIC_SYMBOLS_ERROR
+)
+
+if(NOT GLAPI_PUBLIC_SYMBOLS_RESULT EQUAL 0)
+    message(FATAL_ERROR
+        "Failed to generate ${GLAPI_PUBLIC_SYMBOLS_FILE}: ${GLAPI_PUBLIC_SYMBOLS_ERROR}"
+    )
+endif()
+
+execute_process(
+    COMMAND
+        "${AO46_PYTHON_EXECUTABLE}"
+        "${MESA_ROOT}/src/mesa/glapi/mapi_abi.py"
+        --printer glapi
+        --gl_symbols "${GLAPI_PUBLIC_SYMBOLS_FILE}"
+        "${MESA_ROOT}/src/mesa/glapi/glapi/gen/gl_and_es_API.xml"
+    OUTPUT_FILE "${GLAPI_PUBLIC_MAPI_HEADER}"
+    RESULT_VARIABLE GLAPI_PUBLIC_MAPI_RESULT
+    ERROR_VARIABLE GLAPI_PUBLIC_MAPI_ERROR
+)
+
+if(NOT GLAPI_PUBLIC_MAPI_RESULT EQUAL 0)
+    message(FATAL_ERROR
+        "Failed to generate ${GLAPI_PUBLIC_MAPI_HEADER}: ${GLAPI_PUBLIC_MAPI_ERROR}"
+    )
 endif()
 set(MESA_INCLUDE_DIRS
     "${ROOT_DIR}/vendor/MGL/include"
@@ -489,6 +537,8 @@ endif()
 # -------------------------------------------------------------
 add_library(OpenGL_4_6 SHARED
     framework/src/OpenGL46Framework.c
+    "${MESA_ROOT}/src/mesa/glapi/glapi/libgl_public.c"
+    "${GLAPI_PUBLIC_MAPI_HEADER}"
     ${AO46_FRAMEWORK_PUBLIC_HEADERS}
     ${AO46_FRAMEWORK_MODULEMAP}
     $<TARGET_OBJECTS:OpenGL46RuntimeObjects>
@@ -499,7 +549,13 @@ target_include_directories(OpenGL_4_6
         runtime/include
         MesaPlatform
         GL2MTL
+        "${GLAPI_PUBLIC_GEN_DIR}"
         "${MESA_INCLUDE_DIRS}"
+)
+
+target_compile_definitions(OpenGL_4_6
+    PRIVATE
+        ${MESA_COMPILE_DEFINITIONS}
 )
 
 target_link_libraries(OpenGL_4_6
@@ -675,5 +731,61 @@ set_target_properties(LibNSOpenGLContextDriver PROPERTIES
 # -------------------------------------------------------------
 if(BUILD_TESTING)
     enable_testing()
-    # ... add tests as before, but link them to OpenGL_4_6 etc.
+
+    add_executable(AO46RuntimeCompatSmoke
+        tests/AO46RuntimeCompatSmoke.c
+    )
+
+    target_include_directories(AO46RuntimeCompatSmoke
+        PRIVATE
+            runtime/include
+            client/include
+            drivers/include
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_link_libraries(AO46RuntimeCompatSmoke
+        PRIVATE
+            OpenGL_4_6
+    )
+
+    add_test(
+        NAME AO46RuntimeCompatSmoke
+        COMMAND $<TARGET_FILE:AO46RuntimeCompatSmoke>
+    )
+
+    set_tests_properties(AO46RuntimeCompatSmoke PROPERTIES
+        ENVIRONMENT
+            "AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    add_executable(AO46NSOpenGLCompatSmoke
+        tests/AO46NSOpenGLCompatSmoke.m
+    )
+
+    target_include_directories(AO46NSOpenGLCompatSmoke
+        PRIVATE
+            runtime/include
+            client/include
+            drivers/include
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_link_libraries(AO46NSOpenGLCompatSmoke
+        PRIVATE
+            LibNSOpenGLContextDriver
+            OpenGL46FrameworkClient
+            "-framework AppKit"
+            "-framework Foundation"
+    )
+
+    add_test(
+        NAME AO46NSOpenGLCompatSmoke
+        COMMAND $<TARGET_FILE:AO46NSOpenGLCompatSmoke>
+    )
+
+    set_tests_properties(AO46NSOpenGLCompatSmoke PROPERTIES
+        ENVIRONMENT
+            "AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
 endif()

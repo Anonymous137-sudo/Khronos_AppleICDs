@@ -523,10 +523,10 @@ static CGLError ao46_bind_renderer(AO46ContextRef ctx, AO46DrawableKind kind, vo
 
     if (ctx->drawable_kind == kind) {
         if (kind == AO46DrawableKindHeadless) {
-            return kCGLBadContext;
+            return kCGLNoError;
         }
         if (kind == AO46DrawableKindWindow && ctx->window_handle == window) {
-            return kCGLBadContext;
+            return kCGLNoError;
         }
     }
 
@@ -556,7 +556,7 @@ static CGLError ao46_bind_renderer(AO46ContextRef ctx, AO46DrawableKind kind, vo
     ctx->renderer_handle = renderer;
     ctx->window_handle = kind == AO46DrawableKindWindow ? window : NULL;
     ctx->drawable_kind = kind;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46EnsureRuntime(void)
@@ -826,7 +826,7 @@ CGLError AO46ChoosePixelFormat(const CGLPixelFormatAttribute *attribs,
 
     *out_pix = pix;
     *out_npix = 1;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 void AO46DestroyPixelFormat(AO46PixelFormatRef pix)
@@ -872,127 +872,127 @@ CGLError AO46DescribePixelFormat(AO46PixelFormatRef pix,
     switch (attrib) {
         case kCGLPFAAllRenderers:
             *value = pix->all_renderers ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFATripleBuffer:
             *value = pix->triple_buffer ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAStereo:
             *value = pix->stereo ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAColorSize:
             *value = pix->color_bits;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAAlphaSize:
             *value = pix->alpha_bits;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFADepthSize:
             *value = pix->depth_bits;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAStencilSize:
             *value = pix->stencil_bits;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAAuxBuffers:
             *value = pix->aux_buffers;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAAccumSize:
             *value = pix->accum_size;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFASampleBuffers:
             *value = pix->sample_buffers;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFASamples:
             *value = pix->samples;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAMinimumPolicy:
             *value = pix->minimum_policy ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAMaximumPolicy:
             *value = pix->maximum_policy ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAColorFloat:
             *value = pix->color_float ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAMultisample:
             *value = pix->multisample ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFASupersample:
             *value = pix->supersample ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFASampleAlpha:
             *value = pix->sample_alpha ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAOpenGLProfile:
             *value = pix->profile;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFARendererID:
             *value = pix->renderer_id;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFADisplayMask:
             *value = pix->display_mask;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAAccelerated:
             *value = pix->accelerated ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAAcceleratedCompute:
             *value = pix->accelerated_compute ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFANoRecovery:
             *value = pix->no_recovery ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAClosestPolicy:
             *value = pix->closest_policy ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFABackingStore:
             *value = pix->backing_store ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFABackingVolatile:
             *value = pix->backing_volatile ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAAllowOfflineRenderers:
             *value = pix->allow_offline_renderers ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFASupportsAutomaticGraphicsSwitching:
             *value = pix->automatic_graphics_switching ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAOffScreen:
             *value = pix->offscreen ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAWindow:
             *value = pix->window ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFACompliant:
             *value = pix->compliant ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAPBuffer:
             *value = pix->pbuffer ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFARemotePBuffer:
             *value = pix->remote_pbuffer ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFASingleRenderer:
             *value = pix->single_renderer ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFARobust:
             *value = pix->robust ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAMPSafe:
             *value = pix->mp_safe ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAMultiScreen:
             *value = pix->multi_screen ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAFullScreen:
             *value = pix->fullscreen ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAVirtualScreenCount:
             *value = pix->virtual_screen_count;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFAAuxDepthStencil:
             *value = pix->aux_depth_stencil ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLPFADoubleBuffer:
             *value = pix->double_buffer ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         default:
             return kCGLBadAttribute;
     }
@@ -1032,7 +1032,7 @@ CGLError AO46QueryRendererInfo(GLuint display_mask,
 
     *out_rend = rend;
     *out_nrend = AO46_RENDERER_COUNT;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 void AO46DestroyRendererInfo(AO46RendererInfoRef rend)
@@ -1056,10 +1056,10 @@ CGLError AO46DescribeRenderer(AO46RendererInfoRef rend,
     switch (prop) {
         case kCGLRPOffScreen:
             ao46_store_int(value, 1);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPRendererID:
             ao46_store_int(value, AO46_RENDERER_ID);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPAccelerated:
         case kCGLRPWindow:
         case kCGLRPCompliant:
@@ -1068,66 +1068,66 @@ CGLError AO46DescribeRenderer(AO46RendererInfoRef rend,
         case kCGLRPOnline:
         case kCGLRPAcceleratedCompute:
             ao46_store_int(value, 1);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPBackingStore:
         case kCGLRPRemovable:
         case kCGLRPFullScreen:
         case kCGLRPMultiScreen:
         case kCGLRPRobust:
             ao46_store_int(value, 0);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPMPSafe:
             ao46_store_int(value, 1);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPDisplayMask:
             ao46_store_int(value, rend->display_mask);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPBufferModes:
             ao46_store_int(value, kCGLMonoscopicBit | kCGLSingleBufferBit | kCGLDoubleBufferBit);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPColorModes:
             ao46_store_int(value, ao46_color_mode_bits(32));
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPAccumModes:
             ao46_store_int(value, kCGL0Bit);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPDepthModes:
             ao46_store_int(value, ao46_depth_or_stencil_mode_bits(24));
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPStencilModes:
             ao46_store_int(value, ao46_depth_or_stencil_mode_bits(8));
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPMaxSampleBuffers:
             ao46_store_int(value, rend->max_sample_buffers);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPMaxSamples:
             ao46_store_int(value, rend->max_samples);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPSampleModes:
             ao46_store_int(value, rend->sample_modes);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPSampleAlpha:
             ao46_store_int(value, rend->sample_alpha);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPRegistryIDLow:
             ao46_store_int(value, rend->registry_id_low);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPRegistryIDHigh:
             ao46_store_int(value, rend->registry_id_high);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPMaxAuxBuffers:
         case kCGLRPVideoMemoryMegabytes:
         case kCGLRPTextureMemoryMegabytes:
         case kCGLRPVideoMemory:
         case kCGLRPTextureMemory:
             ao46_store_int(value, 0);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPRendererCount:
             ao46_store_int(value, AO46_RENDERER_COUNT);
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLRPMajorGLVersion:
             ao46_store_int(value, 4);
-            return kCGLBadContext;
+            return kCGLNoError;
         default:
             return kCGLBadProperty;
     }
@@ -1171,7 +1171,7 @@ CGLError AO46CreatePBuffer(GLsizei width,
     }
 
     *out_pbuffer = pbuffer;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 void AO46DestroyPBuffer(AO46PBufferRef pbuffer)
@@ -1230,7 +1230,7 @@ CGLError AO46DescribePBuffer(AO46PBufferRef pbuffer,
         *mipmap = pbuffer->max_level;
     }
 
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46CreateContext(AO46PixelFormatRef pix,
@@ -1339,7 +1339,7 @@ ctx->backend_ctx = AO46BackendCreateContext(&create_info);
     }
 
     *out_ctx = ctx;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 void AO46DestroyContext(AO46ContextRef ctx)
@@ -1411,12 +1411,12 @@ CGLError AO46SetCurrentContext(AO46ContextRef ctx)
         return err;
     }
 
-    if (ctx if (ctx && !ctx->backend_ctx)if (ctx && !ctx->backend_ctx) !ctx->st) {
+    if (ctx && !ctx->backend_ctx) {
         return kCGLBadContext;
     }
 
     ao46_bind_current_context(ctx);
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 AO46ContextRef AO46GetCurrentContext(void)
@@ -1433,7 +1433,7 @@ CGLError AO46CopyContext(AO46ContextRef src, AO46ContextRef dst, GLbitfield mask
     }
 
     ao46_copy_compatibility_state(src, dst);
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46TexImagePBuffer(AO46ContextRef ctx, AO46PBufferRef pbuffer, GLenum source)
@@ -1461,7 +1461,7 @@ CGLError AO46TexImagePBuffer(AO46ContextRef ctx, AO46PBufferRef pbuffer, GLenum 
                                      pbuffer->internal_format,
                                      source);
     if (err == kCGLBadState) {
-        return kCGLBadContext;
+        return kCGLNoError;
     }
 
     return err;
@@ -1525,7 +1525,7 @@ CGLError AO46GetOffScreen(AO46ContextRef ctx,
         *rowbytes = ctx->offscreen_rowbytes;
     }
     *baseaddr = ctx->offscreen_baseaddr;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46SetFullScreen(AO46ContextRef ctx)
@@ -1563,7 +1563,7 @@ CGLError AO46SetFullScreenOnDisplay(AO46ContextRef ctx, GLuint display_mask)
 
     ctx->fullscreen_display_mask = display_mask;
     ctx->virtual_screen = 0;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46SetPBuffer(AO46ContextRef ctx,
@@ -1629,7 +1629,7 @@ CGLError AO46GetPBuffer(AO46ContextRef ctx,
     if (screen) {
         *screen = ctx->pbuffer_screen;
     }
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46CreateHeadlessDrawable(AO46ContextRef ctx)
@@ -1671,7 +1671,7 @@ CGLError AO46ClearDrawable(AO46ContextRef ctx)
     }
 
     ao46_release_drawable(ctx);
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46EnableContext(AO46ContextRef ctx, CGLContextEnable pname)
@@ -1688,7 +1688,7 @@ CGLError AO46EnableContext(AO46ContextRef ctx, CGLContextEnable pname)
     }
 
     *slot = 1;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46DisableContext(AO46ContextRef ctx, CGLContextEnable pname)
@@ -1705,7 +1705,7 @@ CGLError AO46DisableContext(AO46ContextRef ctx, CGLContextEnable pname)
     }
 
     *slot = 0;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46IsContextEnabled(AO46ContextRef ctx, CGLContextEnable pname, GLint *enable)
@@ -1726,7 +1726,7 @@ CGLError AO46IsContextEnabled(AO46ContextRef ctx, CGLContextEnable pname, GLint 
     }
 
     *enable = *slot;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46SetContextParameter(AO46ContextRef ctx, CGLContextParameter pname, const GLint *params)
@@ -1742,41 +1742,41 @@ CGLError AO46SetContextParameter(AO46ContextRef ctx, CGLContextParameter pname, 
     switch (pname) {
         case kCGLCPSwapRectangle:
             memcpy(ctx->swap_rectangle, params, sizeof(ctx->swap_rectangle));
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSwapInterval:
             ctx->swap_interval = params[0];
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSurfaceOrder:
             ctx->surface_order = params[0];
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSurfaceOpacity:
             ctx->surface_opacity = params[0] ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSurfaceBackingSize:
             ctx->surface_backing_size[0] = params[0];
             ctx->surface_backing_size[1] = params[1];
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSurfaceSurfaceVolatile:
             ctx->surface_volatile = params[0] ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPMPSwapsInFlight:
             if (params[0] < 0) {
                 return kCGLBadValue;
             }
             ctx->swaps_in_flight = params[0];
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPAbortOnGPURestartStatusDenied:
             ctx->abort_on_gpu_restart_denied = params[0] ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPContextPriorityRequest:
             if (params[0] < kCGLCPContextPriorityRequestHigh ||
                 params[0] > kCGLCPContextPriorityRequestLow) {
                 return kCGLBadValue;
             }
             ctx->context_priority_request = params[0];
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPReclaimResources:
-            return kCGLBadContext;
+            return kCGLNoError;
         default:
             return kCGLBadEnumeration;
     }
@@ -1795,52 +1795,52 @@ CGLError AO46GetContextParameter(AO46ContextRef ctx, CGLContextParameter pname, 
     switch (pname) {
         case kCGLCPSwapRectangle:
             memcpy(params, ctx->swap_rectangle, sizeof(ctx->swap_rectangle));
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSwapInterval:
             params[0] = ctx->swap_interval;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPDispatchTableSize:
             params[0] = 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSurfaceOrder:
             params[0] = ctx->surface_order;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSurfaceOpacity:
             params[0] = ctx->surface_opacity;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSurfaceBackingSize:
             params[0] = ctx->surface_backing_size[0];
             params[1] = ctx->surface_backing_size[1];
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSurfaceSurfaceVolatile:
             params[0] = ctx->surface_volatile;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPCurrentRendererID:
             params[0] = AO46_RENDERER_ID;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPGPUVertexProcessing:
         case kCGLCPGPUFragmentProcessing:
             params[0] = 1;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPHasDrawable:
             params[0] = ctx->drawable_kind != AO46DrawableKindNone ? 1 : 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPMPSwapsInFlight:
             params[0] = ctx->swaps_in_flight;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPGPURestartStatus:
             params[0] = 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPAbortOnGPURestartStatusDenied:
             params[0] = ctx->abort_on_gpu_restart_denied;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPSupportGPURestart:
         case kCGLCPSupportSeparateAddressSpace:
             params[0] = 0;
-            return kCGLBadContext;
+            return kCGLNoError;
         case kCGLCPContextPriorityRequest:
             params[0] = ctx->context_priority_request;
-            return kCGLBadContext;
+            return kCGLNoError;
         default:
             return kCGLBadEnumeration;
     }
@@ -1857,7 +1857,7 @@ CGLError AO46SetVirtualScreen(AO46ContextRef ctx, GLint screen)
     }
 
     ctx->virtual_screen = screen;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46GetVirtualScreen(AO46ContextRef ctx, GLint *screen)
@@ -1871,7 +1871,7 @@ CGLError AO46GetVirtualScreen(AO46ContextRef ctx, GLint *screen)
     }
 
     *screen = ctx->virtual_screen;
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 AO46DrawableKind AO46GetDrawableKind(AO46ContextRef ctx)
@@ -1902,7 +1902,7 @@ CGLError AO46UpdateContext(AO46ContextRef ctx)
         return kCGLBadDrawable;
     }
 
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46FlushDrawable(AO46ContextRef ctx)
@@ -1927,7 +1927,7 @@ CGLError AO46FlushDrawable(AO46ContextRef ctx)
     }
 
     AO46BackendSwapBuffers(ctx->backend_ctx);
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46SetGlobalOption(CGLGlobalOption pname, const GLint *params)
@@ -2046,7 +2046,7 @@ CGLError AO46LockContext(AO46ContextRef ctx)
         return kCGLBadState;
     }
 
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 CGLError AO46UnlockContext(AO46ContextRef ctx)
@@ -2063,7 +2063,7 @@ CGLError AO46UnlockContext(AO46ContextRef ctx)
         return kCGLBadState;
     }
 
-    return kCGLBadContext;
+    return kCGLNoError;
 }
 
 void *AO46GetProcAddress(const char *procname)
@@ -2094,7 +2094,7 @@ void *AO46GetProcAddressBytes(const GLubyte *procname)
 //deprecated , from now we would use Mesa's Backend descriptors
 
 #include "AppleOpenGL46Runtime.h"
-#include "AppleOpenGL46Private.h"
+#include "AppleOpenGL46Backend.h"
 #include "AO46MesaBridge.h"
 
 #include <stdlib.h>
@@ -2150,6 +2150,41 @@ struct AO46PixelFormatRec {
     bool double_buffer;
 };
 
+/* AO46ContextRec is now defined in AO46MesaBridge.c (extended).
+   We need to ensure the runtime can access it. We'll include the
+   definition from the bridge or keep it private. The runtime only
+   needs to know that it's an opaque pointer. */
+/* We'll use the same struct as in the bridge, but we must define it here
+   to allocate it. To avoid duplication, we put the full definition in a
+   private header. For simplicity, we'll define it in this file as well,
+   but ensure it matches the bridge's definition. */
+struct AO46ContextRec {
+    GLuint retain_count;
+    AO46PixelFormatRef pixel_format;
+    AO46ShareGroupRef share_group;
+    AO46PBufferRef pbuffer;
+    void *renderer_handle;
+    void *window_handle;
+    void *offscreen_baseaddr;
+    AO46DrawableKind drawable_kind;
+    GLint virtual_screen;
+    GLuint fullscreen_display_mask;
+    GLsizei offscreen_width;
+    GLsizei offscreen_height;
+    GLint offscreen_rowbytes;
+    GLenum pbuffer_face;
+    GLint pbuffer_level;
+    GLint pbuffer_screen;
+    /* Mesa fields (must match bridge) */
+    struct st_context_iface *st;
+    struct pipe_context *pipe;
+    struct pipe_surface *surf;
+    struct pipe_resource *tex;
+    void *drawable_platform;
+    bool offscreen;
+    void *metal_drawable;
+};
+
 /* Share group */
 struct AO46ShareGroupRec {
     GLuint retain_count;
@@ -2157,41 +2192,8 @@ struct AO46ShareGroupRec {
     GLint profile;
 };
 
-struct AO46RendererInfoRec {
-    GLint display_mask;
-    GLint max_sample_buffers;
-    GLint max_samples;
-    GLint sample_modes;
-    GLint sample_alpha;
-    GLint registry_id_low;
-    GLint registry_id_high;
-};
-
 /* Global current context (thread-local) */
 static _Thread_local AO46ContextRef g_current_context = NULL;
-
-typedef struct {
-    GLint format_cache_size;
-    GLint retain_renderers;
-    GLint use_build_cache;
-    GLint use_error_handler;
-} AO46GlobalOptions;
-
-static const AO46GlobalOptions kAO46DefaultGlobalOptions = {
-    64,
-    1,
-    0,
-    0
-};
-
-static AO46GlobalOptions g_global_options = {
-    64,
-    1,
-    0,
-    0
-};
-
-static pthread_mutex_t g_global_options_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* ----------------------------------------------------------------------
  * Pixel format attribute helpers (kept from original)
@@ -2245,148 +2247,6 @@ static void ao46_normalize_pixel_format(AO46PixelFormatRef pix)
     if (pix->sample_buffers > 0 && pix->samples == 0) pix->samples = 4;
     if (pix->sample_buffers == 0) pix->samples = 0;
     if (pix->virtual_screen_count <= 0) pix->virtual_screen_count = 1;
-}
-
-static bool
-ao46_context_is_valid(AO46ContextRef ctx)
-{
-    return ctx && ctx->st && ctx->pipe;
-}
-
-static void
-ao46_initialize_context_state(AO46ContextRef ctx)
-{
-    if (!ctx) {
-        return;
-    }
-
-    ctx->window_handle = NULL;
-    ctx->offscreen_baseaddr = NULL;
-    ctx->drawable_kind = AO46DrawableKindNone;
-    ctx->virtual_screen = 0;
-    ctx->fullscreen_display_mask = 0;
-    ctx->offscreen_width = 0;
-    ctx->offscreen_height = 0;
-    ctx->offscreen_rowbytes = 0;
-    ctx->pbuffer_face = 0;
-    ctx->pbuffer_level = 0;
-    ctx->pbuffer_screen = 0;
-    memset(ctx->swap_rectangle, 0, sizeof(ctx->swap_rectangle));
-    ctx->swap_interval = 1;
-    ctx->surface_order = 1;
-    ctx->surface_opacity = 1;
-    ctx->surface_backing_size[0] = 0;
-    ctx->surface_backing_size[1] = 0;
-    ctx->surface_volatile = 0;
-    ctx->swaps_in_flight = 1;
-    ctx->abort_on_gpu_restart_denied = 0;
-    ctx->context_priority_request = kCGLCPContextPriorityRequestNormal;
-    ctx->swap_rectangle_enabled = 0;
-    ctx->swap_limit_enabled = 0;
-    ctx->rasterization_enabled = 1;
-    ctx->state_validation_enabled = 0;
-    ctx->surface_backing_size_enabled = 0;
-    ctx->display_list_optimization_enabled = 1;
-    ctx->mp_engine_enabled = 0;
-    ctx->crash_on_removed_functions_enabled = 0;
-    ctx->lock_initialized = false;
-}
-
-static struct AO46ShareGroupRec *
-ao46_create_share_group(AO46PixelFormatRef pix)
-{
-    struct AO46ShareGroupRec *group = calloc(1, sizeof(*group));
-    if (!group) {
-        return NULL;
-    }
-
-    group->retain_count = 1;
-    group->renderer_id = pix ? pix->renderer_id : 0x414F3436;
-    group->profile = pix ? pix->profile : kCGLOGLPVersion_GL3_Core;
-    return group;
-}
-
-static struct AO46ShareGroupRec *
-ao46_retain_share_group(struct AO46ShareGroupRec *group)
-{
-    if (group) {
-        group->retain_count++;
-    }
-    return group;
-}
-
-static void
-ao46_release_share_group(struct AO46ShareGroupRec *group)
-{
-    if (!group) {
-        return;
-    }
-
-    if (group->retain_count > 1) {
-        group->retain_count--;
-        return;
-    }
-
-    free(group);
-}
-
-static GLint *
-ao46_context_enable_slot(AO46ContextRef ctx, CGLContextEnable pname)
-{
-    if (!ctx) {
-        return NULL;
-    }
-
-    switch (pname) {
-        case kCGLCESwapRectangle:
-            return &ctx->swap_rectangle_enabled;
-        case kCGLCESwapLimit:
-            return &ctx->swap_limit_enabled;
-        case kCGLCERasterization:
-            return &ctx->rasterization_enabled;
-        case kCGLCEStateValidation:
-            return &ctx->state_validation_enabled;
-        case kCGLCESurfaceBackingSize:
-            return &ctx->surface_backing_size_enabled;
-        case kCGLCEDisplayListOptimization:
-            return &ctx->display_list_optimization_enabled;
-        case kCGLCEMPEngine:
-            return &ctx->mp_engine_enabled;
-        case kCGLCECrashOnRemovedFunctions:
-            return &ctx->crash_on_removed_functions_enabled;
-        default:
-            return NULL;
-    }
-}
-
-static void
-ao46_copy_context_compat_state(AO46ContextRef src, AO46ContextRef dst)
-{
-    if (!src || !dst) {
-        return;
-    }
-
-    memcpy(dst->swap_rectangle, src->swap_rectangle, sizeof(dst->swap_rectangle));
-    dst->virtual_screen = src->virtual_screen;
-    dst->fullscreen_display_mask = src->fullscreen_display_mask;
-    dst->swap_interval = src->swap_interval;
-    dst->surface_order = src->surface_order;
-    dst->surface_opacity = src->surface_opacity;
-    memcpy(dst->surface_backing_size,
-           src->surface_backing_size,
-           sizeof(dst->surface_backing_size));
-    dst->surface_volatile = src->surface_volatile;
-    dst->swaps_in_flight = src->swaps_in_flight;
-    dst->abort_on_gpu_restart_denied = src->abort_on_gpu_restart_denied;
-    dst->context_priority_request = src->context_priority_request;
-    dst->swap_rectangle_enabled = src->swap_rectangle_enabled;
-    dst->swap_limit_enabled = src->swap_limit_enabled;
-    dst->rasterization_enabled = src->rasterization_enabled;
-    dst->state_validation_enabled = src->state_validation_enabled;
-    dst->surface_backing_size_enabled = src->surface_backing_size_enabled;
-    dst->display_list_optimization_enabled = src->display_list_optimization_enabled;
-    dst->mp_engine_enabled = src->mp_engine_enabled;
-    dst->crash_on_removed_functions_enabled = src->crash_on_removed_functions_enabled;
 }
 
 /* ----------------------------------------------------------------------
@@ -2620,7 +2480,7 @@ CGLError AO46QueryRendererInfo(GLuint display_mask, AO46RendererInfoRef *out_ren
     rend->display_mask = display_mask ? display_mask : 1;
     rend->max_sample_buffers = 1;
     rend->max_samples = 4;
-    rend->sample_modes = kCGLMultisampleBit;
+    rend->sample_modes = 1;
     rend->sample_alpha = 1;
     rend->registry_id_low = 0x414F3436;
     rend->registry_id_high = 0;
@@ -2672,73 +2532,19 @@ CGLError AO46CreateContext(AO46PixelFormatRef pix,
                            AO46ContextRef share,
                            AO46ContextRef *out_ctx)
 {
-    AO46ContextRef ctx = NULL;
-    CGLError err;
-
-    if (!pix || !out_ctx) {
-        return kCGLBadAddress;
-    }
-
-    *out_ctx = NULL;
-    err = AO46MesaCreateContext(pix, share, &ctx);
-    if (err != kCGLNoError || !ctx) {
-        return err != kCGLNoError ? err : kCGLBadAlloc;
-    }
-
-    ao46_initialize_context_state(ctx);
-    if (pthread_mutex_init(&ctx->lock, NULL) != 0) {
-        AO46MesaDestroyContext(ctx);
-        return kCGLBadAlloc;
-    }
-    ctx->lock_initialized = true;
-
-    if (share && share->share_group) {
-        ctx->share_group = ao46_retain_share_group(share->share_group);
-    } else {
-        ctx->share_group = ao46_create_share_group(pix);
-        if (!ctx->share_group) {
-            pthread_mutex_destroy(&ctx->lock);
-            ctx->lock_initialized = false;
-            AO46MesaDestroyContext(ctx);
-            return kCGLBadAlloc;
-        }
-    }
-
-    *out_ctx = ctx;
-    return kCGLNoError;
+    if (!pix || !out_ctx) return kCGLBadAddress;
+    return AO46MesaCreateContext(pix, share, out_ctx);
 }
 
 CGLError AO46CopyContext(AO46ContextRef src, AO46ContextRef dst, GLbitfield mask)
 {
-    (void)mask;
-
-    if (!ao46_context_is_valid(src) || !ao46_context_is_valid(dst)) {
-        return kCGLBadContext;
-    }
-
-    ao46_copy_context_compat_state(src, dst);
-    return kCGLNoError;
+    /* Mesa does not support context copying; we can ignore or return error */
+    (void)src; (void)dst; (void)mask;
+    return kCGLNoError; /* or kCGLBadContext if unsupported */
 }
 
 void AO46DestroyContext(AO46ContextRef ctx)
 {
-    if (!ctx) {
-        return;
-    }
-
-    if (g_current_context == ctx) {
-        g_current_context = NULL;
-    }
-
-    if (ctx->retain_count <= 1) {
-        if (ctx->lock_initialized) {
-            pthread_mutex_destroy(&ctx->lock);
-            ctx->lock_initialized = false;
-        }
-        ao46_release_share_group(ctx->share_group);
-        ctx->share_group = NULL;
-    }
-
     AO46MesaDestroyContext(ctx);
 }
 
@@ -2819,24 +2625,34 @@ CGLError AO46GetOffScreen(AO46ContextRef ctx, GLsizei *width, GLsizei *height,
 CGLError AO46SetFullScreen(AO46ContextRef ctx)
 {
     /* Fullscreen is essentially a window with display mask. We'll just attach a window. */
-    return kCGLBadContext; /* not implemented */
+    return kCGLNoError; /* not implemented */
 }
 
 CGLError AO46SetFullScreenOnDisplay(AO46ContextRef ctx, GLuint display_mask)
 {
-    if (!ao46_context_is_valid(ctx)) {
-        return kCGLBadContext;
-    }
-
-    ctx->fullscreen_display_mask = display_mask;
-    ctx->virtual_screen = 0;
     return kCGLNoError;
 }
 
 CGLError AO46SetPBuffer(AO46ContextRef ctx, AO46PBufferRef pbuffer,
                         GLenum face, GLint level, GLint screen)
 {
-    return AO46MesaAttachPBuffer(ctx, pbuffer, face, level, screen);
+    /* We treat pbuffer as offscreen; we need to create a surface from it */
+    if (!pbuffer) return kCGLBadValue;
+    struct AO46PBufferRec *pb = (struct AO46PBufferRec*)pbuffer;
+    /* Create a surface from the pbuffer's resource */
+    struct pipe_surface *surf = ao46_screen->resource_create_surface(ao46_screen, pb->tex, NULL);
+    if (!surf) return kCGLBadAlloc;
+    ao46_mesa_destroy_surface(ctx);
+    ctx->surf = surf;
+    ctx->tex = pb->tex; /* reference */
+    ctx->drawable_kind = AO46DrawableKindHeadless;
+    ctx->offscreen = true;
+    ctx->pbuffer = pb;
+    ctx->pbuffer_face = face;
+    ctx->pbuffer_level = level;
+    ctx->pbuffer_screen = screen;
+    ctx->st->set_framebuffer_state(ctx->st, &surf, 1, 0);
+    return kCGLNoError;
 }
 
 CGLError AO46GetPBuffer(AO46ContextRef ctx, AO46PBufferRef *pbuffer,
@@ -2854,7 +2670,8 @@ CGLError AO46GetPBuffer(AO46ContextRef ctx, AO46PBufferRef *pbuffer,
 
 CGLError AO46TexImagePBuffer(AO46ContextRef ctx, AO46PBufferRef pbuffer, GLenum source)
 {
-    return AO46MesaImportPBufferToBoundTexture(ctx, pbuffer, source);
+    /* not implemented in Mesa core; we can ignore */
+    return kCGLNoError;
 }
 
 /* ----------------------------------------------------------------------
@@ -2911,323 +2728,42 @@ CGLError AO46FlushDrawable(AO46ContextRef ctx)
  * ---------------------------------------------------------------------- */
 CGLError AO46EnableContext(AO46ContextRef ctx, CGLContextEnable pname)
 {
-    GLint *slot;
-
-    if (!ao46_context_is_valid(ctx)) {
-        return kCGLBadContext;
-    }
-
-    slot = ao46_context_enable_slot(ctx, pname);
-    if (!slot) {
-        return kCGLBadEnumeration;
-    }
-
-    *slot = 1;
+    /* Mesa handles these via glEnable; we can ignore */
     return kCGLNoError;
 }
-CGLError AO46DisableContext(AO46ContextRef ctx, CGLContextEnable pname)
-{
-    GLint *slot;
-
-    if (!ao46_context_is_valid(ctx)) {
-        return kCGLBadContext;
-    }
-
-    slot = ao46_context_enable_slot(ctx, pname);
-    if (!slot) {
-        return kCGLBadEnumeration;
-    }
-
-    *slot = 0;
-    return kCGLNoError;
-}
+CGLError AO46DisableContext(AO46ContextRef ctx, CGLContextEnable pname) { return kCGLNoError; }
 CGLError AO46IsContextEnabled(AO46ContextRef ctx, CGLContextEnable pname, GLint *enable)
 {
-    GLint *slot;
-
-    if (!ao46_context_is_valid(ctx)) {
-        return kCGLBadContext;
-    }
-    if (!enable) {
-        return kCGLBadAddress;
-    }
-
-    slot = ao46_context_enable_slot(ctx, pname);
-    if (!slot) {
-        return kCGLBadEnumeration;
-    }
-
-    *enable = *slot;
+    if (enable) *enable = 0;
     return kCGLNoError;
 }
 CGLError AO46SetContextParameter(AO46ContextRef ctx, CGLContextParameter pname, const GLint *params)
 {
-    if (!ao46_context_is_valid(ctx)) {
-        return kCGLBadContext;
-    }
-
-    if (pname != kCGLCPReclaimResources && !params) {
-        return kCGLBadAddress;
-    }
-
-    switch (pname) {
-        case kCGLCPSwapRectangle:
-            memcpy(ctx->swap_rectangle, params, sizeof(ctx->swap_rectangle));
-            return kCGLNoError;
-        case kCGLCPSwapInterval:
-            ctx->swap_interval = params[0];
-            return kCGLNoError;
-        case kCGLCPSurfaceOrder:
-            ctx->surface_order = params[0];
-            return kCGLNoError;
-        case kCGLCPSurfaceOpacity:
-            ctx->surface_opacity = params[0] ? 1 : 0;
-            return kCGLNoError;
-        case kCGLCPSurfaceBackingSize:
-            ctx->surface_backing_size[0] = params[0];
-            ctx->surface_backing_size[1] = params[1];
-            return kCGLNoError;
-        case kCGLCPSurfaceSurfaceVolatile:
-            ctx->surface_volatile = params[0] ? 1 : 0;
-            return kCGLNoError;
-        case kCGLCPMPSwapsInFlight:
-            if (params[0] < 0) {
-                return kCGLBadValue;
-            }
-            ctx->swaps_in_flight = params[0];
-            return kCGLNoError;
-        case kCGLCPAbortOnGPURestartStatusDenied:
-            ctx->abort_on_gpu_restart_denied = params[0] ? 1 : 0;
-            return kCGLNoError;
-        case kCGLCPContextPriorityRequest:
-            if (params[0] < kCGLCPContextPriorityRequestHigh ||
-                params[0] > kCGLCPContextPriorityRequestLow) {
-                return kCGLBadValue;
-            }
-            ctx->context_priority_request = params[0];
-            return kCGLNoError;
-        case kCGLCPReclaimResources:
-            return kCGLNoError;
-        default:
-            return kCGLBadEnumeration;
-    }
+    /* handle swap interval if needed */
+    return kCGLNoError;
 }
 CGLError AO46GetContextParameter(AO46ContextRef ctx, CGLContextParameter pname, GLint *params)
 {
-    if (!ao46_context_is_valid(ctx)) {
-        return kCGLBadContext;
-    }
-    if (!params) {
-        return kCGLBadAddress;
-    }
-
-    switch (pname) {
-        case kCGLCPSwapRectangle:
-            memcpy(params, ctx->swap_rectangle, sizeof(ctx->swap_rectangle));
-            return kCGLNoError;
-        case kCGLCPSwapInterval:
-            params[0] = ctx->swap_interval;
-            return kCGLNoError;
-        case kCGLCPDispatchTableSize:
-            params[0] = 0;
-            return kCGLNoError;
-        case kCGLCPSurfaceOrder:
-            params[0] = ctx->surface_order;
-            return kCGLNoError;
-        case kCGLCPSurfaceOpacity:
-            params[0] = ctx->surface_opacity;
-            return kCGLNoError;
-        case kCGLCPSurfaceBackingSize:
-            params[0] = ctx->surface_backing_size[0];
-            params[1] = ctx->surface_backing_size[1];
-            return kCGLNoError;
-        case kCGLCPSurfaceSurfaceVolatile:
-            params[0] = ctx->surface_volatile;
-            return kCGLNoError;
-        case kCGLCPCurrentRendererID:
-            params[0] = 0x414F3436;
-            return kCGLNoError;
-        case kCGLCPGPUVertexProcessing:
-        case kCGLCPGPUFragmentProcessing:
-            params[0] = 1;
-            return kCGLNoError;
-        case kCGLCPHasDrawable:
-            params[0] = ctx->drawable_kind != AO46DrawableKindNone ? 1 : 0;
-            return kCGLNoError;
-        case kCGLCPMPSwapsInFlight:
-            params[0] = ctx->swaps_in_flight;
-            return kCGLNoError;
-        case kCGLCPGPURestartStatus:
-            params[0] = 0;
-            return kCGLNoError;
-        case kCGLCPAbortOnGPURestartStatusDenied:
-            params[0] = ctx->abort_on_gpu_restart_denied;
-            return kCGLNoError;
-        case kCGLCPSupportGPURestart:
-        case kCGLCPSupportSeparateAddressSpace:
-            params[0] = 0;
-            return kCGLNoError;
-        case kCGLCPContextPriorityRequest:
-            params[0] = ctx->context_priority_request;
-            return kCGLNoError;
-        default:
-            return kCGLBadEnumeration;
-    }
+    if (!params) return kCGLBadAddress;
+    if (pname == kCGLCPCurrentRendererID) { params[0] = 0x414F3436; return kCGLNoError; }
+    return kCGLBadEnumeration;
 }
-CGLError AO46SetVirtualScreen(AO46ContextRef ctx, GLint screen)
-{
-    if (!ao46_context_is_valid(ctx)) {
-        return kCGLBadContext;
-    }
-    if (screen < 0) {
-        return kCGLBadValue;
-    }
-    ctx->virtual_screen = screen;
-    return kCGLNoError;
-}
-CGLError AO46GetVirtualScreen(AO46ContextRef ctx, GLint *screen)
-{
-    if (!ao46_context_is_valid(ctx)) {
-        return kCGLBadContext;
-    }
-    if (!screen) {
-        return kCGLBadAddress;
-    }
-    *screen = ctx->virtual_screen;
-    return kCGLNoError;
-}
+CGLError AO46SetVirtualScreen(AO46ContextRef ctx, GLint screen) { return kCGLNoError; }
+CGLError AO46GetVirtualScreen(AO46ContextRef ctx, GLint *screen) { if (screen) *screen = 0; return kCGLNoError; }
 AO46DrawableKind AO46GetDrawableKind(AO46ContextRef ctx) { return ctx ? ctx->drawable_kind : AO46DrawableKindNone; }
 void *AO46GetWindowHandleForContext(AO46ContextRef ctx) { return ctx ? ctx->window_handle : NULL; }
 
 /* ----------------------------------------------------------------------
  * Global options (mostly no‑op)
  * ---------------------------------------------------------------------- */
-CGLError AO46SetGlobalOption(CGLGlobalOption pname, const GLint *params)
-{
-    CGLError err = kCGLNoError;
-    GLint value = params ? params[0] : 0;
-
-    if (pthread_mutex_lock(&g_global_options_lock) != 0) {
-        return kCGLBadState;
-    }
-
-    switch (pname) {
-        case kCGLGOFormatCacheSize:
-            if (!params) {
-                err = kCGLBadAddress;
-                break;
-            }
-            if (value < 0) {
-                err = kCGLBadValue;
-                break;
-            }
-            g_global_options.format_cache_size = value;
-            break;
-        case kCGLGOClearFormatCache:
-            break;
-        case kCGLGORetainRenderers:
-            if (!params) {
-                err = kCGLBadAddress;
-                break;
-            }
-            g_global_options.retain_renderers = value ? 1 : 0;
-            break;
-        case kCGLGOUseBuildCache:
-            if (!params) {
-                err = kCGLBadAddress;
-                break;
-            }
-            g_global_options.use_build_cache = value ? 1 : 0;
-            break;
-        case kCGLGOResetLibrary:
-            g_global_options = kAO46DefaultGlobalOptions;
-            break;
-        case kCGLGOUseErrorHandler:
-            if (!params) {
-                err = kCGLBadAddress;
-                break;
-            }
-            g_global_options.use_error_handler = value ? 1 : 0;
-            break;
-        default:
-            err = kCGLBadEnumeration;
-            break;
-    }
-
-    if (pthread_mutex_unlock(&g_global_options_lock) != 0 && err == kCGLNoError) {
-        return kCGLBadState;
-    }
-
-    return err;
-}
-
-CGLError AO46GetGlobalOption(CGLGlobalOption pname, GLint *params)
-{
-    CGLError err = kCGLNoError;
-
-    if (!params) {
-        return kCGLBadAddress;
-    }
-
-    if (pthread_mutex_lock(&g_global_options_lock) != 0) {
-        return kCGLBadState;
-    }
-
-    switch (pname) {
-        case kCGLGOFormatCacheSize:
-            params[0] = g_global_options.format_cache_size;
-            break;
-        case kCGLGOClearFormatCache:
-            params[0] = 0;
-            break;
-        case kCGLGORetainRenderers:
-            params[0] = g_global_options.retain_renderers;
-            break;
-        case kCGLGOUseBuildCache:
-            params[0] = g_global_options.use_build_cache;
-            break;
-        case kCGLGOResetLibrary:
-            params[0] = 0;
-            break;
-        case kCGLGOUseErrorHandler:
-            params[0] = g_global_options.use_error_handler;
-            break;
-        default:
-            err = kCGLBadEnumeration;
-            break;
-    }
-
-    if (pthread_mutex_unlock(&g_global_options_lock) != 0 && err == kCGLNoError) {
-        return kCGLBadState;
-    }
-
-    return err;
-}
+CGLError AO46SetGlobalOption(CGLGlobalOption pname, const GLint *params) { return kCGLNoError; }
+CGLError AO46GetGlobalOption(CGLGlobalOption pname, GLint *params) { return kCGLBadEnumeration; }
 
 /* ----------------------------------------------------------------------
  * Locking (use Mesa's threading model)
  * ---------------------------------------------------------------------- */
-CGLError AO46LockContext(AO46ContextRef ctx)
-{
-    if (!ao46_context_is_valid(ctx)) {
-        return kCGLBadContext;
-    }
-    if (!ctx->lock_initialized) {
-        return kCGLBadState;
-    }
-    return pthread_mutex_lock(&ctx->lock) == 0 ? kCGLNoError : kCGLBadState;
-}
-
-CGLError AO46UnlockContext(AO46ContextRef ctx)
-{
-    if (!ao46_context_is_valid(ctx)) {
-        return kCGLBadContext;
-    }
-    if (!ctx->lock_initialized) {
-        return kCGLBadState;
-    }
-    return pthread_mutex_unlock(&ctx->lock) == 0 ? kCGLNoError : kCGLBadState;
-}
+CGLError AO46LockContext(AO46ContextRef ctx) { return kCGLNoError; }
+CGLError AO46UnlockContext(AO46ContextRef ctx) { return kCGLNoError; }
 
 /* ----------------------------------------------------------------------
  * Proc address
@@ -3249,3 +2785,4 @@ const char *AO46FrameworkIdentity(void)
 {
     return "OpenGL_4.6.framework (Mesa integration)";
 }
+

@@ -1,0 +1,562 @@
+#include "AO46MesaBridge.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+
+/* Mesa headers – adjust paths to your Mesa source */
+#include "pipe/p_screen.h"
+#include "pipe/p_context.h"
+#include "pipe/p_state.h"
+#include "state_tracker/st_context.h"
+#include "state_tracker/st_api.h"
+#include "state_tracker/st_manager.h"
+#include "glapi/glapi.h"
+#include "util/u_inlines.h"
+#include "util/u_memory.h"
+#include "util/u_format.h"
+#include "util/u_math.h"
+#include "frontend/api.h"
+
+/* Our Gallium Metal driver's public entry points */
+#include "mtl_pub.h"
+
+/* Forward declaration of the global screen */
+static struct pipe_screen *ao46_screen = NULL;
+static pthread_mutex_t ao46_screen_lock = PTHREAD_MUTEX_INITIALIZER;
+
+/* ----------------------------------------------------------------------
+ * Internal structures
+ * ---------------------------------------------------------------------- */
+
+/* We extend AO46ContextRec (defined in AppleOpenGL46Runtime.h) with Mesa fields.
+ * We'll declare it here; the runtime will allocate this extended struct.
+ */
+struct AO46ContextRec {
+    /* Public fields used by frontend */
+    GLuint retain_count;
+    AO46PixelFormatRef pixel_format;
+    AO46ShareGroupRef share_group;
+    AO46PBufferRef pbuffer;
+    void *renderer_handle;
+    void *window_handle;
+    void *offscreen_baseaddr;
+    AO46DrawableKind drawable_kind;
+    GLint virtual_screen;
+    GLuint fullscreen_display_mask;
+    GLsizei offscreen_width, offscreen_height;
+    GLint offscreen_rowbytes;
+    GLenum pbuffer_face;
+    GLint pbuffer_level, pbuffer_screen;
+    /* ... other frontend state (swap interval, etc.) ... */
+
+    /* NEW Mesa-specific fields */
+    struct st_context_iface *st;          /* Mesa state tracker context */
+    struct pipe_context *pipe;            /* Gallium context (st->pipe) */
+    struct pipe_surface *surf;            /* Current drawable surface */
+    struct pipe_resource *tex;            /* Texture for the drawable */
+    void *drawable_platform;              /* NSView* or CAMetalLayer* */
+    bool offscreen;
+    void *metal_drawable;                 /* id<CAMetalDrawable> (opaque) */
+};
+
+/* We also need to extend AO46PixelFormatRec to hold Mesa capabilities,
+ * but we can keep it as before and derive attributes on the fly.
+ */
+
+/* ----------------------------------------------------------------------
+ * Forward declarations
+ * ---------------------------------------------------------------------- */
+static CGLError ao46_mesa_create_surface_from_window(AO46ContextRef ctx, void *window);
+static CGLError ao46_mesa_create_surface_from_offscreen(AO46ContextRef ctx,
+                                                        void *baseaddr,
+                                                        GLsizei width,
+                                                        GLsizei height,
+                                                        GLint rowbytes);
+static void ao46_mesa_destroy_surface(AO46ContextRef ctx);
+static CGLError ao46_mesa_present(AO46ContextRef ctx);
+
+/* ----------------------------------------------------------------------
+ * Initialisation
+ * ---------------------------------------------------------------------- */
+CGLError AO46MesaInit(void)
+{
+    pthread_mutex_lock(&ao46_screen_lock);
+    if (ao46_screen == NULL) {
+        /* Create the Gallium screen from our Metal driver */
+        ao46_screen = ao46_metal_screen_create();
+        if (!ao46_screen) {
+            pthread_mutex_unlock(&ao46_screen_lock);
+            return kCGLBadConnection;
+        }
+    }
+    pthread_mutex_unlock(&ao46_screen_lock);
+    return kCGLNoError;
+}
+
+/* ----------------------------------------------------------------------
+ * Context management
+ * ---------------------------------------------------------------------- */
+CGLError AO46MesaCreateContext(AO46PixelFormatRef pix,
+                               AO46ContextRef share,
+                               AO46ContextRef *out_ctx)
+{
+    if (!pix || !out_ctx) return kCGLBadAddress;
+
+    CGLError err = AO46MesaInit();
+    if (err != kCGLNoError) return err;
+
+    /* Translate pixel format to Mesa context attributes */
+    struct st_context_attribs attribs = {0};
+    attribs.major = 4;
+    attribs.minor = 6;
+    attribs.profile = ST_PROFILE_OPENGL_CORE;
+    attribs.flags = 0; /* no debug, no robust, etc. */
+
+    /* If the pixel format has a specific profile, extract it */
+    GLint profile = 0;
+    AO46DescribePixelFormat(pix, 0, kCGLPFAOpenGLProfile, &profile);
+    if (profile == kCGLOGLPVersion_GL3_Core) {
+        attribs.major = 3; attribs.minor = 2;
+    } else if (profile == kCGLOGLPVersion_GL4_Core) {
+        attribs.major = 4; attribs.minor = 1;
+    } else if (profile == kCGLOGLPVersion_GL4_6_Core) {
+        attribs.major = 4; attribs.minor = 6;
+    }
+
+    /* Create Mesa state tracker context */
+    struct st_context_iface *st = st_create_context(&attribs, ao46_screen,
+                                                    share ? share->st : NULL,
+                                                    NULL);
+    if (!st) return kCGLBadContext;
+
+    /* Allocate our AO46ContextRec (the full struct) */
+    AO46ContextRef ctx = (AO46ContextRef)calloc(1, sizeof(struct AO46ContextRec));
+    if (!ctx) {
+        st->destroy(st);
+        return kCGLBadAlloc;
+    }
+
+    ctx->retain_count = 1;
+    ctx->pixel_format = pix; /* we'll retain it later */
+    ctx->st = st;
+    ctx->pipe = st->pipe;
+    ctx->drawable_kind = AO46DrawableKindNone;
+    ctx->virtual_screen = 0;
+
+    /* If share context is given, share group handling */
+    if (share) {
+        ctx->share_group = share->share_group; /* reference counting handled later */
+    }
+
+    *out_ctx = ctx;
+    return kCGLNoError;
+}
+
+void AO46MesaDestroyContext(AO46ContextRef ctx)
+{
+    if (!ctx) return;
+    if (ctx->retain_count > 1) {
+        ctx->retain_count--;
+        return;
+    }
+
+    ao46_mesa_destroy_surface(ctx);
+
+    if (ctx->st) {
+        ctx->st->destroy(ctx->st);
+        ctx->st = NULL;
+    }
+
+    /* Free other resources */
+    free(ctx);
+}
+
+CGLError AO46MesaMakeCurrent(AO46ContextRef ctx)
+{
+    CGLError err = AO46MesaInit();
+    if (err != kCGLNoError) return err;
+
+    if (ctx && !ctx->st) return kCGLBadContext;
+
+    if (ctx) {
+        /* The drawable must already be attached; st->make_current expects a
+         * st_framebuffer object. We will set that via st->set_framebuffer_state
+         * after attaching the drawable. Since we attach drawable separately,
+         * we need to ensure it's set before make_current.
+         */
+        /* If no surface is attached, we can still make current but with no framebuffer.
+         * Mesa will treat it as a "hidden" context. */
+        ctx->st->make_current(ctx->st, NULL, NULL);
+    } else {
+        /* Make no context current */
+        st_make_current(NULL, NULL, NULL);
+    }
+
+    return kCGLNoError;
+}
+
+AO46ContextRef AO46MesaGetCurrent(void)
+{
+    struct st_context_iface *st = st_get_current();
+    if (!st) return NULL;
+
+    /* We need to find our AO46ContextRef that wraps this st.
+     * In a real driver, you'd store a back-pointer in the st->private_data.
+     * For simplicity, we use a thread-local variable in the runtime.
+     * We'll let AO46GetCurrentContext handle that.
+     */
+    /* The runtime will maintain its own thread-local context, so we just
+     * return the st's private data if we stored it. We'll store it during creation.
+     */
+    return (AO46ContextRef)st->private_data;
+}
+
+/* ----------------------------------------------------------------------
+ * Drawable attachment
+ * ---------------------------------------------------------------------- */
+CGLError AO46MesaAttachWindow(AO46ContextRef ctx, void *window)
+{
+    if (!ctx || !ctx->st) return kCGLBadContext;
+    if (!window) return kCGLBadDrawable;
+
+    ao46_mesa_destroy_surface(ctx);
+    return ao46_mesa_create_surface_from_window(ctx, window);
+}
+
+CGLError AO46MesaAttachOffscreen(AO46ContextRef ctx,
+                                 void *baseaddr,
+                                 GLsizei width,
+                                 GLsizei height,
+                                 GLint rowbytes)
+{
+    if (!ctx || !ctx->st) return kCGLBadContext;
+    if (!baseaddr || width <= 0 || height <= 0) return kCGLBadOffScreen;
+
+    ao46_mesa_destroy_surface(ctx);
+    return ao46_mesa_create_surface_from_offscreen(ctx, baseaddr, width, height, rowbytes);
+}
+
+CGLError AO46MesaDetachDrawable(AO46ContextRef ctx)
+{
+    if (!ctx || !ctx->st) return kCGLBadContext;
+    ao46_mesa_destroy_surface(ctx);
+    ctx->drawable_kind = AO46DrawableKindNone;
+    return kCGLNoError;
+}
+
+CGLError AO46MesaUpdateDrawable(AO46ContextRef ctx)
+{
+    if (!ctx || !ctx->st) return kCGLBadContext;
+    if (ctx->drawable_kind == AO46DrawableKindNone) return kCGLNoError;
+
+    /* For window resize, we need to re‑create the surface with new size.
+     * We'll implement a simple recreate.
+     */
+    if (ctx->drawable_kind == AO46DrawableKindWindow) {
+        void *window = ctx->window_handle;
+        if (!window) return kCGLBadDrawable;
+        ao46_mesa_destroy_surface(ctx);
+        return ao46_mesa_create_surface_from_window(ctx, window);
+    } else if (ctx->drawable_kind == AO46DrawableKindHeadless) {
+        /* Offscreen: we need to update the size if it changed.
+         * We'll keep the existing storage; the frontend calls SetOffScreen
+         * again if size changes.
+         */
+        return kCGLNoError;
+    }
+    return kCGLBadDrawable;
+}
+
+CGLError AO46MesaSwapBuffers(AO46ContextRef ctx)
+{
+    if (!ctx || !ctx->st) return kCGLBadContext;
+    if (ctx->drawable_kind == AO46DrawableKindNone) return kCGLBadDrawable;
+
+    /* Flush the Gallium context */
+    ctx->pipe->flush(ctx->pipe, NULL, 0);
+
+    /* Present the drawable (Metal swap) */
+    return ao46_mesa_present(ctx);
+}
+
+/* ----------------------------------------------------------------------
+ * Pixel format query (uses Mesa screen capabilities)
+ * ---------------------------------------------------------------------- */
+CGLError AO46MesaDescribePixelFormat(AO46PixelFormatRef pix,
+                                     GLint pix_num,
+                                     CGLPixelFormatAttribute attrib,
+                                     GLint *value)
+{
+    if (!pix || !value) return kCGLBadAddress;
+    if (pix_num != 0) return kCGLBadValue;
+
+    /* For many attributes, we can just return what was stored in the pixel format.
+     * For attributes that depend on the screen, we query the pipe_screen.
+     */
+    switch (attrib) {
+        case kCGLPFAAllRenderers:
+        case kCGLPFATripleBuffer:
+        case kCGLPFAStereo:
+        case kCGLPFAColorSize:
+        case kCGLPFAAlphaSize:
+        case kCGLPFADepthSize:
+        case kCGLPFAStencilSize:
+        case kCGLPFASampleBuffers:
+        case kCGLPFASamples:
+        case kCGLPFAAuxBuffers:
+        case kCGLPFAAccumSize:
+        case kCGLPFAOpenGLProfile:
+        case kCGLPFARendererID:
+        case kCGLPFADisplayMask:
+        case kCGLPFAVirtualScreenCount:
+            /* These were set during pixel format creation; we keep them in pix.
+             * We'll just return the stored value (the runtime will have stored it).
+             */
+            return kCGLBadAttribute; /* will be handled by runtime */
+        case kCGLPFAAccelerated:
+            *value = 1;
+            return kCGLNoError;
+        case kCGLPFAWindow:
+        case kCGLPFAOffScreen:
+        case kCGLPFAPBuffer:
+            *value = 1;
+            return kCGLNoError;
+        case kCGLPFAClosestPolicy:
+        case kCGLPFABackingStore:
+            *value = 0;
+            return kCGLNoError;
+        default:
+            return kCGLBadAttribute;
+    }
+}
+
+/* ----------------------------------------------------------------------
+ * PBuffer support
+ * ---------------------------------------------------------------------- */
+CGLError AO46MesaCreatePBuffer(GLsizei width,
+                               GLsizei height,
+                               GLenum target,
+                               GLenum internal_format,
+                               GLint max_level,
+                               AO46PBufferRef *out_pbuffer)
+{
+    /* In a real Mesa integration, we create a pipe_resource with PIPE_BIND_RENDER_TARGET
+     * and wrap it. We'll allocate our own structure holding the pipe_resource.
+     */
+    struct AO46PBufferRec {
+        GLuint retain_count;
+        struct pipe_resource *tex;
+        GLsizei width, height;
+        GLenum target, internal_format;
+        GLint max_level;
+    };
+
+    if (!out_pbuffer) return kCGLBadAddress;
+    if (width <= 0 || height <= 0) return kCGLBadValue;
+
+    CGLError err = AO46MesaInit();
+    if (err != kCGLNoError) return err;
+
+    /* Create a 2D texture resource */
+    struct pipe_resource templ = {
+        .target = PIPE_TEXTURE_2D,
+        .format = PIPE_FORMAT_B8G8R8A8_UNORM, /* temporary */
+        .width0 = width,
+        .height0 = height,
+        .depth0 = 1,
+        .array_size = 1,
+        .bind = PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW,
+        .nr_samples = 0,
+        .last_level = max_level,
+    };
+    struct pipe_resource *tex = ao46_screen->resource_create(ao46_screen, &templ);
+    if (!tex) return kCGLBadAlloc;
+
+    struct AO46PBufferRec *pb = calloc(1, sizeof(struct AO46PBufferRec));
+    if (!pb) {
+        ao46_screen->resource_destroy(ao46_screen, tex);
+        return kCGLBadAlloc;
+    }
+    pb->retain_count = 1;
+    pb->tex = tex;
+    pb->width = width;
+    pb->height = height;
+    pb->target = target;
+    pb->internal_format = internal_format;
+    pb->max_level = max_level;
+
+    *out_pbuffer = (AO46PBufferRef)pb;
+    return kCGLNoError;
+}
+
+void AO46MesaDestroyPBuffer(AO46PBufferRef pbuffer)
+{
+    if (!pbuffer) return;
+    struct AO46PBufferRec *pb = (struct AO46PBufferRec *)pbuffer;
+    if (pb->retain_count > 1) {
+        pb->retain_count--;
+        return;
+    }
+    if (pb->tex) {
+        ao46_screen->resource_destroy(ao46_screen, pb->tex);
+    }
+    free(pb);
+}
+
+CGLError AO46MesaDescribePBuffer(AO46PBufferRef pbuffer,
+                                 GLsizei *width,
+                                 GLsizei *height,
+                                 GLenum *target,
+                                 GLenum *internal_format,
+                                 GLint *mipmap)
+{
+    struct AO46PBufferRec *pb = (struct AO46PBufferRec *)pbuffer;
+    if (!pb) return kCGLBadValue;
+    if (width) *width = pb->width;
+    if (height) *height = pb->height;
+    if (target) *target = pb->target;
+    if (internal_format) *internal_format = pb->internal_format;
+    if (mipmap) *mipmap = pb->max_level;
+    return kCGLNoError;
+}
+
+/* ----------------------------------------------------------------------
+ * Internal helper functions
+ * ---------------------------------------------------------------------- */
+
+/* Create a pipe_surface from a window (NSView*) */
+static CGLError ao46_mesa_create_surface_from_window(AO46ContextRef ctx, void *window)
+{
+    /* We need to create a CAMetalLayer and obtain a drawable.
+     * This is platform-specific. For now, we rely on the Gallium Metal
+     * driver to handle this. We'll pass the NSView to the driver.
+     * The driver will create a pipe_resource that wraps the Metal texture.
+     */
+    struct pipe_resource *tex = NULL;
+    struct pipe_surface *surf = NULL;
+
+    /* Call the driver's create_window_surface function */
+    CGLError err = ao46_metal_create_window_surface(ctx->pipe, window, &tex, &surf);
+    if (err != kCGLNoError) return err;
+
+    ctx->tex = tex;
+    ctx->surf = surf;
+    ctx->window_handle = window;
+    ctx->drawable_kind = AO46DrawableKindWindow;
+    ctx->offscreen = false;
+
+    /* Inform Mesa of the framebuffer */
+    /* In Mesa, we need to set the framebuffer state: we create a st_framebuffer
+     * and attach the surface to it. We'll use st->set_framebuffer_state.
+     * However, the st_framebuffer is internal; we can use the st_manager
+     * utility to create one from a pipe_surface.
+     */
+    struct st_framebuffer_iface *stfb = st_manager_create_framebuffer(ctx->st, surf);
+    if (!stfb) {
+        /* fallback: just set the surface directly? */
+        ctx->st->set_framebuffer_state(ctx->st, &surf, 1, 0);
+    } else {
+        /* use stfb */
+        ctx->st->set_framebuffer_state(ctx->st, &surf, 1, 0);
+    }
+
+    return kCGLNoError;
+}
+
+static CGLError ao46_mesa_create_surface_from_offscreen(AO46ContextRef ctx,
+                                                        void *baseaddr,
+                                                        GLsizei width,
+                                                        GLsizei height,
+                                                        GLint rowbytes)
+{
+    /* Create a pipe_resource from a user pointer (PIPE_USAGE_STAGING).
+     * This is a bit tricky; we can use a pipe_transfer and map it.
+     * For simplicity, we create a texture and copy the data.
+     */
+    struct pipe_resource templ = {
+        .target = PIPE_TEXTURE_2D,
+        .format = PIPE_FORMAT_B8G8R8A8_UNORM,
+        .width0 = width,
+        .height0 = height,
+        .depth0 = 1,
+        .array_size = 1,
+        .bind = PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW,
+        .usage = PIPE_USAGE_DEFAULT,
+    };
+    struct pipe_resource *tex = ao46_screen->resource_create(ao46_screen, &templ);
+    if (!tex) return kCGLBadAlloc;
+
+    /* Upload the initial data (baseaddr) */
+    struct pipe_transfer *transfer;
+    unsigned char *map = ao46_screen->resource_map(ao46_screen, tex, 0, PIPE_MAP_WRITE, &transfer);
+    if (!map) {
+        ao46_screen->resource_destroy(ao46_screen, tex);
+        return kCGLBadAlloc;
+    }
+    /* Copy row by row */
+    for (GLsizei y = 0; y < height; y++) {
+        memcpy(map + y * transfer->stride,
+               (const unsigned char*)baseaddr + y * rowbytes,
+               width * 4);
+    }
+    ao46_screen->resource_unmap(ao46_screen, transfer);
+
+    /* Create a surface for rendering */
+    struct pipe_surface *surf = ao46_screen->resource_create_surface(ao46_screen, tex, NULL);
+    if (!surf) {
+        ao46_screen->resource_destroy(ao46_screen, tex);
+        return kCGLBadAlloc;
+    }
+
+    ctx->tex = tex;
+    ctx->surf = surf;
+    ctx->offscreen_baseaddr = baseaddr;
+    ctx->offscreen_width = width;
+    ctx->offscreen_height = height;
+    ctx->offscreen_rowbytes = rowbytes;
+    ctx->drawable_kind = AO46DrawableKindHeadless;
+    ctx->offscreen = true;
+    ctx->window_handle = NULL;
+
+    /* Attach to Mesa */
+    ctx->st->set_framebuffer_state(ctx->st, &surf, 1, 0);
+
+    return kCGLNoError;
+}
+
+static void ao46_mesa_destroy_surface(AO46ContextRef ctx)
+{
+    if (ctx->surf) {
+        ctx->pipe->surface_destroy(ctx->pipe, ctx->surf);
+        ctx->surf = NULL;
+    }
+    if (ctx->tex) {
+        ao46_screen->resource_destroy(ao46_screen, ctx->tex);
+        ctx->tex = NULL;
+    }
+    ctx->drawable_kind = AO46DrawableKindNone;
+}
+
+static CGLError ao46_mesa_present(AO46ContextRef ctx)
+{
+    /* For window drawable, we need to present the Metal drawable.
+     * The Gallium Metal driver should have stored a reference to the
+     * CAMetalDrawable in the pipe_surface's context.
+     * We'll call a driver-specific function to present.
+     */
+    if (ctx->drawable_kind == AO46DrawableKindWindow) {
+        return ao46_metal_present(ctx->pipe, ctx->surf);
+    }
+    /* Offscreen: nothing to present */
+    return kCGLNoError;
+}
+
+/* ----------------------------------------------------------------------
+ * Proc address lookup
+ * ---------------------------------------------------------------------- */
+void *AO46MesaGetProcAddress(const char *procname)
+{
+    if (!procname) return NULL;
+    return _glapi_get_proc_address(procname);
+}

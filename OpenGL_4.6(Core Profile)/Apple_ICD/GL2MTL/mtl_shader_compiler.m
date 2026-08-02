@@ -62,6 +62,14 @@ ao46_metal_compile_nir_to_msl(struct nir_shader *nir,
     NSString *sourceStr = [NSString stringWithUTF8String:msl_source];
     NSString *entryName = [NSString stringWithUTF8String:translated_entry_name];
 
+    if (getenv("AO46_TRACE_RUNTIME")) {
+        fprintf(stderr,
+                "[AO46Metal] translated %s shader entry=%s\n%s\n",
+                _mesa_shader_stage_to_string(work_nir->info.stage),
+                translated_entry_name,
+                msl_source);
+    }
+
     MTLCompileOptions *options = [[MTLCompileOptions alloc] init];
     options.fastMathEnabled = YES;
     options.languageVersion = MTLLanguageVersion2_4;
@@ -73,6 +81,8 @@ ao46_metal_compile_nir_to_msl(struct nir_shader *nir,
     if (!lib) {
         if (error) *error = compileError;
         NSLog(@"MSL compilation error: %@", compileError);
+        fprintf(stderr, "AO46 Metal generated MSL follows:\n%s\n", msl_source);
+        fflush(stderr);
         ralloc_free(work_nir);
         return nil;
     }

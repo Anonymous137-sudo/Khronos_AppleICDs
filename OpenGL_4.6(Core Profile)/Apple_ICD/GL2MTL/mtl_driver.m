@@ -4,23 +4,22 @@
 #import <AppKit/NSWindow.h>
 #import <Foundation/Foundation.h>
 #import <pthread.h>
-#import <stdarg.h>
-#import <stdio.h>
+#include <stdlib.h>
 
 #include "pipe/p_context.h"
 #include "pipe/p_screen.h"
 #include "pipe/p_state.h"
 #include "pipe/p_defines.h"
 #include "util/u_inlines.h"
-#include "util/u_helpers.h"
 #include "util/u_memory.h"
 #include "util/u_screen.h"
-#include "util/u_framebuffer.h"
 #include "util/format/u_format.h"
 #include "util/u_math.h"
 #include "util/u_debug.h"
 #include "util/u_hash_table.h"
 #include "util/blend.h"
+#include "util/u_framebuffer.h"
+#include "util/u_upload_mgr.h"
 #include "state_tracker/st_context.h"
 #include "nir/nir.h"
 #include "compiler/shader_enums.h"
@@ -29,6 +28,12 @@
 #include "mtl_pub.h"
 
 #define AO46_MAX_SAMPLERS 16  /* Conservative graphics-stage sampler budget */
+#define AO46_MAX_SHADER_BUFFERS 8
+#define AO46_MAX_IMAGE_UNITS 8
+#define AO46_BUFFER_SLOT_CONST0 0
+#define AO46_BUFFER_SLOT_SAMPLER_TABLE 1
+#define AO46_BUFFER_SLOT_PER_DRAW 2
+#define AO46_BUFFER_SLOT_VERTEX_BASE 3
 #ifndef MAX_IMAGE_UNITS
 #define MAX_IMAGE_UNITS 8  /* GL_MAX_IMAGE_UNITS */
 #endif
@@ -39,30 +44,6 @@
 id<MTLDevice> g_mtl_device = nil;
 id<MTLCommandQueue> g_mtl_queue = nil;
 static pthread_mutex_t g_mtl_lock = PTHREAD_MUTEX_INITIALIZER;
-
-static bool
-ao46_metal_trace_enabled(void)
-{
-    const char *value = getenv("AO46_TRACE_RUNTIME");
-    return value && value[0] != '\0';
-}
-
-static void
-ao46_metal_trace(const char *fmt, ...)
-{
-    va_list args;
-
-    if (!ao46_metal_trace_enabled()) {
-        return;
-    }
-
-    fprintf(stderr, "[AO46Metal] ");
-    va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-    fputc('\n', stderr);
-    fflush(stderr);
-}
 
 static void
 ao46_metal_context_flush(struct pipe_context *ctx,
@@ -96,6 +77,153 @@ static id<MTLCommandBuffer> ao46_metal_get_command_buffer(void)
     return [g_mtl_queue commandBuffer];
 }
 
+static bool ao46_metal_texture_uses_slices(const struct pipe_resource *res);
+static bool ao46_metal_texture_is_3d(const struct pipe_resource *res);
+static id<MTLTexture> ao46_metal_create_texture_view(id<MTLTexture> texture,
+                                                     MTLPixelFormat pixel_format,
+                                                     MTLTextureType texture_type,
+                                                     unsigned first_level,
+                                                     unsigned level_count,
+                                                     unsigned first_slice,
+                                                     unsigned slice_count);
+
+static void
+ao46_metal_commit_command_buffer(id<MTLCommandBuffer> cmd_buffer, bool wait)
+{
+    if (!cmd_buffer) {
+        return;
+    }
+
+    [cmd_buffer commit];
+    if (wait) {
+        [cmd_buffer waitUntilCompleted];
+    }
+}
+
+static bool
+ao46_metal_prepare_texture_for_cpu_read(id<MTLTexture> texture)
+{
+    id<MTLCommandBuffer> cmd_buffer;
+    id<MTLBlitCommandEncoder> blit;
+
+    if (!texture) {
+        return false;
+    }
+
+    if (texture.storageMode != MTLStorageModeManaged) {
+        return true;
+    }
+
+    cmd_buffer = ao46_metal_get_command_buffer();
+    if (!cmd_buffer) {
+        return false;
+    }
+
+    blit = [cmd_buffer blitCommandEncoder];
+    if (!blit) {
+        return false;
+    }
+
+    [blit synchronizeResource:texture];
+    [blit endEncoding];
+    ao46_metal_commit_command_buffer(cmd_buffer, true);
+    return true;
+}
+
+static bool
+ao46_metal_texture_region_read_multisample(id<MTLTexture> texture,
+                                           const struct pipe_resource *res,
+                                           unsigned level,
+                                           const struct pipe_box *box,
+                                           void *dst,
+                                           unsigned stride)
+{
+    id<MTLTexture> source_texture = nil;
+    id<MTLTexture> resolve_texture = nil;
+    id<MTLCommandBuffer> cmd_buffer = nil;
+    id<MTLRenderCommandEncoder> encoder = nil;
+    MTLRenderPassDescriptor *rpd = nil;
+    MTLTextureDescriptor *desc = nil;
+    unsigned mip_width;
+    unsigned mip_height;
+    bool ok = false;
+
+    if (!texture || !res || !box || !dst || box->depth != 1 ||
+        ao46_metal_texture_uses_slices(res) || ao46_metal_texture_is_3d(res)) {
+        return false;
+    }
+
+    mip_width = MAX2(u_minify(res->width0, level), 1u);
+    mip_height = MAX2(u_minify(res->height0, level), 1u);
+
+    if (level == 0) {
+        source_texture = [texture retain];
+    } else {
+        source_texture = ao46_metal_create_texture_view(texture,
+                                                        texture.pixelFormat,
+                                                        texture.textureType,
+                                                        level,
+                                                        1u,
+                                                        0u,
+                                                        1u);
+    }
+    if (!source_texture) {
+        return false;
+    }
+
+    desc = [[MTLTextureDescriptor alloc] init];
+    desc.textureType = MTLTextureType2D;
+    desc.pixelFormat = texture.pixelFormat;
+    desc.width = mip_width;
+    desc.height = mip_height;
+    desc.depth = 1;
+    desc.arrayLength = 1;
+    desc.mipmapLevelCount = 1;
+    desc.sampleCount = 1;
+    desc.storageMode = MTLStorageModeManaged;
+    desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+
+    resolve_texture = [g_mtl_device newTextureWithDescriptor:desc];
+    [desc release];
+    if (!resolve_texture) {
+        [source_texture release];
+        return false;
+    }
+
+    cmd_buffer = ao46_metal_get_command_buffer();
+    if (!cmd_buffer) {
+        [resolve_texture release];
+        [source_texture release];
+        return false;
+    }
+
+    rpd = [[MTLRenderPassDescriptor alloc] init];
+    rpd.colorAttachments[0].texture = source_texture;
+    rpd.colorAttachments[0].resolveTexture = resolve_texture;
+    rpd.colorAttachments[0].loadAction = MTLLoadActionLoad;
+    rpd.colorAttachments[0].storeAction = MTLStoreActionMultisampleResolve;
+    encoder = [cmd_buffer renderCommandEncoderWithDescriptor:rpd];
+    [encoder endEncoding];
+    [rpd release];
+    ao46_metal_commit_command_buffer(cmd_buffer, true);
+
+    if (!ao46_metal_prepare_texture_for_cpu_read(resolve_texture)) {
+        [resolve_texture release];
+        [source_texture release];
+        return false;
+    }
+
+    [resolve_texture getBytes:dst
+                  bytesPerRow:stride
+                   fromRegion:MTLRegionMake2D(box->x, box->y, box->width, box->height)
+                  mipmapLevel:0];
+    ok = true;
+
+    [resolve_texture release];
+    [source_texture release];
+    return ok;
+}
+
 static MTLPixelFormat
 ao46_metal_pixel_format(enum pipe_format format)
 {
@@ -104,10 +232,18 @@ ao46_metal_pixel_format(enum pipe_format format)
             return MTLPixelFormatR8Unorm;
         case PIPE_FORMAT_R8_SNORM:
             return MTLPixelFormatR8Snorm;
+        case PIPE_FORMAT_R8_UINT:
+            return MTLPixelFormatR8Uint;
+        case PIPE_FORMAT_R8_SINT:
+            return MTLPixelFormatR8Sint;
         case PIPE_FORMAT_R8G8_UNORM:
             return MTLPixelFormatRG8Unorm;
         case PIPE_FORMAT_R8G8_SNORM:
             return MTLPixelFormatRG8Snorm;
+        case PIPE_FORMAT_R8G8_UINT:
+            return MTLPixelFormatRG8Uint;
+        case PIPE_FORMAT_R8G8_SINT:
+            return MTLPixelFormatRG8Sint;
         case PIPE_FORMAT_B8G8R8A8_UNORM:
             return MTLPixelFormatBGRA8Unorm;
         case PIPE_FORMAT_B8G8R8A8_SRGB:
@@ -118,26 +254,62 @@ ao46_metal_pixel_format(enum pipe_format format)
             return MTLPixelFormatRGBA8Unorm_sRGB;
         case PIPE_FORMAT_R8G8B8A8_SNORM:
             return MTLPixelFormatRGBA8Snorm;
+        case PIPE_FORMAT_R8G8B8A8_UINT:
+            return MTLPixelFormatRGBA8Uint;
+        case PIPE_FORMAT_R8G8B8A8_SINT:
+            return MTLPixelFormatRGBA8Sint;
+        case PIPE_FORMAT_R10G10B10A2_UNORM:
+            return MTLPixelFormatRGB10A2Unorm;
+        case PIPE_FORMAT_B10G10R10A2_UNORM:
+            return MTLPixelFormatBGR10A2Unorm;
+        case PIPE_FORMAT_R10G10B10A2_UINT:
+            return MTLPixelFormatRGB10A2Uint;
         case PIPE_FORMAT_R16_UNORM:
             return MTLPixelFormatR16Unorm;
         case PIPE_FORMAT_R16_SNORM:
             return MTLPixelFormatR16Snorm;
+        case PIPE_FORMAT_R16_UINT:
+            return MTLPixelFormatR16Uint;
+        case PIPE_FORMAT_R16_SINT:
+            return MTLPixelFormatR16Sint;
         case PIPE_FORMAT_R16_FLOAT:
             return MTLPixelFormatR16Float;
         case PIPE_FORMAT_R16G16_UNORM:
             return MTLPixelFormatRG16Unorm;
         case PIPE_FORMAT_R16G16_SNORM:
             return MTLPixelFormatRG16Snorm;
+        case PIPE_FORMAT_R16G16_UINT:
+            return MTLPixelFormatRG16Uint;
+        case PIPE_FORMAT_R16G16_SINT:
+            return MTLPixelFormatRG16Sint;
         case PIPE_FORMAT_R16G16_FLOAT:
             return MTLPixelFormatRG16Float;
         case PIPE_FORMAT_R16G16B16A16_UNORM:
             return MTLPixelFormatRGBA16Unorm;
+        case PIPE_FORMAT_R16G16B16A16_SNORM:
+            return MTLPixelFormatRGBA16Snorm;
+        case PIPE_FORMAT_R16G16B16A16_UINT:
+            return MTLPixelFormatRGBA16Uint;
+        case PIPE_FORMAT_R16G16B16A16_SINT:
+            return MTLPixelFormatRGBA16Sint;
         case PIPE_FORMAT_R16G16B16A16_FLOAT:
             return MTLPixelFormatRGBA16Float;
         case PIPE_FORMAT_R11G11B10_FLOAT:
             return MTLPixelFormatRG11B10Float;
         case PIPE_FORMAT_R9G9B9E5_FLOAT:
             return MTLPixelFormatRGB9E5Float;
+        case PIPE_FORMAT_R32_UINT:
+            return MTLPixelFormatR32Uint;
+        case PIPE_FORMAT_R32_SINT:
+            return MTLPixelFormatR32Sint;
+        case PIPE_FORMAT_R32_FLOAT:
+            return MTLPixelFormatR32Float;
+        case PIPE_FORMAT_R32G32_UINT:
+            return MTLPixelFormatRG32Uint;
+        case PIPE_FORMAT_R32G32_SINT:
+            return MTLPixelFormatRG32Sint;
+        case PIPE_FORMAT_R32G32_FLOAT:
+            return MTLPixelFormatRG32Float;
         case PIPE_FORMAT_R32G32B32A32_UINT:
             return MTLPixelFormatRGBA32Uint;
         case PIPE_FORMAT_R32G32B32A32_SINT:
@@ -162,30 +334,122 @@ ao46_metal_pixel_format(enum pipe_format format)
     }
 }
 
+static bool
+ao46_metal_buffer_texture_format_supported(enum pipe_format format)
+{
+    if (util_format_is_compressed(format) ||
+        util_format_is_depth_or_stencil(format) ||
+        util_format_get_blockwidth(format) != 1 ||
+        util_format_get_blockheight(format) != 1) {
+        return false;
+    }
+
+    return ao46_metal_pixel_format(format) != MTLPixelFormatInvalid;
+}
+
+static id<MTLTexture>
+ao46_metal_create_buffer_texture_view(id<MTLBuffer> buffer,
+                                      enum pipe_format format,
+                                      unsigned offset,
+                                      unsigned size)
+{
+    unsigned blocksize;
+    unsigned texel_count;
+    MTLTextureDescriptor *desc;
+
+    if (!buffer || !size) {
+        return nil;
+    }
+
+    if (!ao46_metal_buffer_texture_format_supported(format)) {
+        return nil;
+    }
+
+    blocksize = util_format_get_blocksize(format);
+    if (!blocksize || (offset % blocksize) != 0 || size < blocksize) {
+        return nil;
+    }
+
+    texel_count = size / blocksize;
+    if (!texel_count) {
+        return nil;
+    }
+
+    desc = [MTLTextureDescriptor textureBufferDescriptorWithPixelFormat:ao46_metal_pixel_format(format)
+                                                                 width:texel_count
+                                                       resourceOptions:MTLResourceStorageModeShared
+                                                                 usage:MTLTextureUsageShaderRead];
+    if (!desc) {
+        return nil;
+    }
+
+    return [buffer newTextureWithDescriptor:desc offset:offset bytesPerRow:0];
+}
+
 static MTLVertexFormat
 ao46_metal_vertex_format(enum pipe_format format)
 {
     switch (format) {
+        case PIPE_FORMAT_R32_UINT:
+            return MTLVertexFormatUInt;
+        case PIPE_FORMAT_R32_SINT:
+            return MTLVertexFormatInt;
         case PIPE_FORMAT_R32_FLOAT:
             return MTLVertexFormatFloat;
+        case PIPE_FORMAT_R32G32_UINT:
+            return MTLVertexFormatUInt2;
+        case PIPE_FORMAT_R32G32_SINT:
+            return MTLVertexFormatInt2;
         case PIPE_FORMAT_R32G32_FLOAT:
             return MTLVertexFormatFloat2;
+        case PIPE_FORMAT_R32G32B32_UINT:
+            return MTLVertexFormatUInt3;
+        case PIPE_FORMAT_R32G32B32_SINT:
+            return MTLVertexFormatInt3;
         case PIPE_FORMAT_R32G32B32_FLOAT:
             return MTLVertexFormatFloat3;
+        case PIPE_FORMAT_R32G32B32A32_UINT:
+            return MTLVertexFormatUInt4;
+        case PIPE_FORMAT_R32G32B32A32_SINT:
+            return MTLVertexFormatInt4;
         case PIPE_FORMAT_R32G32B32A32_FLOAT:
             return MTLVertexFormatFloat4;
         case PIPE_FORMAT_R16_FLOAT:
             return MTLVertexFormatHalf;
+        case PIPE_FORMAT_R16_UINT:
+            return MTLVertexFormatUShort;
+        case PIPE_FORMAT_R16_SINT:
+            return MTLVertexFormatShort;
+        case PIPE_FORMAT_R16_UNORM:
+            return MTLVertexFormatUShortNormalized;
+        case PIPE_FORMAT_R16_SNORM:
+            return MTLVertexFormatShortNormalized;
         case PIPE_FORMAT_R16G16_FLOAT:
             return MTLVertexFormatHalf2;
+        case PIPE_FORMAT_R16G16_UINT:
+            return MTLVertexFormatUShort2;
+        case PIPE_FORMAT_R16G16_SINT:
+            return MTLVertexFormatShort2;
+        case PIPE_FORMAT_R16G16_SNORM:
+            return MTLVertexFormatShort2Normalized;
         case PIPE_FORMAT_R16G16B16A16_FLOAT:
             return MTLVertexFormatHalf4;
+        case PIPE_FORMAT_R16G16B16A16_UINT:
+            return MTLVertexFormatUShort4;
+        case PIPE_FORMAT_R16G16B16A16_SINT:
+            return MTLVertexFormatShort4;
+        case PIPE_FORMAT_R16G16B16A16_SNORM:
+            return MTLVertexFormatShort4Normalized;
         case PIPE_FORMAT_R8G8B8A8_UNORM:
             return MTLVertexFormatUChar4Normalized;
+        case PIPE_FORMAT_B8G8R8A8_UNORM:
+            return MTLVertexFormatUChar4Normalized_BGRA;
         case PIPE_FORMAT_R8G8B8A8_SNORM:
             return MTLVertexFormatChar4Normalized;
         case PIPE_FORMAT_R8G8B8A8_UINT:
             return MTLVertexFormatUChar4;
+        case PIPE_FORMAT_R8G8B8A8_SINT:
+            return MTLVertexFormatChar4;
         case PIPE_FORMAT_R16G16_UNORM:
             return MTLVertexFormatUShort2Normalized;
         case PIPE_FORMAT_R16G16B16A16_UNORM:
@@ -508,38 +772,16 @@ static unsigned
 ao46_metal_bytes_per_pixel(enum pipe_format format)
 {
     switch (format) {
-        case PIPE_FORMAT_R8_UNORM:
-        case PIPE_FORMAT_R8_SNORM:
-            return 1;
-        case PIPE_FORMAT_R8G8_UNORM:
-        case PIPE_FORMAT_R8G8_SNORM:
-        case PIPE_FORMAT_R16_UNORM:
-        case PIPE_FORMAT_R16_SNORM:
-        case PIPE_FORMAT_R16_FLOAT:
-            return 2;
         case PIPE_FORMAT_B8G8R8A8_UNORM:
         case PIPE_FORMAT_B8G8R8A8_SRGB:
         case PIPE_FORMAT_R8G8B8A8_UNORM:
         case PIPE_FORMAT_R8G8B8A8_SRGB:
-        case PIPE_FORMAT_R8G8B8A8_SNORM:
         case PIPE_FORMAT_Z32_FLOAT:
-        case PIPE_FORMAT_R16G16_UNORM:
-        case PIPE_FORMAT_R16G16_SNORM:
-        case PIPE_FORMAT_R16G16_FLOAT:
-        case PIPE_FORMAT_R11G11B10_FLOAT:
-        case PIPE_FORMAT_R9G9B9E5_FLOAT:
             return 4;
         case PIPE_FORMAT_Z24_UNORM_S8_UINT:
             return 4;
-        case PIPE_FORMAT_R16G16B16A16_UNORM:
-        case PIPE_FORMAT_R16G16B16A16_FLOAT:
-            return 8;
         case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
             return 8;
-        case PIPE_FORMAT_R32G32B32A32_UINT:
-        case PIPE_FORMAT_R32G32B32A32_SINT:
-        case PIPE_FORMAT_R32G32B32A32_FLOAT:
-            return 16;
         default:
             return 0;
     }
@@ -566,6 +808,28 @@ static bool
 ao46_metal_texture_is_3d(const struct pipe_resource *res)
 {
     return res && res->target == PIPE_TEXTURE_3D;
+}
+
+static bool
+ao46_metal_texture_is_multisampled(const struct pipe_resource *res)
+{
+    return res && res->nr_samples > 1;
+}
+
+static bool
+ao46_metal_multisample_target_supported(const struct pipe_resource *res)
+{
+    if (!ao46_metal_texture_is_multisampled(res)) {
+        return true;
+    }
+
+    switch (res->target) {
+        case PIPE_TEXTURE_2D:
+        case PIPE_TEXTURE_RECT:
+            return true;
+        default:
+            return false;
+    }
 }
 
 static bool
@@ -614,6 +878,10 @@ ao46_metal_texture_type_for_resource(const struct pipe_resource *res)
         return MTLTextureType2D;
     }
 
+    if (ao46_metal_texture_is_multisampled(res)) {
+        return MTLTextureType2DMultisample;
+    }
+
     switch (res->target) {
         case PIPE_TEXTURE_2D:
         case PIPE_TEXTURE_RECT:
@@ -632,9 +900,14 @@ ao46_metal_texture_type_for_resource(const struct pipe_resource *res)
 }
 
 static MTLTextureType
-ao46_metal_texture_type_for_sampler_view(enum pipe_texture_target target,
+ao46_metal_texture_type_for_sampler_view(const struct pipe_resource *texture,
+                                         enum pipe_texture_target target,
                                          NSUInteger slice_count)
 {
+    if (ao46_metal_texture_is_multisampled(texture)) {
+        return MTLTextureType2DMultisample;
+    }
+
     switch (target) {
         case PIPE_TEXTURE_2D:
         case PIPE_TEXTURE_RECT:
@@ -684,6 +957,10 @@ ao46_metal_texture_type_for_surface_view(const struct pipe_surface *surf)
 
     if (!surf || !surf->texture) {
         return MTLTextureType2D;
+    }
+
+    if (ao46_metal_texture_is_multisampled(surf->texture)) {
+        return MTLTextureType2DMultisample;
     }
 
     layer_count = surf->last_layer >= surf->first_layer ?
@@ -742,6 +1019,19 @@ ao46_metal_texture_region_read(id<MTLTexture> texture,
         return false;
     }
 
+    if (texture.sampleCount > 1) {
+        return ao46_metal_texture_region_read_multisample(texture,
+                                                          res,
+                                                          level,
+                                                          box,
+                                                          dst,
+                                                          stride);
+    }
+
+    if (!ao46_metal_prepare_texture_for_cpu_read(texture)) {
+        return false;
+    }
+
     if (ao46_metal_texture_uses_slices(res)) {
         MTLRegion region = MTLRegionMake2D(box->x, box->y, box->width, box->height);
         uintptr_t effective_layer_stride =
@@ -791,6 +1081,10 @@ ao46_metal_texture_region_write(id<MTLTexture> texture,
                                 uintptr_t layer_stride)
 {
     if (!texture || !res || !box || !src || box->depth <= 0) {
+        return false;
+    }
+
+    if (texture.sampleCount > 1) {
         return false;
     }
 
@@ -943,11 +1237,6 @@ struct ao46_metal_depth_stencil_alpha_state {
     id<MTLDepthStencilState> mtl_state;
 };
 
-struct ao46_metal_stream_output_target {
-    struct pipe_stream_output_target base;
-    uint32_t write_offset;
-};
-
 static inline struct ao46_metal_resource *
 ao46_metal_resource(struct pipe_resource *res)
 {
@@ -964,12 +1253,6 @@ static inline struct ao46_metal_sampler_view *
 ao46_metal_sampler_view(struct pipe_sampler_view *view)
 {
     return (struct ao46_metal_sampler_view *)view;
-}
-
-static inline struct ao46_metal_stream_output_target *
-ao46_metal_stream_output_target(struct pipe_stream_output_target *target)
-{
-    return (struct ao46_metal_stream_output_target *)target;
 }
 
 static id<MTLTexture>
@@ -1005,6 +1288,10 @@ ao46_metal_get_surface_texture(const struct pipe_surface *surf)
         return [mr->mtl_texture retain];
     }
 
+    if (mr->mtl_texture.sampleCount > 1) {
+        return nil;
+    }
+
     return ao46_metal_create_texture_view(mr->mtl_texture,
                                           pixel_format,
                                           ao46_metal_texture_type_for_surface_view(surf),
@@ -1019,12 +1306,23 @@ ao46_metal_resource_create(struct pipe_screen *screen,
                            const struct pipe_resource *templ)
 {
     struct ao46_metal_resource *res = CALLOC_STRUCT(ao46_metal_resource);
+    MTLPixelFormat mtl_format;
+
     if (!res) return NULL;
 
     res->base = *templ;
     res->base.screen = screen;
+    pipe_reference_init(&res->base.reference, 1);
+    mtl_format = ao46_metal_pixel_format(templ->format);
+    if (mtl_format == MTLPixelFormatInvalid) {
+        FREE(res);
+        return NULL;
+    }
 
-    MTLPixelFormat mtl_format = ao46_metal_pixel_format(templ->format);
+    if (!ao46_metal_multisample_target_supported(&res->base)) {
+        FREE(res);
+        return NULL;
+    }
 
     switch (templ->target) {
         case PIPE_BUFFER: {
@@ -1043,29 +1341,25 @@ ao46_metal_resource_create(struct pipe_screen *screen,
         case PIPE_TEXTURE_CUBE:
         case PIPE_TEXTURE_CUBE_ARRAY:
         case PIPE_TEXTURE_3D: {
-            if (mtl_format == MTLPixelFormatInvalid) {
-                FREE(res);
-                return NULL;
-            }
-
             MTLTextureDescriptor *desc = [[MTLTextureDescriptor alloc] init];
-            desc.textureType = ao46_metal_texture_type_for_resource(templ);
+            desc.textureType = ao46_metal_texture_type_for_resource(&res->base);
             desc.pixelFormat = mtl_format;
             desc.width = templ->width0;
             desc.height = templ->height0;
             desc.depth = templ->target == PIPE_TEXTURE_3D ?
                 MAX2((NSUInteger)templ->depth0, 1u) : 1;
-            desc.mipmapLevelCount = templ->last_level + 1;
-            desc.arrayLength = ao46_metal_texture_array_length(templ);
-            desc.usage = MTLTextureUsageShaderRead | MTLTextureUsagePixelFormatView;
-            if (templ->bind & PIPE_BIND_RENDER_TARGET) {
-                desc.usage |= MTLTextureUsageRenderTarget;
+            desc.mipmapLevelCount = res->base.nr_samples > 1 ? 1u : templ->last_level + 1;
+            desc.arrayLength = res->base.nr_samples > 1 ? 1u : ao46_metal_texture_array_length(templ);
+            desc.sampleCount = MAX2(res->base.nr_samples, 1u);
+            desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+            if (res->base.nr_samples == 1) {
+                desc.usage |= MTLTextureUsagePixelFormatView;
             }
-            if (templ->bind & PIPE_BIND_SHADER_IMAGE) {
+            if ((templ->bind & PIPE_BIND_SHADER_IMAGE) && res->base.nr_samples == 1) {
                 desc.usage |= MTLTextureUsageShaderWrite;
             }
             if (templ->bind & PIPE_BIND_DEPTH_STENCIL) {
-                desc.pixelFormat = ao46_metal_pixel_format(templ->format);
+                desc.pixelFormat = mtl_format;
                 desc.usage |= MTLTextureUsageRenderTarget;
             }
             res->mtl_texture = [g_mtl_device newTextureWithDescriptor:desc];
@@ -1227,11 +1521,21 @@ ao46_metal_destroy_surface(struct pipe_screen *screen,
 
 struct ao46_metal_shader {
     id<MTLFunction> function;
+    id<MTLComputePipelineState> compute_pipeline;
     struct nir_shader *nir;
+    uint32_t workgroup_size[3];
+};
+
+struct ao46_metal_shader_buffer_binding {
+    struct pipe_resource *buffer;
+    unsigned buffer_offset;
+    unsigned buffer_size;
+    bool writable;
 };
 
 struct ao46_metal_context {
     struct pipe_context base;
+
     /* Texture buffers (GL_TEXTURE_BUFFER) */
     struct pipe_resource *texture_buffer;   /* currently bound buffer texture */
     id<MTLTexture> texture_buffer_mtl;      /* Metal texture wrapping the buffer */
@@ -1239,6 +1543,7 @@ struct ao46_metal_context {
     id<MTLCommandBuffer> cmd_buffer;
     MTLRenderPassDescriptor *render_pass;
     id<MTLRenderCommandEncoder> render_encoder;
+    id<MTLComputeCommandEncoder> compute_encoder;
     id<MTLRenderPipelineState> pipeline_state;
     uint64_t pipeline_key;
     bool render_pass_started;
@@ -1255,35 +1560,54 @@ struct ao46_metal_context {
     struct pipe_blend_color blend_color;
     struct pipe_stencil_ref stencil_ref;
     struct ao46_metal_shader *vs_shader;
+    struct ao46_metal_shader *gs_shader;
+    struct ao46_metal_shader *tcs_shader;
+    struct ao46_metal_shader *tes_shader;
     struct ao46_metal_shader *fs_shader;
     struct ao46_metal_shader *cs_shader;
     struct pipe_constant_buffer const_buffers[MESA_SHADER_STAGES];
     id<MTLBuffer> const_buffer_mtl[MESA_SHADER_STAGES];
     bool const_buffer_dirty[MESA_SHADER_STAGES];
-    struct pipe_shader_buffer shader_buffers[MESA_SHADER_STAGES][PIPE_MAX_SHADER_BUFFERS];
-    unsigned num_shader_buffers[MESA_SHADER_STAGES];
-    unsigned shader_buffer_writable_mask[MESA_SHADER_STAGES];
-    struct pipe_image_view image_views[MESA_SHADER_STAGES][PIPE_MAX_SHADER_IMAGES];
+    struct ao46_metal_shader_buffer_binding shader_buffers[MESA_SHADER_STAGES][AO46_MAX_SHADER_BUFFERS];
+    uint num_shader_buffers[MESA_SHADER_STAGES];
+    struct pipe_image_view image_views[MESA_SHADER_STAGES][AO46_MAX_IMAGE_UNITS];
     uint num_image_views[MESA_SHADER_STAGES];
     struct pipe_sampler_view *sampler_views[MESA_SHADER_STAGES][AO46_MAX_SAMPLERS];
     struct ao46_metal_sampler_state *samplers[MESA_SHADER_STAGES][AO46_MAX_SAMPLERS];
     uint num_sampler_views[MESA_SHADER_STAGES];
     uint num_samplers[MESA_SHADER_STAGES];
-    struct pipe_stream_output_target *so_targets[PIPE_MAX_SO_BUFFERS];
-    unsigned num_so_targets;
-    enum mesa_prim so_output_prim;
-    struct pipe_clip_state clip_state;
-    unsigned sample_mask;
-    unsigned min_samples;
-    struct pipe_query *render_condition_query;
-    bool render_condition_cond;
-    enum pipe_render_cond_flag render_condition_mode;
 };
 
 static inline struct ao46_metal_context *
 ao46_metal_context(struct pipe_context *ctx)
 {
     return (struct ao46_metal_context *)ctx;
+}
+
+static id<MTLTexture>
+ao46_metal_get_resource_texture(struct pipe_resource *res)
+{
+    struct ao46_metal_resource *mr;
+
+    if (!res) {
+        return nil;
+    }
+
+    mr = ao46_metal_resource(res);
+    return mr->mtl_texture ? [mr->mtl_texture retain] : nil;
+}
+
+static id<MTLTexture>
+ao46_metal_get_framebuffer_resolve_texture(const struct ao46_metal_context *mc,
+                                           unsigned color_index,
+                                           const struct pipe_surface *surf)
+{
+    if (!mc || !surf || color_index != 0 || !mc->fb_state.resolve ||
+        !surf->texture || !ao46_metal_texture_is_multisampled(surf->texture)) {
+        return nil;
+    }
+
+    return ao46_metal_get_resource_texture(mc->fb_state.resolve);
 }
 
 static void *
@@ -1294,7 +1618,10 @@ ao46_metal_buffer_map(struct pipe_context *ctx,
                       const struct pipe_box *box,
                       struct pipe_transfer **out_transfer)
 {
-    (void)ctx;
+    if (ctx && (usage & PIPE_MAP_READ)) {
+        ao46_metal_context_flush(ctx, NULL, PIPE_FLUSH_HINT_FINISH);
+    }
+
     return ao46_metal_resource_map(resource->screen, resource, level, usage, box, out_transfer);
 }
 
@@ -1313,7 +1640,10 @@ ao46_metal_texture_map(struct pipe_context *ctx,
                        const struct pipe_box *box,
                        struct pipe_transfer **out_transfer)
 {
-    (void)ctx;
+    if (ctx && (usage & PIPE_MAP_READ)) {
+        ao46_metal_context_flush(ctx, NULL, PIPE_FLUSH_HINT_FINISH);
+    }
+
     return ao46_metal_resource_map(resource->screen, resource, level, usage, box, out_transfer);
 }
 
@@ -1462,7 +1792,7 @@ static void
 ao46_metal_flush_for_resource_op(struct pipe_context *ctx)
 {
     struct ao46_metal_context *mc = ctx ? ao46_metal_context(ctx) : NULL;
-    if (mc && mc->render_encoder) {
+    if (mc && (mc->render_encoder || mc->compute_encoder)) {
         ao46_metal_context_flush(ctx, NULL, 0);
     }
 }
@@ -1655,7 +1985,7 @@ ao46_metal_resource_copy_region(struct pipe_context *ctx,
     }
 
     [blit endEncoding];
-    [cmd_buffer commit];
+    ao46_metal_commit_command_buffer(cmd_buffer, true);
 }
 
 static void
@@ -1697,6 +2027,98 @@ ao46_metal_blit(struct pipe_context *ctx, const struct pipe_blit_info *info)
                               &src_box);
 }
 
+static bool
+ao46_metal_generate_mipmap(struct pipe_context *ctx,
+                           struct pipe_resource *resource,
+                           enum pipe_format format,
+                           unsigned base_level,
+                           unsigned last_level,
+                           unsigned first_layer,
+                           unsigned last_layer)
+{
+    struct ao46_metal_resource *mr;
+    id<MTLTexture> target_texture = nil;
+    id<MTLCommandBuffer> cmd_buffer;
+    id<MTLBlitCommandEncoder> blit;
+    NSUInteger slice_count;
+    NSUInteger full_slice_count;
+    unsigned level_count;
+    MTLTextureType view_type;
+    bool trace_runtime = getenv("AO46_TRACE_RUNTIME") != NULL;
+
+    (void)format;
+    if (!ctx || !resource || base_level >= last_level) {
+        return false;
+    }
+
+    mr = ao46_metal_resource(resource);
+    if (!mr->mtl_texture || resource->target == PIPE_BUFFER ||
+        ao46_metal_texture_is_multisampled(resource) ||
+        ao46_metal_texture_is_3d(resource)) {
+        return false;
+    }
+
+    full_slice_count = ao46_metal_texture_slice_count(resource, base_level);
+    slice_count = ao46_metal_texture_uses_slices(resource) ?
+        (NSUInteger)(last_layer - first_layer + 1) : 1u;
+    level_count = last_level - base_level + 1;
+    view_type = ao46_metal_texture_type_for_sampler_view(resource,
+                                                         resource->target,
+                                                         MAX2(slice_count, 1u));
+
+    if (base_level == 0 &&
+        last_level == resource->last_level &&
+        first_layer == 0 &&
+        slice_count == full_slice_count &&
+        view_type == mr->mtl_texture.textureType) {
+        target_texture = [mr->mtl_texture retain];
+    } else {
+        target_texture = ao46_metal_create_texture_view(mr->mtl_texture,
+                                                        mr->mtl_texture.pixelFormat,
+                                                        view_type,
+                                                        base_level,
+                                                        MAX2(level_count, 1u),
+                                                        first_layer,
+                                                        MAX2(slice_count, 1u));
+    }
+
+    if (!target_texture) {
+        return false;
+    }
+
+    ao46_metal_flush_for_resource_op(ctx);
+    cmd_buffer = ao46_metal_get_command_buffer();
+    if (!cmd_buffer) {
+        [target_texture release];
+        return false;
+    }
+
+    blit = [cmd_buffer blitCommandEncoder];
+    if (!blit) {
+        [target_texture release];
+        return false;
+    }
+
+    if (trace_runtime) {
+        fprintf(stderr,
+                "[AO46Metal] generate_mipmap level=%u..%u layers=%u..%u target=%lu size=%lux%lu viewType=%lu\n",
+                base_level,
+                last_level,
+                first_layer,
+                last_layer,
+                (unsigned long)resource->target,
+                (unsigned long)target_texture.width,
+                (unsigned long)target_texture.height,
+                (unsigned long)target_texture.textureType);
+    }
+
+    [blit generateMipmapsForTexture:target_texture];
+    [blit endEncoding];
+    ao46_metal_commit_command_buffer(cmd_buffer, true);
+    [target_texture release];
+    return true;
+}
+
 static void
 ao46_metal_clear_render_target(struct pipe_context *ctx,
                                struct pipe_surface *dst,
@@ -1705,8 +2127,10 @@ ao46_metal_clear_render_target(struct pipe_context *ctx,
                                unsigned width, unsigned height,
                                bool render_condition_enabled)
 {
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
     struct pipe_box box;
     id<MTLTexture> surface_texture;
+    id<MTLTexture> resolve_texture = nil;
 
     (void)render_condition_enabled;
     if (!ctx || !dst || !dst->texture || !color) {
@@ -1716,6 +2140,15 @@ ao46_metal_clear_render_target(struct pipe_context *ctx,
     surface_texture = ao46_metal_get_surface_texture(dst);
     if (!surface_texture) {
         return;
+    }
+
+    if (mc) {
+        for (unsigned i = 0; i < mc->fb_state.nr_cbufs; i++) {
+            if (ao46_metal_surface_equal(&mc->fb_state.cbufs[i], dst)) {
+                resolve_texture = ao46_metal_get_framebuffer_resolve_texture(mc, i, dst);
+                break;
+            }
+        }
     }
 
     if (ao46_metal_box_covers_surface(dst, dstx, dsty, width, height)) {
@@ -1733,27 +2166,37 @@ ao46_metal_clear_render_target(struct pipe_context *ctx,
         rpd = [[MTLRenderPassDescriptor alloc] init];
         rpd.colorAttachments[0].texture = surface_texture;
         rpd.colorAttachments[0].loadAction = MTLLoadActionClear;
-        rpd.colorAttachments[0].storeAction = MTLStoreActionStore;
+        if (resolve_texture && surface_texture.sampleCount > 1) {
+            rpd.colorAttachments[0].resolveTexture = resolve_texture;
+            rpd.colorAttachments[0].storeAction = MTLStoreActionStoreAndMultisampleResolve;
+        } else {
+            rpd.colorAttachments[0].storeAction = MTLStoreActionStore;
+        }
         rpd.colorAttachments[0].clearColor =
             MTLClearColorMake(color->f[0], color->f[1], color->f[2], color->f[3]);
         encoder = [cmd_buffer renderCommandEncoderWithDescriptor:rpd];
         [encoder endEncoding];
         [rpd release];
         [surface_texture release];
-        [cmd_buffer commit];
+        [resolve_texture release];
+        ao46_metal_commit_command_buffer(cmd_buffer, true);
         return;
     }
 
     u_box_2d(dstx, dsty, width, height, &box);
-    if (ao46_metal_bytes_per_pixel(dst->format) == 4) {
+    if (ao46_metal_bytes_per_pixel(dst->format) == 4 &&
+        (!ao46_metal_texture_is_multisampled(dst->texture) || resolve_texture)) {
         uint8_t texel[4];
+        id<MTLTexture> target_texture = ao46_metal_texture_is_multisampled(dst->texture) ?
+            resolve_texture : surface_texture;
         ao46_metal_pack_color_texel(dst->format, color, texel);
         box.z = 0;
-        box.depth = ao46_metal_texture_type_uses_slices(surface_texture.textureType) ?
-            (int)MAX2(surface_texture.arrayLength, 1u) : 1;
-        (void)ao46_metal_fill_texture_box(surface_texture, dst->format, 0, &box, texel);
+        box.depth = ao46_metal_texture_type_uses_slices(target_texture.textureType) ?
+            (int)MAX2(target_texture.arrayLength, 1u) : 1;
+        (void)ao46_metal_fill_texture_box(target_texture, dst->format, 0, &box, texel);
     }
     [surface_texture release];
+    [resolve_texture release];
 }
 
 static void
@@ -1811,7 +2254,7 @@ ao46_metal_clear_depth_stencil(struct pipe_context *ctx,
     [encoder endEncoding];
     [rpd release];
     [surface_texture release];
-    [cmd_buffer commit];
+    ao46_metal_commit_command_buffer(cmd_buffer, true);
 }
 
 static void
@@ -1977,16 +2420,21 @@ ao46_metal_trim_stage_bind_counts(struct ao46_metal_context *mc,
 }
 
 static void
-ao46_metal_trim_shader_resource_counts(struct ao46_metal_context *mc,
-                                       mesa_shader_stage shader)
+ao46_metal_trim_shader_buffer_count(struct ao46_metal_context *mc,
+                                    mesa_shader_stage shader)
 {
-    int count = PIPE_MAX_SHADER_BUFFERS;
+    int count = AO46_MAX_SHADER_BUFFERS;
     while (count > 0 && !mc->shader_buffers[shader][count - 1].buffer) {
         count--;
     }
-    mc->num_shader_buffers[shader] = (unsigned)count;
+    mc->num_shader_buffers[shader] = (uint)count;
+}
 
-    count = PIPE_MAX_SHADER_IMAGES;
+static void
+ao46_metal_trim_image_count(struct ao46_metal_context *mc,
+                            mesa_shader_stage shader)
+{
+    int count = AO46_MAX_IMAGE_UNITS;
     while (count > 0 && !mc->image_views[shader][count - 1].resource) {
         count--;
     }
@@ -2032,7 +2480,9 @@ static void
 ao46_metal_destroy_shader_state(struct ao46_metal_shader *shader)
 {
     if (!shader) return;
+    [shader->compute_pipeline release];
     [shader->function release];
+    shader->compute_pipeline = nil;
     shader->function = nil;
     FREE(shader);
 }
@@ -2080,12 +2530,100 @@ ao46_metal_delete_fs_state(struct pipe_context *ctx, void *hwcso)
 }
 
 static void *
+ao46_metal_create_gs_state(struct pipe_context *ctx,
+                           const struct pipe_shader_state *shader)
+{
+    (void)ctx;
+    return ao46_metal_create_shader_state(shader);
+}
+
+static void
+ao46_metal_bind_gs_state(struct pipe_context *ctx, void *hwcso)
+{
+    ao46_metal_context(ctx)->gs_shader = (struct ao46_metal_shader *)hwcso;
+}
+
+static void
+ao46_metal_delete_gs_state(struct pipe_context *ctx, void *hwcso)
+{
+    (void)ctx;
+    ao46_metal_destroy_shader_state((struct ao46_metal_shader *)hwcso);
+}
+
+static void *
+ao46_metal_create_tcs_state(struct pipe_context *ctx,
+                            const struct pipe_shader_state *shader)
+{
+    (void)ctx;
+    return ao46_metal_create_shader_state(shader);
+}
+
+static void
+ao46_metal_bind_tcs_state(struct pipe_context *ctx, void *hwcso)
+{
+    ao46_metal_context(ctx)->tcs_shader = (struct ao46_metal_shader *)hwcso;
+}
+
+static void
+ao46_metal_delete_tcs_state(struct pipe_context *ctx, void *hwcso)
+{
+    (void)ctx;
+    ao46_metal_destroy_shader_state((struct ao46_metal_shader *)hwcso);
+}
+
+static void *
+ao46_metal_create_tes_state(struct pipe_context *ctx,
+                            const struct pipe_shader_state *shader)
+{
+    (void)ctx;
+    return ao46_metal_create_shader_state(shader);
+}
+
+static void
+ao46_metal_bind_tes_state(struct pipe_context *ctx, void *hwcso)
+{
+    ao46_metal_context(ctx)->tes_shader = (struct ao46_metal_shader *)hwcso;
+}
+
+static void
+ao46_metal_delete_tes_state(struct pipe_context *ctx, void *hwcso)
+{
+    (void)ctx;
+    ao46_metal_destroy_shader_state((struct ao46_metal_shader *)hwcso);
+}
+
+static void *
 ao46_metal_create_compute_state(struct pipe_context *ctx,
                                 const struct pipe_compute_state *state)
 {
+    struct ao46_metal_shader *ms;
+    struct pipe_shader_state shader_state = {0};
+    NSError *error = nil;
+
     (void)ctx;
-    (void)state;
-    return NULL;
+    if (!state || state->ir_type != PIPE_SHADER_IR_NIR || !state->prog) {
+        return NULL;
+    }
+
+    shader_state.type = state->ir_type;
+    shader_state.ir.nir = (struct nir_shader *)state->prog;
+    ms = ao46_metal_create_shader_state(&shader_state);
+    if (!ms) {
+        return NULL;
+    }
+
+    ms->compute_pipeline =
+        [g_mtl_device newComputePipelineStateWithFunction:ms->function error:&error];
+    if (!ms->compute_pipeline) {
+        NSLog(@"AO46 Metal: Compute pipeline creation failed: %@", error);
+        ao46_metal_destroy_shader_state(ms);
+        return NULL;
+    }
+
+    ms->workgroup_size[0] = MAX2(ms->nir->info.workgroup_size[0], 1u);
+    ms->workgroup_size[1] = MAX2(ms->nir->info.workgroup_size[1], 1u);
+    ms->workgroup_size[2] = MAX2(ms->nir->info.workgroup_size[2], 1u);
+    return ms;
 }
 
 static void
@@ -2367,7 +2905,7 @@ ao46_metal_create_sampler_view(struct pipe_context *ctx,
     }
 
     mr = ao46_metal_resource(texture);
-    if (!mr->mtl_texture) {
+    if (texture->target != PIPE_BUFFER && !mr->mtl_texture) {
         return NULL;
     }
 
@@ -2389,16 +2927,40 @@ ao46_metal_create_sampler_view(struct pipe_context *ctx,
     view->base.u = templ->u;
     pipe_resource_reference(&view->base.texture, texture);
 
-    pixel_format = ao46_metal_pixel_format(view->base.format);
-    if (pixel_format == MTLPixelFormatInvalid) {
-        pipe_resource_reference(&view->base.texture, NULL);
-        FREE(view);
-        return NULL;
+    if (texture->target == PIPE_BUFFER) {
+        unsigned offset = view->base.u.buf.offset;
+        unsigned size = view->base.u.buf.size;
+        unsigned available = offset < texture->width0 ? texture->width0 - offset : 0;
+
+        if (!mr->mtl_buffer || offset >= texture->width0) {
+            pipe_resource_reference(&view->base.texture, NULL);
+            FREE(view);
+            return NULL;
+        }
+
+        if (!size || size > available) {
+            size = available;
+        }
+
+        view->mtl_texture = ao46_metal_create_buffer_texture_view(mr->mtl_buffer,
+                                                                  view->base.format,
+                                                                  offset,
+                                                                  size);
+        if (!view->mtl_texture) {
+            pipe_resource_reference(&view->base.texture, NULL);
+            FREE(view);
+            return NULL;
+        }
+
+        return &view->base;
     }
+
+    pixel_format = ao46_metal_pixel_format(view->base.format);
     slice_count = ao46_metal_texture_uses_slices(texture) || ao46_metal_texture_is_3d(texture) ?
         (NSUInteger)(view->base.u.tex.last_layer - view->base.u.tex.first_layer + 1) : 1u;
     level_count = view->base.u.tex.last_level - view->base.u.tex.first_level + 1;
-    view_type = ao46_metal_texture_type_for_sampler_view(view->base.target,
+    view_type = ao46_metal_texture_type_for_sampler_view(texture,
+                                                         view->base.target,
                                                          MAX2(slice_count, 1u));
     full_levels = view->base.u.tex.first_level == 0 &&
         view->base.u.tex.last_level == texture->last_level;
@@ -2409,6 +2971,8 @@ ao46_metal_create_sampler_view(struct pipe_context *ctx,
         view_type == mr->mtl_texture.textureType &&
         full_levels && full_slices) {
         view->mtl_texture = [mr->mtl_texture retain];
+    } else if (texture->nr_samples > 1) {
+        view->mtl_texture = nil;
     } else {
         view->mtl_texture = ao46_metal_create_texture_view(mr->mtl_texture,
                                                            pixel_format,
@@ -2495,6 +3059,82 @@ ao46_metal_get_texture_from_view(struct pipe_sampler_view *view)
     return ao46_metal_resource(view->texture)->mtl_texture;
 }
 
+static id<MTLTexture>
+ao46_metal_get_texture_from_image_view(const struct pipe_image_view *image)
+{
+    struct ao46_metal_resource *mr;
+    MTLPixelFormat pixel_format;
+    MTLTextureType view_type;
+    NSUInteger slice_count;
+    bool full_view;
+
+    if (!image || !image->resource) {
+        return nil;
+    }
+
+    mr = ao46_metal_resource(image->resource);
+    if (image->resource->target == PIPE_BUFFER) {
+        unsigned offset;
+        unsigned size;
+
+        if (!mr->mtl_buffer) {
+            return nil;
+        }
+
+        offset = image->u.buf.offset;
+        if (offset >= image->resource->width0) {
+            return nil;
+        }
+
+        size = image->u.buf.size;
+        if (!size || size > image->resource->width0 - offset) {
+            size = image->resource->width0 - offset;
+        }
+
+        return ao46_metal_create_buffer_texture_view(mr->mtl_buffer,
+                                                     image->format,
+                                                     offset,
+                                                     size);
+    }
+
+    if (!mr->mtl_texture) {
+        return nil;
+    }
+
+    if (ao46_metal_texture_is_3d(image->resource) && !image->u.tex.is_2d_view_of_3d) {
+        return [mr->mtl_texture retain];
+    }
+
+    pixel_format = ao46_metal_pixel_format(image->format);
+    if (pixel_format == MTLPixelFormatInvalid) {
+        pixel_format = mr->mtl_texture.pixelFormat;
+    }
+
+    slice_count = image->u.tex.last_layer >= image->u.tex.first_layer ?
+        (NSUInteger)(image->u.tex.last_layer - image->u.tex.first_layer + 1) : 1u;
+    view_type = image->u.tex.is_2d_view_of_3d ?
+        (slice_count > 1 ? MTLTextureType2DArray : MTLTextureType2D) :
+        ao46_metal_texture_type_for_resource(image->resource);
+    full_view = image->u.tex.level == 0 &&
+        image->resource->last_level == 0 &&
+        image->u.tex.first_layer == 0 &&
+        slice_count == ao46_metal_texture_slice_count(image->resource, image->u.tex.level) &&
+        pixel_format == mr->mtl_texture.pixelFormat &&
+        view_type == mr->mtl_texture.textureType;
+
+    if (full_view) {
+        return [mr->mtl_texture retain];
+    }
+
+    return ao46_metal_create_texture_view(mr->mtl_texture,
+                                          pixel_format,
+                                          view_type,
+                                          image->u.tex.level,
+                                          1u,
+                                          image->u.tex.first_layer,
+                                          MAX2(slice_count, 1u));
+}
+
 /* ----------------------------------------------------------------------
  * Context state setters
  * ---------------------------------------------------------------------- */
@@ -2520,7 +3160,11 @@ ao46_metal_set_constant_buffer(struct pipe_context *ctx,
         return;
     }
 
-    util_copy_constant_buffer(&mc->const_buffers[shader], cb);
+    if (cb) {
+        mc->const_buffers[shader] = *cb;
+    } else {
+        memset(&mc->const_buffers[shader], 0, sizeof(mc->const_buffers[shader]));
+    }
 
     [mc->const_buffer_mtl[shader] release];
     mc->const_buffer_mtl[shader] = nil;
@@ -2568,63 +3212,6 @@ ao46_metal_set_constant_buffer(struct pipe_context *ctx,
 }
 
 static void
-ao46_metal_set_shader_buffers(struct pipe_context *ctx,
-                              mesa_shader_stage shader,
-                              unsigned start_slot,
-                              unsigned count,
-                              const struct pipe_shader_buffer *buffers,
-                              unsigned writable_bitmask)
-{
-    struct ao46_metal_context *mc = ao46_metal_context(ctx);
-    unsigned limit;
-
-    if (!mc || shader < 0 || shader >= MESA_SHADER_STAGES ||
-        start_slot >= PIPE_MAX_SHADER_BUFFERS) {
-        return;
-    }
-
-    limit = MIN2(start_slot + count, PIPE_MAX_SHADER_BUFFERS);
-    for (unsigned slot = start_slot, i = 0; slot < limit; slot++, i++) {
-        util_copy_shader_buffer(&mc->shader_buffers[shader][slot],
-                                buffers ? &buffers[i] : NULL);
-    }
-
-    mc->shader_buffer_writable_mask[shader] = writable_bitmask;
-    ao46_metal_trim_shader_resource_counts(mc, shader);
-}
-
-static void
-ao46_metal_set_shader_images(struct pipe_context *ctx,
-                             mesa_shader_stage shader,
-                             unsigned start_slot,
-                             unsigned count,
-                             unsigned unbind_num_trailing_slots,
-                             const struct pipe_image_view *images)
-{
-    struct ao46_metal_context *mc = ao46_metal_context(ctx);
-    unsigned limit;
-    unsigned clear_end;
-
-    if (!mc || shader < 0 || shader >= MESA_SHADER_STAGES ||
-        start_slot >= PIPE_MAX_SHADER_IMAGES) {
-        return;
-    }
-
-    limit = MIN2(start_slot + count, PIPE_MAX_SHADER_IMAGES);
-    for (unsigned slot = start_slot, i = 0; slot < limit; slot++, i++) {
-        util_copy_image_view(&mc->image_views[shader][slot],
-                             images ? &images[i] : NULL);
-    }
-
-    clear_end = MIN2(limit + unbind_num_trailing_slots, PIPE_MAX_SHADER_IMAGES);
-    for (unsigned slot = limit; slot < clear_end; slot++) {
-        util_copy_image_view(&mc->image_views[shader][slot], NULL);
-    }
-
-    ao46_metal_trim_shader_resource_counts(mc, shader);
-}
-
-static void
 ao46_metal_set_sampler_views(struct pipe_context *ctx,
                              mesa_shader_stage shader,
                              uint start_slot,
@@ -2655,112 +3242,130 @@ ao46_metal_set_vertex_buffers(struct pipe_context *ctx,
                               const struct pipe_vertex_buffer *buffers)
 {
     struct ao46_metal_context *mc = ao46_metal_context(ctx);
-    if (!buffers || count == 0) {
-        memset(mc->vertex_buffers, 0, sizeof(mc->vertex_buffers));
-        mc->num_vertex_buffers = 0;
-        return;
+    memset(mc->vertex_buffers, 0, sizeof(mc->vertex_buffers));
+    mc->num_vertex_buffers = MIN2(count, PIPE_MAX_ATTRIBS);
+    if (buffers && mc->num_vertex_buffers > 0) {
+        memcpy(mc->vertex_buffers, buffers,
+               mc->num_vertex_buffers * sizeof(struct pipe_vertex_buffer));
     }
-
-    util_set_vertex_buffers_count(mc->vertex_buffers,
-                                  &mc->num_vertex_buffers,
-                                  buffers,
-                                  MIN2(count, PIPE_MAX_ATTRIBS));
 }
 
 static void
 ao46_metal_set_sample_mask(struct pipe_context *ctx, unsigned sample_mask)
 {
-    struct ao46_metal_context *mc = ao46_metal_context(ctx);
-    if (!mc) {
-        return;
-    }
-
-    mc->sample_mask = sample_mask;
+    (void)ctx;
+    (void)sample_mask;
 }
 
 static void
 ao46_metal_set_min_samples(struct pipe_context *ctx, unsigned min_samples)
 {
-    struct ao46_metal_context *mc = ao46_metal_context(ctx);
-    if (!mc) {
-        return;
-    }
-
-    mc->min_samples = min_samples;
+    (void)ctx;
+    (void)min_samples;
 }
 
 static void
 ao46_metal_set_clip_state(struct pipe_context *ctx,
-                          const struct pipe_clip_state *clip_state)
+                          const struct pipe_clip_state *state)
 {
-    struct ao46_metal_context *mc = ao46_metal_context(ctx);
-    if (!mc) {
-        return;
-    }
-
-    if (clip_state) {
-        mc->clip_state = *clip_state;
-    } else {
-        memset(&mc->clip_state, 0, sizeof(mc->clip_state));
-    }
-}
-
-static void
-ao46_metal_render_condition(struct pipe_context *ctx,
-                            struct pipe_query *query,
-                            bool condition,
-                            enum pipe_render_cond_flag mode)
-{
-    struct ao46_metal_context *mc = ao46_metal_context(ctx);
-    if (!mc) {
-        return;
-    }
-
-    mc->render_condition_query = query;
-    mc->render_condition_cond = condition;
-    mc->render_condition_mode = mode;
-}
-
-static struct pipe_stream_output_target *
-ao46_metal_create_stream_output_target(struct pipe_context *ctx,
-                                       struct pipe_resource *buffer,
-                                       unsigned buffer_offset,
-                                       unsigned buffer_size)
-{
-    struct ao46_metal_stream_output_target *target;
-
-    if (!ctx || !buffer) {
-        return NULL;
-    }
-
-    target = CALLOC_STRUCT(ao46_metal_stream_output_target);
-    if (!target) {
-        return NULL;
-    }
-
-    pipe_reference_init(&target->base.reference, 1);
-    target->base.context = ctx;
-    pipe_resource_reference(&target->base.buffer, buffer);
-    target->base.buffer_offset = buffer_offset;
-    target->base.buffer_size = buffer_size;
-    target->write_offset = buffer_offset;
-    return &target->base;
-}
-
-static void
-ao46_metal_stream_output_target_destroy(struct pipe_context *ctx,
-                                        struct pipe_stream_output_target *target)
-{
-    struct ao46_metal_stream_output_target *mt =
-        ao46_metal_stream_output_target(target);
-
     (void)ctx;
-    if (!mt) {
+    (void)state;
+}
+
+static void
+ao46_metal_set_polygon_stipple(struct pipe_context *ctx,
+                               const struct pipe_poly_stipple *state)
+{
+    (void)ctx;
+    (void)state;
+}
+
+static void
+ao46_metal_set_window_rectangles(struct pipe_context *ctx,
+                                 bool include,
+                                 unsigned num_rectangles,
+                                 const struct pipe_scissor_state *rects)
+{
+    (void)ctx;
+    (void)include;
+    (void)num_rectangles;
+    (void)rects;
+}
+
+static void
+ao46_metal_set_shader_buffers(struct pipe_context *ctx,
+                              mesa_shader_stage shader,
+                              unsigned start_slot,
+                              unsigned count,
+                              const struct pipe_shader_buffer *buffers,
+                              unsigned writable_bitmask)
+{
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
+    unsigned limit;
+
+    if (!mc || shader < 0 || shader >= MESA_SHADER_STAGES ||
+        start_slot >= AO46_MAX_SHADER_BUFFERS) {
         return;
     }
 
-    pipe_resource_reference(&mt->base.buffer, NULL);
-    FREE(mt);
+    limit = MIN2(start_slot + count, AO46_MAX_SHADER_BUFFERS);
+    for (unsigned slot = start_slot, i = 0; slot < limit; slot++, i++) {
+        struct ao46_metal_shader_buffer_binding *dst = &mc->shader_buffers[shader][slot];
+
+        pipe_resource_reference(&dst->buffer, NULL);
+        dst->buffer_offset = 0;
+        dst->buffer_size = 0;
+        dst->writable = false;
+
+        if (buffers && buffers[i].buffer) {
+            pipe_resource_reference(&dst->buffer, buffers[i].buffer);
+            dst->buffer_offset = buffers[i].buffer_offset;
+            dst->buffer_size = buffers[i].buffer_size;
+            dst->writable = (writable_bitmask & (1u << i)) != 0;
+        }
+    }
+
+    ao46_metal_trim_shader_buffer_count(mc, shader);
+}
+
+static void
+ao46_metal_set_shader_images(struct pipe_context *ctx,
+                             mesa_shader_stage shader,
+                             unsigned start_slot,
+                             unsigned count,
+                             unsigned unbind_num_trailing_slots,
+                             const struct pipe_image_view *images)
+{
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
+    unsigned limit;
+    unsigned clear_end;
+
+    if (!mc || shader < 0 || shader >= MESA_SHADER_STAGES ||
+        start_slot >= AO46_MAX_IMAGE_UNITS) {
+        return;
+    }
+
+    limit = MIN2(start_slot + count, AO46_MAX_IMAGE_UNITS);
+    for (unsigned slot = start_slot, i = 0; slot < limit; slot++, i++) {
+        struct pipe_image_view *dst = &mc->image_views[shader][slot];
+
+        pipe_resource_reference(&dst->resource, NULL);
+        memset(dst, 0, sizeof(*dst));
+
+        if (images && images[i].resource) {
+            *dst = images[i];
+            pipe_resource_reference(&dst->resource, images[i].resource);
+        }
+    }
+
+    clear_end = MIN2(limit + unbind_num_trailing_slots, AO46_MAX_IMAGE_UNITS);
+    for (unsigned slot = limit; slot < clear_end; slot++) {
+        struct pipe_image_view *dst = &mc->image_views[shader][slot];
+        pipe_resource_reference(&dst->resource, NULL);
+        memset(dst, 0, sizeof(*dst));
+    }
+
+    ao46_metal_trim_image_count(mc, shader);
 }
 
 static void
@@ -2770,37 +3375,11 @@ ao46_metal_set_stream_output_targets(struct pipe_context *ctx,
                                      const unsigned *offsets,
                                      enum mesa_prim output_prim)
 {
-    struct ao46_metal_context *mc = ao46_metal_context(ctx);
-    unsigned limit;
-
-    if (!mc) {
-        return;
-    }
-
-    limit = MIN2(num_targets, PIPE_MAX_SO_BUFFERS);
-    for (unsigned i = 0; i < limit; i++) {
-        pipe_so_target_reference(&mc->so_targets[i], targets ? targets[i] : NULL);
-        if (mc->so_targets[i] && offsets && offsets[i] != (unsigned)-1) {
-            ao46_metal_stream_output_target(mc->so_targets[i])->write_offset = offsets[i];
-        }
-    }
-
-    for (unsigned i = limit; i < PIPE_MAX_SO_BUFFERS; i++) {
-        pipe_so_target_reference(&mc->so_targets[i], NULL);
-    }
-
-    mc->num_so_targets = limit;
-    mc->so_output_prim = output_prim;
-}
-
-static uint32_t
-ao46_metal_stream_output_target_offset(struct pipe_stream_output_target *target)
-{
-    if (!target) {
-        return 0;
-    }
-
-    return ao46_metal_stream_output_target(target)->write_offset;
+    (void)ctx;
+    (void)num_targets;
+    (void)targets;
+    (void)offsets;
+    (void)output_prim;
 }
 
 static void
@@ -2849,10 +3428,11 @@ ao46_metal_build_vertex_descriptor(const struct ao46_metal_context *mc)
 
         descriptor.attributes[i].format = format;
         descriptor.attributes[i].offset = elem->src_offset;
-        descriptor.attributes[i].bufferIndex = elem->vertex_buffer_index;
+        descriptor.attributes[i].bufferIndex =
+            AO46_BUFFER_SLOT_VERTEX_BASE + elem->vertex_buffer_index;
 
         MTLVertexBufferLayoutDescriptor *layout =
-            descriptor.layouts[elem->vertex_buffer_index];
+            descriptor.layouts[AO46_BUFFER_SLOT_VERTEX_BASE + elem->vertex_buffer_index];
         layout.stride = elem->src_stride;
         layout.stepFunction = elem->instance_divisor ?
             MTLVertexStepFunctionPerInstance :
@@ -2891,6 +3471,69 @@ ao46_metal_compute_pipeline_key(struct ao46_metal_context *mc,
     return key;
 }
 
+static void
+ao46_metal_bind_compute_resources(struct ao46_metal_context *mc)
+{
+    id<MTLComputeCommandEncoder> enc = mc ? mc->compute_encoder : nil;
+
+    if (!enc) {
+        return;
+    }
+
+    if (mc->const_buffer_mtl[MESA_SHADER_COMPUTE]) {
+        [enc setBuffer:mc->const_buffer_mtl[MESA_SHADER_COMPUTE]
+                offset:0
+               atIndex:0];
+        mc->const_buffer_dirty[MESA_SHADER_COMPUTE] = false;
+    }
+
+    for (uint i = 0; i < mc->num_shader_buffers[MESA_SHADER_COMPUTE] &&
+                      i < AO46_MAX_SHADER_BUFFERS; i++) {
+        struct ao46_metal_shader_buffer_binding *binding =
+            &mc->shader_buffers[MESA_SHADER_COMPUTE][i];
+        struct ao46_metal_resource *mr =
+            binding->buffer ? ao46_metal_resource(binding->buffer) : NULL;
+
+        if (!mr || !mr->mtl_buffer || binding->buffer_offset >= binding->buffer->width0) {
+            continue;
+        }
+
+        [enc setBuffer:mr->mtl_buffer
+                offset:binding->buffer_offset
+               atIndex:i + 4];
+    }
+
+    for (uint i = 0; i < mc->num_sampler_views[MESA_SHADER_COMPUTE] &&
+                      i < AO46_MAX_SAMPLERS; i++) {
+        id<MTLTexture> tex =
+            ao46_metal_get_texture_from_view(mc->sampler_views[MESA_SHADER_COMPUTE][i]);
+        if (tex) {
+            [enc setTexture:tex atIndex:i];
+        }
+    }
+
+    for (uint i = 0; i < mc->num_samplers[MESA_SHADER_COMPUTE] &&
+                      i < AO46_MAX_SAMPLERS; i++) {
+        struct ao46_metal_sampler_state *sampler = mc->samplers[MESA_SHADER_COMPUTE][i];
+        id<MTLSamplerState> mtl_sampler = sampler ? sampler->mtl_sampler : nil;
+        if (mtl_sampler) {
+            [enc setSamplerState:mtl_sampler atIndex:i];
+        }
+    }
+
+    for (uint i = 0; i < mc->num_image_views[MESA_SHADER_COMPUTE] &&
+                      i < AO46_MAX_IMAGE_UNITS; i++) {
+        id<MTLTexture> tex =
+            ao46_metal_get_texture_from_image_view(&mc->image_views[MESA_SHADER_COMPUTE][i]);
+        if (!tex) {
+            continue;
+        }
+
+        [enc setTexture:tex atIndex:AO46_MAX_SAMPLERS + i];
+        [tex release];
+    }
+}
+
 static id<MTLRenderPipelineState>
 ao46_metal_get_pipeline_state(struct ao46_metal_context *mc, enum mesa_prim mode)
 {
@@ -2925,18 +3568,27 @@ ao46_metal_get_pipeline_state(struct ao46_metal_context *mc, enum mesa_prim mode
             unsigned rt_index = mc->blend->base.independent_blend_enable ? i : 0;
             const struct pipe_rt_blend_state *rt = &mc->blend->base.rt[rt_index];
             attachment.blendingEnabled = rt->blend_enable;
-            attachment.rgbBlendOperation =
-                ao46_metal_blend_operation((enum pipe_blend_func)rt->rgb_func);
-            attachment.alphaBlendOperation =
-                ao46_metal_blend_operation((enum pipe_blend_func)rt->alpha_func);
-            attachment.sourceRGBBlendFactor =
-                ao46_metal_blend_factor((enum pipe_blendfactor)rt->rgb_src_factor, false);
-            attachment.destinationRGBBlendFactor =
-                ao46_metal_blend_factor((enum pipe_blendfactor)rt->rgb_dst_factor, false);
-            attachment.sourceAlphaBlendFactor =
-                ao46_metal_blend_factor((enum pipe_blendfactor)rt->alpha_src_factor, true);
-            attachment.destinationAlphaBlendFactor =
-                ao46_metal_blend_factor((enum pipe_blendfactor)rt->alpha_dst_factor, true);
+            if (rt->blend_enable) {
+                attachment.rgbBlendOperation =
+                    ao46_metal_blend_operation((enum pipe_blend_func)rt->rgb_func);
+                attachment.alphaBlendOperation =
+                    ao46_metal_blend_operation((enum pipe_blend_func)rt->alpha_func);
+                attachment.sourceRGBBlendFactor =
+                    ao46_metal_blend_factor((enum pipe_blendfactor)rt->rgb_src_factor, false);
+                attachment.destinationRGBBlendFactor =
+                    ao46_metal_blend_factor((enum pipe_blendfactor)rt->rgb_dst_factor, false);
+                attachment.sourceAlphaBlendFactor =
+                    ao46_metal_blend_factor((enum pipe_blendfactor)rt->alpha_src_factor, true);
+                attachment.destinationAlphaBlendFactor =
+                    ao46_metal_blend_factor((enum pipe_blendfactor)rt->alpha_dst_factor, true);
+            } else {
+                attachment.rgbBlendOperation = MTLBlendOperationAdd;
+                attachment.alphaBlendOperation = MTLBlendOperationAdd;
+                attachment.sourceRGBBlendFactor = MTLBlendFactorOne;
+                attachment.destinationRGBBlendFactor = MTLBlendFactorZero;
+                attachment.sourceAlphaBlendFactor = MTLBlendFactorOne;
+                attachment.destinationAlphaBlendFactor = MTLBlendFactorZero;
+            }
             attachment.writeMask = ao46_metal_color_write_mask(rt->colormask);
         } else {
             attachment.blendingEnabled = NO;
@@ -2972,6 +3624,135 @@ ao46_metal_get_pipeline_state(struct ao46_metal_context *mc, enum mesa_prim mode
     mc->pipeline_state = ps;
     mc->pipeline_key = new_key;
     return ps;
+}
+
+static void
+ao46_metal_memory_barrier(struct pipe_context *ctx, unsigned flags)
+{
+    (void)flags;
+    if (!ctx) {
+        return;
+    }
+
+    ao46_metal_flush_for_resource_op(ctx);
+}
+
+static void
+ao46_metal_get_compute_state_info(struct pipe_context *ctx,
+                                  void *cso,
+                                  struct pipe_compute_state_object_info *info)
+{
+    struct ao46_metal_shader *shader = (struct ao46_metal_shader *)cso;
+
+    (void)ctx;
+    if (!info) {
+        return;
+    }
+
+    memset(info, 0, sizeof(*info));
+    if (!shader) {
+        return;
+    }
+
+    info->max_threads = shader->compute_pipeline ?
+        (unsigned)shader->compute_pipeline.maxTotalThreadsPerThreadgroup : 1024u;
+    info->preferred_simd_size = shader->compute_pipeline ?
+        (unsigned)MAX2(shader->compute_pipeline.threadExecutionWidth, 1u) : 32u;
+    info->simd_sizes = info->preferred_simd_size;
+    info->private_memory = shader->nir ? shader->nir->scratch_size : 0u;
+}
+
+static uint32_t
+ao46_metal_get_compute_state_subgroup_size(struct pipe_context *ctx,
+                                           void *cso,
+                                           const uint32_t block[3])
+{
+    struct ao46_metal_shader *shader = (struct ao46_metal_shader *)cso;
+
+    (void)ctx;
+    (void)block;
+    if (!shader || !shader->compute_pipeline) {
+        return 1u;
+    }
+
+    return (uint32_t)MAX2(shader->compute_pipeline.threadExecutionWidth, 1u);
+}
+
+static void
+ao46_metal_launch_grid(struct pipe_context *ctx,
+                       const struct pipe_grid_info *info)
+{
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
+    struct ao46_metal_shader *shader;
+    uint32_t block_x;
+    uint32_t block_y;
+    uint32_t block_z;
+    NSUInteger threads_per_group;
+    MTLSize threadgroup_size;
+
+    if (!mc || !info) {
+        return;
+    }
+
+    shader = mc->cs_shader;
+    if (!shader || !shader->compute_pipeline) {
+        return;
+    }
+
+    block_x = info->block[0] ? info->block[0] : shader->workgroup_size[0];
+    block_y = info->block[1] ? info->block[1] : shader->workgroup_size[1];
+    block_z = info->block[2] ? info->block[2] : shader->workgroup_size[2];
+    block_x = MAX2(block_x, 1u);
+    block_y = MAX2(block_y, 1u);
+    block_z = MAX2(block_z, 1u);
+    threads_per_group = (NSUInteger)block_x * (NSUInteger)block_y * (NSUInteger)block_z;
+    if (!threads_per_group ||
+        threads_per_group > shader->compute_pipeline.maxTotalThreadsPerThreadgroup) {
+        return;
+    }
+
+    if (mc->render_encoder) {
+        [mc->render_encoder endEncoding];
+        mc->render_encoder = nil;
+        mc->render_pass_started = false;
+        [mc->render_pass release];
+        mc->render_pass = nil;
+    }
+
+    if (!mc->cmd_buffer) {
+        mc->cmd_buffer = ao46_metal_get_command_buffer();
+        if (!mc->cmd_buffer) {
+            return;
+        }
+    }
+
+    if (!mc->compute_encoder) {
+        mc->compute_encoder = [mc->cmd_buffer computeCommandEncoder];
+        if (!mc->compute_encoder) {
+            return;
+        }
+    }
+
+    [mc->compute_encoder setComputePipelineState:shader->compute_pipeline];
+    ao46_metal_bind_compute_resources(mc);
+
+    threadgroup_size = MTLSizeMake(block_x, block_y, block_z);
+    if (info->indirect) {
+        struct ao46_metal_resource *mr = ao46_metal_resource(info->indirect);
+        if (!mr->mtl_buffer || (info->indirect_offset & 0x3u)) {
+            return;
+        }
+
+        [mc->compute_encoder dispatchThreadgroupsWithIndirectBuffer:mr->mtl_buffer
+                                               indirectBufferOffset:info->indirect_offset
+                                              threadsPerThreadgroup:threadgroup_size];
+        return;
+    }
+
+    [mc->compute_encoder dispatchThreadgroups:MTLSizeMake(MAX2(info->grid[0], 1u),
+                                                          MAX2(info->grid[1], 1u),
+                                                          MAX2(info->grid[2], 1u))
+                          threadsPerThreadgroup:threadgroup_size];
 }
 
 static enum mesa_prim
@@ -3297,24 +4078,40 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
     (void)drawid_offset;
     struct ao46_metal_context *mc = ao46_metal_context(ctx);
     bool needs_emulation = ao46_metal_primitive_needs_emulation(info);
+    bool trace_runtime = getenv("AO46_TRACE_RUNTIME") != NULL;
     if (!mc || !info || !draws || num_draws == 0) return;
     if (indirect || info->has_user_indices) return;
 
+    if (mc->compute_encoder) {
+        [mc->compute_encoder endEncoding];
+        mc->compute_encoder = nil;
+    }
+
     if (!mc->render_encoder) {
         id<MTLTexture> color_textures[PIPE_MAX_COLOR_BUFS] = { nil };
+        id<MTLTexture> resolve_textures[PIPE_MAX_COLOR_BUFS] = { nil };
         id<MTLTexture> depth_texture = nil;
-        mc->cmd_buffer = ao46_metal_get_command_buffer();
-        if (!mc->cmd_buffer) return;
+        if (!mc->cmd_buffer) {
+            mc->cmd_buffer = ao46_metal_get_command_buffer();
+            if (!mc->cmd_buffer) return;
+        }
 
         MTLRenderPassDescriptor *rpd = [[MTLRenderPassDescriptor alloc] init];
         for (unsigned i = 0; i < mc->fb_state.nr_cbufs; i++) {
             struct pipe_surface *surf = &mc->fb_state.cbufs[i];
             if (!surf->texture) continue;
             color_textures[i] = ao46_metal_get_surface_texture(surf);
+            resolve_textures[i] = ao46_metal_get_framebuffer_resolve_texture(mc, i, surf);
             if (color_textures[i]) {
                 rpd.colorAttachments[i].texture = color_textures[i];
                 rpd.colorAttachments[i].loadAction = MTLLoadActionLoad;
-                rpd.colorAttachments[i].storeAction = MTLStoreActionStore;
+                if (resolve_textures[i] && color_textures[i].sampleCount > 1) {
+                    rpd.colorAttachments[i].resolveTexture = resolve_textures[i];
+                    rpd.colorAttachments[i].storeAction =
+                        MTLStoreActionStoreAndMultisampleResolve;
+                } else {
+                    rpd.colorAttachments[i].storeAction = MTLStoreActionStore;
+                }
                 rpd.colorAttachments[i].clearColor = MTLClearColorMake(0, 0, 0, 1);
             }
         }
@@ -3336,6 +4133,7 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
         mc->render_encoder = [mc->cmd_buffer renderCommandEncoderWithDescriptor:rpd];
         for (unsigned i = 0; i < mc->fb_state.nr_cbufs; i++) {
             [color_textures[i] release];
+            [resolve_textures[i] release];
         }
         [depth_texture release];
         mc->render_pass_started = true;
@@ -3345,7 +4143,70 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
     if (!enc) return;
 
     id<MTLRenderPipelineState> ps = ao46_metal_get_pipeline_state(mc, info->mode);
-    if (!ps) return;
+    if (!ps) {
+        if (trace_runtime) {
+            fprintf(stderr,
+                    "[AO46Metal] draw dropped: missing pipeline state mode=%d indexed=%u count=%u\n",
+                    (int)info->mode,
+                    info->index_size != 0,
+                    draws[0].count);
+        }
+        return;
+    }
+
+    if (trace_runtime) {
+        fprintf(stderr,
+                "[AO46Metal] draw mode=%d indexed=%u start=%u count=%u emulation=%d vbs=%u elems=%u vs=%p fs=%p\n",
+                (int)info->mode,
+                info->index_size != 0,
+                draws[0].start,
+                draws[0].count,
+                needs_emulation,
+                mc->num_vertex_buffers,
+                mc->vertex_elements_state ? mc->vertex_elements_state->num_elements : 0,
+                (void *)mc->vs_shader,
+                (void *)mc->fs_shader);
+        fprintf(stderr,
+                "[AO46Metal]   viewport scale=(%f,%f,%f) translate=(%f,%f,%f) scissor=(%u,%u)-(%u,%u)\n",
+                mc->viewport.scale[0],
+                mc->viewport.scale[1],
+                mc->viewport.scale[2],
+                mc->viewport.translate[0],
+                mc->viewport.translate[1],
+                mc->viewport.translate[2],
+                mc->scissor.minx,
+                mc->scissor.miny,
+                mc->scissor.maxx,
+                mc->scissor.maxy);
+        fprintf(stderr,
+                "[AO46Metal]   raster discard=%d cull=%u front_ccw=%d fill=(%u,%u) blend_mask=%u\n",
+                mc->raster ? mc->raster->base.rasterizer_discard : 0,
+                mc->raster ? mc->raster->base.cull_face : PIPE_FACE_NONE,
+                mc->raster ? mc->raster->base.front_ccw : 0,
+                mc->raster ? mc->raster->base.fill_front : PIPE_POLYGON_MODE_FILL,
+                mc->raster ? mc->raster->base.fill_back : PIPE_POLYGON_MODE_FILL,
+                mc->blend ? mc->blend->base.rt[0].colormask : PIPE_MASK_RGBA);
+        if (mc->vertex_elements_state) {
+            for (unsigned i = 0; i < mc->vertex_elements_state->num_elements; i++) {
+                const struct pipe_vertex_element *elem = &mc->vertex_elements_state->elements[i];
+                fprintf(stderr,
+                        "[AO46Metal]   attr%u vb=%u stride=%u src_offset=%u\n",
+                        i,
+                        elem->vertex_buffer_index,
+                        elem->src_stride,
+                        elem->src_offset);
+            }
+        }
+        for (unsigned i = 0; i < mc->num_vertex_buffers && i < PIPE_MAX_ATTRIBS; i++) {
+            struct pipe_vertex_buffer *vb = &mc->vertex_buffers[i];
+            fprintf(stderr,
+                    "[AO46Metal]   vb%u resource=%p user=%d offset=%u\n",
+                    i,
+                    (void *)vb->buffer.resource,
+                    vb->is_user_buffer,
+                    vb->buffer_offset);
+        }
+    }
     [enc setRenderPipelineState:ps];
     [enc setDepthStencilState:mc->dsa ? mc->dsa->mtl_state : nil];
     [enc setBlendColorRed:mc->blend_color.color[0]
@@ -3371,9 +4232,14 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
 
     MTLViewport vp;
     vp.originX = mc->viewport.translate[0] - mc->viewport.scale[0];
-    vp.originY = mc->viewport.translate[1] - mc->viewport.scale[1];
+    /*
+     * Gallium's viewport state is expressed in surface coordinates, while
+     * Metal's viewport transform is top-origin. Convert explicitly so Mesa's
+     * default framebuffer Y flip is not applied a second time here.
+     */
+    vp.originY = mc->viewport.translate[1] + mc->viewport.scale[1];
     vp.width = mc->viewport.scale[0] * 2.0f;
-    vp.height = mc->viewport.scale[1] * 2.0f;
+    vp.height = mc->viewport.scale[1] * -2.0f;
     vp.znear = mc->viewport.translate[2] - mc->viewport.scale[2];
     vp.zfar = mc->viewport.translate[2] + mc->viewport.scale[2];
     [enc setViewport:vp];
@@ -3387,12 +4253,19 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
     }
 
     MTLScissorRect scissor;
-    scissor.x = mc->scissor.minx;
-    scissor.y = mc->scissor.miny;
-    scissor.width = mc->scissor.maxx > mc->scissor.minx ?
-        mc->scissor.maxx - mc->scissor.minx : fb_width;
-    scissor.height = mc->scissor.maxy > mc->scissor.miny ?
-        mc->scissor.maxy - mc->scissor.miny : fb_height;
+    if (mc->raster && mc->raster->base.scissor) {
+        scissor.x = mc->scissor.minx;
+        scissor.y = mc->scissor.miny;
+        scissor.width = mc->scissor.maxx > mc->scissor.minx ?
+            mc->scissor.maxx - mc->scissor.minx : fb_width;
+        scissor.height = mc->scissor.maxy > mc->scissor.miny ?
+            mc->scissor.maxy - mc->scissor.miny : fb_height;
+    } else {
+        scissor.x = 0;
+        scissor.y = 0;
+        scissor.width = fb_width;
+        scissor.height = fb_height;
+    }
     [enc setScissorRect:scissor];
 
     const mesa_shader_stage graphics_stages[] = {
@@ -3430,43 +4303,37 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
     for (unsigned stage_index = 0; stage_index < ARRAY_SIZE(graphics_stages); stage_index++) {
         mesa_shader_stage stage = graphics_stages[stage_index];
         if (mc->const_buffer_mtl[stage] && mc->const_buffer_dirty[stage]) {
-            NSUInteger bufferIndex = (stage == MESA_SHADER_VERTEX) ? 1 : 2;
             if (stage == MESA_SHADER_VERTEX) {
                 [enc setVertexBuffer:mc->const_buffer_mtl[stage]
                               offset:0
-                             atIndex:bufferIndex];
+                             atIndex:AO46_BUFFER_SLOT_CONST0];
             } else if (stage == MESA_SHADER_FRAGMENT) {
                 [enc setFragmentBuffer:mc->const_buffer_mtl[stage]
                                 offset:0
-                               atIndex:bufferIndex];
+                               atIndex:AO46_BUFFER_SLOT_CONST0];
             }
             mc->const_buffer_dirty[stage] = false;
         }
     }
 
-    if (mc->vertex_elements_state) {
-        for (unsigned i = 0; i < mc->vertex_elements_state->num_elements; i++) {
-            const struct pipe_vertex_element *elem = &mc->vertex_elements_state->elements[i];
-            uint buffer_index = elem->vertex_buffer_index;
-            if (buffer_index >= mc->num_vertex_buffers || buffer_index >= PIPE_MAX_ATTRIBS) {
-                continue;
-            }
+    for (unsigned buffer_index = 0;
+         buffer_index < mc->num_vertex_buffers && buffer_index < PIPE_MAX_ATTRIBS;
+         buffer_index++) {
+        struct pipe_vertex_buffer *vb = &mc->vertex_buffers[buffer_index];
+        struct ao46_metal_resource *mr;
 
-            struct pipe_vertex_buffer *vb = &mc->vertex_buffers[buffer_index];
-            if (vb->is_user_buffer || !vb->buffer.resource) {
-                continue;
-            }
-
-            struct ao46_metal_resource *mr = ao46_metal_resource(vb->buffer.resource);
-            if (!mr->mtl_buffer) {
-                continue;
-            }
-
-            NSUInteger offset = vb->buffer_offset + elem->src_offset;
-            [enc setVertexBuffer:mr->mtl_buffer
-                          offset:offset
-                         atIndex:buffer_index];
+        if (vb->is_user_buffer || !vb->buffer.resource) {
+            continue;
         }
+
+        mr = ao46_metal_resource(vb->buffer.resource);
+        if (!mr->mtl_buffer) {
+            continue;
+        }
+
+        [enc setVertexBuffer:mr->mtl_buffer
+                      offset:vb->buffer_offset
+                     atIndex:AO46_BUFFER_SLOT_VERTEX_BASE + buffer_index];
     }
 
     if (mc->raster && mc->raster->base.cull_face == PIPE_FACE_FRONT_AND_BACK) {
@@ -3559,6 +4426,10 @@ ao46_metal_context_flush(struct pipe_context *ctx,
 {
     (void)fence;
     struct ao46_metal_context *mc = ao46_metal_context(ctx);
+    if (mc->compute_encoder) {
+        [mc->compute_encoder endEncoding];
+        mc->compute_encoder = nil;
+    }
     if (mc->render_encoder) {
         [mc->render_encoder endEncoding];
         mc->render_encoder = nil;
@@ -3579,31 +4450,35 @@ static void
 ao46_metal_context_destroy(struct pipe_context *ctx)
 {
     struct ao46_metal_context *mc = ao46_metal_context(ctx);
+    [mc->compute_encoder release];
+    [mc->render_encoder release];
     [mc->cmd_buffer release];
     [mc->render_pass release];
     [mc->pipeline_state release];
+    mc->compute_encoder = nil;
+    mc->render_encoder = nil;
     mc->cmd_buffer = nil;
     mc->render_pass = nil;
     mc->pipeline_state = nil;
     for (int i = 0; i < MESA_SHADER_STAGES; i++) {
         [mc->const_buffer_mtl[i] release];
         mc->const_buffer_mtl[i] = nil;
-        util_copy_constant_buffer(&mc->const_buffers[i], NULL);
-        for (unsigned j = 0; j < PIPE_MAX_SHADER_BUFFERS; j++) {
-            util_copy_shader_buffer(&mc->shader_buffers[i][j], NULL);
+        for (unsigned j = 0; j < AO46_MAX_SHADER_BUFFERS; j++) {
+            pipe_resource_reference(&mc->shader_buffers[i][j].buffer, NULL);
         }
-        for (unsigned j = 0; j < PIPE_MAX_SHADER_IMAGES; j++) {
-            util_copy_image_view(&mc->image_views[i][j], NULL);
+        for (unsigned j = 0; j < AO46_MAX_IMAGE_UNITS; j++) {
+            pipe_resource_reference(&mc->image_views[i][j].resource, NULL);
         }
         for (unsigned j = 0; j < AO46_MAX_SAMPLERS; j++) {
             pipe_sampler_view_reference(&mc->sampler_views[i][j], NULL);
         }
     }
-    for (unsigned i = 0; i < mc->num_vertex_buffers; i++) {
-        pipe_vertex_buffer_unreference(&mc->vertex_buffers[i]);
+    if (mc->base.const_uploader &&
+        mc->base.const_uploader != mc->base.stream_uploader) {
+        u_upload_destroy(mc->base.const_uploader);
     }
-    for (unsigned i = 0; i < PIPE_MAX_SO_BUFFERS; i++) {
-        pipe_so_target_reference(&mc->so_targets[i], NULL);
+    if (mc->base.stream_uploader) {
+        u_upload_destroy(mc->base.stream_uploader);
     }
     util_unreference_framebuffer_state(&mc->fb_state);
     FREE(mc);
@@ -3617,10 +4492,6 @@ ao46_metal_screen_context_create(struct pipe_screen *screen,
                                  void *priv,
                                  unsigned flags)
 {
-    ao46_metal_trace("context_create begin screen=%p priv=%p flags=0x%x",
-                     (void *)screen,
-                     priv,
-                     flags);
     if (!ao46_metal_init()) return NULL;
 
     struct ao46_metal_context *mc = CALLOC_STRUCT(ao46_metal_context);
@@ -3628,11 +4499,19 @@ ao46_metal_screen_context_create(struct pipe_screen *screen,
 
     mc->base.screen = screen;
     mc->base.priv = priv;
+    mc->base.stream_uploader = u_upload_create_default(&mc->base);
+    if (!mc->base.stream_uploader) {
+        FREE(mc);
+        return NULL;
+    }
+    mc->base.const_uploader = mc->base.stream_uploader;
     mc->base.destroy = ao46_metal_context_destroy;
     mc->base.flush = ao46_metal_context_flush;
     mc->base.draw_vbo = ao46_metal_draw_vbo;
     mc->base.resource_copy_region = ao46_metal_resource_copy_region;
+    mc->base.resource_release = u_default_resource_release;
     mc->base.blit = ao46_metal_blit;
+    mc->base.generate_mipmap = ao46_metal_generate_mipmap;
     mc->base.clear = ao46_metal_clear;
     mc->base.clear_render_target = ao46_metal_clear_render_target;
     mc->base.clear_depth_stencil = ao46_metal_clear_depth_stencil;
@@ -3642,12 +4521,16 @@ ao46_metal_screen_context_create(struct pipe_screen *screen,
     mc->base.set_vertex_buffers = ao46_metal_set_vertex_buffers;
     mc->base.set_viewport_states = ao46_metal_set_viewport_states;
     mc->base.set_scissor_states = ao46_metal_set_scissor_states;
+    mc->base.set_window_rectangles = ao46_metal_set_window_rectangles;
+    mc->base.set_clip_state = ao46_metal_set_clip_state;
+    mc->base.set_polygon_stipple = ao46_metal_set_polygon_stipple;
     mc->base.set_sample_mask = ao46_metal_set_sample_mask;
     mc->base.set_min_samples = ao46_metal_set_min_samples;
-    mc->base.set_clip_state = ao46_metal_set_clip_state;
     mc->base.set_constant_buffer = ao46_metal_set_constant_buffer;
     mc->base.set_shader_buffers = ao46_metal_set_shader_buffers;
     mc->base.set_shader_images = ao46_metal_set_shader_images;
+    mc->base.set_stream_output_targets = ao46_metal_set_stream_output_targets;
+    mc->base.memory_barrier = ao46_metal_memory_barrier;
     mc->base.buffer_map = ao46_metal_buffer_map;
     mc->base.transfer_flush_region = ao46_metal_transfer_flush_region;
     mc->base.buffer_unmap = ao46_metal_buffer_unmap;
@@ -3676,6 +4559,15 @@ ao46_metal_screen_context_create(struct pipe_screen *screen,
     mc->base.create_vs_state = ao46_metal_create_vs_state;
     mc->base.bind_vs_state = ao46_metal_bind_vs_state;
     mc->base.delete_vs_state = ao46_metal_delete_vs_state;
+    mc->base.create_gs_state = ao46_metal_create_gs_state;
+    mc->base.bind_gs_state = ao46_metal_bind_gs_state;
+    mc->base.delete_gs_state = ao46_metal_delete_gs_state;
+    mc->base.create_tcs_state = ao46_metal_create_tcs_state;
+    mc->base.bind_tcs_state = ao46_metal_bind_tcs_state;
+    mc->base.delete_tcs_state = ao46_metal_delete_tcs_state;
+    mc->base.create_tes_state = ao46_metal_create_tes_state;
+    mc->base.bind_tes_state = ao46_metal_bind_tes_state;
+    mc->base.delete_tes_state = ao46_metal_delete_tes_state;
     mc->base.create_fs_state = ao46_metal_create_fs_state;
     mc->base.bind_fs_state = ao46_metal_bind_fs_state;
     mc->base.delete_fs_state = ao46_metal_delete_fs_state;
@@ -3685,11 +4577,9 @@ ao46_metal_screen_context_create(struct pipe_screen *screen,
     mc->base.create_compute_state = ao46_metal_create_compute_state;
     mc->base.bind_compute_state = ao46_metal_bind_compute_state;
     mc->base.delete_compute_state = ao46_metal_delete_compute_state;
-    mc->base.render_condition = ao46_metal_render_condition;
-    mc->base.create_stream_output_target = ao46_metal_create_stream_output_target;
-    mc->base.stream_output_target_destroy = ao46_metal_stream_output_target_destroy;
-    mc->base.set_stream_output_targets = ao46_metal_set_stream_output_targets;
-    mc->base.stream_output_target_offset = ao46_metal_stream_output_target_offset;
+    mc->base.get_compute_state_info = ao46_metal_get_compute_state_info;
+    mc->base.get_compute_state_subgroup_size = ao46_metal_get_compute_state_subgroup_size;
+    mc->base.launch_grid = ao46_metal_launch_grid;
 
     mc->viewport.scale[0] = 1.0f; mc->viewport.scale[1] = 1.0f;
     mc->viewport.scale[2] = 1.0f;
@@ -3697,11 +4587,7 @@ ao46_metal_screen_context_create(struct pipe_screen *screen,
     mc->viewport.translate[2] = 0.0f;
     mc->scissor.minx = 0; mc->scissor.miny = 0;
     mc->scissor.maxx = 0; mc->scissor.maxy = 0;
-    mc->sample_mask = ~0u;
-    mc->min_samples = 0;
-    mc->so_output_prim = MESA_PRIM_POINTS;
 
-    ao46_metal_trace("context_create complete ctx=%p", (void *)&mc->base);
     return &mc->base;
 }
 
@@ -3735,37 +4621,86 @@ ao46_metal_screen_is_format_supported(struct pipe_screen *screen,
                                       unsigned storage_sample_count,
                                       unsigned bind)
 {
-    (void)screen;
-    (void)bind;
+    bool multisampled = sample_count > 1 || storage_sample_count > 1;
 
-    if (sample_count > 1 || storage_sample_count > 1) {
+    (void)screen;
+
+    if (sample_count > 4 || storage_sample_count > sample_count) {
         return false;
     }
 
+    if (multisampled) {
+        if ((target != PIPE_TEXTURE_2D && target != PIPE_TEXTURE_RECT) ||
+            (bind & PIPE_BIND_SHADER_IMAGE)) {
+            return false;
+        }
+    }
+
     if (target == PIPE_BUFFER) {
+        if (sample_count > 1 || storage_sample_count > 1) {
+            return false;
+        }
+
+        if ((bind & PIPE_BIND_VERTEX_BUFFER) &&
+            ao46_metal_vertex_format(format) == MTLVertexFormatInvalid) {
+            return false;
+        }
+
+        if ((bind & PIPE_BIND_SAMPLER_VIEW) &&
+            !ao46_metal_buffer_texture_format_supported(format)) {
+            return false;
+        }
+
+        if ((bind & PIPE_BIND_SHADER_IMAGE) &&
+            !ao46_metal_buffer_texture_format_supported(format)) {
+            return false;
+        }
+
         return true;
     }
 
     switch (format) {
         case PIPE_FORMAT_R8_UNORM:
         case PIPE_FORMAT_R8_SNORM:
+        case PIPE_FORMAT_R8_UINT:
+        case PIPE_FORMAT_R8_SINT:
         case PIPE_FORMAT_R8G8_UNORM:
         case PIPE_FORMAT_R8G8_SNORM:
+        case PIPE_FORMAT_R8G8_UINT:
+        case PIPE_FORMAT_R8G8_SINT:
         case PIPE_FORMAT_B8G8R8A8_UNORM:
         case PIPE_FORMAT_B8G8R8A8_SRGB:
         case PIPE_FORMAT_R8G8B8A8_UNORM:
         case PIPE_FORMAT_R8G8B8A8_SRGB:
         case PIPE_FORMAT_R8G8B8A8_SNORM:
+        case PIPE_FORMAT_R8G8B8A8_UINT:
+        case PIPE_FORMAT_R8G8B8A8_SINT:
+        case PIPE_FORMAT_R10G10B10A2_UNORM:
+        case PIPE_FORMAT_B10G10R10A2_UNORM:
+        case PIPE_FORMAT_R10G10B10A2_UINT:
         case PIPE_FORMAT_R16_UNORM:
         case PIPE_FORMAT_R16_SNORM:
+        case PIPE_FORMAT_R16_UINT:
+        case PIPE_FORMAT_R16_SINT:
         case PIPE_FORMAT_R16_FLOAT:
         case PIPE_FORMAT_R16G16_UNORM:
         case PIPE_FORMAT_R16G16_SNORM:
+        case PIPE_FORMAT_R16G16_UINT:
+        case PIPE_FORMAT_R16G16_SINT:
         case PIPE_FORMAT_R16G16_FLOAT:
         case PIPE_FORMAT_R16G16B16A16_UNORM:
+        case PIPE_FORMAT_R16G16B16A16_SNORM:
+        case PIPE_FORMAT_R16G16B16A16_UINT:
+        case PIPE_FORMAT_R16G16B16A16_SINT:
         case PIPE_FORMAT_R16G16B16A16_FLOAT:
         case PIPE_FORMAT_R11G11B10_FLOAT:
         case PIPE_FORMAT_R9G9B9E5_FLOAT:
+        case PIPE_FORMAT_R32_UINT:
+        case PIPE_FORMAT_R32_SINT:
+        case PIPE_FORMAT_R32_FLOAT:
+        case PIPE_FORMAT_R32G32_UINT:
+        case PIPE_FORMAT_R32G32_SINT:
+        case PIPE_FORMAT_R32G32_FLOAT:
         case PIPE_FORMAT_R32G32B32A32_UINT:
         case PIPE_FORMAT_R32G32B32A32_SINT:
         case PIPE_FORMAT_R32G32B32A32_FLOAT:
@@ -3789,7 +4724,9 @@ ao46_metal_init_shader_caps(struct pipe_screen *screen)
         struct pipe_shader_caps *caps =
             (struct pipe_shader_caps *)&screen->shader_caps[i];
 
-        if (i != MESA_SHADER_VERTEX && i != MESA_SHADER_FRAGMENT) {
+        if (i != MESA_SHADER_VERTEX &&
+            i != MESA_SHADER_FRAGMENT &&
+            i != MESA_SHADER_COMPUTE) {
             continue;
         }
 
@@ -3798,15 +4735,16 @@ ao46_metal_init_shader_caps(struct pipe_screen *screen)
         caps->max_tex_instructions = 4096;
         caps->max_tex_indirections = 256;
         caps->max_control_flow_depth = 256;
-        caps->max_inputs = 32;
-        caps->max_outputs = i == MESA_SHADER_FRAGMENT ? PIPE_MAX_COLOR_BUFS : 32;
+        caps->max_inputs = i == MESA_SHADER_COMPUTE ? 0 : 32;
+        caps->max_outputs = i == MESA_SHADER_FRAGMENT ? PIPE_MAX_COLOR_BUFS :
+            (i == MESA_SHADER_COMPUTE ? 0 : 32);
         caps->max_const_buffer0_size = 64 * 1024;
         caps->max_const_buffers = 16;
         caps->max_temps = 256;
         caps->max_texture_samplers = AO46_MAX_SAMPLERS;
         caps->max_sampler_views = AO46_MAX_SAMPLERS;
-        caps->max_shader_buffers = 8;
-        caps->max_shader_images = 8;
+        caps->max_shader_buffers = AO46_MAX_SHADER_BUFFERS;
+        caps->max_shader_images = AO46_MAX_IMAGE_UNITS;
         caps->supported_irs = 1 << PIPE_SHADER_IR_NIR;
         caps->cont_supported = true;
         caps->indirect_temp_addr = true;
@@ -3850,11 +4788,15 @@ ao46_metal_init_screen_caps(struct pipe_screen *screen)
     caps->texture_swizzle = true;
     caps->texture_mirror_clamp = true;
     caps->texture_mirror_clamp_to_edge = true;
+    caps->texture_multisample = true;
+    caps->texture_query_lod = true;
+    caps->generate_mipmap = true;
     caps->blend_equation_separate = true;
     caps->primitive_restart = true;
     caps->primitive_restart_fixed_index = true;
     caps->indep_blend_enable = true;
     caps->indep_blend_func = true;
+    caps->dest_surface_srgb_control = true;
     caps->fs_coord_origin_upper_left = true;
     caps->fs_coord_origin_lower_left = true;
     caps->fs_coord_pixel_center_half_integer = true;
@@ -3872,26 +4814,34 @@ ao46_metal_init_screen_caps(struct pipe_screen *screen)
     caps->vertex_color_unclamped = true;
     caps->vertex_color_clamped = true;
     caps->user_vertex_buffers = true;
+    caps->allow_mapped_buffers_during_execution = true;
     caps->start_instance = true;
     caps->query_timestamp = true;
     caps->cube_map_array = true;
     caps->texture_buffer_objects = true;
+    caps->sampler_view_target = true;
     caps->query_pipeline_statistics = true;
     caps->fragment_shader_texture_lod = true;
     caps->fragment_shader_derivatives = true;
     caps->vs_layer_viewport = true;
     caps->draw_indirect = true;
+    caps->multi_draw_indirect = true;
+    caps->multi_draw_indirect_params = true;
     caps->doubles = true;
     caps->int64 = true;
     caps->constant_buffer_offset_alignment = 16;
     caps->min_map_buffer_alignment = 64;
+    caps->shader_buffer_offset_alignment = 16;
+    caps->max_combined_shader_buffers = 16;
+    caps->image_store_formatted = true;
     caps->glsl_feature_level = 460;
     caps->glsl_feature_level_compatibility = 460;
     caps->fake_sw_msaa = true;
+    caps->max_dual_source_render_targets = 1;
     caps->max_render_targets = PIPE_MAX_COLOR_BUFS;
     caps->max_texture_2d_size = 16384;
     caps->max_texture_3d_levels = 12;
-    caps->max_texture_cube_levels = 14;
+    caps->max_texture_cube_levels = 15;
     caps->max_stream_output_buffers = PIPE_MAX_SO_BUFFERS;
     caps->max_texture_array_layers = 2048;
     caps->max_stream_output_separate_components = 16 * 4;
@@ -3901,13 +4851,20 @@ ao46_metal_init_screen_caps(struct pipe_screen *screen)
     caps->max_geometry_total_output_components = 4096;
     caps->max_vertex_streams = 1;
     caps->max_vertex_attrib_stride = 2048;
+    caps->max_vertex_element_src_offset = 4095;
+    caps->max_texture_gather_components = 4;
+    caps->min_texture_gather_offset = -8;
+    caps->max_texture_gather_offset = 7;
+    caps->framebuffer_no_attachment = true;
+    caps->viewport_subpixel_bits = 8;
+    caps->rasterizer_subpixel_bits = 8;
     caps->max_line_width = 16.0f;
     caps->max_line_width_aa = 16.0f;
     caps->max_point_size = 64.0f;
     caps->max_point_size_aa = 64.0f;
     caps->max_texture_anisotropy = 16.0f;
     caps->max_texture_lod_bias = 16.0f;
-    caps->compute = false;
+    caps->compute = true;
 }
 
 static void
@@ -3922,6 +4879,14 @@ ao46_metal_fence_reference(struct pipe_screen *screen,
                            struct pipe_fence_handle *fence)
 {
     (void)screen;
+
+    if (!ptr) {
+        return;
+    }
+
+    /* Our current backend does not manufacture reusable fence objects yet.
+     * Keep the Gallium ownership hooks valid so Mesa teardown paths can
+     * safely clear throttle/sync slots without jumping through NULL. */
     *ptr = fence;
 }
 
@@ -4007,6 +4972,7 @@ ao46_metal_create_window_surface(struct pipe_context *ctx,
     if (!mr) return kCGLBadAlloc;
     mr->base = templ;
     mr->base.screen = ctx->screen;
+    pipe_reference_init(&mr->base.reference, 1);
     mr->metal_layer = [layer retain];
 
     id<CAMetalDrawable> drawable = [layer nextDrawable];
@@ -4022,14 +4988,16 @@ ao46_metal_create_window_surface(struct pipe_context *ctx,
         desc.mipmapLevelCount = 1;
         desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
         mr->mtl_texture = [g_mtl_device newTextureWithDescriptor:desc];
+        [desc release];
     }
 
     struct pipe_surface *surf = CALLOC_STRUCT(pipe_surface);
     if (!surf) {
-        FREE(mr);
+        ao46_metal_resource_destroy(ctx->screen, &mr->base);
         return kCGLBadAlloc;
     }
-    surf->texture = &mr->base;
+    pipe_reference_init(&surf->reference, 1);
+    pipe_resource_reference(&surf->texture, &mr->base);
     surf->format = mr->base.format;
     surf->nr_samples = mr->base.nr_samples;
     surf->first_layer = 0;
@@ -4070,7 +5038,6 @@ ao46_metal_present(struct pipe_context *ctx, struct pipe_surface *surf)
 struct pipe_screen *
 ao46_metal_screen_create(void)
 {
-    ao46_metal_trace("screen_create begin");
     if (!ao46_metal_init()) return NULL;
 
     struct pipe_screen *screen = CALLOC_STRUCT(pipe_screen);
@@ -4083,11 +5050,11 @@ ao46_metal_screen_create(void)
     screen->is_format_supported = ao46_metal_screen_is_format_supported;
     screen->context_create = ao46_metal_screen_context_create;
     screen->destroy = ao46_metal_screen_destroy;
-    screen->fence_reference = ao46_metal_fence_reference;
-    screen->fence_finish = ao46_metal_fence_finish;
     screen->resource_create = ao46_metal_resource_create;
     screen->resource_destroy = ao46_metal_resource_destroy;
     screen->flush_frontbuffer = ao46_metal_screen_flush_frontbuffer;
+    screen->fence_reference = ao46_metal_fence_reference;
+    screen->fence_finish = ao46_metal_fence_finish;
 
     for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
         screen->nir_options[i] = &ao46_metal_nir_options;
@@ -4097,8 +5064,5 @@ ao46_metal_screen_create(void)
     ao46_metal_init_compute_caps(screen);
     ao46_metal_init_screen_caps(screen);
 
-    ao46_metal_trace("screen_create complete screen=%p context_create=%p",
-                     (void *)screen,
-                     (void *)screen->context_create);
     return screen;
 }
