@@ -20,7 +20,7 @@
 #include "util/u_math.h"
 #include "util/u_memory.h"
 
-#include "mtl_pub.h"
+#include "AppleOpenGLAsahi.h"
 
 struct AO46MesaDrawable {
     struct pipe_frontend_drawable base;
@@ -28,7 +28,6 @@ struct AO46MesaDrawable {
     struct pipe_screen *screen;
     struct pipe_resource *textures[ST_ATTACHMENT_COUNT];
     struct pipe_resource *resolve_textures[ST_ATTACHMENT_COUNT];
-    struct pipe_surface *present_surface;
     struct pipe_resource *pbuffer_storage;
     void *window_handle;
     void *baseaddr;
@@ -245,18 +244,6 @@ ao46_mesa_supported_pbuffer_source(GLenum source)
     }
 }
 
-static void
-ao46_mesa_release_surface(struct pipe_surface **surface)
-{
-    if (!surface || !*surface) {
-        return;
-    }
-
-    pipe_resource_reference(&(*surface)->texture, NULL);
-    free(*surface);
-    *surface = NULL;
-}
-
 static struct pipe_surface *
 ao46_mesa_create_surface_view(struct pipe_resource *texture,
                               enum pipe_format format,
@@ -285,18 +272,26 @@ ao46_mesa_create_surface_view(struct pipe_resource *texture,
     return surface;
 }
 
-static void
+static bool
 ao46_mesa_profile_version(GLint profile, int *major, int *minor)
 {
-    *major = 4;
-    *minor = 6;
-
-    if (profile == kCGLOGLPVersion_GL3_Core) {
+    switch (profile) {
+    case kCGLOGLPVersion_GL3_Core:
         *major = 3;
         *minor = 2;
-    } else if (profile == kCGLOGLPVersion_GL4_Core) {
+        return true;
+    case kCGLOGLPVersion_GL4_Core:
         *major = 4;
         *minor = 1;
+        return true;
+    case kCGLOGLPVersion_GL4_6_Core:
+        *major = 4;
+        *minor = 6;
+        return true;
+    default:
+        *major = 0;
+        *minor = 0;
+        return false;
     }
 }
 
@@ -529,8 +524,8 @@ ao46_mesa_flush_front(struct st_context *st,
 
     (void)statt;
 
-    if (drawable->window_backed && drawable->present_surface) {
-        return ao46_metal_present(st->pipe, drawable->present_surface) == kCGLNoError;
+    if (drawable->window_backed) {
+        return false;
     }
 
     if (drawable->pbuffer_backed) {
@@ -547,8 +542,8 @@ ao46_mesa_flush_swapbuffers(struct st_context *st,
     struct AO46MesaDrawable *drawable = ao46_mesa_drawable(pdrawable);
     AO46ContextRef ctx = (AO46ContextRef)st->frontend_context;
 
-    if (drawable->window_backed && drawable->present_surface) {
-        return ao46_metal_present(st->pipe, drawable->present_surface) == kCGLNoError;
+    if (drawable->window_backed) {
+        return false;
     }
 
     if (drawable->pbuffer_backed) {
@@ -566,7 +561,6 @@ ao46_mesa_release_drawable_surfaces(struct AO46MesaDrawable *drawable)
         pipe_resource_reference(&drawable->resolve_textures[i], NULL);
     }
 
-    ao46_mesa_release_surface(&drawable->present_surface);
     pipe_resource_reference(&drawable->pbuffer_storage, NULL);
     drawable->pbuffer_level = 0;
     drawable->pbuffer_layer = 0;
@@ -746,51 +740,12 @@ ao46_mesa_clear_pbuffer_binding(AO46ContextRef ctx)
 static CGLError
 ao46_mesa_build_window_target(AO46ContextRef ctx, struct AO46MesaDrawable *drawable)
 {
-    struct pipe_resource *color = NULL;
-    struct pipe_resource *msaa_color = NULL;
-    struct pipe_surface *present_surface = NULL;
-    enum st_attachment_type color_slot = ao46_mesa_color_attachment(drawable);
-    CGLError err;
+    (void)ctx;
+    (void)drawable;
 
-    ao46_mesa_release_drawable_surfaces(drawable);
-
-    err = ao46_metal_create_window_surface(ctx->pipe,
-                                           drawable->window_handle,
-                                           &color,
-                                           &present_surface);
-    if (err != kCGLNoError) {
-        return err;
-    }
-
-    drawable->width = color->width0;
-    drawable->height = color->height0;
-    drawable->rowbytes = color->width0 * 4u;
-    if (drawable->visual.samples > 1) {
-        msaa_color = ao46_mesa_create_texture_resource(drawable->screen,
-                                                       PIPE_TEXTURE_2D,
-                                                       color->format,
-                                                       drawable->width,
-                                                       drawable->height,
-                                                       1,
-                                                       1,
-                                                       0,
-                                                       drawable->visual.samples,
-                                                       drawable->visual.samples,
-                                                       PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW);
-        if (!msaa_color) {
-            ao46_mesa_release_surface(&present_surface);
-            pipe_resource_reference(&color, NULL);
-            return kCGLBadAlloc;
-        }
-    }
-
-    pipe_resource_reference(&drawable->textures[color_slot], msaa_color ? msaa_color : color);
-    pipe_resource_reference(&drawable->resolve_textures[color_slot], msaa_color ? color : NULL);
-    drawable->present_surface = present_surface;
-    pipe_resource_reference(&ctx->tex, ao46_mesa_drawable_resolve_resource(drawable));
-    pipe_resource_reference(&msaa_color, NULL);
-    pipe_resource_reference(&color, NULL);
-    return kCGLNoError;
+    /* IOSurface-backed drawable creation belongs to the native AGX winsys.
+     * Do not route a CGL window through the removed GL2MTL presentation path. */
+    return kCGLBadContext;
 }
 
 static CGLError
@@ -878,8 +833,12 @@ AO46MesaInit(void)
     pthread_mutex_lock(&g_gl_screen_lock);
 
     if (!g_gl_screen) {
-        g_gl_screen = ao46_metal_screen_create();
+        g_gl_screen = AppleOpenGLAsahiCreateScreen();
         if (!g_gl_screen) {
+            fprintf(stderr,
+                    "[OpenGL_4.6] refusing CGL context creation without a "
+                    "native Mesa Asahi screen; GL2MTL is not a runtime "
+                    "fallback\n");
             pthread_mutex_unlock(&g_gl_screen_lock);
             return kCGLBadContext;
         }
@@ -905,7 +864,7 @@ AO46MesaCreateContext(AO46PixelFormatRef pix,
     int gl_es2_version = 0;
     int requested_core_version = 0;
     int realized_core_version = 0;
-    struct st_context *shared_st = share ? share->st : NULL;
+    struct st_context *shared_st = NULL;
     struct st_visual visual;
     enum st_context_error error = ST_CONTEXT_SUCCESS;
     GLint profile = kCGLOGLPVersion_GL4_6_Core;
@@ -915,6 +874,12 @@ AO46MesaCreateContext(AO46PixelFormatRef pix,
     if (!pix || !out_ctx) {
         return kCGLBadAddress;
     }
+    *out_ctx = NULL;
+
+    if (share && !share->st) {
+        return kCGLBadContext;
+    }
+    shared_st = share ? share->st : NULL;
 
     err = AO46MesaInit();
     if (err != kCGLNoError) {
@@ -922,12 +887,17 @@ AO46MesaCreateContext(AO46PixelFormatRef pix,
     }
 
     ao46_mesa_fill_visual(pix, &visual);
-    AO46DescribePixelFormat(pix, 0, kCGLPFAOpenGLProfile, &profile);
+    err = AO46DescribePixelFormat(pix, 0, kCGLPFAOpenGLProfile, &profile);
+    if (err != kCGLNoError) {
+        return err;
+    }
 
     memset(&attribs, 0, sizeof(attribs));
     attribs.profile = API_OPENGL_CORE;
     attribs.visual = visual;
-    ao46_mesa_profile_version(profile, &attribs.major, &attribs.minor);
+    if (!ao46_mesa_profile_version(profile, &attribs.major, &attribs.minor)) {
+        return kCGLBadPixelFormat;
+    }
     requested_core_version = attribs.major * 10 + attribs.minor;
 
     ao46_mesa_query_versions(&gl_core_version,
@@ -948,22 +918,17 @@ AO46MesaCreateContext(AO46PixelFormatRef pix,
                 gl_es2_version / 10,
                 gl_es2_version % 10);
     }
-    if (gl_core_version <= 0) {
-        return kCGLBadPixelFormat;
-    }
-    realized_core_version = MIN2(gl_core_version, 46);
-    if (realized_core_version < requested_core_version) {
+    if (gl_core_version < requested_core_version) {
         if (getenv("AO46_TRACE_RUNTIME")) {
             fprintf(stderr,
-                    "[AO46Mesa] falling back to supported core=%d.%d for requested core=%d.%d\n",
-                    realized_core_version / 10,
-                    realized_core_version % 10,
-                    requested_core_version / 10,
-                    requested_core_version % 10);
+                    "[AO46Mesa] rejecting unsupported core request=%d.%d supported core=%d.%d\n",
+                    attribs.major,
+                    attribs.minor,
+                    gl_core_version / 10,
+                    gl_core_version % 10);
         }
+        return kCGLBadPixelFormat;
     }
-    attribs.major = realized_core_version / 10;
-    attribs.minor = realized_core_version % 10;
 
     ctx = calloc(1, sizeof(*ctx));
     if (!ctx) {
@@ -983,6 +948,15 @@ AO46MesaCreateContext(AO46PixelFormatRef pix,
 
     ctx->pipe = ctx->st->pipe;
     ctx->st->frontend_context = ctx;
+    realized_core_version = ctx->st->ctx->Version;
+    if (realized_core_version < requested_core_version) {
+        st_destroy_context(ctx->st);
+        AO46DestroyPixelFormat(ctx->pixel_format);
+        free(ctx);
+        return kCGLBadPixelFormat;
+    }
+    ctx->mesa_requested_version = requested_core_version;
+    ctx->mesa_realized_version = realized_core_version;
 
     if (share) {
         ctx->share_group = share->share_group;
@@ -1031,13 +1005,13 @@ AO46MesaDestroyContext(AO46ContextRef ctx)
 CGLError
 AO46MesaMakeCurrent(AO46ContextRef ctx)
 {
+    if (!ctx) {
+        return st_api_make_current(NULL, NULL, NULL) ? kCGLNoError : kCGLBadContext;
+    }
+
     CGLError err = AO46MesaInit();
     if (err != kCGLNoError) {
         return err;
-    }
-
-    if (!ctx) {
-        return st_api_make_current(NULL, NULL, NULL) ? kCGLNoError : kCGLBadContext;
     }
 
     if (!ctx->st) {
@@ -1067,6 +1041,9 @@ AO46MesaAttachWindow(AO46ContextRef ctx, void *window)
     }
     if (!window) {
         return kCGLBadWindow;
+    }
+    if (!AppleOpenGLAsahiCanPresentWindow()) {
+        return kCGLBadContext;
     }
 
     AO46DescribePixelFormat(ctx->pixel_format, 0, kCGLPFADoubleBuffer, &double_buffer);
@@ -1100,6 +1077,8 @@ AO46MesaAttachWindow(AO46ContextRef ctx, void *window)
     if (err != kCGLNoError) {
         ao46_mesa_destroy_drawable(drawable);
         ctx->drawable = NULL;
+        ctx->window_handle = NULL;
+        ctx->drawable_kind = AO46DrawableKindNone;
         return err;
     }
 
@@ -1360,6 +1339,9 @@ AO46MesaUpdateDrawable(AO46ContextRef ctx)
     }
 
     if (ctx->drawable_kind == AO46DrawableKindWindow) {
+        if (!AppleOpenGLAsahiCanPresentWindow()) {
+            return kCGLBadContext;
+        }
         CGLError err = ao46_mesa_build_window_target(ctx, ctx->drawable);
         if (err != kCGLNoError) {
             return err;
@@ -1377,6 +1359,10 @@ CGLError
 AO46MesaSwapBuffers(AO46ContextRef ctx)
 {
     if (!ctx || !ctx->st || !ctx->drawable) {
+        return kCGLBadContext;
+    }
+
+    if (ctx->drawable->window_backed) {
         return kCGLBadContext;
     }
 

@@ -35,8 +35,12 @@ endif()
 # -------------------------------------------------------------
 set(ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(MESA_ROOT "${ROOT_DIR}/../mesa")   # Mesa source tree (submodule)
-set(AO46_MESA_BUILD_DIR "${MESA_ROOT}/build" CACHE PATH "Path to the Meson-built Mesa directory")
+set(AO46_MESA_BUILD_DIR "${MESA_ROOT}/build-ao46-asahi-arm64" CACHE PATH "Path to the Meson-built Mesa Asahi directory")
 set(MESA_BUILD_DIR "${AO46_MESA_BUILD_DIR}")
+option(OPENGLKHR_BUILD_DEPRECATED_GL2MTL
+    "Build the deprecated GL2MTL development backend (never linked by OpenGL_4.6)"
+    OFF
+)
 set(AO46_MESA_PYTHON
     "${MESA_ROOT}/.ao46-python/bin/python3"
 )
@@ -233,7 +237,7 @@ set(MESA_COMPILE_DEFINITIONS
     HAVE_ZSTD
     HAVE_COMPRESSION
     HAVE_PTHREAD
-    DRAW_LLVM_AVAILABLE=0
+    DRAW_LLVM_AVAILABLE=1
     AMD_LLVM_AVAILABLE=0
     GALLIVM_USE_ORCJIT=0
     HAVE_SPIRV_TOOLS
@@ -257,10 +261,22 @@ find_library(MESA_COMPILER_LIB    NAMES compiler       PATHS "${MESA_BUILD_DIR}/
 find_library(MESA_NIR_LIB         NAMES nir            PATHS "${MESA_BUILD_DIR}/src/compiler/nir" NO_DEFAULT_PATH)
 find_library(MESA_GLSL_UTIL_LIB   NAMES glsl_util      PATHS "${MESA_BUILD_DIR}/src/compiler/glsl" NO_DEFAULT_PATH)
 find_library(MESA_GLSL_LIB        NAMES glsl           PATHS "${MESA_BUILD_DIR}/src/compiler/glsl" NO_DEFAULT_PATH)
-find_library(MESA_PIPE_LOADER_LIB NAMES pipe_loader_static PATHS "${MESA_BUILD_DIR}/src/gallium/auxiliary/pipe-loader" NO_DEFAULT_PATH)
-find_library(MESA_SOFTPIPE_LIB    NAMES softpipe       PATHS "${MESA_BUILD_DIR}/src/gallium/drivers/softpipe" NO_DEFAULT_PATH)
-# KosmicKrisp might be part of Mesa or separate; we'll add its library if available
-find_library(MESA_KOZMICKRISP_LIB NAMES kosmickrisp    PATHS "${MESA_BUILD_DIR}/src/kosmickrisp" NO_DEFAULT_PATH)
+find_library(MESA_ASAHI_GALLIUM_LIB NAMES asahi
+    PATHS "${MESA_BUILD_DIR}/src/gallium/drivers/asahi" NO_DEFAULT_PATH)
+find_library(MESA_ASAHI_COMPILER_LIB NAMES asahi_compiler
+    PATHS "${MESA_BUILD_DIR}/src/asahi/compiler" NO_DEFAULT_PATH)
+find_library(MESA_ASAHI_CORE_LIB NAMES asahi_lib
+    PATHS "${MESA_BUILD_DIR}/src/asahi/lib" NO_DEFAULT_PATH)
+find_library(MESA_ASAHI_LAYOUT_LIB NAMES asahi_layout
+    PATHS "${MESA_BUILD_DIR}/src/asahi/layout" NO_DEFAULT_PATH)
+find_library(MESA_POLY_NIR_LIB NAMES libpoly_nir
+    PATHS "${MESA_BUILD_DIR}/src/poly/nir" NO_DEFAULT_PATH)
+find_library(MESA_ASAHI_MACOS_WINSYS_LIB NAMES asahi_macos_winsys
+    PATHS "${MESA_BUILD_DIR}/src/asahi/lib" NO_DEFAULT_PATH)
+find_library(MESA_BLAKE3_LIB NAMES blake3
+    PATHS "${MESA_BUILD_DIR}/src/util/blake3" NO_DEFAULT_PATH)
+find_library(LLVM_LIB NAMES LLVM LLVM-22
+    PATHS /opt/homebrew/opt/llvm/lib /usr/local/opt/llvm/lib NO_DEFAULT_PATH)
 
 # If not found, the user must build Mesa first or adjust paths.
 if(NOT MESA_GLAPI_LIB OR
@@ -273,12 +289,20 @@ if(NOT MESA_GLAPI_LIB OR
    NOT MESA_NIR_LIB OR
    NOT MESA_GLSL_UTIL_LIB OR
    NOT MESA_GLSL_LIB OR
-   NOT MESA_PIPE_LOADER_LIB OR
-   NOT MESA_SOFTPIPE_LIB)
+   NOT MESA_ASAHI_GALLIUM_LIB OR
+   NOT MESA_ASAHI_COMPILER_LIB OR
+   NOT MESA_ASAHI_CORE_LIB OR
+   NOT MESA_ASAHI_LAYOUT_LIB OR
+   NOT MESA_POLY_NIR_LIB OR
+   NOT MESA_ASAHI_MACOS_WINSYS_LIB OR
+   NOT MESA_BLAKE3_LIB OR
+   NOT LLVM_LIB)
     message(FATAL_ERROR
-        "Mesa static libraries were not found under '${MESA_BUILD_DIR}'. "
-        "Run scripts/bootstrap_mesa.sh first, or point AO46_MESA_BUILD_DIR "
-        "at a completed Mesa Meson build.")
+        "Required Mesa/Asahi archives were not found under '${MESA_BUILD_DIR}'. "
+        "OpenGL_4.6 has no GL2MTL or softpipe runtime fallback. Run "
+        "scripts/bootstrap_mesa.sh after completing the macOS Asahi winsys "
+        "port, or point AO46_MESA_BUILD_DIR at a completed Asahi build with "
+        "LLVM and BLAKE3 available.")
 endif()
 
 if(NOT SPIRV_TOOLS_INCLUDE_DIR OR NOT SPIRV_TOOLS_LIB OR NOT ZSTD_LIB OR NOT ZLIB_LIB)
@@ -306,6 +330,15 @@ set(AO46_FRAMEWORK_MODULEMAP
 add_library(OpenGL46RuntimeObjects OBJECT
     runtime/src/AppleOpenGL46Runtime.c
     MesaPlatform/AO46MesaBridge.c
+    MesaPlatform/AppleOpenGLAsahi.c
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_bo.c"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_queue.c"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_command.c"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_lease.c"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_iosurface.m"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_screen_bootstrap.c"
 )
 
 target_include_directories(OpenGL46RuntimeObjects
@@ -313,7 +346,6 @@ target_include_directories(OpenGL46RuntimeObjects
         runtime/include
         MesaPlatform
         "${MESA_INCLUDE_DIRS}"
-        GL2MTL
 )
 
 target_compile_definitions(OpenGL46RuntimeObjects
@@ -338,7 +370,8 @@ add_custom_command(
     VERBATIM
 )
 
-add_library(AO46MetalMSLCompiler STATIC
+if(OPENGLKHR_BUILD_DEPRECATED_GL2MTL)
+add_library(AO46MetalMSLCompiler STATIC EXCLUDE_FROM_ALL
     "${AO46_MSL_NIR_ALGEBRAIC_C}"
     "${MESA_ROOT}/src/kosmickrisp/compiler/nir_to_msl.c"
     "${MESA_ROOT}/src/kosmickrisp/compiler/msl_type_inference.c"
@@ -361,6 +394,7 @@ target_compile_definitions(AO46MetalMSLCompiler
     PRIVATE
         ${MESA_COMPILE_DEFINITIONS}
 )
+endif()
 
 # -------------------------------------------------------------
 # 6. Mesa Companion Libraries (glcpp + SPIR-V/vtn)
@@ -491,10 +525,11 @@ target_compile_definitions(AO46MesaVTN
 )
 
 # -------------------------------------------------------------
-# 7. Metal Gallium Driver (GL2MTL)
+# 7. Archived GL2MTL Development Target
 # -------------------------------------------------------------
-# We include only the necessary files; mtl_cntxt.c and mtl_rsrc.c are redundant.
-add_library(LibGL2MTLBackend SHARED
+# This target is intentionally outside the production framework dependency graph.
+if(OPENGLKHR_BUILD_DEPRECATED_GL2MTL)
+add_library(LibGL2MTLBackend SHARED EXCLUDE_FROM_ALL
     GL2MTL/mtl_driver.m
     GL2MTL/mtl_shader_compiler.m
 )
@@ -528,8 +563,6 @@ target_link_libraries(LibGL2MTLBackend
         "-framework Foundation"
 )
 
-if(MESA_KOZMICKRISP_LIB)
-    target_link_libraries(LibGL2MTLBackend PRIVATE ${MESA_KOZMICKRISP_LIB})
 endif()
 
 # -------------------------------------------------------------
@@ -548,7 +581,6 @@ target_include_directories(OpenGL_4_6
     PRIVATE
         runtime/include
         MesaPlatform
-        GL2MTL
         "${GLAPI_PUBLIC_GEN_DIR}"
         "${MESA_INCLUDE_DIRS}"
 )
@@ -560,7 +592,6 @@ target_compile_definitions(OpenGL_4_6
 
 target_link_libraries(OpenGL_4_6
     PRIVATE
-        LibGL2MTLBackend
         ${MESA_ST_MESA_LIB}
         ${MESA_GLAPI_LIB}
         ${MESA_GLSL_LIB}
@@ -571,10 +602,16 @@ target_link_libraries(OpenGL_4_6
         AO46MesaVTN
         ${SPIRV_TOOLS_LIB}
         ${SPIRV_TOOLS_OPT_LIB}
-        ${MESA_SOFTPIPE_LIB}
-        ${MESA_PIPE_LOADER_LIB}
         ${MESA_GALLIUM_AUX}
+        ${MESA_ASAHI_GALLIUM_LIB}
+        ${MESA_ASAHI_COMPILER_LIB}
+        ${MESA_ASAHI_CORE_LIB}
+        ${MESA_ASAHI_LAYOUT_LIB}
+        ${MESA_POLY_NIR_LIB}
+        ${MESA_ASAHI_MACOS_WINSYS_LIB}
         ${MESA_UTIL_LIB}
+        ${MESA_BLAKE3_LIB}
+        ${LLVM_LIB}
         ${ZSTD_LIB}
         ${ZLIB_LIB}
         ${MESA_UTIL_SIMD_LIB}
@@ -582,6 +619,9 @@ target_link_libraries(OpenGL_4_6
         # C++ standard library (Mesa uses C++)
         "-lc++"
         "-framework Foundation"
+        "-framework IOKit"
+        "-framework CoreFoundation"
+        "-framework IOSurface"
 )
 
 set_target_properties(OpenGL_4_6 PROPERTIES
@@ -732,6 +772,147 @@ set_target_properties(LibNSOpenGLContextDriver PROPERTIES
 if(BUILD_TESTING)
     enable_testing()
 
+    add_executable(AppleOpenGLAsahiBackendSmoke
+        tests/AppleOpenGLAsahiBackendSmoke.c
+        MesaPlatform/AppleOpenGLAsahi.c
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_bo.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_queue.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_command.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_lease.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_iosurface.m"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_screen_bootstrap.c"
+    )
+
+    target_include_directories(AppleOpenGLAsahiBackendSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_link_libraries(AppleOpenGLAsahiBackendSmoke
+        PRIVATE
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-framework Foundation"
+            "-framework IOSurface"
+    )
+
+    add_test(
+        NAME AppleOpenGLAsahiBackendSmoke
+        COMMAND $<TARGET_FILE:AppleOpenGLAsahiBackendSmoke>
+    )
+
+    add_executable(AGXMacOSSubmissionObservationSmoke
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_submission_observation_smoke.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
+    )
+
+    target_include_directories(AGXMacOSSubmissionObservationSmoke
+        PRIVATE
+            "${MESA_ROOT}/src/asahi/lib"
+    )
+
+    add_test(
+        NAME AGXMacOSSubmissionObservationSmoke
+        COMMAND $<TARGET_FILE:AGXMacOSSubmissionObservationSmoke>
+    )
+
+    add_executable(AGXMacOSSubmissionLeaseSmoke
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_submission_lease_smoke.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_bo.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_lease.c"
+    )
+
+    target_include_directories(AGXMacOSSubmissionLeaseSmoke
+        PRIVATE
+            "${MESA_ROOT}/src/asahi/lib"
+    )
+
+    target_link_libraries(AGXMacOSSubmissionLeaseSmoke
+        PRIVATE
+            "-framework IOKit"
+            "-framework CoreFoundation"
+    )
+
+    add_test(
+        NAME AGXMacOSSubmissionLeaseSmoke
+        COMMAND $<TARGET_FILE:AGXMacOSSubmissionLeaseSmoke>
+    )
+
+    add_executable(AGXMacOSIOSurfaceDrawableTrace
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_iosurface_drawable_trace.m"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_iosurface.m"
+    )
+
+    target_include_directories(AGXMacOSIOSurfaceDrawableTrace
+        PRIVATE
+            "${MESA_ROOT}/src/asahi/lib"
+    )
+
+    target_link_libraries(AGXMacOSIOSurfaceDrawableTrace
+        PRIVATE
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-framework Foundation"
+            "-framework IOSurface"
+            "-framework Metal"
+    )
+
+    add_executable(AGXMacOSIOSurfaceSmoke
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_iosurface_smoke.m"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_iosurface.m"
+    )
+
+    target_include_directories(AGXMacOSIOSurfaceSmoke
+        PRIVATE
+            "${MESA_ROOT}/src/asahi/lib"
+    )
+
+    target_link_libraries(AGXMacOSIOSurfaceSmoke
+        PRIVATE
+            "-framework Foundation"
+            "-framework IOSurface"
+    )
+
+    add_test(
+        NAME AGXMacOSIOSurfaceSmoke
+        COMMAND $<TARGET_FILE:AGXMacOSIOSurfaceSmoke>
+    )
+
+    add_executable(AGXMacOSScreenBootstrapSmoke
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_screen_bootstrap_smoke.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_bo.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_queue.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_lease.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_command.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_iosurface.m"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_screen_bootstrap.c"
+    )
+
+    target_include_directories(AGXMacOSScreenBootstrapSmoke
+        PRIVATE
+            "${MESA_ROOT}/src/asahi/lib"
+    )
+
+    target_link_libraries(AGXMacOSScreenBootstrapSmoke
+        PRIVATE
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-framework Foundation"
+            "-framework IOSurface"
+    )
+
+    add_test(
+        NAME AGXMacOSScreenBootstrapSmoke
+        COMMAND $<TARGET_FILE:AGXMacOSScreenBootstrapSmoke>
+    )
+
     add_executable(AO46RuntimeCompatSmoke
         tests/AO46RuntimeCompatSmoke.c
     )
@@ -757,6 +938,42 @@ if(BUILD_TESTING)
     set_tests_properties(AO46RuntimeCompatSmoke PROPERTIES
         ENVIRONMENT
             "AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    add_executable(AO46MesaProfileNegotiationSmoke
+        tests/AO46MesaProfileNegotiationSmoke.c
+    )
+
+    target_include_directories(AO46MesaProfileNegotiationSmoke
+        PRIVATE
+            runtime/include
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_link_libraries(AO46MesaProfileNegotiationSmoke
+        PRIVATE
+            OpenGL_4_6
+    )
+
+    add_test(
+        NAME AO46MesaProfileNegotiationSmoke
+        COMMAND $<TARGET_FILE:AO46MesaProfileNegotiationSmoke>
+    )
+
+    set_tests_properties(AO46MesaProfileNegotiationSmoke PROPERTIES
+        ENVIRONMENT
+            "AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    add_test(
+        NAME AO46MesaProfileNegotiationNativeBootstrapSmoke
+        COMMAND $<TARGET_FILE:AO46MesaProfileNegotiationSmoke>
+    )
+
+    set_tests_properties(AO46MesaProfileNegotiationNativeBootstrapSmoke PROPERTIES
+        ENVIRONMENT
+            "AO46_ENABLE_NATIVE_SCREEN_BOOTSTRAP=1;AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
     )
 
     add_executable(AO46NSOpenGLCompatSmoke

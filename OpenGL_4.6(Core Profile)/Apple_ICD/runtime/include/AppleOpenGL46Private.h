@@ -46,6 +46,8 @@ struct AO46ContextRec {
     GLint display_list_optimization_enabled;
     GLint mp_engine_enabled;
     GLint crash_on_removed_functions_enabled;
+    GLint mesa_requested_version;
+    GLint mesa_realized_version;
     struct st_context *st;
     struct pipe_context *pipe;
     struct pipe_surface *present_surface;

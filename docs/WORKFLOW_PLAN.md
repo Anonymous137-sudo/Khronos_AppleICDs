@@ -1,8 +1,25 @@
 # Workflow Plan
 
-This document is the active engineering workflow plan for `Khronos_AppleICDs` as of July 18, 2026.
+This document is the active engineering workflow plan for `Khronos_AppleICDs`.
 
 It adopts the repo-to-full-OpenGL-4.6 engineering map originally assessed against commit `1a0d21e` and turns that assessment into the working implementation order for the driver framework from this point forward.
+
+## Governing Native AGX Pivot
+
+The authoritative architecture is [`AO46AGXNativeArchitecture.md`](AO46AGXNativeArchitecture.md).
+
+AO46 no longer plans to manually implement OpenGL 4.6 semantics, GLSL, NIR
+lowering, shader stages, object validation, or AGX GPU execution. The full Mesa
+OpenGL implementation and full Mesa Asahi Gallium driver remain upstream code
+and are the only source of those behaviours. AO46 code is limited to macOS
+framework/CGL/NSOpenGL integration and, later, the macOS platform adapter below
+Asahi's userspace driver.
+
+The Metal-oriented workstreams and phase descriptions below are retained as a
+record of the deprecated development backend and its existing tests. They are not a mandate
+to build a parallel GL implementation. All future feature work must first ask
+whether upstream Mesa/Asahi already provides the behavior; if it does, AO46
+integrates that existing implementation instead of recreating it.
 
 ## Status Legend
 
@@ -27,23 +44,92 @@ It adopts the repo-to-full-OpenGL-4.6 engineering map originally assessed agains
 
 - Start with `cmake --build` and `ctest` in the repo-local `artifacts/build`.
 - Prefer one coherent vertical slice per pass: object model, API surface, backend behavior, and tests together.
+- Every native-winsys pass advances all six readiness lanes in parallel:
+  1. GPU-VA resource ownership and BO lifetime.
+  2. Submission UABI observation and sidecar validation.
+  3. Completion, fence, retirement, and failure handling.
+  4. Native Mesa `pipe_screen` and context admission.
+  5. IOSurface, CAMetalLayer, resize, and presentation lifecycle.
+  6. Offscreen rendering, readback, and CTS admission.
+  A lane may advance only with tested implementation work, a newly controlled
+  hardware observation, or an explicitly verified blocker. A TODO,
+  documentation-only change, version string, or fallback backend is not
+  progress. Each pass reports `[x]`, `[~]`, or `[ ]` for every lane.
 - Expand existing smoke coverage whenever a new object family or state path becomes real.
-- Treat the Metal execution backend, object semantics, and platform integration as one system.
+- Treat Mesa/Asahi as the sole GL semantic and hardware-driver implementation.
+- Keep the Metal execution backend isolated as a deprecated development target;
+  it must not become a framework runtime fallback.
 - Keep public repo documentation aligned with the current implementation boundary.
+
+## Native Winsys Six-Lane Dashboard
+
+- `[~]` 1. GPU-VA resource ownership and BO lifetime: trace-validated direct
+  BO allocation, full-range lookup, submission pinning, and state-gated
+  retirement exist. Managed CPU maps are explicitly pinned and protected by
+  single-use mapping capabilities, rejecting altered or replayed map handles
+  before they can release BO ownership. The framework-owned native screen
+  bootstrap starts and tears down the BO set with its AGX session. VM/heap
+  management and Mesa `agx_bo` adaptation remain.
+- `[~]` 2. Submission UABI observation and sidecar validation: the observed
+  64-byte descriptor, headers, outer carrier offset, 256-byte diagnostic
+  prefix, and a 4 KiB immutable admission snapshot are validated. Fresh
+  render and compute captures both prove the 4 KiB carrier and the nonzero
+  opaque slot at `0x790`; the slot is captured but never dereferenced or
+  decoded. `libwrap.dylib` applies the same extended validator to live trace
+  carriers. Submission admission now normalizes aliased resource ranges to
+  one BO pin per batch, and a lease may enter the in-flight state only with
+  that extended trace-valid evidence. The sidecar pointer graph, command
+  payload encoding, and direct Trap4 submission remain disabled. Fresh
+  controlled resource-range and render-lifecycle traces continue to validate
+  the carrier and resource/completion relationships without changing that
+  boundary.
+- `[~]` 3. Completion, fence, retirement, and failure handling: notification
+  queues, token matching, resource-lease retirement, device-loss abandonment,
+  foreign-record preservation, and screen-bootstrap queue ownership exist.
+  A rejected bootstrap teardown now leaves its queue and other ready state
+  intact when a BO map or submission pin remains live. Completion and
+  device-loss retirement now also discard the immutable carrier snapshot.
+  The live bootstrap smoke now proves an admitted carrier-backed in-flight
+  lease blocks teardown until the explicit device-loss retirement path releases
+  its BO pins. Fresh two-queue range and render-lifecycle controls complete
+  their observed token pairs before releasing traced resources. Real
+  submit-originated completion records, GPU resets, and device-loss recovery
+  remain.
+- `[~]` 4. Native Mesa `pipe_screen` and context admission: CGL profiles route
+  to Mesa admission, validate the intended 3.2-4.6 request range, and reject
+  safely while native blockers remain. With
+  `AO46_ENABLE_NATIVE_SCREEN_BOOTSTRAP=1`, the framework itself now exercises
+  the device/BO/command/queue/drawable ownership root; this route is in the
+  CGL smoke matrix. The macOS `agx_screen_create` replacement and real
+  `pipe_context` remain.
+- `[~]` 5. IOSurface, CAMetalLayer, resize, and presentation lifecycle:
+  IOSurface creation, explicit write/read handoff, generation-tracked
+  transactional resize, stable native IOSurface identity, and explicit
+  `(IOSurfaceID, generation)` stale-drawable tokens exist. Mesa and CMake
+  smoke coverage verifies that resize and destruction invalidate old tokens;
+  the hardware trace verifies IOSurface import, clear, and readback. Framework-
+  owned native bootstrap ownership also exists.
+  CAMetalLayer import/export, drawable acquisition, and present remain.
+- `[~]` 6. Offscreen rendering, readback, and CTS admission: the native
+  bootstrap now performs a hardware-tested IOSurface write/read round trip.
+  Its resource admission now also requires the same immutable carrier gate as
+  future graphics work. The framework profile smoke verifies the native screen
+  blocker before its Mesa clear/readback section can run. Real Mesa offscreen
+  rendering and staged CTS remain blocked on lanes 2 and 4.
 
 ## Workstreams
 
 1. `Implemented` System-facing driver architecture
-   Scope: Apple-path `OpenGL.framework` loader, `OpenGL_4.6.framework`, `libGLICD.dylib`, `libgl2mtl.dylib`, `libGL.dylib`, `libGLContext.dylib`, `libNSOpenGLContext.dylib`, client/runtime bridge, headers, and module metadata.
-   Still required: stable ABI between layers, version negotiation, universal-binary strategy, code-signing strategy, hardened-runtime compatibility, atomic replacement and rollback, runtime capability probing, per-application backend selection, and crash isolation where possible.
+   Scope: Apple-path `OpenGL.framework` loader, `OpenGL_4.6.framework`, `libGLICD.dylib`, `libGL.dylib`, `libGLContext.dylib`, `libNSOpenGLContext.dylib`, client/runtime bridge, headers, and module metadata.
+   Still required: stable ABI between layers, version negotiation, universal-binary strategy, code-signing strategy, hardened-runtime compatibility, atomic replacement and rollback, runtime capability probing, per-application compatibility settings, and crash isolation where possible.
 
 2. `Partial` OpenGL entry-point dispatch
    Scope: generated client, ICD, framework, and backend exports already exist.
    Still required: complete OpenGL 4.6 registry coverage with real semantics, context-specific dispatch, extension/version gating, no-context behavior, alias handling, fast validated dispatch, and tracing/validation support.
 
 3. `Partial` CGL and macOS context integration
-   Scope: renderer enumeration, pixel formats, contexts, share groups, pbuffers, offscreen drawables, CGL shim testing, and NSOpenGL bridge.
-   Still required: precise context creation semantics, debug/robust/no-error profiles, cross-thread migration, drawable acquisition and loss behavior, Retina/backing-scale handling, swap interval, fullscreen behavior, color-space handling, and undocumented Apple-quirk compatibility where needed.
+   Scope: renderer enumeration, pixel formats, contexts, share groups, pbuffers, offscreen drawables, CGL shim testing, and NSOpenGL bridge. CGL core-profile requests now map directly to Mesa state-tracker requests; insufficient Mesa support returns `kCGLBadPixelFormat` rather than silently lowering the requested version.
+   Still required: debug/robust/no-error profiles, cross-thread migration, drawable acquisition and loss behavior, Retina/backing-scale handling, swap interval, fullscreen behavior, color-space handling, and undocumented Apple-quirk compatibility where needed.
 
 4. `Partial` Context state foundation
    Scope: current error state, draw/read buffers, pack/unpack alignment, clear values, masks, viewport, scissor, line width, point size, polygon mode, cull/front-face state, depth range, depth function, and several core queries.
@@ -161,17 +247,17 @@ It adopts the repo-to-full-OpenGL-4.6 engineering map originally assessed agains
     Scope: final 4.6 feature completion.
     Required: indirect draw parameter support, pipeline-statistics queries, polygon offset clamp, no-error contexts, expanded shader atomic-counter ops, shader draw parameters, group-vote operations, SPIR-V ingestion, anisotropic filtering, and transform-feedback overflow queries.
 
-33. `Partial` Metal GPU execution backend
-    Scope: `libgl2mtl.dylib` exists and already handles state, storage, and basic raster behavior.
-    Still required: real Metal device/queue/encoder ownership, GPU resources, render and compute pipelines, binding allocator, command recording, dirty-state tracking, resolves, and visibility-point handling.
+33. `Archived` GL2MTL development backend
+    Scope: retained for source comparison and its existing tests only. It is excluded from production framework selection.
+    Still required: no production work; Mesa/Asahi owns semantic and hardware-driver execution.
 
 34. `Required` Capability and format database
     Scope: not implemented yet.
-    Required: central capability tables driven by GPU family, Metal features, macOS version, format support, limits, and alignment rules, with one source of truth for queries, extension exposure, validation, and fallback policy.
+    Required: central capability tables driven by GPU family, macOS version, format support, limits, and alignment rules, with one source of truth for queries, extension exposure, validation, and rejection policy.
 
-35. `Required` Emulation layer for Metal gaps
-    Scope: not implemented yet.
-    Required: explicit fallback strategies for geometry shaders, transform feedback, wide lines, point rules, polygon modes, certain queries, clipping behavior, unusual texture views, some atomic semantics, and cross-context synchronization corner cases.
+35. `Archived` GL2MTL gap workstream
+    Scope: historical design notes for the deprecated development target.
+    Still required: no production work; Mesa/Asahi owns conformance behavior and reports only verified backend capability.
 
 36. `Partial` Error semantics
     Scope: `glGetError` and internal error tracking already exist.

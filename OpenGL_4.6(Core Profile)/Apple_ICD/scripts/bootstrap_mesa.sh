@@ -4,11 +4,13 @@ set -eu
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 project_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 mesa_root=${OPENGLKHR_MESA_ROOT:-"$project_root/../mesa"}
-mesa_build_dir=${OPENGLKHR_MESA_BUILD_DIR:-"$mesa_root/build"}
+mesa_build_dir=${OPENGLKHR_MESA_BUILD_DIR:-"$mesa_root/build-ao46-asahi-arm64"}
 mesa_python_root=${OPENGLKHR_MESA_PYTHON_ROOT:-"$mesa_root/.ao46-python"}
 
 # Mesa's macOS parser stack expects newer bison/flex than the system defaults.
-PATH="/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/flex/bin:/usr/local/opt/bison/bin:/usr/local/opt/flex/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+PATH="/opt/homebrew/opt/llvm/bin:/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/flex/bin:/usr/local/opt/llvm/bin:/usr/local/opt/bison/bin:/usr/local/opt/flex/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+PKG_CONFIG_PATH="${OPENGLKHR_PKG_CONFIG_PATH:-/private/tmp/mesa-asahi-prefix/lib/pkgconfig:/opt/homebrew/share/pkgconfig:/opt/homebrew/lib/pkgconfig}${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+export PATH PKG_CONFIG_PATH
 
 if [ ! -d "$mesa_root" ]; then
     echo "missing Mesa source tree: $mesa_root" >&2
@@ -73,11 +75,12 @@ if [ -f "$mesa_build_dir/build.ninja" ] || [ -d "$mesa_build_dir/meson-info" ]; 
         --buildtype=release \
         --default-library=static \
         -Dplatforms=macos \
-        -Dgallium-drivers=softpipe \
+        -Dgallium-drivers=asahi \
         -Dglx=disabled \
-        -Dllvm=disabled \
+        -Dllvm=enabled \
         -Dvulkan-drivers= \
-        -Dgallium-rusticl=false
+        -Dgallium-rusticl=false \
+        -Dtools=asahi
 else
     meson setup \
         "$mesa_build_dir" \
@@ -85,11 +88,12 @@ else
         --buildtype=release \
         --default-library=static \
         -Dplatforms=macos \
-        -Dgallium-drivers=softpipe \
+        -Dgallium-drivers=asahi \
         -Dglx=disabled \
-        -Dllvm=disabled \
+        -Dllvm=enabled \
         -Dvulkan-drivers= \
-        -Dgallium-rusticl=false
+        -Dgallium-rusticl=false \
+        -Dtools=asahi
 fi
 
 meson compile -C "$mesa_build_dir" \
@@ -103,5 +107,9 @@ meson compile -C "$mesa_build_dir" \
     nir \
     glsl \
     glsl_util \
-    pipe_loader_static \
-    softpipe
+    asahi \
+    asahi_compiler \
+    asahi_layout \
+    asahi_lib \
+    libpoly_nir \
+    asahi_macos_winsys

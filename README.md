@@ -4,6 +4,14 @@
 
 Its goal is to provide a modern OpenGL 4.6 core-profile stack through a real system framework, system-space loader pieces, and user-space `libGL*.dylib` bridges, filling in the modern OpenGL path Apple stopped advancing when OpenGL was deprecated on macOS Mojave 10.14 in 2018.
 
+The intended native execution path fully reuses Mesa's OpenGL implementation
+and Mesa's Asahi Gallium driver. AO46 supplies macOS-specific framework,
+CGL/NSOpenGL, drawable, and platform integration; it does not duplicate GL
+semantics or the AGX compiler/driver. GL2MTL is retained only as an isolated
+development target; the framework fails closed while the native macOS Asahi
+winsys is incomplete. See [the native AGX architecture
+plan](docs/AO46AGXNativeArchitecture.md).
+
 ## Repository Layout
 
 - `OpenGL_4.6(Core Profile)/Apple_ICD`
@@ -11,7 +19,10 @@ Its goal is to provide a modern OpenGL 4.6 core-profile stack through a real sys
 - `docs/INSTALLATION.md`
   Live-install notes for developer machines, installer behavior, target paths, and update flow.
 - `docs/WORKFLOW_PLAN.md`
-  Active engineering workflow plan for taking the current driver framework to full OpenGL 4.6 Core Profile coverage.
+  Active engineering workflow plan, including the Mesa/Asahi reuse rule.
+- `docs/AO46AGXNativeArchitecture.md`
+  Governing native backend architecture, upstream reuse boundary, and macOS
+  platform-port delivery order.
 - `dist/`
   Built `OpenGLKHR_ICD_Installer.pkg` outputs.
 

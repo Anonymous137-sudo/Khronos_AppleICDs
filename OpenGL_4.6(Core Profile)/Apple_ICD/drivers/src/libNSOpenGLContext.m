@@ -877,12 +877,12 @@ static NSData *ao46_ns_synthesize_attribute_data_for_pixel_format(AO46PixelForma
 
 @end
 
-void NSOpenGLSetOption(AO46NSOpenGLGlobalOption pname, GLint param)
+static void ao46_ns_set_global_option(AO46NSOpenGLGlobalOption pname, GLint param)
 {
     (void)AO46ClientSetGlobalOption((CGLGlobalOption)pname, &param);
 }
 
-void NSOpenGLGetOption(AO46NSOpenGLGlobalOption pname, GLint *param)
+static void ao46_ns_get_global_option(AO46NSOpenGLGlobalOption pname, GLint *param)
 {
     if (!param) {
         return;
@@ -891,6 +891,16 @@ void NSOpenGLGetOption(AO46NSOpenGLGlobalOption pname, GLint *param)
     if (AO46ClientGetGlobalOption((CGLGlobalOption)pname, param) != kCGLNoError) {
         *param = 0;
     }
+}
+
+void NSOpenGLSetOption(AO46NSOpenGLGlobalOption pname, GLint param)
+{
+    ao46_ns_set_global_option(pname, param);
+}
+
+void NSOpenGLGetOption(AO46NSOpenGLGlobalOption pname, GLint *param)
+{
+    ao46_ns_get_global_option(pname, param);
 }
 
 void NSOpenGLGetVersion(GLint *major, GLint *minor)
@@ -905,12 +915,12 @@ void NSOpenGLGetVersion(GLint *major, GLint *minor)
 
 void AO46NSOpenGLSetOption(AO46NSOpenGLGlobalOption pname, GLint param)
 {
-    NSOpenGLSetOption(pname, param);
+    ao46_ns_set_global_option(pname, param);
 }
 
 void AO46NSOpenGLGetOption(AO46NSOpenGLGlobalOption pname, GLint *param)
 {
-    NSOpenGLGetOption(pname, param);
+    ao46_ns_get_global_option(pname, param);
 }
 
 void AO46NSOpenGLGetVersion(GLint *major, GLint *minor)

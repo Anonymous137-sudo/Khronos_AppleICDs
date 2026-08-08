@@ -49,8 +49,4 @@ if [ -f "$build_dir/libGLICD.dylib" ]; then
     cp "$build_dir/libGLICD.dylib" "$usr_local_lib/libGLICD.dylib"
 fi
 
-if [ -f "$build_dir/libgl2mtl.dylib" ]; then
-    cp "$build_dir/libgl2mtl.dylib" "$usr_local_lib/libgl2mtl.dylib"
-fi
-
 echo "staged OpenGL_4.6(Core Profile)/Apple_ICD layout at $stage_root"

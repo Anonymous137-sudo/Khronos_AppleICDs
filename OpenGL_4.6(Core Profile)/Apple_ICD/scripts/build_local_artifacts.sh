@@ -6,7 +6,7 @@ project_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 
 build_dir=${1:-"$project_root/artifacts/build"}
 stage_dir=${2:-"$project_root/artifacts/stage"}
-mesa_build_dir=${OPENGLKHR_MESA_BUILD_DIR:-"$project_root/../mesa/build"}
+mesa_build_dir=${OPENGLKHR_MESA_BUILD_DIR:-"$project_root/../mesa/build-ao46-asahi-arm64"}
 
 rm -rf "$build_dir" "$stage_dir"
 

@@ -1,15 +1,39 @@
 # OpenGL_4.6(Core Profile) / Apple_ICD
 
-This is the source tree for the `OpenGL_4.6(Core Profile)` stack, a third-party in-development macOS OpenGL 4.6 core-profile system driver project.
+This is the source tree for the `OpenGL_4.6(Core Profile)` stack, a third-party in-development macOS OpenGL core-profile framework project.
 
-The public and system driver layers are `OpenGL.framework`, `OpenGL_4.6.framework`, `libGLICD.dylib`, and `libgl2mtl.dylib`.
+The public and system driver layers are `OpenGL.framework`,
+`OpenGL_4.6.framework`, `libGLICD.dylib`, and the user-space bridge dylibs.
+
+AO46 has one production execution path and one archived development target:
+
+- `AO46AGXMac` is the planned native path. It reuses upstream Mesa's OpenGL
+  frontend and Asahi Gallium driver stack in full, then replaces only the Linux
+  platform boundary with a macOS implementation.
+- `GL2MTL` is a deprecated development-only target. It is excluded from the
+  default build and is never linked into `OpenGL_4.6.framework`.
+
+AO46 does not reimplement OpenGL 4.6 semantics, the GLSL/NIR compiler stack,
+or the Asahi AGX driver. Those are Mesa/Asahi responsibilities. The
+project-side responsibilities are macOS framework ABI, CGL/NSOpenGL
+integration, drawable lifecycle, and eventually the macOS AGX platform adapter.
+
+The governing design is in
+[`docs/AO46AGXNativeArchitecture.md`](../../docs/AO46AGXNativeArchitecture.md).
 
 ## Layout
 
 - `framework/`
   The real `OpenGL_4.6.framework` driver. This is the system-space OpenGL 4.6 core-profile entrypoint.
 - `backend/`
-  The internal `libgl2mtl.dylib` backend boundary where OpenGL state and commands are translated toward Metal-facing execution.
+  Archived development backend interfaces; not part of the production runtime.
+- `GL2MTL/`
+  Deprecated Metal development code. It is not built or linked by default.
+- `AO46AGXMac/`
+  The planned macOS platform adapter beneath Mesa's upstream Asahi userspace
+  driver. It will contain device, BO, GPU-VA, queue, submission,
+  synchronization, IOSurface, and presentation integration without duplicating
+  Mesa OpenGL or Asahi compiler code.
 - `runtime/`
   Framework-side runtime code that implements the driver and owns the framework-to-backend bridge.
 - `client/`
@@ -25,13 +49,18 @@ The public and system driver layers are `OpenGL.framework`, `OpenGL_4.6.framewor
 
 ## First Goal
 
-The first milestone is a clean system-driver bring-up with:
+The first framework milestone is a clean system-driver bring-up with:
 
 - an exact-path Apple `OpenGL.framework` loader target
 - a real `OpenGL_4.6.framework` target
-- a framework-owned backend boundary that talks directly to `libgl2mtl.dylib`
+- a framework-owned backend boundary that selects Mesa Asahi only
 - initial `CGL*` compatibility entrypoints
-- initial Khronos `gl*` forwarding entrypoints
+- Khronos `gl*` forwarding into Mesa
+
+The native-backend milestone then builds the upstream Mesa/Asahi stack as a
+pinned dependency, adds the AO46AGXMac platform boundary, and validates one
+macOS/GPU profile at a time. Until that work is complete, AO46 must not claim
+native AGX execution or macOS OpenGL 4.6 conformance.
 
 ## Current Shape
 
@@ -43,16 +72,14 @@ Right now this subproject is an early in-development driver:
 - `CGL*` context, renderer, pixel-format, pbuffer, option, and share-group entrypoints are routed through the framework/ICD/loader path
 - `OpenGL_4.6.framework` now carries public `Headers/` and a `Modules/` definition instead of only the binary and `Info.plist`
 - `gl*` entrypoints and the backend proc table are generated from a vendored Khronos-facing registry snapshot stored in this repo
-- `libgl2mtl.dylib` now implements the first real GL-visible backend behavior through standard Khronos entrypoints including `glGetString`, `glGetStringi`, `glGetError`, `glGetIntegerv`, `glGetBooleanv`, `glViewport`, `glScissor`, `glEnable`, `glDisable`, `glClearColor`, `glClearDepth`, `glClearStencil`, `glColorMask`, `glDepthMask`, `glClear`, `glReadBuffer`, `glReadPixels`, `glDrawArrays`, `glDrawElements`, `glDrawRangeElements`, `glFlush`, and `glFinish`
-- the texture-object path now includes `glActiveTexture`, `glBindTexture`, `glGenTextures`, `glDeleteTextures`, `glTexParameterf`, `glTexParameteri`, `glTexImage2D`, `glTexSubImage2D`, `glTexStorage2D`, `glGenerateMipmap`, `glGetTexParameteriv`, `glGetTexLevelParameteriv`, `glGetTexImage`, and `glPixelStorei`
-- the buffer-object path now includes `glGenBuffers`, `glCreateBuffers`, `glBindBuffer`, `glBindBufferBase`, `glBindBufferRange`, `glBufferData`, `glBufferSubData`, `glBufferStorage`, `glMapBuffer`, `glMapBufferRange`, `glUnmapBuffer`, `glFlushMappedBufferRange`, `glGetBufferParameteriv`, `glGetBufferParameteri64v`, `glGetBufferPointerv`, `glGetBufferSubData`, `glCopyBufferSubData`, `glClearBufferData`, `glClearBufferSubData`, plus the first DSA buffer equivalents: `glNamedBufferStorage`, `glNamedBufferData`, `glNamedBufferSubData`, `glCopyNamedBufferSubData`, `glClearNamedBufferData`, `glClearNamedBufferSubData`, `glMapNamedBuffer`, `glMapNamedBufferRange`, `glUnmapNamedBuffer`, `glFlushMappedNamedBufferRange`, `glGetNamedBufferParameteriv`, `glGetNamedBufferParameteri64v`, `glGetNamedBufferPointerv`, and `glGetNamedBufferSubData`
-- broader generic buffer-target state is now present for pixel pack/unpack, uniform, transform-feedback, atomic-counter, shader-storage, draw-indirect, and dispatch-indirect bindings, with indexed `glGetIntegeri_v` and `glGetInteger64i_v` coverage for the current indexed buffer families
-- element-array state now flows through the backend with proper `GL_ELEMENT_ARRAY_BUFFER_BINDING` reporting, so indexed draw calls use VAO-owned EBO state instead of only non-indexed vertex pulls
-- texture-unit state, immutable/mutable 2D texture storage, sampler uniform routing, generated mipmap chains, row-aligned texture upload/readback, and a minimal textured-triangle raster path now flow through the backend
-- offscreen memory and framework-owned pbuffers now bind through the backend storage path, so clear/readback tests exercise real pixel data instead of only metadata bookkeeping
-- `CGLTexImagePBuffer` and `AO46TexImagePBuffer` now have a real backend import lane for the currently attached pbuffer image when a compatible texture is bound
+- old handwritten GL2MTL state, texture, buffer, pbuffer, and raster paths are archived only; their feature lists are not claims about the production framework
 - when a standard Khronos OpenGL token or function name already exists, the code now prefers that Khronos spelling directly; `AO46*` names are reserved for private driver plumbing
-- the current `libgl2mtl.dylib` backend implementation is still a minimal internal scaffold; deeper Metal command translation, shader/pipeline work, synchronization, and resource execution are still TODO
+- the runtime now selects only the native Mesa Asahi backend. It fails CGL
+  context creation explicitly until the macOS winsys can create an AGX screen;
+  it never falls back to `libgl2mtl.dylib`
+- the device-profile query, 64-byte capability request, and profile gate are
+  implemented for the current host; BO, GPU-VA, queue, submission, and GPU
+  synchronization operations remain the blocking macOS winsys work
 
 ## Build
 

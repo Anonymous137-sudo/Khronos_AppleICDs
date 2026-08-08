@@ -8,7 +8,7 @@ PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/b
 
 build_dir=${OPENGLKHR_BUILD_DIR:-"$project_root/artifacts/build"}
 stage_dir=${OPENGLKHR_STAGE_DIR:-"$project_root/artifacts/stage"}
-mesa_build_dir=${OPENGLKHR_MESA_BUILD_DIR:-"$project_root/../mesa/build"}
+mesa_build_dir=${OPENGLKHR_MESA_BUILD_DIR:-"$project_root/../mesa/build-ao46-asahi-arm64"}
 
 if ! command -v cmake >/dev/null 2>&1; then
     echo "cmake is required to build the OpenGLKHR ICD source tree" >&2

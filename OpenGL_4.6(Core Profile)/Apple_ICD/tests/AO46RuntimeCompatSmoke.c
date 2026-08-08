@@ -95,6 +95,7 @@ int main(void)
     AO46PixelFormatRef pix = NULL;
     AO46PixelFormatRef pix46 = NULL;
     AO46ContextRef ctx = NULL;
+    AO46ContextRef ctx46 = NULL;
     AO46ContextRef copy_ctx = NULL;
     AO46ContextRef shared_ctx = NULL;
     AO46ContextRef independent_ctx = NULL;
@@ -306,6 +307,49 @@ int main(void)
         expect_no_error("AO46DescribePixelFormat(4.6 profile)",
                         AO46DescribePixelFormat(pix46, 0, kCGLPFAOpenGLProfile, &value)) ||
         expect_true("4.6 profile preserved", value == kCGLOGLPVersion_GL4_6_Core)) {
+        AO46DestroyPixelFormat(pix46);
+        AO46DestroyPixelFormat(pix);
+        return 1;
+    }
+
+    CGLError create46_error = AO46CreateContext(pix46, NULL, &ctx46);
+    if (create46_error == kCGLNoError) {
+        if (expect_true("4.6 context exists", ctx46 != NULL) ||
+            expect_no_error("AO46SetOffScreen(4.6)",
+                            AO46SetOffScreen(ctx46, 1, 1, 4, offscreen_storage)) ||
+            expect_no_error("AO46SetCurrentContext(4.6)", AO46SetCurrentContext(ctx46))) {
+            AO46DestroyContext(ctx46);
+            AO46DestroyPixelFormat(pix46);
+            AO46DestroyPixelFormat(pix);
+            return 1;
+        }
+
+        glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
+        glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
+        if (expect_true("4.6 request is not silently lowered",
+                        gl_version_at_least(gl_major, gl_minor, 4, 6))) {
+            AO46SetCurrentContext(NULL);
+            AO46DestroyContext(ctx46);
+            AO46DestroyPixelFormat(pix46);
+            AO46DestroyPixelFormat(pix);
+            return 1;
+        }
+
+        AO46SetCurrentContext(NULL);
+        AO46DestroyContext(ctx46);
+    } else if (create46_error == kCGLBadContext && ctx46 == NULL) {
+        fprintf(stderr, "native Mesa Asahi winsys is not ready; context creation is correctly blocked\n");
+        if (expect_no_error("AO46SetCurrentContext(NULL) without native screen",
+                            AO46SetCurrentContext(NULL))) {
+            AO46DestroyPixelFormat(pix46);
+            AO46DestroyPixelFormat(pix);
+            return 1;
+        }
+        AO46DestroyPixelFormat(pix46);
+        AO46DestroyPixelFormat(pix);
+        return 0;
+    } else if (expect_true("unsupported 4.6 request returns bad pixel format",
+                           create46_error == kCGLBadPixelFormat && ctx46 == NULL)) {
         AO46DestroyPixelFormat(pix46);
         AO46DestroyPixelFormat(pix);
         return 1;

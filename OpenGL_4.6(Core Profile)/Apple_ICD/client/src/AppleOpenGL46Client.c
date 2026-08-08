@@ -203,16 +203,16 @@ CGLError AO46ClientEnsureFramework(void)
     size_t i;
 
     if (g_framework.framework_handle) {
-        if (!g_framework.ensure_runtime) {
+        if (!ao46_framework_has_required_exports()) {
             return kCGLBadConnection;
         }
-        return g_framework.ensure_runtime();
+        return kCGLNoError;
     }
 
     for (i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
         if (ao46_try_load_framework_candidate(candidates[i])) {
             fprintf(stderr, "AO46 client: loaded framework driver from %s\n", g_framework.loaded_path);
-            return g_framework.ensure_runtime();
+            return kCGLNoError;
         }
     }
 

@@ -128,8 +128,11 @@ int main(void)
         }
 
         context = [[AO46NSOpenGLContext alloc] initWithFormat:format shareContext:nil];
-        if (expect_true("AO46NSOpenGLContext exists", context != nil)) {
-            return 1;
+        if (!context) {
+            /* A context is unavailable until the native Mesa Asahi screen is
+             * enabled. The NSOpenGL frontend must not revive a fallback. */
+            return expect_true("AO46NSOpenGLContext remains unbound",
+                               [AO46NSOpenGLContext currentContext] == nil);
         }
 
         [context setValues:&swap_interval forParameter:AO46NSOpenGLContextParameterSwapInterval];
