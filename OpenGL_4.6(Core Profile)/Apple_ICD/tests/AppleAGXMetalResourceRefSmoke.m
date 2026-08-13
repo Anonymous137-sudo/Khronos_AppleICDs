@@ -1,0 +1,64 @@
+/*
+ * Copyright 2026 Khronos_AppleICDs contributors
+ * SPDX-License-Identifier: MIT
+ */
+
+#import <Metal/Metal.h>
+
+#include "AppleAGXMetalResourceRef.h"
+#include "AppleAGXNativeBridge.h"
+#include "asahi/lib/agx_macos_device.h"
+
+#include <stdio.h>
+
+#define AO46_SKIP_UNSUPPORTED_PROFILE 77
+
+int
+main(void)
+{
+   struct agx_macos_device_session session = {0};
+   struct AppleAGXNativeBridge bridge = {0};
+   struct AppleAGXMetalResourceRef ref = {0};
+   id<MTLBuffer> buffer = nil;
+   bool passed = false;
+
+   if (agx_macos_device_session_open(&session) !=
+       AGX_MACOS_DEVICE_SESSION_READY) {
+      return AO46_SKIP_UNSUPPORTED_PROFILE;
+   }
+
+   if (!AppleAGXNativeBridgeOpen(&bridge, &session) ||
+       !AppleAGXNativeBridgeHasObservedResourceContract(&bridge, &session)) {
+      AppleAGXNativeBridgeClose(&bridge);
+      agx_macos_device_session_close(&session);
+      return AO46_SKIP_UNSUPPORTED_PROFILE;
+   }
+
+   buffer = [(id<MTLDevice>)bridge.metal_device
+      newBufferWithLength:4096 options:MTLResourceStorageModeShared];
+   passed = buffer && AppleAGXMetalResourceRefRead(&bridge, buffer, &ref) &&
+      AppleAGXMetalResourceRefIsCurrent(&ref) &&
+      ref.gpu_va == [buffer gpuAddress] && ref.gpu_va_length >= [buffer length] &&
+      ref.resource_list_binding == (const uint8_t *)buffer + 0x40 &&
+      ref.resource_list_binding != (const uint8_t *)ref.resource_ref + 0x40;
+
+   if (passed) {
+      printf("Apple AGX Metal resource ref smoke: buffer=%p resource=%p binding=%p "
+             "gpu_va=%#llx length=%#llx\n", buffer, ref.resource_ref,
+             ref.resource_list_binding,
+             (unsigned long long)ref.gpu_va,
+             (unsigned long long)ref.gpu_va_length);
+   }
+
+   if (buffer)
+      [buffer release];
+   AppleAGXNativeBridgeClose(&bridge);
+   agx_macos_device_session_close(&session);
+
+   if (!passed) {
+      fputs("Apple AGX Metal resource ref smoke failed\n", stderr);
+      return 1;
+   }
+
+   return 0;
+}

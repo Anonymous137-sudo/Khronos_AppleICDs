@@ -21,6 +21,15 @@ to build a parallel GL implementation. All future feature work must first ask
 whether upstream Mesa/Asahi already provides the behavior; if it does, AO46
 integrates that existing implementation instead of recreating it.
 
+The preferred macOS platform route is now defined by
+[`AppleNativeAGXBridgePlan.md`](AppleNativeAGXBridgePlan.md): AO46 should use a
+small, profile-gated ABI adapter to Apple's existing AGX userspace
+infrastructure when a low-level callable boundary is proven. The direct IOKit
+UABI prototype remains a preserved, fail-closed fallback research route, not
+the desired default implementation. Neither route permits Metal rendering,
+OpenGL-to-Metal translation, MSL shader generation, or a project-local OpenGL
+semantic engine.
+
 ## Status Legend
 
 - `Implemented`
@@ -59,20 +68,308 @@ integrates that existing implementation instead of recreating it.
 - Treat Mesa/Asahi as the sole GL semantic and hardware-driver implementation.
 - Keep the Metal execution backend isolated as a deprecated development target;
   it must not become a framework runtime fallback.
+- Before accepting static Apple GPU identifiers on a new macOS/AGX profile,
+  capture `inventory_apple_agx_stack.sh` output and correlate it with a
+  controlled `wrap.dylib` trace. Static metadata alone never authorizes UABI
+  implementation.
+- Treat Apple AGX userspace identifiers as investigation anchors only. A
+  native bridge operation requires controlled dynamic evidence, an explicit
+  profile gate, and a hardware smoke test; it must not call guessed private
+  Objective-C layouts or make copied Apple binaries an AO46 dependency.
+- For an opaque allocator, carrier, sidecar, or USC blocker, begin with Ghidra
+  headless C-style reconstruction of the exact arm64e profile image and its
+  local call graph. Use controlled dynamic capture only to resolve a specific
+  static ambiguity such as a profile branch, argument meaning, or lifecycle
+  order. Temporary binary copies and raw pseudocode stay outside the
+  repository; commit only AO46-owned exporter scripts and independently stated
+  behavioral facts. Decompilation narrows the next experiment and ownership
+  model, but it never by itself authorizes a private call or a fabricated Apple
+  object.
+- Treat `AGX_BO_LOW_VA` and `AGX_BO_EXEC` as separate native contracts. The
+  current M4 Pro evidence is recorded in
+  [`AppleAGXShaderContractResearch.md`](AppleAGXShaderContractResearch.md);
+  neither capability may be exposed from public-buffer or encoder-allocation
+  observations alone.
+- `[x]` The G16X public compute execution chain is mapped through pipeline
+  binding, kernel emission, Apple resource-list retention, USC-spill handling,
+  and completion. `[ ]` This is not a Mesa shader-BO import contract: AO46
+  still needs a standalone low-VA allocation/mapping path and an executable
+  AGX-code import path before `pipe_screen` admission.
+- `[x]` Direct profile analysis now identifies the actual Apple
+  `ComputeProgramVariant` residency allocator: `Heap<true>::allocateImpl`
+  returns a 40-byte allocation record that is retained by the variant and
+  scales with the compiled program. The active public controls cover seven
+  zero-base selections. `[~]` Its nonzero selector switches to a distinct heap
+  and a `0x1000000000` fixed base, but the public trigger, mapping, executable
+  provenance, and AO46/Asahi import contract remain unproven. The exact
+  evidence and next gate are maintained in
+  [`AppleAGXShaderContractResearch.md`](AppleAGXShaderContractResearch.md).
+- `[x]` Headless reconstruction now confirms that the residency allocator's
+  0x68 configuration is consumed by an Apple-owned resource creation path,
+  while pooled resource, command-storage, queue, resource-list, Trap4, and
+  selector-29 submission work retain Apple-owned lifetime state. `[~]` The
+  remaining direct-adapter work is therefore a concrete adoption/import proof,
+  not guessing record fields; details are maintained in
+  [`AppleAGXShaderContractResearch.md`](AppleAGXShaderContractResearch.md).
+- `[x]` The profile-gated compute carrier is now decomposed into its Apple
+  command-storage segment, compute subrecord, USC descriptor packing, and
+  context-owned resource-list transition. The observed relationships and next
+  controlled differentials live in `AppleAGXComputeCarrierResearch.md`. The
+  segment close and queue-lowering descriptor are also correlated to the live
+  completion pair. A repeated same-process compute control with an independent
+  second-capture intersection now proves that no reproducible p4 sidecar word
+  tracks the two-buffer resource count or this threadgroup shader change;
+  bindings remain in the closed command record/resource-list transition. The
+  same profile trace maps finalized Apple program variants into the USC loader
+  and excludes all 28 observed nonzero generic-resource GPU addresses from
+  Mesa's low-VA USC window. Raw queue commit, sidecar admission,
+  low-VA/executable residency, and completion ABI evidence still remain
+  required before a native `pipe_screen` can exist.
+- Prefer the Apple-native bridge when it can pass Asahi resources and command
+  records below Metal command encoding. Keep the direct-UABI route available
+  only as a fail-closed fallback when that boundary cannot be established.
 - Keep public repo documentation aligned with the current implementation boundary.
 
 ## Native Winsys Six-Lane Dashboard
+
+### Direct macOS UABI Phases
+
+- `[x]` Phase 1, UABI contract layer: `agx_macos_uabi` is the versioned,
+  profile-gated boundary between Mesa platform glue and the macOS AGX
+  implementation. It declares device session, API configuration, BO
+  allocation/mapping, fixed-VA validation, command infrastructure,
+  notification queue, and completion polling as current operations. VM bind,
+  resource binding, carrier construction, and batch submission are declared
+  but unavailable. The contract rejects stale API generations and is now the
+  source of Mesa device capability reporting. Its smoke test verifies current,
+  unsupported, unconfigured, and stale-generation cases.
+- `[x]` Phase 2, device-session ownership and loss handling: the direct AGX
+  session now has explicit `closed`, `open`, `configured`, and `lost` states.
+  A loss transition advances its generation before disabling admission, making
+  every UABI contract, BO set, queue, command-infrastructure object, Mesa
+  device, screen bootstrap, and Apple-native bridge stale at once while
+  preserving their saved handles for teardown. The state smoke proves that a
+  lost session cannot re-admit UABI BO work. Automatic GPU-reset detection and
+  recovery remain Phase 7 work because no live completion queue exists yet to
+  report a reset.
+- `[~]` Phase 3, general BO and VM management: the direct macOS `agx_bo_bind`
+  replacement now routes Mesa's canonical single-BO bind helper through the
+  existing exact native-allocation mapping validation. On the profiled host,
+  the experimental Mesa smoke allocated a direct 64 KiB BO, exercised the
+  common helper, and rejected partial maps and unbinds. Arbitrary GPU-VA
+  allocation, remapping, subrange binds, unbind, heap management, and
+  relocatable VM mappings remain unavailable until a specific macOS UABI is
+  proven.
+- `[x]` Phase 3a, Apple-owned Mesa BO resource identity: the optional
+  `AppleAGXMetalBOProvider` now backs an ordinary CPU-visible Mesa `agx_bo`
+  with one retained Apple allocation. The BO's CPU mapping, GPU VA, lifetime,
+  and verified `IOGPUMetalBuffer + 0x40` resource-list binding are therefore
+  one object, and the carrier smoke admits that exact binding in a balanced
+  no-submit segment. This does not grant low-VA, executable, remap, unbind, or
+  command-submission capability.
+- `[~]` Phase 4, native queue ordering: a carrier-backed lease now receives a
+  queue-local monotonic serial only as it enters flight. Final completion may
+  retire only the next serial, preventing out-of-order retirement or carrier
+  replay; device-loss abandonment invalidates outstanding order evidence.
+  This is host-side lifecycle ordering around the proven notification queue,
+  not an invented Apple command-queue or submission ABI. Native queue submit
+  and hardware completion delivery remain required for Phase 4 completion.
+- `[~]` Phase 5, carrier and resource binding: a finalized neutral
+  `agx_submit_info` must now target the current native notification queue, and
+  every known render/compute GPU address is checked both against native BO
+  ownership and against its retained Asahi resource table. This includes
+  VDM/CDM streams, helpers, sampler heaps, ISP buffers, depth/stencil and
+  compression buffers, attachments, and timestamp objects. The existing
+  bounded carrier snapshot and resource-record encoder retain this package
+  until ordered completion. Provider-backed CPU-visible Mesa BOs now have an
+  independently verified Apple resource-list identity; batch admission still
+  needs a complete Asahi BO set, command-storage mutation, and queue commit.
+- `[~]` Phase 6, real Asahi batch submission: finalized Asahi batches already
+  enter the native `submit_info` consumer rather than generating a Linux DRM
+  packet. That boundary now validates the complete input before reading its
+  queue or resource fields, rejects ambiguous timestamp-object identities, and
+  proves timestamp write offsets start within their retained native BOs. Native
+  carrier import/adoption and queue submission remain the completion blockers.
+- `[~]` Phase 7, completion-to-Gallium fence retirement: native sync handles
+  already retain an in-flight package and signal only after both observed
+  completion tokens retire it. Gallium's `pipe_fence_finish` now treats loss
+  of that macOS completion source as an unsignaled fence instead of asserting.
+  Live command submission is still required before these completions represent
+  real GPU work.
+- `[~]` Phase 8, native `pipe_screen`, offscreen rendering, presentation, and
+  staged CTS: the framework now publishes a capability-derived native-screen
+  readiness map covering its session, Apple bridge, bootstrap, Mesa device,
+  BO/VM operations, submit, completion, IOSurface lifecycle, live
+  `pipe_screen`, and presentation. `AppleOpenGLAsahiGetNativePhaseStatus`
+  makes the Phase 2-8 completion requirements executable and smoke-tested.
+  CGL remains fail-closed until the map satisfies the real
+  `agx_screen_create_macos` prerequisites and a presentation path exists; no
+  placeholder screen is exposed.
+
+### Phase 2-8 Completion Gate
+
+Before Phase 9 begins, `AppleOpenGLAsahiGetNativePhaseStatus` must report
+`COMPLETE` for every phase below on the target hardware profile, and the
+corresponding runtime smoke must exercise the exit condition. This is an
+implementation gate, not a documentation-only checklist.
+
+- `[x]` Phase 2: profiled AGX session lifecycle, generation invalidation, and loss rejection.
+- `[~]` Phase 3: multiple Mesa BOs plus general VM bind, remap, and unbind.
+- `[~]` Phase 4: native queue accepts a validated submission package.
+- `[~]` Phase 5: carrier/resource bindings reach the AGX user client without Metal state.
+- `[~]` Phase 6: an Asahi-generated batch writes a controlled output buffer.
+- `[~]` Phase 7: live GPU completion retires a Gallium fence and all retained BO pins.
+- `[~]` Phase 8: `pipe_screen`/`pipe_context`, offscreen draw/readback, IOSurface presentation, then staged CTS admission.
+
+## Phase 9: Native Execution Closure
+
+Phase 9 closes the three native paths on which Phases 3-8 depend. It does not
+introduce a fallback renderer or a parallel OpenGL implementation.
+
+- `[~]` VM and BO path: a native pre-queue bootstrap now proves two distinct
+  Apple BOs can be adopted by Mesa and a third Mesa-requested BO can grow the
+  same set, including a valid 16 KiB-page-aligned GPU VA that is not 64 KiB
+  aligned. The BO-provider ABI now treats CPU-visible data, USC low-VA mapping,
+  and executable shader code as separate capabilities, and a no-submit shader
+  compilation/pipeline trace measures the Apple allocation classes without
+  pretending they are an importable contract. The remaining work is general VM
+  bind, remap, unbind, a proven low-VA mapping, and executable shader-BO
+  support. Mesa's Asahi linker requires
+  `AGX_BO_EXEC | AGX_BO_LOW_VA`, so screen admission reports both missing
+  contracts explicitly instead of failing on its first shader allocation. Exit
+  condition: Mesa resource, shader, and command BOs can coexist through
+  allocation/teardown stress without aliasing an Apple allocation identity.
+- `[~]` Carrier and queue path: map one validated `agx_submit_info` package to
+  a native resource/object binding set, command carrier, queue commit, and
+  ordered completion source. `agx_device.queue_id` now carries the same
+  generation-validated native queue identifier enforced by `submit_info` and
+  completion polling. Neutral package admission now proves one encoder/record
+  BO plus two distinct resource BOs are retained and retired together. Exit
+  condition: a retained Asahi compute batch reaches the AGX user client without
+  a Linux DRM packet or Metal command translation.
+- `[~]` Execution and presentation path: enable timestamp/query object binding,
+  live fence retirement, `agx_screen_create_macos`, offscreen readback, and
+  IOSurface presentation. Exit condition: a real `pipe_context` clears and
+  reads back deterministic pixels, followed by staged CTS admission.
 
 - `[~]` 1. GPU-VA resource ownership and BO lifetime: trace-validated direct
   BO allocation, full-range lookup, submission pinning, and state-gated
   retirement exist. Managed CPU maps are explicitly pinned and protected by
   single-use mapping capabilities, rejecting altered or replayed map handles
   before they can release BO ownership. The framework-owned native screen
-  bootstrap starts and tears down the BO set with its AGX session. VM/heap
-  management and Mesa `agx_bo` adaptation remain.
+  bootstrap starts and tears down the BO set with its AGX session. A native
+  Mesa `agx_bo` adapter now owns trace-validated direct allocation, CPU
+  mapping, and an exact fixed-VA bind admission check for returned AGX
+  mappings. Generic VM/heap management, relocatable mappings, and unbind
+  remain. Creation, lookup, pinning, and CPU mapping all reject a stale API
+  generation. Direct allocation and
+  direct CPU mapping also require the configured allocating session, while
+  release, unmap, and cleanup remain available for device-loss retirement.
+  The Mesa submission adapter now validates a real macOS-backed `agx_bo`'s
+  command-record range and resource subranges against that same native BO set,
+  then retains both the native allocation and its Mesa wrapper until package
+  retirement. Its opt-in hardware smoke now proves two native bootstrap BOs
+  plus a third Mesa-requested 64 KiB BO in one direct session, each with a
+  distinct native handle and GPU VA; the adapter accepts Apple-returned VAs at
+  Asahi's 16 KiB page granularity, not an invented 64 KiB boundary. A repeated
+  raw direct allocation still fails closed without freeing the original live
+  BO. A refreshed
+  `agx_submit_info` consumer also validates finalized Asahi compute/render
+  batch structure and rejects known command-stream, helper, sampler, or
+  attachment ranges that are not owned by the active native BO set. Valid work
+  reaches the carrier-import boundary without a Linux DRM packet; it remains
+  non-submittable until that import boundary exists. The handoff now carries
+  each actual `batch->cdm.bo` or `batch->vdm.bo` source with its command;
+  macOS rejects a stream range unless it resolves to the same source BO and
+  native handle. It also proves every binary and timeline sync handle belongs
+  to the current Mesa device before carrier admission. Timestamp-bearing
+  batches now carry declared timestamp source BOs, which macOS validates
+  without constructing a private Apple object. Every finalized batch now
+  carries its complete Asahi BO dependency set as a neutral resource table;
+  macOS checks every command-referenced range against it. The native screen
+  factory now requires this direct `submit_info` boundary rather than a Linux
+  `drm_asahi_submit` callback. A refreshed
+  public-Metal `IOGPUResourceCreate` trace proves that resource-object lifetime
+  is independent of GPU-VA identity: sixteen returned objects map to thirteen VAs on
+  the profiled host. Raw selector-9 allocation is admitted only through the
+  generation-owned BO set, which rejects reused allocation identities; typed
+  Apple resource objects remain a separate future requirement rather than an
+  inferred replacement for that ownership rule. An expanded 4/8/16/32/128 KiB public-Metal
+  series now proves a size-aware object policy: observed `70040000` records are
+  data-bearing and their little-endian word at record offset `0x48` matches the
+  object's data/resident/GPU-VA allocation size (measured at 16 KiB, 32 KiB,
+  and 128 KiB), while observed `300c0000` records are non-data-bearing
+  suballocation objects. These are profile-specific evidence keys, not ABI
+  field names. The unresolved cookie/generation region, paired-object relation,
+  failure cleanup, and generic mapping coherence keep typed resource creation
+  disabled. A public `MTLBuffer.contents` inventory now also proves all thirteen
+  public CPU ranges are contained by ten data-bearing generic resource ranges,
+  with three offset suballocations. This is an ownership/range observation only;
+  it does not permit AO46 to map or write generic resources. A duplicate 16 KiB
+  direct allocation has an identical 104-byte record but distinct resource and
+  GPU-VA identities, while cache mode changes only `0x05` and allocator/failure
+  transitions change only `0x60..0x63`; that tail is opaque allocator-owned
+  metadata. Every non-data object has one containing data-bearing GPU-VA range,
+  and its record fields `0x38`/`0x40` match the public mapping/backing CPU
+  pointers. A public oversized request returns null from the generic constructor
+  without creating or releasing an object, and two subsequent allocations
+  recover successfully. A separate public-Metal hardware smoke proves
+  bidirectional CPU/GPU visibility through a private buffer. Resolve-only
+  read-only accessors are verified. The constructor trace now also verifies all
+  17 complete records reach IOKit selector `9` unchanged; the stateful tail is
+  a kernel-facing input, not an AO46-constructible field. A documented kernel
+  UABI or Apple-owned allocator path, generic resource mapping/coherency API,
+  and unknown partial-failure cleanup still block a typed AO46 constructor.
+  The Apple-owned allocator condition is now met separately: the public
+  `AppleAGXMetalAllocation` broker retains `MTLBuffer` ownership and exposes
+  its public `gpuAddress` and allowed CPU mapping. A fresh 13-buffer trace
+  proves every such GPU VA matches a generic resource VA from the corresponding
+  Apple allocation phase, and its smoke test covers shared/private allocation
+  and teardown. This avoids constructing the opaque selector-9 record, but it
+  does not expose a generic resource object or satisfy resource-sidecar and
+  direct-submission requirements. `AppleAGXMetalResourceSet` now provides the
+  next safe handoff: it validates full public GPU-VA ranges, pins the command
+  record allocation and every resource in a copy-safe lease, and uses only the
+  observed Mesa resource-record slots to encode blit/compute addresses. Its
+  hardware smoke rejects an invalid range without changing the record, checks
+  the blit-producer, blit-consumer, and compute layouts against full public
+  GPU-VA ranges, blocks teardown while pinned, and rejects a stale copied
+  lease. The Apple resource-sidecar object relation and direct submission
+  remain separate blockers. The Apple-owned command-carrier
+  constructor is now measured with a return identity: the public empty-command
+  control creates and returns one storage object before the first of two
+  64-byte carriers and ordered public completions. Its analyzer enforces that
+  ordering. Read-only profile disassembly confirms that this constructor
+  consumes a private parameter object and initializes internal resource lists,
+  so it remains Apple-owned and resolve-only rather than an AO46 call path.
+  The public-to-generic handoff is now traced: each public `MTLCommandBuffer`
+  enters `-[IOGPUMetalCommandBuffer fillCommandBufferArgs:commandQueue:]` as
+  `self`, and the method's argument-record pointer becomes the exact 64-byte
+  descriptor observed by generic queue submission. Generic submit has a null
+  command-buffer pointer on this profile, which proves the public object is
+  lowered by Apple rather than accepted by the generic C entry point. This is
+  a verified Apple-owned handoff for observation and public completion, not a
+  documented Asahi batch-injection ABI; AO46 must not invoke the private fill
+  method or synthesize its descriptor.
+  The Metal 4 allocator audit is now complete on the active profile:
+  `MTL4CommandAllocator` supplies storage only for an attached
+  `MTL4CommandBuffer` to encode Metal commands. Read-only runtime metadata
+  confirms matching private storage getters on Apple objects, but the public
+  API has no external AGX-command, resource-table, or descriptor import.
+  A four-workload procedural capture (blit, compute, render, and IOSurface)
+  reaches the same storage, binding-record, Apple command-buffer fill,
+  descriptor, Trap4, and completion sequence each time. For every submission,
+  the fill method's `arguments` pointer is exactly the 64-byte descriptor
+  passed to generic queue submit; generic submit's object-array pointer is
+  null. This closes the Apple-command-carrier discovery gate with a negative
+  result: the current OS/GPU profile exposes no usable Asahi import boundary,
+  so direct private injection remains disabled.
 - `[~]` 2. Submission UABI observation and sidecar validation: the observed
   64-byte descriptor, headers, outer carrier offset, 256-byte diagnostic
-  prefix, and a 4 KiB immutable admission snapshot are validated. Fresh
+  prefix, and a 4 KiB immutable admission snapshot are validated. The render
+  descriptor-variation verifier can now require that 4 KiB capture explicitly
+  (`AGX_TRACE_REQUIRE_EXTENDED=1`), proving each render's extended snapshot and
+  nonzero opaque slot before accepting the trace. Fresh
   render and compute captures both prove the 4 KiB carrier and the nonzero
   opaque slot at `0x790`; the slot is captured but never dereferenced or
   decoded. `libwrap.dylib` applies the same extended validator to live trace
@@ -80,12 +377,95 @@ integrates that existing implementation instead of recreating it.
   one BO pin per batch, and a lease may enter the in-flight state only with
   that extended trace-valid evidence. The sidecar pointer graph, command
   payload encoding, and direct Trap4 submission remain disabled. Fresh
-  controlled resource-range and render-lifecycle traces continue to validate
+  two-command-buffer no-submit traces now enforce the observed selector-6
+  first-buffer scope and selector-`0x0e` `0x4000/0,1` pair for each buffer,
+  while rejecting any Trap4 or completion event. This is UABI evidence only:
+  framework bootstrap owns the generation-scoped command-pair prerequisites,
+  but it does not build or dispatch a Trap4 submission.
+  Controlled raw 4 KiB carrier capture is now available to the offline layout
+  analyzer, which distinguishes stable and varying word locations without
+  claiming sidecar semantics. The resource-variation gate now proves that the
+  controlled blit resource bindings occur in a separate CPU-mapped command
+  record and that the sidecar contains zero direct or indirect resource
+  references. The confirmed resource addresses are encoded in those records
+  only: blit producer `0x0/0x8`, blit consumer `0x0/0x8/0x20/0x28`, and
+  compute `0x1ba0/0x1ba8`. Each encoder requires
+  full-range native BO ownership before it changes a record. The Trap4 builder
+  now produces a validated, integrity-checked in-memory outer-packet preview
+  from captured evidence, but intentionally has no submit operation. The
+  submission package now composes the command-record backing range, resource
+  ranges, BO pins, immutable carrier, and preview into one admission unit;
+  it rejects a package without an explicit record backing range. It now also
+  requires a current notification-queue bind before an admitted package may
+  enter flight, rejects foreign completion tokens, and drops its immutable
+  carrier after the second matching completion releases every BO pin. This is
+  a non-submittable lifecycle contract, not a private submission call.
+  Controlled resource-range and render-lifecycle traces continue to validate
   the carrier and resource/completion relationships without changing that
   boundary.
+
+  `capture_agx_uabi_profile.sh` now repeats that validation over nine hardware
+  workloads: empty, two-queue, blit control, blit resource record, compute
+  record, compute range, render record, render variation, and IOSurface.
+  Its transport verifier rejects a mismatch in Trap4 index, queue, descriptor
+  size, carrier shape, completion pairing, or the profiled extended-pointer
+  invariant before a trace can be accepted as UABI evidence. The profile also
+  requires one exact 4 KiB hexadecimal carrier record per submission and
+  writes one sidecar-layout report per workload. These reports classify stable
+  and varying words without assigning undocumented field semantics. The same
+  profile now requires a bounded 512-byte hexadecimal target capture for every
+  readable sidecar pointer and writes a separate pointer-layout report keyed by
+  the originating sidecar offset. On the profiled host, the captured `0x368`,
+  `0x790`, `0xa58`, and `0xab8` targets are verified ASCII C-string tables
+  with no tracked GPU-resource references. Other bounded targets may remain
+  `unclassified`; they are explicitly excluded from resource-table candidates
+  rather than being interpreted. Pointer targets remain evidence only. The
+  first Mesa-to-record connection is complete: a macOS-backed Mesa
+  `agx_bo` is admitted only when its CPU-mapped record range and every resource
+  GPU-VA subrange resolve to the active native BO set, and its Mesa reference
+  survives until the native package retires. The Mesa adapter now also validates
+  the mapped BO span shape used by Asahi VDM/CDM encoders before a future
+  command-record adapter can retain it. The remaining task is to connect actual
+  Asahi batch command semantics to an independently proven Apple
+  command-record allocation, extend the proven BO-set path to typed resources,
+  and establish outer transport ownership; AO46 must not reinterpret the Linux
+  `drm_asahi_submit` packet as an Apple command record.
 - `[~]` 3. Completion, fence, retirement, and failure handling: notification
   queues, token matching, resource-lease retirement, device-loss abandonment,
   foreign-record preservation, and screen-bootstrap queue ownership exist.
+  Direct-submit admission now additionally binds a carrier-backed lease to a
+  live notification queue generation and its current AGX session before it may
+  become in-flight or consume a completion. Lease admission, submission, and
+  direct completion recording also require a current BO-set generation. The
+  package smoke rejects a repeated valid token while its peer token and every
+  BO pin are still required, so only two distinct observed tokens can retire
+  the package.
+  The private-winsys capture now combines read-only private-call observation
+  with the public transport wrapper in one target process, proving that traced
+  materialized command resources outlive both observed descriptor tokens.
+  The serial control shows completion-token values may recur on a later queue
+  only after their earlier pair retires, so queue/token generation is the
+  required ownership key rather than descriptor-pointer identity.
+  The owned opaque carrier snapshot includes a non-cryptographic integrity check,
+  so an accidental in-process mutation cannot advance a lease to submission.
+  Submission also requires a lease-specific queue bind; binding the exposed
+  fence alone cannot make a carrier-backed lease eligible.
+  A live BO set also blocks device-loss retirement, so normal in-flight work
+  cannot be abandoned before the owning session has been invalidated.
+  Queue state, peek, dequeue, and
+  drain paths apply the same check, rejecting an ID-only or stale-queue
+  completion path before it touches completion memory.
+Mesa sync adoption also now requires an in-flight package to be bound to the
+device's exact current queue connection, queue ID, and API generation before
+it can own completion retirement. One admitted package can now be assigned to
+a unique group of output sync handles, allowing one verified completion to
+retire the batch binary fence and flush timeline fence together. Binary outputs
+explicitly rearm reusable batch handles, while a timeline output must advance
+past its prior completion. Multiple in-flight timeline points are retained
+separately and may complete out of order; only their contiguous completed
+prefix advances the visible timeline. Batch admission rejects zero handles,
+invalid binary/timeline values, duplicate outputs, and already-owned output
+handles before it can reach the carrier boundary.
   A rejected bootstrap teardown now leaves its queue and other ready state
   intact when a BO map or submission pin remains live. Completion and
   device-loss retirement now also discard the immutable carrier snapshot.
@@ -100,15 +480,33 @@ integrates that existing implementation instead of recreating it.
   safely while native blockers remain. With
   `AO46_ENABLE_NATIVE_SCREEN_BOOTSTRAP=1`, the framework itself now exercises
   the device/BO/command/queue/drawable ownership root; this route is in the
-  CGL smoke matrix. The macOS `agx_screen_create` replacement and real
-  `pipe_context` remain.
+  CGL smoke matrix. Mesa's Asahi `agx_screen_create` now separates its Linux
+  DRM fd/device acquisition from the complete downstream Gallium screen,
+  compiler, capability, resource, and context setup. The macOS factory will
+  reuse that exact finalization path after it can initialize an `agx_device`
+  with real parameters, VM, BO, queue, and synchronization operations.
+  `agx_screen_create_macos` now owns that direct non-DRM handoff: it accepts
+  only a fully populated native device, transfers it into the upstream screen
+  finalization, and fails cleanly if native synchronization is unavailable.
+  The framework's opt-in native route now owns the same private Mesa
+  `agx_device` over its bootstrap BO set and exposes its precise capability
+  state for diagnostics. The adapter supplies real profiled BO allocation,
+  mapping, and fixed-VA mapping validation, while explicitly reporting that
+  generic VM binding, submission, and completion sync are unavailable. A real
+  `pipe_context` remains blocked on those missing capabilities.
 - `[~]` 5. IOSurface, CAMetalLayer, resize, and presentation lifecycle:
   IOSurface creation, explicit write/read handoff, generation-tracked
   transactional resize, stable native IOSurface identity, and explicit
   `(IOSurfaceID, generation)` stale-drawable tokens exist. Mesa and CMake
-  smoke coverage verifies that resize and destruction invalidate old tokens;
-  the hardware trace verifies IOSurface import, clear, and readback. Framework-
-  owned native bootstrap ownership also exists.
+  smoke coverage verifies that resize and destruction invalidate old tokens.
+  Lifecycle operations are serialized, and a live CPU map makes resize and
+  teardown return busy rather than invalidating client-visible memory;
+  the hardware trace verifies IOSurface import, clear, and readback. The
+  framework now atomically copies an unlocked `IOSurfaceID`/generation/layout snapshot
+  under its bootstrap lock, so a future `pipe_screen` never borrows a drawable
+  pointer across resize. It can also acquire a retained IOSurface lease and
+  later reject it as stale after resize before rebinding. Framework-owned
+  native bootstrap ownership also exists.
   CAMetalLayer import/export, drawable acquisition, and present remain.
 - `[~]` 6. Offscreen rendering, readback, and CTS admission: the native
   bootstrap now performs a hardware-tested IOSurface write/read round trip.

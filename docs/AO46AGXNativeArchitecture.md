@@ -29,14 +29,26 @@ macOS application
   -> Mesa OpenGL frontend and state tracker
   -> Mesa Asahi Gallium driver
   -> Asahi compiler, lib, layout, genxml, libagx
-  -> AO46AGXMac platform adapter
-  -> Apple AGX macOS kernel driver and firmware
+  -> AO46 Apple-AGX ABI adapter
+  -> Apple AGX userspace infrastructure
+  -> IOGPU user client, Apple AGX kernel driver, and firmware
   -> AGX GPU
 ```
 
 `GL2MTL` remains in the source tree only as a deprecated, opt-in development
 target. It is excluded from the default build and cannot be selected by the
 framework runtime.
+
+### Bounded Metal Bootstrap
+
+The native route does not use Metal as a rendering backend. For the active,
+profile-gated G16X implementation only, AO46 may retain the system Metal
+device long enough to request its opaque generic IOGPU `deviceRef`. This is an
+Apple-owned ownership root for the generic IOGPU C boundary, not a Metal
+translation layer: AO46 creates no Metal command encoders or command buffers,
+does not compile MSL, and does not submit through Metal. Resource, queue, and
+submission calls remain disabled until their C ABI contracts are independently
+validated by controlled evidence.
 
 ## Ownership Boundary
 
@@ -45,7 +57,8 @@ framework runtime.
 | CGL, NSOpenGL, framework ABI, pixel formats, drawable lifecycle, routing | AO46 | Maintain and integrate |
 | OpenGL 4.6 API semantics, validation, objects, GLSL, SPIR-V, NIR, state tracker | Mesa | Reuse unchanged |
 | AGX Gallium driver, AGX compiler, batch/state generation | Mesa Asahi | Reuse unchanged |
-| BOs, GPU VM, command queues, submission, synchronization, IOSurface presentation | AO46AGXMac | Implement as the macOS platform port |
+| BOs, GPU VM, command queues, submission, synchronization | Apple AGX userspace infrastructure | Reuse through a narrow, profile-gated adapter when a viable boundary is proven |
+| Resource ownership, object translation, IOSurface presentation | AO46AGXMac | Adapt Asahi objects and macOS drawables without replacing Apple's GPU OS integration |
 | Scheduling, power, resets, firmware and hardware ownership | Apple macOS | Use; do not replace |
 
 ## Source Reuse Policy
@@ -103,10 +116,26 @@ Only Linux-specific Asahi platform code is replaced:
 | Apple AGX kernel driver and firmware | Use as supplied by macOS |
 | `wrap.dylib` and `agxdecode` | Retain only as development/trace tools |
 
-The target lower-level path is therefore Mesa OpenGL -> Asahi Gallium -> AGX
-userspace driver -> AO46 macOS winsys -> macOS AGX UABI -> Apple's kernel
-driver -> Apple firmware -> GPU. No Mesa or Asahi GL semantic code is replaced
-at this boundary.
+The preferred lower-level path is Mesa OpenGL -> Asahi Gallium -> AGX userspace
+driver -> AO46 Apple-AGX ABI adapter -> Apple's AGX userspace infrastructure ->
+IOGPU user client -> Apple's kernel driver -> Apple firmware -> GPU. No Mesa or
+Asahi GL semantic code is replaced at this boundary.
+
+The adapter is deliberately not a Metal renderer, an OpenGL-to-Metal
+translation layer, or a new GPU operating system. It must pass Asahi-created
+resources, contexts, queues, command records, and synchronization requests to
+an existing Apple AGX userspace boundary that is low enough to preserve Asahi's
+AGX shaders and command generation. Apple infrastructure continues to own the
+macOS-specific GPU VM, queue, kernel, firmware, reset, and scheduling contract.
+
+This route is the primary investigation target because it avoids duplicating a
+large private UABI per Apple GPU generation. It becomes a runtime path only
+after a controlled profile proves all of the following without a Metal command
+encoder in the hot path: device/context ownership, resource allocation and GPU
+VA, a native command submission, completion/fence delivery, and resource
+retirement. Until then, the existing trace-validated direct-UABI work remains a
+preserved fallback research path and all native screen creation stays
+fail-closed.
 
 The Linux DRM stack is not included in the macOS runtime. In particular,
 `src/gallium/winsys/asahi/drm/`, Linux DRM UAPI, dma-buf, sync-file, and the
@@ -114,9 +143,50 @@ Linux Asahi kernel driver are not shipped by AO46.
 
 The porting seam is broader than the thin Gallium winsys directory. Current
 Mesa sources place DRM-specific BO allocation, GPU-VA binding, queue creation,
-submission, and synchronization in `src/asahi/lib/agx_device.c` as well.
-AO46AGXMac must provide the macOS platform implementation at that layer without
-changing the GL frontend, NIR, or Asahi compiler logic.
+submission, and synchronization in `src/asahi/lib/agx_device.c` as well. The
+AO46 adapter must satisfy that platform contract without changing the GL
+frontend, NIR, or Asahi compiler logic, but it should delegate to Apple's
+existing userspace machinery wherever a validated boundary exists.
+
+`AppleNativeAGXBridgePlan.md` defines the required proof points, the adapter
+contract, and the non-negotiable fallback policy for that decision.
+
+## Current Native Device Boundary
+
+The macOS platform adapter now initializes Mesa's upstream `agx_device` data
+model from one profiled AGX session. It creates traced direct AGX BOs through
+Mesa's normal `agx_bo_create` path, retains the GPU VA returned by the native
+user client, exposes the validated CPU mapping, and accepts only the exact
+fixed binding already established by that direct allocation.
+
+This is not general GPU VM support. Relocatable mappings, unbind, command
+submission, and completion-backed synchronization are still rejected. The
+framework's native bootstrap owns the same private adapter for lifecycle and
+capability diagnostics, releasing it before its BO set is destroyed. The
+macOS `agx_screen_create_macos` entry point checks an explicit positive
+readiness contract before taking ownership of an adapter, so these partial
+operations can never be mistaken for a usable `pipe_screen` or GL context.
+
+For carrier-resource identity, the runtime now has a second, deliberately
+separate allocation path. `AppleAGXMetalBOProvider` creates an Apple-owned
+CPU-visible allocation first and exposes it to Mesa as an ordinary `agx_bo`.
+That single allocation supplies the Mesa mapping and GPU VA as well as the
+profile-validated `IOGPUMetalBuffer + 0x40` binding consumed by Apple's carrier
+resource list. It replaces neither the raw UABI research BO path nor AGX
+submission; it prevents an invalid attempt to bind a raw selector-9 BO as if it
+were an unrelated Apple buffer. The provider now declares ordinary CPU-visible
+data, USC low-VA placement, and executable shader provenance separately. Only
+the data capability is currently proven; the other two remain explicit screen
+gates.
+
+`agx_macos_mesa_submission_package` is the first ownership-preserving handoff
+from Mesa into the profiled command-record path. It accepts only live
+macOS-backed Mesa `agx_bo` subranges, resolves every CPU/GPU address through
+the active native BO set, and retains both the native BO pins and the matching
+Mesa BO references until retirement. The hardware smoke validates one 64 KiB
+Mesa BO as a CPU-mapped record with two disjoint resource ranges. It does not
+accept Mesa's Linux `drm_asahi_submit` packet, construct an Apple command
+record, enable repeated raw allocation, or submit work.
 
 The native build now removes `xf86drm.h` from the shared `agx_device.h` and
 `agx_state.h` headers. Linux DRM calls remain confined to the Linux device,
@@ -132,12 +202,14 @@ before a macOS BO/VM/queue/synchronization implementation can replace them.
    and AGX source without a project-local rewrite.
 3. Make the framework select Mesa Asahi only, failing context creation until
    AO46AGXMac has a validated screen implementation.
-4. Implement the AO46AGXMac platform operations: device setup, BO allocation
-   and mapping, GPU VA mapping, queue creation, notifications/fences,
-   submission, IOSurface sharing, and presentation.
-5. Enable one known macOS-and-SoC profile at a time, compare command traces,
+4. Locate and validate a low-level Apple AGX userspace boundary for device,
+   resources, queues, submission, and completion; implement only a thin AO46
+   adapter over evidence-backed operations.
+5. Retain the direct-UABI prototype as a fail-closed fallback research route
+   for operations not proven available through Apple userspace infrastructure.
+6. Enable one known macOS-and-SoC profile at a time, compare command traces,
    then run Mesa and Khronos conformance testing before advertising it.
-6. Keep GL2MTL archived for source comparison only; do not link or select it
+7. Keep GL2MTL archived for source comparison only; do not link or select it
    in production builds.
 
 ## Validation Rules
@@ -329,10 +401,11 @@ with no input, followed by selector `0x0e` with scalar pairs `0x4000/0` and
 `0x4000/1`. Each call returns a nonzero opaque 16-byte pair. The opt-in
 `asahi_macos_command_smoke` validates that one initial sequence on the
 profiled host after session configuration and notification-queue setup. The
-two-queue control proves that this sequence is not a generic per-buffer rule,
-so the adapter exposes no later-buffer replay API. It records the initial
-pairs with the active API generation but does not assign field meanings to
-them.
+two-buffer trace proves the `0x0e` pair can repeat, while the two-queue control
+shows the scope still depends on unmodeled Metal state. Consequently this
+replay is isolated to the explicit smoke and is not initialized by the native
+screen bootstrap or framework runtime. It records the initial pairs with the
+active API generation but does not assign field meanings to them.
 
 This is command infrastructure only. It creates no Mesa command queue, does not
 allocate a command buffer, does not build a Trap4 descriptor, and cannot submit
@@ -446,10 +519,13 @@ contract for the development tools:
   6 call with no input and a 16-byte reply, followed by two selector `0x0e`
   calls with scalar inputs `0x4000/0` and `0x4000/1` and 16-byte replies.
   Those calls happen while Metal obtains the first command buffer, before the
-  test begins encoding. The blit-specific allocations happen afterwards and
-  later submissions do not repeat the three calls. They are therefore typed
-  only as command-infrastructure initialization, not as resource binding,
-  command encoding, or a submission interface.
+  test begins encoding. The two-buffer no-submit control establishes the
+  narrower lifecycle rule: selector 6 is first-buffer initialization, while
+  the `0x0e` `0x4000/0,1` pair repeats when the same queue obtains a second
+  uncommitted command buffer. The trace verifier enforces that observation and
+  rejects any Trap4 or completion event. The calls remain only
+  command-infrastructure observations, not resource binding, command encoding,
+  or a submission interface.
 - A submitted Metal command buffer, including an empty one, reaches the AGX
   service through `IOConnectTrap4(index = 0)`, not through the historical
   selector-based submit interface.
@@ -521,6 +597,50 @@ This is a host-and-OS-specific trace record, not a portable AGX UABI contract.
 `AGX_TRACE_TRAP_PAYLOADS=1`; it caps the diagnostic read at 4096 bytes. No
 AO46 runtime code may issue an allocation or submission until every field it
 uses has a validated definition and an explicit profile gate.
+
+`capture_agx_uabi_profile.sh` now runs empty, two-queue, blit, compute,
+render, and IOSurface controls as one transport-profile suite. Its generic
+verifier requires the traced `IOConnectTrap4(index = 0)` call, a 64-byte
+descriptor, queue-scoped `2/1` outer header, a carrier at offset `132`, two
+matching 40-byte completions, and a bounded 4 KiB sidecar capture with the
+observed `0x1ff800000` pointer slot. This completes the *observed outer UABI
+transport profile* for the currently profiled device. It does not complete the
+opaque sidecar's command/resource schema, so it deliberately does not expose a
+direct-submit routine or enable the native Mesa screen.
+
+The wrapper can additionally emit a complete bounded 4 KiB carrier as an
+opt-in hexadecimal trace record. The nine-workload UABI profile now requires
+one complete hexadecimal record per submission and stores a layout report for
+each workload. `analyze_agx_sidecar_layout.sh` reports its stable and varying
+64-bit word locations across controlled captures without assigning
+undocumented semantics. That evidence confirmed that the sidecar is not the
+resource table. Instead, AO46 now has a range-authorized encoder for
+the independently traced CPU-mapped command records: blit producer addresses
+at `0x0/0x8`, blit consumer addresses at `0x0/0x8/0x20/0x28`, and compute
+addresses at `0x1ba0/0x1ba8`. It verifies the full requested GPU-VA range
+against the native BO set before modifying any word. These layouts are
+resource-record encoders only, not an AGX command-stream or sidecar decoder.
+The accompanying Trap4 preview builder copies intact captured descriptor and
+carrier evidence into the observed `queue, 64, descriptor, descriptor+0x84`
+argument shape, verifies it, and has no dispatch API. A preview is explicitly
+non-submittable, preventing stale process-local pointers from becoming replay.
+The submission package composes a CPU-mapped command record, its explicit
+backing-BO range, resource ranges, BO pins, immutable carrier, and preview in
+one fail-closed admission unit. It cannot be created without the record range
+and still has no direct-submit operation.
+
+The profile also records at most the already-readable 512-byte target of each
+sidecar pointer and checks that every target capture is ordered after its
+originating pointer observation. Its pointer-layout report is keyed by the
+sidecar offset and classifies target words as stable or varying. Neither the
+capture nor the report exposes target bytes to the runtime or treats a pointer
+as an AGX object/resource binding.
+
+Current nine-workload evidence classifies the observed `0x368`, `0x790`,
+`0xa58`, and `0xab8` pointer targets as bounded ASCII C-string tables with no
+tracked GPU-resource references. They are host-process metadata, not resource
+table candidates. The verifier rejects a new or changed classification instead
+of allowing the future direct-submit path to interpret a dangling host pointer.
 
 The first resource-type, two-queue, size-scaling, and lifetime controls now
 confirm that the candidate mapped-allocation edges track the requested workload
@@ -605,6 +725,20 @@ a profiled AGX session is present, but `macos-pipe-screen`,
 This does not enable direct Trap4 replay. Mesa's upstream `agx_screen_create`
 takes a Linux DRM file descriptor and cannot be called from the macOS framework
 until the AO46 macOS winsys supplies an equivalent native screen implementation.
+
+The Gallium implementation now separates that Linux fd/DRM acquisition from
+the downstream screen finalization. The shared finalization retains upstream
+Asahi's real pipe-screen callbacks, NIR/compiler configuration, capability
+initialization, resource transfer setup, fences, and context creation hooks.
+`agx_screen_create_macos` now exposes that macOS handoff and transfers one
+fully initialized native `agx_device` into the same finalization path. It
+requires real BO allocation, binding, mapping, parameter, object-binding, and
+submit operations, and it fails cleanly if completion-backed synchronization
+is unavailable. The framework cannot call it yet: substituting an IOKit
+`io_connect_t` for the Linux fd is invalid. The native initializer still
+requires trace-validated global parameters, GPU VM setup, Mesa `agx_bo`
+adaptation, command-queue creation, direct submission encoding, and
+completion-backed synchronization.
 
 References:
 

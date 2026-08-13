@@ -7,16 +7,26 @@ if [ "$#" -ne 1 ]; then
 fi
 
 trace_log=$1
+require_extended=${AGX_TRACE_REQUIRE_EXTENDED:-0}
 
 if [ ! -f "$trace_log" ]; then
     echo "missing AGX render descriptor-variation trace: $trace_log" >&2
     exit 2
 fi
 
+case "$require_extended" in
+    0|1)
+        ;;
+    *)
+        echo "AGX_TRACE_REQUIRE_EXTENDED must be 0 or 1" >&2
+        exit 2
+        ;;
+esac
+
 # This captures repeat-versus-geometry-change descriptor snapshots. The public
 # Metal control verifies pixels; this script proves capture ordering and outer
 # carrier shape only. Changed auxiliary bytes remain intentionally undecoded.
-LC_ALL=C awk '
+LC_ALL=C awk -v require_extended="$require_extended" '
 function failure(message) {
     print "AGX render descriptor-variation verification failed: " message > "/dev/stderr"
     exit 1
@@ -88,6 +98,21 @@ function capture_target(which) {
     }
     next
 }
+/MODERN_SUBMIT_AUX_EXTENDED bytes=/ {
+    if (active_render != "") {
+        extended_counts[active_render]++
+        extended_bytes[active_render] = trace_field($0, "bytes=")
+    }
+    next
+}
+/MODERN_SUBMIT_CARRIER_EXTENDED queue=/ {
+    if (active_render != "") {
+        extended_carrier_counts[active_render]++
+        extended_prefixes[active_render] = trace_field($0, "prefix=")
+        extended_slots[active_render] = trace_field($0, "opaque_slot=")
+    }
+    next
+}
 /MODERN_SUBMIT_AUX_DIFF queue=.*baseline=256$/ {
     baseline_count++
     next
@@ -135,6 +160,22 @@ END {
     if (queues["first"] == "" || queues["first"] != queues["repeat"] ||
         queues["first"] != queues["variation"])
         failure("render variation did not remain on one queue")
+
+    if (require_extended == "1" &&
+        (extended_counts["first"] != 1 || extended_counts["repeat"] != 1 ||
+         extended_counts["variation"] != 1 ||
+         extended_carrier_counts["first"] != 1 ||
+         extended_carrier_counts["repeat"] != 1 ||
+         extended_carrier_counts["variation"] != 1 ||
+         extended_bytes["first"] != "4096" ||
+         extended_bytes["repeat"] != "4096" ||
+         extended_bytes["variation"] != "4096" ||
+         extended_prefixes["first"] != "4096" ||
+         extended_prefixes["repeat"] != "4096" ||
+         extended_prefixes["variation"] != "4096" ||
+         extended_slots["first"] == "0" || extended_slots["repeat"] == "0" ||
+         extended_slots["variation"] == "0"))
+        failure("extended 4 KiB carrier evidence was incomplete")
 
     printf "AGX_RENDER_DESCRIPTOR_VARIATION_TRACE verified queue=%s target_a=%s target_b=%s snapshots=baseline+2-changed\n", \
         queues["first"], target_handle["a"], target_handle["b"]

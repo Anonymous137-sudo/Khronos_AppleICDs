@@ -133,6 +133,7 @@ set(MESA_INCLUDE_DIRS
     "${MESA_BUILD_DIR}/src/compiler/glsl"
     "${MESA_BUILD_DIR}/src/compiler/nir"
     "${MESA_BUILD_DIR}/src/compiler/spirv"
+    "${MESA_BUILD_DIR}/src/asahi/genxml"
     "${MESA_BUILD_DIR}/src/gallium/auxiliary"
     "${MESA_BUILD_DIR}/src/mesa"
     "${MESA_BUILD_DIR}/src/mesa/program"
@@ -151,6 +152,12 @@ set(MESA_INCLUDE_DIRS
     "${MESA_ROOT}/src/compiler/nir"
     "${MESA_ROOT}/src/compiler/glsl"
     "${MESA_ROOT}/src/util"
+    "${MESA_ROOT}/src/asahi"
+    "${MESA_ROOT}/src/asahi/compiler"
+    "${MESA_ROOT}/src/asahi/layout"
+    "${MESA_ROOT}/src/asahi/lib"
+    "${MESA_ROOT}/src/asahi/libagx"
+    "${MESA_ROOT}/src/virtio/vdrm"
     "${MESA_ROOT}/src/kosmickrisp"
     # Add KosmicKrisp if it lives inside Mesa (adjust path if needed)
     "${MESA_ROOT}/src/kosmickrisp/compiler"  # for nir_to_msl.h
@@ -164,8 +171,6 @@ set(MESA_COMPILE_DEFINITIONS
     HAVE_OPENGL=1
     HAVE_OPENGL_ES_1=1
     HAVE_OPENGL_ES_2=1
-    HAVE_SOFTPIPE
-    HAVE_SWRAST
     MESA_SYSTEM_HAS_KMS_DRM=0
     BUILDING_MESA
     VK_ENABLE_BETA_EXTENSIONS
@@ -267,6 +272,10 @@ find_library(MESA_ASAHI_COMPILER_LIB NAMES asahi_compiler
     PATHS "${MESA_BUILD_DIR}/src/asahi/compiler" NO_DEFAULT_PATH)
 find_library(MESA_ASAHI_CORE_LIB NAMES asahi_lib
     PATHS "${MESA_BUILD_DIR}/src/asahi/lib" NO_DEFAULT_PATH)
+find_library(MESA_ASAHI_DECODE_LIB NAMES asahi_decode
+    PATHS "${MESA_BUILD_DIR}/src/asahi/lib" NO_DEFAULT_PATH)
+find_library(MESA_AGX_DISASM_LIB NAMES agx2_disasm
+    PATHS "${MESA_BUILD_DIR}/src/asahi/isa" NO_DEFAULT_PATH)
 find_library(MESA_ASAHI_LAYOUT_LIB NAMES asahi_layout
     PATHS "${MESA_BUILD_DIR}/src/asahi/layout" NO_DEFAULT_PATH)
 find_library(MESA_POLY_NIR_LIB NAMES libpoly_nir
@@ -292,6 +301,8 @@ if(NOT MESA_GLAPI_LIB OR
    NOT MESA_ASAHI_GALLIUM_LIB OR
    NOT MESA_ASAHI_COMPILER_LIB OR
    NOT MESA_ASAHI_CORE_LIB OR
+   NOT MESA_ASAHI_DECODE_LIB OR
+   NOT MESA_AGX_DISASM_LIB OR
    NOT MESA_ASAHI_LAYOUT_LIB OR
    NOT MESA_POLY_NIR_LIB OR
    NOT MESA_ASAHI_MACOS_WINSYS_LIB OR
@@ -299,7 +310,7 @@ if(NOT MESA_GLAPI_LIB OR
    NOT LLVM_LIB)
     message(FATAL_ERROR
         "Required Mesa/Asahi archives were not found under '${MESA_BUILD_DIR}'. "
-        "OpenGL_4.6 has no GL2MTL or softpipe runtime fallback. Run "
+        "OpenGL_4.6 has no alternate runtime fallback. Run "
         "scripts/bootstrap_mesa.sh after completing the macOS Asahi winsys "
         "port, or point AO46_MESA_BUILD_DIR at a completed Asahi build with "
         "LLVM and BLAKE3 available.")
@@ -310,6 +321,24 @@ if(NOT SPIRV_TOOLS_INCLUDE_DIR OR NOT SPIRV_TOOLS_LIB OR NOT ZSTD_LIB OR NOT ZLI
         "Required framework-side dependencies were not found. "
         "Need SPIR-V Tools headers/library plus zstd and zlib.")
 endif()
+
+# The framework and direct-device smoke link this Meson archive rather than
+# compiling a private copy. Keep it current so a CMake relink cannot test stale
+# winsys code after an AGX UABI change.
+find_program(AO46_NINJA_EXECUTABLE NAMES ninja REQUIRED)
+find_program(AO46_LLVM_AR_EXECUTABLE NAMES llvm-ar
+    HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin
+    REQUIRED)
+get_filename_component(AO46_LLVM_BIN_DIR "${AO46_LLVM_AR_EXECUTABLE}" DIRECTORY)
+add_custom_target(AO46MesaMacOSWinsysArchive
+    COMMAND "${CMAKE_COMMAND}" -E env "MAKEFLAGS="
+            "PATH=${AO46_LLVM_BIN_DIR}:$ENV{PATH}"
+            "${AO46_NINJA_EXECUTABLE}" -C "${MESA_BUILD_DIR}"
+            "src/asahi/lib/libasahi_macos_winsys.a"
+    BYPRODUCTS "${MESA_ASAHI_MACOS_WINSYS_LIB}"
+    COMMENT "Synchronizing Mesa macOS AGX winsys archive"
+    VERBATIM
+)
 
 # -------------------------------------------------------------
 # 3. Public headers (for framework)
@@ -331,14 +360,25 @@ add_library(OpenGL46RuntimeObjects OBJECT
     runtime/src/AppleOpenGL46Runtime.c
     MesaPlatform/AO46MesaBridge.c
     MesaPlatform/AppleOpenGLAsahi.c
+    MesaPlatform/AppleAGXNativeBridge.m
+    MesaPlatform/AppleAGXOpaqueCarrier.m
+    MesaPlatform/AppleAGXConfiguredCarrier.m
+    MesaPlatform/AppleAGXMetalResourceRef.m
+    MesaPlatform/AppleAGXMetalAllocation.m
+    MesaPlatform/AppleAGXMetalBOProvider.m
+    MesaPlatform/AppleAGXMetalResourceSet.m
     "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_uabi.c"
     "${MESA_ROOT}/src/asahi/lib/agx_macos_bo.c"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_shader_provenance.c"
     "${MESA_ROOT}/src/asahi/lib/agx_macos_queue.c"
     "${MESA_ROOT}/src/asahi/lib/agx_macos_command.c"
     "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_build.c"
     "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_lease.c"
     "${MESA_ROOT}/src/asahi/lib/agx_macos_iosurface.m"
     "${MESA_ROOT}/src/asahi/lib/agx_macos_screen_bootstrap.c"
+    "${MESA_ROOT}/src/asahi/lib/agx_macos_mesa_device.c"
 )
 
 target_include_directories(OpenGL46RuntimeObjects
@@ -606,6 +646,8 @@ target_link_libraries(OpenGL_4_6
         ${MESA_ASAHI_GALLIUM_LIB}
         ${MESA_ASAHI_COMPILER_LIB}
         ${MESA_ASAHI_CORE_LIB}
+        ${MESA_ASAHI_DECODE_LIB}
+        ${MESA_AGX_DISASM_LIB}
         ${MESA_ASAHI_LAYOUT_LIB}
         ${MESA_POLY_NIR_LIB}
         ${MESA_ASAHI_MACOS_WINSYS_LIB}
@@ -622,7 +664,9 @@ target_link_libraries(OpenGL_4_6
         "-framework IOKit"
         "-framework CoreFoundation"
         "-framework IOSurface"
+        "-framework Metal"
 )
+add_dependencies(OpenGL_4_6 AO46MesaMacOSWinsysArchive)
 
 set_target_properties(OpenGL_4_6 PROPERTIES
     FRAMEWORK TRUE
@@ -775,14 +819,22 @@ if(BUILD_TESTING)
     add_executable(AppleOpenGLAsahiBackendSmoke
         tests/AppleOpenGLAsahiBackendSmoke.c
         MesaPlatform/AppleOpenGLAsahi.c
+        MesaPlatform/AppleAGXNativeBridge.m
+        MesaPlatform/AppleAGXMetalAllocation.m
+        MesaPlatform/AppleAGXMetalResourceRef.m
+        MesaPlatform/AppleAGXMetalBOProvider.m
         "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_uabi.c"
         "${MESA_ROOT}/src/asahi/lib/agx_macos_bo.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_shader_provenance.c"
         "${MESA_ROOT}/src/asahi/lib/agx_macos_queue.c"
         "${MESA_ROOT}/src/asahi/lib/agx_macos_command.c"
         "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_build.c"
         "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_lease.c"
         "${MESA_ROOT}/src/asahi/lib/agx_macos_iosurface.m"
         "${MESA_ROOT}/src/asahi/lib/agx_macos_screen_bootstrap.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_mesa_device.c"
     )
 
     target_include_directories(AppleOpenGLAsahiBackendSmoke
@@ -791,18 +843,482 @@ if(BUILD_TESTING)
             "${MESA_INCLUDE_DIRS}"
     )
 
+    # The smoke compiles the same direct Mesa device adapter as the framework,
+    # so it must use Mesa's generated platform configuration as well.
+    target_compile_definitions(AppleOpenGLAsahiBackendSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
     target_link_libraries(AppleOpenGLAsahiBackendSmoke
         PRIVATE
+            ${MESA_ASAHI_CORE_LIB}
+            ${MESA_ASAHI_DECODE_LIB}
+            ${MESA_AGX_DISASM_LIB}
+            ${MESA_ASAHI_LAYOUT_LIB}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-lc++"
             "-framework IOKit"
             "-framework CoreFoundation"
             "-framework Foundation"
             "-framework IOSurface"
+            "-framework Metal"
     )
 
     add_test(
         NAME AppleOpenGLAsahiBackendSmoke
         COMMAND $<TARGET_FILE:AppleOpenGLAsahiBackendSmoke>
     )
+
+    # Development-only proof that the submit anchor observed in a controlled
+    # trace can be resolved from the active shared-cache image. It never calls
+    # the private symbol and is skipped on profiles without that exact anchor.
+    add_executable(AppleAGXNativeBridgeSymbolProbe
+        tests/AppleAGXNativeBridgeSymbolProbe.c
+    )
+
+    add_test(
+        NAME AppleAGXNativeBridgeSymbolProbe
+        COMMAND $<TARGET_FILE:AppleAGXNativeBridgeSymbolProbe>
+    )
+
+    set_tests_properties(AppleAGXNativeBridgeSymbolProbe PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # Read only the Objective-C type metadata of the traced IOGPU submission
+    # method. This is not an invocation path and does not inspect object state.
+    add_executable(AppleAGXNativeBridgeRuntimeProbe
+        tests/AppleAGXNativeBridgeRuntimeProbe.m
+    )
+
+    target_link_libraries(AppleAGXNativeBridgeRuntimeProbe
+        PRIVATE
+            "-lobjc"
+    )
+
+    add_test(
+        NAME AppleAGXNativeBridgeRuntimeProbe
+        COMMAND $<TARGET_FILE:AppleAGXNativeBridgeRuntimeProbe>
+    )
+
+    set_tests_properties(AppleAGXNativeBridgeRuntimeProbe PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # Retains only Apple's opaque generic device root and resolves the C entry
+    # points observed in trace. It performs no private resource, queue, or GPU
+    # submission call.
+    add_executable(AppleAGXNativeBridgeBootstrapSmoke
+        tests/AppleAGXNativeBridgeBootstrapSmoke.m
+        MesaPlatform/AppleAGXNativeBridge.m
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+    )
+
+    target_include_directories(AppleAGXNativeBridgeBootstrapSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AppleAGXNativeBridgeBootstrapSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AppleAGXNativeBridgeBootstrapSmoke
+        PRIVATE
+            "-framework Metal"
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-lobjc"
+    )
+
+    add_test(
+        NAME AppleAGXNativeBridgeBootstrapSmoke
+        COMMAND $<TARGET_FILE:AppleAGXNativeBridgeBootstrapSmoke>
+    )
+
+    set_tests_properties(AppleAGXNativeBridgeBootstrapSmoke PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # Constructs and returns one Apple-owned command carrier using the
+    # profile-validated storage pool. It does not bind resources or submit.
+    add_executable(AppleAGXOpaqueCarrierSmoke
+        tests/AppleAGXOpaqueCarrierSmoke.m
+        MesaPlatform/AppleAGXNativeBridge.m
+        MesaPlatform/AppleAGXOpaqueCarrier.m
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+    )
+
+    target_include_directories(AppleAGXOpaqueCarrierSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AppleAGXOpaqueCarrierSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AppleAGXOpaqueCarrierSmoke
+        PRIVATE
+            "-framework Metal"
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-lobjc"
+    )
+
+    add_test(
+        NAME AppleAGXOpaqueCarrierSmoke
+        COMMAND $<TARGET_FILE:AppleAGXOpaqueCarrierSmoke>
+    )
+
+    set_tests_properties(AppleAGXOpaqueCarrierSmoke PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # Uses the profiled Apple queue and command-buffer initializers to obtain
+    # configured carrier storage, then reads its slot table. It performs no
+    # encoding, resource binding, commit, or GPU submission.
+    add_executable(AppleAGXConfiguredCarrierSmoke
+        tests/AppleAGXConfiguredCarrierSmoke.m
+        MesaPlatform/AppleAGXNativeBridge.m
+        MesaPlatform/AppleAGXOpaqueCarrier.m
+        MesaPlatform/AppleAGXConfiguredCarrier.m
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+    )
+
+    target_include_directories(AppleAGXConfiguredCarrierSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AppleAGXConfiguredCarrierSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AppleAGXConfiguredCarrierSmoke
+        PRIVATE
+            "-framework Metal"
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-lobjc"
+    )
+
+    add_test(
+        NAME AppleAGXConfiguredCarrierSmoke
+        COMMAND $<TARGET_FILE:AppleAGXConfiguredCarrierSmoke>
+    )
+
+    set_tests_properties(AppleAGXConfiguredCarrierSmoke PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # Isolated direct storage-level lifecycle check. It calls exactly the
+    # profile-validated begin/end pair using Apple-owned command memory, then
+    # exits without resource admission, command bytes, commit, or submission.
+    add_executable(AppleAGXNoResourceSegmentSmoke
+        tests/AppleAGXNoResourceSegmentSmoke.m
+        MesaPlatform/AppleAGXNativeBridge.m
+        MesaPlatform/AppleAGXOpaqueCarrier.m
+        MesaPlatform/AppleAGXConfiguredCarrier.m
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+    )
+
+    target_include_directories(AppleAGXNoResourceSegmentSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AppleAGXNoResourceSegmentSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AppleAGXNoResourceSegmentSmoke
+        PRIVATE
+            "-framework Metal"
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-lobjc"
+    )
+
+    add_test(
+        NAME AppleAGXNoResourceSegmentSmoke
+        COMMAND $<TARGET_FILE:AppleAGXNoResourceSegmentSmoke>
+    )
+
+    set_tests_properties(AppleAGXNoResourceSegmentSmoke PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # Identifies the Apple-owned generic resource behind one public buffer.
+    # It only compares read-only resource identity and address reporting.
+    add_executable(AppleAGXMetalResourceRefSmoke
+        tests/AppleAGXMetalResourceRefSmoke.m
+        MesaPlatform/AppleAGXNativeBridge.m
+        MesaPlatform/AppleAGXMetalResourceRef.m
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+    )
+
+    target_include_directories(AppleAGXMetalResourceRefSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AppleAGXMetalResourceRefSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AppleAGXMetalResourceRefSmoke
+        PRIVATE
+            "-framework Metal"
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-lobjc"
+    )
+
+    add_test(
+        NAME AppleAGXMetalResourceRefSmoke
+        COMMAND $<TARGET_FILE:AppleAGXMetalResourceRefSmoke>
+    )
+
+    set_tests_properties(AppleAGXMetalResourceRefSmoke PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # Admits one retained Apple-owned buffer through the profiled carrier
+    # resource-list boundary, then exits before command encoding or submission.
+    add_executable(AppleAGXCarrierResourceBindingSmoke
+        tests/AppleAGXCarrierResourceBindingSmoke.m
+        MesaPlatform/AppleAGXNativeBridge.m
+        MesaPlatform/AppleAGXOpaqueCarrier.m
+        MesaPlatform/AppleAGXConfiguredCarrier.m
+        MesaPlatform/AppleAGXMetalResourceRef.m
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+    )
+
+    target_include_directories(AppleAGXCarrierResourceBindingSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AppleAGXCarrierResourceBindingSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AppleAGXCarrierResourceBindingSmoke
+        PRIVATE
+            "-framework Metal"
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-lobjc"
+    )
+
+    add_test(
+        NAME AppleAGXCarrierResourceBindingSmoke
+        COMMAND $<TARGET_FILE:AppleAGXCarrierResourceBindingSmoke>
+    )
+
+    set_tests_properties(AppleAGXCarrierResourceBindingSmoke PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # Allocates a real Mesa BO through the Apple-owned provider, verifies the
+    # retained buffer's carrier binding, and admits it without encoding or
+    # submitting GPU work.
+    add_executable(AppleAGXMesaBOCarrierBindingSmoke
+        tests/AppleAGXMesaBOCarrierBindingSmoke.m
+        MesaPlatform/AppleAGXNativeBridge.m
+        MesaPlatform/AppleAGXOpaqueCarrier.m
+        MesaPlatform/AppleAGXConfiguredCarrier.m
+        MesaPlatform/AppleAGXMetalAllocation.m
+        MesaPlatform/AppleAGXMetalResourceRef.m
+        MesaPlatform/AppleAGXMetalBOProvider.m
+    )
+
+    target_include_directories(AppleAGXMesaBOCarrierBindingSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AppleAGXMesaBOCarrierBindingSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AppleAGXMesaBOCarrierBindingSmoke
+        PRIVATE
+            ${MESA_ASAHI_MACOS_WINSYS_LIB}
+            ${MESA_ASAHI_CORE_LIB}
+            ${MESA_ASAHI_DECODE_LIB}
+            ${MESA_AGX_DISASM_LIB}
+            ${MESA_ASAHI_LAYOUT_LIB}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-lc++"
+            "-framework Metal"
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-lobjc"
+    )
+    add_dependencies(AppleAGXMesaBOCarrierBindingSmoke AO46MesaMacOSWinsysArchive)
+
+    add_test(
+        NAME AppleAGXMesaBOCarrierBindingSmoke
+        COMMAND $<TARGET_FILE:AppleAGXMesaBOCarrierBindingSmoke>
+    )
+
+    set_tests_properties(AppleAGXMesaBOCarrierBindingSmoke PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # Exercises the supported Apple-owned allocation path. This retains public
+    # MTLBuffer objects and observes their public GPU VAs; it never invokes an
+    # IOGPU private resource, queue, or submission entry point.
+    add_executable(AppleAGXMetalAllocationSmoke
+        tests/AppleAGXMetalAllocationSmoke.m
+        MesaPlatform/AppleAGXNativeBridge.m
+        MesaPlatform/AppleAGXMetalAllocation.m
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+    )
+
+    target_include_directories(AppleAGXMetalAllocationSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AppleAGXMetalAllocationSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AppleAGXMetalAllocationSmoke
+        PRIVATE
+            "-framework Metal"
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-lobjc"
+    )
+
+    add_test(
+        NAME AppleAGXMetalAllocationSmoke
+        COMMAND $<TARGET_FILE:AppleAGXMetalAllocationSmoke>
+    )
+
+    set_tests_properties(AppleAGXMetalAllocationSmoke PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # Couples public Metal allocation lifetime to only the independently
+    # observed resource-address slots in a CPU-mapped command record. It does
+    # not build a sidecar or submit a command through IOGPU or Metal.
+    add_executable(AppleAGXMetalResourceSetSmoke
+        tests/AppleAGXMetalResourceSetSmoke.m
+        MesaPlatform/AppleAGXNativeBridge.m
+        MesaPlatform/AppleAGXMetalAllocation.m
+        MesaPlatform/AppleAGXMetalResourceSet.m
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_bo.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_queue.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_build.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_lease.c"
+    )
+
+    target_include_directories(AppleAGXMetalResourceSetSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AppleAGXMetalResourceSetSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AppleAGXMetalResourceSetSmoke
+        PRIVATE
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-framework Metal"
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-lobjc"
+            "-lc++"
+    )
+
+    add_test(
+        NAME AppleAGXMetalResourceSetSmoke
+        COMMAND $<TARGET_FILE:AppleAGXMetalResourceSetSmoke>
+    )
+
+    set_tests_properties(AppleAGXMetalResourceSetSmoke PROPERTIES
+        SKIP_RETURN_CODE 77
+    )
+
+    # This control is launched only by capture_iogpu_resource_constructor.sh.
+    # It uses public Metal allocation so LLDB can observe Apple's generic IOGPU
+    # constructor; it is not a framework runtime or a CTest workload.
+    add_executable(AppleAGXResourceConstructorControl
+        tests/AppleAGXResourceConstructorControl.m
+    )
+
+    target_link_libraries(AppleAGXResourceConstructorControl
+        PRIVATE
+            "-framework Metal"
+            "-lobjc"
+    )
+
+    # This public-Metal hardware smoke establishes CPU/GPU visibility through
+    # a private buffer without invoking an IOGPU private entry point.
+    add_executable(AppleAGXResourceCoherenceSmoke
+        tests/AppleAGXResourceCoherenceSmoke.m
+    )
+
+    target_link_libraries(AppleAGXResourceCoherenceSmoke
+        PRIVATE
+            "-framework Metal"
+            "-lobjc"
+    )
+
+    add_test(
+        NAME AppleAGXResourceCoherenceSmoke
+        COMMAND $<TARGET_FILE:AppleAGXResourceCoherenceSmoke>
+    )
+
+    # This public-Metal control emits no render or compute encoder work. Its
+    # debugger-only capture validates Apple's generic queue contract.
+    add_executable(AppleAGXQueueContractControl
+        tests/AppleAGXQueueContractControl.m
+    )
+
+    target_link_libraries(AppleAGXQueueContractControl
+        PRIVATE
+            "-framework Metal"
+            "-lobjc"
+    )
+
+    target_compile_options(AppleAGXQueueContractControl PRIVATE -fblocks)
 
     add_executable(AGXMacOSSubmissionObservationSmoke
         "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_submission_observation_smoke.c"
@@ -819,9 +1335,81 @@ if(BUILD_TESTING)
         COMMAND $<TARGET_FILE:AGXMacOSSubmissionObservationSmoke>
     )
 
+    add_executable(AGXMacOSUABIContractSmoke
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_uabi_contract_smoke.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_uabi.c"
+    )
+
+    target_include_directories(AGXMacOSUABIContractSmoke
+        PRIVATE
+            "${MESA_ROOT}/src/asahi/lib"
+    )
+
+    target_link_libraries(AGXMacOSUABIContractSmoke
+        PRIVATE
+            "-framework IOKit"
+            "-framework CoreFoundation"
+    )
+
+    add_test(
+        NAME AGXMacOSUABIContractSmoke
+        COMMAND $<TARGET_FILE:AGXMacOSUABIContractSmoke>
+    )
+
+    add_executable(AGXMacOSDeviceSessionStateSmoke
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_device_session_state_smoke.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_uabi.c"
+    )
+
+    target_include_directories(AGXMacOSDeviceSessionStateSmoke
+        PRIVATE
+            "${MESA_ROOT}/src/asahi/lib"
+    )
+
+    target_link_libraries(AGXMacOSDeviceSessionStateSmoke
+        PRIVATE
+            "-framework IOKit"
+            "-framework CoreFoundation"
+    )
+
+    add_test(
+        NAME AGXMacOSDeviceSessionStateSmoke
+        COMMAND $<TARGET_FILE:AGXMacOSDeviceSessionStateSmoke>
+    )
+
+    add_executable(AGXMacOSSubmissionBuildSmoke
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_submission_build_smoke.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_bo.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_queue.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_build.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_lease.c"
+    )
+
+    target_include_directories(AGXMacOSSubmissionBuildSmoke
+        PRIVATE
+            "${MESA_ROOT}/src/asahi/lib"
+    )
+
+    target_link_libraries(AGXMacOSSubmissionBuildSmoke
+        PRIVATE
+            "-framework IOKit"
+            "-framework CoreFoundation"
+    )
+
+    add_test(
+        NAME AGXMacOSSubmissionBuildSmoke
+        COMMAND $<TARGET_FILE:AGXMacOSSubmissionBuildSmoke>
+    )
+
     add_executable(AGXMacOSSubmissionLeaseSmoke
         "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_submission_lease_smoke.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
         "${MESA_ROOT}/src/asahi/lib/agx_macos_bo.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_queue.c"
         "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
         "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_lease.c"
     )
@@ -911,6 +1499,106 @@ if(BUILD_TESTING)
     add_test(
         NAME AGXMacOSScreenBootstrapSmoke
         COMMAND $<TARGET_FILE:AGXMacOSScreenBootstrapSmoke>
+    )
+
+    # The framework compiles this adapter in OpenGL46RuntimeObjects. This
+    # private smoke links the same Mesa archives directly because agx_bo_* is
+    # intentionally not exported from the framework ABI.
+    add_executable(AGXMacOSMesaDeviceSmoke
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_mesa_device_smoke.c"
+    )
+
+    target_include_directories(AGXMacOSMesaDeviceSmoke
+        PRIVATE
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AGXMacOSMesaDeviceSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AGXMacOSMesaDeviceSmoke
+        PRIVATE
+            ${MESA_ASAHI_MACOS_WINSYS_LIB}
+            ${MESA_ASAHI_CORE_LIB}
+            ${MESA_ASAHI_DECODE_LIB}
+            ${MESA_AGX_DISASM_LIB}
+            ${MESA_ASAHI_LAYOUT_LIB}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-lc++"
+            "-framework IOKit"
+            "-framework CoreFoundation"
+            "-framework Foundation"
+            "-framework IOSurface"
+    )
+    add_dependencies(AGXMacOSMesaDeviceSmoke AO46MesaMacOSWinsysArchive)
+
+    add_test(
+        NAME AGXMacOSMesaDeviceSmoke
+        COMMAND $<TARGET_FILE:AGXMacOSMesaDeviceSmoke>
+    )
+
+    add_executable(AGXMacOSShaderProvenanceSmoke
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_macos_shader_provenance_smoke.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
+        "${MESA_ROOT}/src/asahi/lib/agx_macos_shader_provenance.c"
+    )
+
+    target_include_directories(AGXMacOSShaderProvenanceSmoke
+        PRIVATE
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AGXMacOSShaderProvenanceSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AGXMacOSShaderProvenanceSmoke
+        PRIVATE
+            "-framework IOKit"
+            "-framework CoreFoundation"
+    )
+
+    add_test(
+        NAME AGXMacOSShaderProvenanceSmoke
+        COMMAND $<TARGET_FILE:AGXMacOSShaderProvenanceSmoke>
+    )
+
+    add_executable(AGXSubmitInfoSmoke
+        "${MESA_ROOT}/src/asahi/lib/tests/agx_submit_info_smoke.c"
+    )
+
+    target_include_directories(AGXSubmitInfoSmoke
+        PRIVATE
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AGXSubmitInfoSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AGXSubmitInfoSmoke
+        PRIVATE
+            ${MESA_ASAHI_CORE_LIB}
+            ${MESA_ASAHI_DECODE_LIB}
+            ${MESA_AGX_DISASM_LIB}
+            ${MESA_ASAHI_LAYOUT_LIB}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-lc++"
+    )
+
+    add_test(
+        NAME AGXSubmitInfoSmoke
+        COMMAND $<TARGET_FILE:AGXSubmitInfoSmoke>
     )
 
     add_executable(AO46RuntimeCompatSmoke

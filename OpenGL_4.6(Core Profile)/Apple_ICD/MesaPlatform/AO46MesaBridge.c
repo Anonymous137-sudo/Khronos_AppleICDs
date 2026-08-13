@@ -837,8 +837,7 @@ AO46MesaInit(void)
         if (!g_gl_screen) {
             fprintf(stderr,
                     "[OpenGL_4.6] refusing CGL context creation without a "
-                    "native Mesa Asahi screen; GL2MTL is not a runtime "
-                    "fallback\n");
+                    "native Mesa Asahi screen\n");
             pthread_mutex_unlock(&g_gl_screen_lock);
             return kCGLBadContext;
         }

@@ -109,6 +109,14 @@ function record_reference(phase, line, source, target, offset) {
     record_reference(phase, $0)
     next
 }
+/MODERN_SUBMIT_AUX_RESOURCE / {
+    sidecar_resource_reference_count++
+    next
+}
+/MODERN_SUBMIT_AUX_INDIRECT_RESOURCE / {
+    sidecar_indirect_resource_reference_count++
+    next
+}
 /MODERN_SUBMIT queue=/ {
     queue = trace_field($0, "queue=")
     if (phase != "")
@@ -164,6 +172,13 @@ END {
         record_slots["consumer_128k", "0x28"] != handles["destination_128k"])
         failure("resource record prefix did not remain stable across variations")
 
+    # The carrier is transport metadata for this profiled workload. Resource
+    # references must stay in the separately mapped command record, not leak
+    # into a guessed sidecar table.
+    if (sidecar_resource_reference_count ||
+        sidecar_indirect_resource_reference_count)
+        failure("controlled resource bindings unexpectedly appeared in the sidecar")
+
     for (phase_name in completion_count) {
         if (completion_count[phase_name] < 2)
             failure("a controlled submission did not produce two completions")
@@ -175,9 +190,10 @@ END {
         completion_count["consumer_128k"] < 2)
         failure("a controlled submission did not produce two completions")
 
-    printf "AGX_RESOURCE_RECORD_VARIATION_TRACE verified producer_queue=%s consumer_queue=%s record=%s record_cpu=%s source_4k=%s private_4k=%s destination_4k=%s source_128k=%s private_128k=%s staging_128k=%s destination_128k=%s\n", \
+    printf "AGX_RESOURCE_RECORD_VARIATION_TRACE verified producer_queue=%s consumer_queue=%s record=%s record_cpu=%s binding_location=cpu-mapped-command-record sidecar_resource_refs=%u sidecar_indirect_resource_refs=%u source_4k=%s private_4k=%s destination_4k=%s source_128k=%s private_128k=%s staging_128k=%s destination_128k=%s\n", \
         submission_queue["producer_4k"], submission_queue["consumer_4k"], \
-        record, allocation_cpu[record], handles["source_4k"], \
+        record, allocation_cpu[record], sidecar_resource_reference_count, \
+        sidecar_indirect_resource_reference_count, handles["source_4k"], \
         handles["private_4k"], handles["destination_4k"], handles["source_128k"], \
         handles["private_128k"], handles["staging_128k"], handles["destination_128k"]
 }

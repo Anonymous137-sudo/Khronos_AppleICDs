@@ -72,7 +72,7 @@ function record_reference(line, source, target, offset, delta) {
 {
     record_allocation($0)
 }
-/AO46_AGX_COMPUTE_RECORD dispatch transform-input-to-output$/ {
+/AO46_AGX_COMPUTE_RECORD dispatch transform-input-to-output([[:space:]]|$)/ {
     dispatch_started = 1
     next
 }
@@ -82,8 +82,10 @@ function record_reference(line, source, target, offset, delta) {
     next
 }
 /MODERN_SUBMIT queue=/ {
-    if (dispatch_started)
+    if (dispatch_started) {
+        submission_count++
         submission_queue = trace_field($0, "queue=")
+    }
     next
 }
 /MODERN_COMPLETION queue=/ {
@@ -101,8 +103,8 @@ END {
     if (handles["input"] == "" || handles["output"] == "")
         failure("compute input or output handle was not captured")
 
-    if (submission_queue == "")
-        failure("compute submission queue was not captured")
+    if (submission_count != 1 || submission_queue == "")
+        failure("compute control did not produce exactly one submission")
 
     if (app_record == "" || app_record_conflict ||
         allocation_cpu[app_record] == "" || allocation_cpu[app_record] == "0")

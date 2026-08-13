@@ -7,7 +7,9 @@ mesa_root=${OPENGLKHR_MESA_ROOT:-"$project_root/../mesa"}
 mesa_build_dir=${OPENGLKHR_MESA_BUILD_DIR:-"$mesa_root/build-ao46-asahi-arm64"}
 trace_target=${OPENGLKHR_TRACE_TARGET:-asahi_macos_trace_control}
 case "$trace_target" in
-    asahi_macos_trace_control|asahi_macos_resource_record_variation_trace|\
+    asahi_macos_trace_control|asahi_macos_shader_allocation_trace|\
+    asahi_macos_shader_execution_trace|\
+    asahi_macos_resource_record_variation_trace|\
     asahi_macos_resource_record_range_trace|\
     asahi_macos_compute_resource_record_trace|\
     asahi_macos_compute_resource_range_trace|\
@@ -29,6 +31,36 @@ case "$trace_target" in
 esac
 
 trace_notification_ports=${AGX_TRACE_NOTIFICATION_PORTS:-1}
+trace_require_extended=${AGX_TRACE_REQUIRE_EXTENDED:-0}
+trace_aux_extended=${AGX_TRACE_AUX_EXTENDED:-$trace_require_extended}
+trace_require_apple_bridge=${AGX_TRACE_REQUIRE_APPLE_BRIDGE:-0}
+
+case "$trace_require_extended" in
+    0|1)
+        ;;
+    *)
+        echo "AGX_TRACE_REQUIRE_EXTENDED must be 0 or 1" >&2
+        exit 2
+        ;;
+esac
+
+case "$trace_aux_extended" in
+    0|1)
+        ;;
+    *)
+        echo "AGX_TRACE_AUX_EXTENDED must be 0 or 1" >&2
+        exit 2
+        ;;
+esac
+
+case "$trace_require_apple_bridge" in
+    0|1)
+        ;;
+    *)
+        echo "AGX_TRACE_REQUIRE_APPLE_BRIDGE must be 0 or 1" >&2
+        exit 2
+        ;;
+esac
 
 trace_binary="$mesa_build_dir/src/asahi/lib/$trace_target"
 trace_wrapper="$mesa_build_dir/src/asahi/lib/libwrap.dylib"
@@ -64,6 +96,7 @@ if ! DYLD_INSERT_LIBRARIES="$trace_wrapper${DYLD_INSERT_LIBRARIES:+:$DYLD_INSERT
     AGX_TRACE_RESOURCE_REFS=1 \
     AGX_TRACE_TRAP_AUX=1 \
     AGX_TRACE_AUX_ANALYSIS=1 \
+    AGX_TRACE_AUX_EXTENDED="$trace_aux_extended" \
     AGX_TRACE_TRAP_PAYLOADS="${AGX_TRACE_TRAP_PAYLOADS:-0}" \
     "$trace_binary" >"$trace_output" 2>&1; then
     cat "$trace_output"
@@ -74,6 +107,12 @@ verifier=
 case "$trace_target" in
     asahi_macos_trace_control)
         verifier="$script_dir/verify_agx_resource_ownership_trace.sh"
+        ;;
+    asahi_macos_shader_allocation_trace)
+        verifier="$script_dir/verify_agx_shader_allocation_trace.sh"
+        ;;
+    asahi_macos_shader_execution_trace)
+        verifier="$script_dir/verify_agx_shader_execution_trace.sh"
         ;;
     asahi_macos_resource_record_variation_trace)
         verifier="$script_dir/verify_agx_resource_record_variation_trace.sh"
@@ -99,10 +138,25 @@ case "$trace_target" in
     asahi_macos_iosurface_drawable_trace)
         verifier="$script_dir/verify_agx_iosurface_drawable_trace.sh"
         ;;
+    asahi_macos_command_buffer_pair_lifecycle_trace)
+        verifier="$script_dir/verify_agx_command_buffer_pair_lifecycle_trace.sh"
+        ;;
 esac
 
 if [ -n "$verifier" ]; then
     if ! sh "$verifier" "$trace_output"; then
+        cat "$trace_output"
+        exit 1
+    fi
+fi
+
+if [ "$trace_require_apple_bridge" = 1 ]; then
+    if [ "$trace_target" != asahi_macos_trace_control ]; then
+        echo "Apple-native bridge verification requires asahi_macos_trace_control" >&2
+        exit 2
+    fi
+
+    if ! sh "$script_dir/verify_agx_apple_native_bridge_trace.sh" "$trace_output"; then
         cat "$trace_output"
         exit 1
     fi
