@@ -1,0 +1,1053 @@
+(lldb) target create "/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/../mesa/build-ao46-asahi-arm64/src/asahi/lib/asahi_macos_public_buffer_binding_trace"
+Current executable set to '/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/mesa/build-ao46-asahi-arm64/src/asahi/lib/asahi_macos_public_buffer_binding_trace' (arm64).
+(lldb) settings set target.env-vars 'DYLD_INSERT_LIBRARIES=/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/../mesa/build-ao46-asahi-arm64/src/asahi/lib/libwrap.dylib' 'AGX_TRACE_UNBUFFERED=1' 'AGX_TRACE_CALL_SHAPES=1' 'AGX_TRACE_NOTIFICATION_PORTS=1' 'AGX_TRACE_ALLOCATION_REQUESTS=1' 'AGX_TRACE_SUBMISSION_DETAILS=1' 'AGX_TRACE_RESOURCE_REFS=1' 'AGX_TRACE_TRAP_AUX=1' 'AGX_TRACE_AUX_ANALYSIS=1' 'AGX_TRACE_AUX_EXTENDED=1'
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageBeginKernelCommands
+Breakpoint 1: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageBeginSegment
+Breakpoint 2: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageGrowKernelCommandBuffer
+Breakpoint 3: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageEndKernelCommands
+Breakpoint 4: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageEndSegment
+Breakpoint 5: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageAllocResourceAtIndex
+Breakpoint 6: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageAllocSidebandBuffer
+Breakpoint 7: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageGrowSidebandBuffer
+Breakpoint 8: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageMergeResidencySetList
+Breakpoint 9: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageFinalizeResidencySetList
+Breakpoint 10: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalResidencySetListCreate
+Breakpoint 11: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalResidencySetListDestroy
+Breakpoint 12: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUResourceListAddResource
+Breakpoint 13: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUResourceListMerge
+Breakpoint 14: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUResourceListMergeLists
+Breakpoint 15: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUResourceListReset
+Breakpoint 16: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUResourceGroupUpdateResources
+Breakpoint 17: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStorageCreateExt
+Breakpoint 18: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUCommandQueueSubmitCommandBuffers
+Breakpoint 19: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOConnectTrap4
+Breakpoint 20: where = IOKit`IOConnectTrap4, address = 0x0000000184871d5c
+(lldb) breakpoint set --name IOGPUResourceCreate
+Breakpoint 21: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUResourceGetGPUVirtualAddress
+Breakpoint 22: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUResourceRelease
+Breakpoint 23: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name "-[IOGPUMetalCommandBuffer fillCommandBufferArgs:commandQueue:]"
+Breakpoint 24: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalResourcePoolCreatePooledResource
+Breakpoint 25: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name "-[IOGPUMetalCommandBuffer initWithQueue:retainedReferences:synchronousDebugMode:]"
+Breakpoint 26: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name IOGPUMetalCommandBufferStoragePoolCreateStorage
+Breakpoint 27: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) breakpoint set --name "-[IOGPUMetalCommandBuffer beginSegment:]"
+Breakpoint 28: no locations (pending).
+WARNING:  Unable to resolve breakpoint to any actual locations.
+(lldb) command script import '/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/scripts/agx_private_winsys_capture.py'
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_begin_kernel_commands 1
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_begin_segment 2
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_grow_kernel_command_buffer 3
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_end_kernel_commands 4
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_end_segment 5
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_alloc_resource_at_index 6
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_alloc_sideband_buffer 7
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_grow_sideband_buffer 8
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_merge_residency_set_list 9
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_finalize_residency_set_list 10
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_residency_set_list_create 11
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_residency_set_list_destroy 12
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_resource_list_add_resource 13
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_resource_list_merge 14
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_resource_list_merge_lists 15
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_resource_list_reset 16
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_resource_group_update 17
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_command_storage_create 18
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_queue_submit 19
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_trap4 20
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_resource_create 21
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_resource_gpu_address 22
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_resource_release 23
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_command_buffer_fill 24
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_resource_pool_create_pooled_resource 25
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_command_buffer_init 26
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_storage_pool_create 27
+(lldb) breakpoint command add -F agx_private_winsys_capture.capture_command_buffer_begin_segment 28
+(lldb) run
+1 location added to breakpoint 1
+1 location added to breakpoint 2
+1 location added to breakpoint 3
+1 location added to breakpoint 4
+1 location added to breakpoint 5
+1 location added to breakpoint 6
+1 location added to breakpoint 7
+1 location added to breakpoint 8
+1 location added to breakpoint 9
+1 location added to breakpoint 10
+1 location added to breakpoint 11
+1 location added to breakpoint 12
+1 location added to breakpoint 13
+1 location added to breakpoint 14
+1 location added to breakpoint 15
+1 location added to breakpoint 16
+1 location added to breakpoint 17
+1 location added to breakpoint 18
+1 location added to breakpoint 19
+1 location added to breakpoint 21
+1 location added to breakpoint 22
+1 location added to breakpoint 23
+1 location added to breakpoint 24
+1 location added to breakpoint 25
+1 location added to breakpoint 26
+1 location added to breakpoint 27
+1 location added to breakpoint 28
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000086ecd99d8 bytes=0000000000000000010001000100000001010001300400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000008180000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=1 return_hook=1 x0=0x00000001005ea640 x1=0x000000086ecd99d8 x2=0x0000000000000068 x3=0x000000086ec671c0 x4=0x000000086ec66880 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=1 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec081f0 x1=0x000000016fdfd8d8
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=2 return_hook=1 x0=0x000000086ec081f0 x1=0x00000001f3f76da8 x2=0x00000001a8a3c758 x3=0x000000086ec08268 x4=0xffffffffffffe988 x5=0x0000000000000020
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=2 name=resource-gpu-address storage=0x000000086ec081f0 x0=0x0000010000000000 x1=0x00000001f3f76da8
+3B03: call 107, wake port 3A07 (out 0x0, 0)
+, references:  0 10dae43c4 86ecd8000
+return 0
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdd10 bytes=0000000000000000010001000100000001010001700400000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000038000000000000000000000000000000000058180000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=3 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdd10 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfdd10
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=3 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08150 x1=0x000000016fdfda08
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=4 return_hook=1 x0=0x000000086ec08150 x1=0x00000001f3f76da8 x2=0x00000001a8a3c758 x3=0x000000086ec081c8 x4=0xffffffffffffe988 x5=0x0000000000000010
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=4 name=resource-gpu-address storage=0x000000086ec08150 x0=0x0000006f00000000 x1=0x00000001f3f76da8
+Selector 7, 3B03, 3B03
+AGX_CALL selector=7 scalar_in=0 struct_in=1040 scalar_out_capacity=0 struct_out_capacity=16
+3B03: SET_API(/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/mesa/build-ao46-asahi-arm64/src/asahi/lib/asahi_macos_public_buffer_binding_trace)
+AGX_RESULT selector=7 status=0 scalar_out=0 struct_out=16
+ struct
+000000  01 00 00 00 00 00 00 00 9E 74 CD C3 07 00 00 00  | .........t......
+
+
+Selector 16, 3B03, 3B03
+AGX_CALL selector=16 scalar_in=2 struct_in=0 scalar_out_capacity=0 struct_out_capacity=16
+3B03: call 10 (out 0x16fdfdba0, 16) 100 28
+AGX_RESULT selector=16 status=0 scalar_out=0 struct_out=16
+MODERN_NOTIFICATION_QUEUE data_queue=100334000 id=1 config=100/28
+Allocated notif port 2E07
+Set noficiation port connect=3B03, type=0, port=2E07, reference=1
+Selector 28, 3B03, 3B03
+AGX_CALL selector=28 scalar_in=2 struct_in=0 scalar_out_capacity=0 struct_out_capacity=0
+3B03: call 1C (out 0x0, 0) 1 1
+AGX_RESULT selector=28 status=0 scalar_out=0 struct_out=0
+
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfd978 bytes=000000000000000001000100010000000101000170040000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000c80a0b0e01000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=5 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfd978 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfd978
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfd740, 88), struct:
+000000  00 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | ................
+000010  01 01 00 01 70 04 00 00 00 00 00 00 00 00 00 00  | ....p...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000040  00 00 00 00 00 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000060  C8 0A 0B 0E 01 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=3 gpu=10000018000 cpu=104b10000 size=20000 attributes=0 storage=0x470 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=000000000000000001000100010000000101000170040000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000c80a0b0e01000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=5 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08290 x1=0x000000016fdfd738
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=6 return_hook=1 x0=0x000000086ec08290 x1=0x000000086ec08290 x2=0x0000000000000000 x3=0x000000086ec08308 x4=0x00000001000a7c3f x5=0x000000016fdfd1d0
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=6 name=resource-gpu-address storage=0x000000086ec08290 x0=0x0000010000018000 x1=0x000000086ec08290
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc68 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000000b104010000000000b1040100000000000200000000000300000000000000000000001800000090150b0e01000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=7 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc68 x2=0x0000000000000068 x3=0x0000000000000002 x4=0x0000000000000000 x5=0x000000016fdfdc68
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda70, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 00 B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  90 15 0B 0E 01 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=4 gpu=10000018000 cpu=0 size=20000 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000000b104010000000000b1040100000000000200000000000300000000000000000000001800000090150b0e01000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=7 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08510 x1=0x000000016fdfda68
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=8 return_hook=1 x0=0x000000086ec08510 x1=0x000000086ec08510 x2=0x0000000000000000 x3=0x000000086ec08588 x4=0x00000001000a7c3f x5=0x000000016fdfd500
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=8 name=resource-gpu-address storage=0x000000086ec08510 x0=0x0000010000018000 x1=0x000000086ec08510
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc68 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000002b104010000000000b1040100000000000200000000000300000000000000000000001800000090150b0e01000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=9 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc68 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfdc68
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda70, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 02 B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  90 15 0B 0E 01 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=5 gpu=10000018200 cpu=0 size=1fe00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000002b104010000000000b1040100000000000200000000000300000000000000000000001800000090150b0e01000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=9 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec085b0 x1=0x000000016fdfda68
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=10 return_hook=1 x0=0x000000086ec085b0 x1=0x000000086ec085b0 x2=0x0000000000000000 x3=0x000000086ec08628 x4=0x00000001000a7c3f x5=0x000000016fdfd500
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=10 name=resource-gpu-address storage=0x000000086ec085b0 x0=0x0000010000018200 x1=0x000000086ec085b0
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc68 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000004b104010000000000b10401000000000002000000000003000000000000000000000018000000c89ccd6e08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=11 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc68 x2=0x0000000000000068 x3=0x0000000000000005 x4=0x00000001005f4900 x5=0x000000016fdfdc68
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda70, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 04 B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  C8 9C CD 6E 08 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=6 gpu=10000018400 cpu=0 size=1fc00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000004b104010000000000b10401000000000002000000000003000000000000000000000018000000c89ccd6e08000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=11 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08650 x1=0x000000016fdfda68
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=12 return_hook=1 x0=0x000000086ec08650 x1=0x000000086ec08650 x2=0x0000000000000000 x3=0x000000086ec086c8 x4=0x00000001000a7c3f x5=0x000000016fdfd500
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=12 name=resource-gpu-address storage=0x000000086ec08650 x0=0x0000010000018400 x1=0x000000086ec08650
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc78 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000005b104010000000000b1040100000000000200000000000300000000000000000000001800000020a2cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=13 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc78 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfdc78
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda80, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 05 B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  20 A2 CD 6E 08 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=7 gpu=10000018500 cpu=0 size=1fb00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000005b104010000000000b1040100000000000200000000000300000000000000000000001800000020a2cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=13 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec086f0 x1=0x000000016fdfda78
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=14 return_hook=1 x0=0x000000086ec086f0 x1=0x000000086ec086f0 x2=0x0000000000000000 x3=0x000000086ec08768 x4=0x00000001000a7c3f x5=0x000000016fdfd510
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=14 name=resource-gpu-address storage=0x000000086ec086f0 x0=0x0000010000018500 x1=0x000000086ec086f0
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc78 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000007b104010000000000b1040100000000000200000000000300000000000000000000001800000040a5cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=15 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc78 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfdc78
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda80, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 07 B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  40 A5 CD 6E 08 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=8 gpu=10000018700 cpu=0 size=1f900 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000007b104010000000000b1040100000000000200000000000300000000000000000000001800000040a5cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=15 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08790 x1=0x000000016fdfda78
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=16 return_hook=1 x0=0x000000086ec08790 x1=0x000000086ec08790 x2=0x0000000000000000 x3=0x000000086ec08808 x4=0x00000001000a7c3f x5=0x000000016fdfd510
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=16 name=resource-gpu-address storage=0x000000086ec08790 x0=0x0000010000018700 x1=0x000000086ec08790
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc78 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000008b104010000000000b1040100000000000200000000000300000000000000000000001800000060a8cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=17 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc78 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfdc78
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda80, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 08 B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  60 A8 CD 6E 08 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=9 gpu=10000018800 cpu=0 size=1f800 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000008b104010000000000b1040100000000000200000000000300000000000000000000001800000060a8cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=17 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08830 x1=0x000000016fdfda78
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=18 return_hook=1 x0=0x000000086ec08830 x1=0x000000086ec08830 x2=0x0000000000000000 x3=0x000000086ec088a8 x4=0x00000001000a7c3f x5=0x000000016fdfd510
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=18 name=resource-gpu-address storage=0x000000086ec08830 x0=0x0000010000018800 x1=0x000000086ec08830
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc88 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000009b104010000000000b1040100000000000200000000000300000000000000000000001800000080abcd6e08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=19 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc88 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfdc88
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda90, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 09 B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  80 AB CD 6E 08 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=10 gpu=10000018900 cpu=0 size=1f700 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000009b104010000000000b1040100000000000200000000000300000000000000000000001800000080abcd6e08000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=19 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec088d0 x1=0x000000016fdfda88
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=20 return_hook=1 x0=0x000000086ec088d0 x1=0x000000086ec088d0 x2=0x0000000000000000 x3=0x000000086ec08948 x4=0x00000001000a7c3f x5=0x000000016fdfd520
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=20 name=resource-gpu-address storage=0x000000086ec088d0 x0=0x0000010000018900 x1=0x000000086ec088d0
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc78 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000019b104010000000000b10401000000000002000000000003000000000000000000000018000000a0aecd6e08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=21 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc78 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfdc78
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda80, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 19 B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  A0 AE CD 6E 08 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=11 gpu=10000019900 cpu=0 size=1e700 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000019b104010000000000b10401000000000002000000000003000000000000000000000018000000a0aecd6e08000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=21 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08970 x1=0x000000016fdfda78
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=22 return_hook=1 x0=0x000000086ec08970 x1=0x000000086ec08970 x2=0x0000000000000000 x3=0x000000086ec089e8 x4=0x00000001000a7c3f x5=0x000000016fdfd510
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=22 name=resource-gpu-address storage=0x000000086ec08970 x0=0x0000010000019900 x1=0x000000086ec08970
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc78 bytes=8000000000000000010001000100000001010001300c00000000000000000000000000000000000000000000000000000000000000000000001ab104010000000000b10401000000000002000000000003000000000000000000000018000000a8b1cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=23 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc78 x2=0x0000000000000068 x3=0x0000000000000008 x4=0x00000001005ddec0 x5=0x000000016fdfdc78
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda80, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 1A B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  A8 B1 CD 6E 08 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=12 gpu=10000019a00 cpu=0 size=1e600 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c00000000000000000000000000000000000000000000000000000000000000000000001ab104010000000000b10401000000000002000000000003000000000000000000000018000000a8b1cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=23 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08a10 x1=0x000000016fdfda78
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=24 return_hook=1 x0=0x000000086ec08a10 x1=0x000000086ec08a10 x2=0x0000000000000000 x3=0x000000086ec08a88 x4=0x00000001000a7c3f x5=0x000000016fdfd510
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=24 name=resource-gpu-address storage=0x000000086ec08a10 x0=0x0000010000019a00 x1=0x000000086ec08a10
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc78 bytes=8000000000000000010001000100000001010001300c00000000000000000000000000000000000000000000000000000000000000000000001bb104010000000000b10401000000000002000000000003000000000000000000000018000000b0b4cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=25 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc78 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfdc78
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda80, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 1B B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  B0 B4 CD 6E 08 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=13 gpu=10000019b00 cpu=0 size=1e500 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c00000000000000000000000000000000000000000000000000000000000000000000001bb104010000000000b10401000000000002000000000003000000000000000000000018000000b0b4cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=25 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08ab0 x1=0x000000016fdfda78
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=26 return_hook=1 x0=0x000000086ec08ab0 x1=0x000000086ec08ab0 x2=0x0000000000000000 x3=0x000000086ec08b28 x4=0x00000001000a7c3f x5=0x000000016fdfd510
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=26 name=resource-gpu-address storage=0x000000086ec08ab0 x0=0x0000010000019b00 x1=0x000000086ec08ab0
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc78 bytes=8000000000000000010001000100000001010001300c00000000000000000000000000000000000000000000000000000000000000000000001cb104010000000000b10401000000000002000000000003000000000000000000000018000000b8b7cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=27 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc78 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfdc78
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda80, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 1C B1 04 01 00 00 00  | ................
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  B8 B7 CD 6E 08 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=14 gpu=10000019c00 cpu=0 size=1e400 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c00000000000000000000000000000000000000000000000000000000000000000000001cb104010000000000b10401000000000002000000000003000000000000000000000018000000b8b7cd6e08000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=27 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08b50 x1=0x000000016fdfda78
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=28 return_hook=1 x0=0x000000086ec08b50 x1=0x000000086ec08b50 x2=0x0000000000000000 x3=0x000000086ec08bc8 x4=0x00000001000a7c3f x5=0x000000016fdfd510
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=28 name=resource-gpu-address storage=0x000000086ec08b50 x0=0x0000010000019c00 x1=0x000000086ec08b50
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdc78 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000024b104010000000000b10401000000000002000000000003000000000000000000000018000000c0bacd6e08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=29 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdc78 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfdc78
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfda80, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 24 B1 04 01 00 00 00  | .........$......
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  C0 BA CD 6E 08 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=15 gpu=1000001a400 cpu=0 size=1dc00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000024b104010000000000b10401000000000002000000000003000000000000000000000018000000c0bacd6e08000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=29 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08bf0 x1=0x000000016fdfda78
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=30 return_hook=1 x0=0x000000086ec08bf0 x1=0x000000086ec08bf0 x2=0x0000000000000000 x3=0x000000086ec08c68 x4=0x00000001000a7c3f x5=0x000000016fdfd510
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=30 name=resource-gpu-address storage=0x000000086ec08bf0 x0=0x000001000001a400 x1=0x000000086ec08bf0
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000086ecd9930 bytes=0000000000000000010001000100000001010001300400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000008180000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=31 return_hook=1 x0=0x00000001005ea640 x1=0x000000086ecd9930 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000086ecd9930
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfc690, 88), struct:
+000000  00 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | ................
+000010  01 01 00 01 30 04 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 00  | ................
+000050  00 00 00 00 00 00 00 00 00 00 00 08 18 00 00 00  | ................
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=16 gpu=10000040000 cpu=104b30000 size=10000 attributes=0 storage=0x430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=1
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000010001000100000001010001300400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000008180000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=31 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08c90 x1=0x000000016fdfc688
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=32 return_hook=1 x0=0x000000086ec08c90 x1=0x000000086ec08c90 x2=0x0000000000000000 x3=0x000000086ec08d08 x4=0x00000001000a7c3f x5=0x000000016fdfc120
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=32 name=resource-gpu-address storage=0x000000086ec08c90 x0=0x0000010000040000 x1=0x000000086ec08c90
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000086ecd9b28 bytes=0000000000000000010001000100000001010001308400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000038180000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=33 return_hook=1 x0=0x00000001005ea640 x1=0x000000086ecd9b28 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000086ecd9b28
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfcb90, 88), struct:
+000000  00 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | ................
+000010  01 01 00 01 30 84 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 00  | ................
+000050  00 00 00 00 00 00 00 00 00 00 00 38 18 00 00 00  | ...........8....
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=17 gpu=0 cpu=104b40000 size=10000 attributes=0 storage=0x8430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=1
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000010001000100000001010001308400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000038180000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=33 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08d30 x1=0x000000016fdfcb88
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=34 return_hook=1 x0=0x000000086ec08d30 x1=0x000000086ec08d30 x2=0x0000000000000000 x3=0x000000086ec08da8 x4=0x00000001000a7c3f x5=0x000000016fdfc620
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=34 name=resource-gpu-address storage=0x000000086ec08d30 x0=0x0000000000000000 x1=0x000000086ec08d30
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfda38 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000025b104010000000000b10401000000000002000000000003000000000000000000000018000000c80a0b0e01000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=35 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfda38 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfda38
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfd840, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 25 B1 04 01 00 00 00  | .........%......
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  C8 0A 0B 0E 01 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=18 gpu=1000001a500 cpu=0 size=1db00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000025b104010000000000b10401000000000002000000000003000000000000000000000018000000c80a0b0e01000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=35 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08dd0 x1=0x000000016fdfd838
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=36 return_hook=1 x0=0x000000086ec08dd0 x1=0x000000086ec08dd0 x2=0x0000000000000000 x3=0x000000086ec08e48 x4=0x00000001000a7c3f x5=0x000000016fdfd2d0
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=36 name=resource-gpu-address storage=0x000000086ec08dd0 x0=0x000001000001a500 x1=0x000000086ec08dd0
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfd9d8 bytes=000000000000000001000100010000000101000170040000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000c80a0b0e01000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=37 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfd9d8 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000020020 x5=0x000000016fdfd9d8
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfd7a0, 88), struct:
+000000  00 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | ................
+000010  01 01 00 01 70 04 00 00 00 00 00 00 00 00 00 00  | ....p...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000040  00 00 00 00 00 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000060  C8 0A 0B 0E 01 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=19 gpu=10000058000 cpu=104b50000 size=20000 attributes=0 storage=0x470 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=000000000000000001000100010000000101000170040000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000c80a0b0e01000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=37 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08e70 x1=0x000000016fdfd798
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=38 return_hook=1 x0=0x000000086ec08e70 x1=0x000000086ec08e70 x2=0x0000000000000000 x3=0x000000086ec08ee8 x4=0x00000001000a7c3f x5=0x000000016fdfd230
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=38 name=resource-gpu-address storage=0x000000086ec08e70 x0=0x0000010000058000 x1=0x000000086ec08e70
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfdcc8 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000000b504010000000000b50401000000000002000000000013000000000000000000000018000000c80a0b0e01000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=39 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfdcc8 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000020020 x5=0x000000016fdfdcc8
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdad0, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 00 B5 04 01 00 00 00  | ................
+000040  00 00 B5 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  13 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
+000060  C8 0A 0B 0E 01 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=20 gpu=10000058000 cpu=0 size=20000 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000000b504010000000000b50401000000000002000000000013000000000000000000000018000000c80a0b0e01000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=39 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08f10 x1=0x000000016fdfdac8
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=40 return_hook=1 x0=0x000000086ec08f10 x1=0x000000086ec08f10 x2=0x0000000000000000 x3=0x000000086ec08f88 x4=0x00000001000a7c3f x5=0x000000016fdfd560
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=40 name=resource-gpu-address storage=0x000000086ec08f10 x0=0x0000010000058000 x1=0x000000086ec08f10
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfe178 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000045b104010000000000b10401000000000002000000000003000000000000000000000000000000c80a0b0e01000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=41 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfe178 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfe178
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdfa0, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 45 B1 04 01 00 00 00  | .........E......
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000060  C8 0A 0B 0E 01 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=21 gpu=1000001c500 cpu=0 size=1bb00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000045b104010000000000b10401000000000002000000000003000000000000000000000000000000c80a0b0e01000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=41 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec08fb0 x1=0x000000016fdfdf98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=42 return_hook=1 x0=0x000000086ec08fb0 x1=0x000000086ec08fb0 x2=0x0000000000000000 x3=0x000000086ec09028 x4=0x00000001000a7c3f x5=0x000000016fdfda30
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=42 name=resource-gpu-address storage=0x000000086ec08fb0 x0=0x000001000001c500 x1=0x000000086ec08fb0
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000016fdfe178 bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000055b104010000000000b1040100000000000200000000000300000000000000000000000000000058807bef01000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=43 return_hook=1 x0=0x00000001005ea640 x1=0x000000016fdfe178 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000016fdfe178
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdfa0, 88), struct:
+000000  80 00 00 00 00 00 00 00 01 00 01 00 01 00 00 00  | €...............
+000010  01 01 00 01 30 0C 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000030  00 00 00 00 00 00 00 00 00 55 B1 04 01 00 00 00  | .........U......
+000040  00 00 B1 04 01 00 00 00 00 00 02 00 00 00 00 00  | ................
+000050  03 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+000060  58 80 7B EF 01 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=22 gpu=1000001d500 cpu=0 size=1ab00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=2
+MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000000000000000000000000000000000000000000000000000000000000000000055b104010000000000b1040100000000000200000000000300000000000000000000000000000058807bef01000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=43 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec09050 x1=0x000000016fdfdf98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=44 return_hook=1 x0=0x000000086ec09050 x1=0x000000086ec09050 x2=0x0000000000000000 x3=0x000000086ec090c8 x4=0x00000001000a7c3f x5=0x000000016fdfda30
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=44 name=resource-gpu-address storage=0x000000086ec09050 x0=0x000001000001d500 x1=0x000000086ec09050
+AO46_AGX_BUFFER_BINDING public-resource name=source object=0x86f098e00 resource_ref=0x86ec08fb0 resource_ref_plus_0x40=0x86ec08ff0 gpu_va=0x1000001c500 bytes=4096
+AO46_AGX_BUFFER_BINDING public-resource name=destination object=0x86f098fc0 resource_ref=0x86ec09050 resource_ref_plus_0x40=0x86ec09090 gpu_va=0x1000001d500 bytes=4096
+AO46_AGX_PRIVATE_WINSYS_CALL name=command-buffer-init capture_id=45 return_hook=1 x0=0x00000001005fc260 x1=0x00000001fe1359a8 x2=0x00000001005f7500 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x0000000040000001
+Selector 6, 3B03, 3B03
+AGX_CALL selector=6 scalar_in=0 struct_in=0 scalar_out_capacity=0 struct_out_capacity=16
+3B03: call 6 (out 0x16fdfe098, 16)
+AGX_RESULT selector=6 status=0 scalar_out=0 struct_out=16
+AO46_AGX_PRIVATE_WINSYS_CALL name=storage-pool-create capture_id=46 return_hook=1 x0=0x000000086ec684e0 x1=0x00000007c3cd74cb x2=0x0000000000000001 x3=0x0000000000000103 x4=0x000000018376f757 x5=0x000000016fdfdb70
+AO46_AGX_PRIVATE_WINSYS_STORAGE_CREATE_PARAMS address=0x00000001005ef8a0 bytes=c082026f080000008082026f080000000083026f080000000089cb6e080000002c0000000000000020c4c76e0800000000c0c76e080000004083026f08000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=command-storage-create capture_id=47 return_hook=1 x0=0x00000001005ef5c0 x1=0x00000001005ef8a0 x2=0x00000007c3cd74cb x3=0x0000000000000001 x4=0x000000018376f757 x5=0x000000016fdfdb70
+Selector 14, 3B03, 3B03
+AGX_CALL selector=14 scalar_in=2 struct_in=0 scalar_out_capacity=0 struct_out_capacity=16
+3B03: call E (out 0x16fdfdf60, 16) 4000 0
+AGX_RESULT selector=14 status=0 scalar_out=0 struct_out=16
+Selector 14, 3B03, 3B03
+AGX_CALL selector=14 scalar_in=2 struct_in=0 scalar_out_capacity=0 struct_out_capacity=16
+3B03: call E (out 0x16fdfdf60, 16) 4000 1
+AGX_RESULT selector=14 status=0 scalar_out=0 struct_out=16
+AO46_AGX_PRIVATE_WINSYS_CALL name=begin-kernel-commands capture_id=48 return_hook=1 x0=0x00000001005fde20 x1=0x0000000104b74000 x2=0xffffffffffffffec x3=0x0000000104b7406c x4=0x0000000104b74080 x5=0x000000016fdfda80
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=48 name=begin-kernel-commands storage=0x00000001005fde20 x0=0x00000001005fde20 x1=0x0000000104b74000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=47 name=command-storage-create storage=0x00000001005ef5c0 x0=0x00000001005fde20 x1=0x0000000104b74000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=46 name=storage-pool-create storage=0x000000086ec684e0 x0=0x00000001005fde20 x1=0x0000000104b74000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=45 name=command-buffer-init storage=0x00000001005fc260 x0=0x00000001005fc260 x1=0x0000000104b74000
+AO46_AGX_PRIVATE_WINSYS_SEGMENT_POINTER storage=0x00000001005fde20 pointer=0x0000000104b740ac kernel_base=0x0000000104b74000 kernel_delta=0xac
+AO46_AGX_PRIVATE_WINSYS_CALL name=begin-segment capture_id=49 return_hook=1 x0=0x00000001005fde20 x1=0x0000000104b740ac x2=0x0000000000000000 x3=0x000000086f098e00 x4=0x000001000001c500 x5=0x0000000000001000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-reset capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x0000000104b70048 x2=0x0000000000003fb8 x3=0x0000000000000001 x4=0x000001000001c500 x5=0x0000000000001000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=49 name=begin-segment storage=0x00000001005fde20 x0=0x000000044c400300 x1=0x0000000000000000
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x0000000000000000 count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x00000001005f7a00 record=0x000000086ecf8c00 slot_descriptor_bytes=812cd2ef010000010000000000000000087a5f00010000000000000000000000187a5f00010000000000000000000000082cd2ef01000000c0f55e0001000000707a5f0001000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=50 return_hook=1 x0=0x00000001005fde20 x1=0x0000000000000000 x2=0x0000000000000001 x3=0x000000044c4003c0 x4=0x000000044c400380 x5=0x0000000000001000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=51 return_hook=1 x0=0x00000001005f7a00 x1=0x000000016fdfdd9f x2=0x0000000000000001 x3=0x000000044c4003c0 x4=0x000000044c400380 x5=0x0000000000001000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x00000001005f7a70 bytes=000000000000000000800100010000000101000130c400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000038000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=52 return_hook=1 x0=0x00000001005ea640 x1=0x00000001005f7a70 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x00000001005f7a70
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 80 01 00 01 00 00 00  | .........€......
+000010  01 01 00 01 30 C4 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00  | .........€......
+000050  00 00 00 00 00 00 00 00 00 00 00 38 00 00 00 00  | ...........8....
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=23 gpu=18000 cpu=104b78000 size=8000 attributes=0 storage=0xc430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=000000000000000000800100010000000101000130c400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000038000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=52 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec090f0 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=53 return_hook=1 x0=0x000000086ec090f0 x1=0x000000086ec090f0 x2=0x0000000000000000 x3=0x000000086ec09168 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=53 name=resource-gpu-address storage=0x000000086ec090f0 x0=0x0000000000018000 x1=0x000000086ec090f0
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=51 name=resource-pool-create-pooled-resource storage=0x00000001005f7a00 x0=0x000000086ed88000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=50 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x0000000000000000 count=44 records=0x000000086ecf8c00 record=0x000000086ecf8c00 record_resource=0x000000086ed88000 record_bytes=00800100000000000080b704010000000000b804010000000080b704010000000080d86e08000000000000000000000000800000000000001700000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed88040
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed88040 x2=0x0000000000000001 x3=0x0000000000000103 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x0000000000000003 count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x00000001005f7ca0 record=0x000000086ecf8cc0 slot_descriptor_bytes=812cd2ef010000010000000000000000a87c5f00010000000000000000000000b87c5f00010000000000000000000000082cd2ef01000000c0f55e0001000000107d5f0001000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=54 return_hook=1 x0=0x00000001005fde20 x1=0x0000000000000003 x2=0x0000000000000001 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=55 return_hook=1 x0=0x00000001005f7ca0 x1=0x000000016fdfdd9f x2=0x0000000000000001 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x00000001005f7d10 bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000008480000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=56 return_hook=1 x0=0x00000001005ea640 x1=0x00000001005f7d10 x2=0x0000000000000068 x3=0x0000000000000016 x4=0x00000001005ddf40 x5=0x00000001005f7d10
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 80 01 00 01 00 00 00  | .........€......
+000010  01 01 00 01 30 44 00 00 00 00 00 00 00 00 00 00  | ....0D..........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00  | .........€......
+000050  00 00 00 00 00 00 00 00 00 00 00 08 48 00 00 00  | ............H...
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=24 gpu=10000080000 cpu=104b80000 size=8000 attributes=0 storage=0x4430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000008480000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=56 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec09190 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=57 return_hook=1 x0=0x000000086ec09190 x1=0x000000086ec09190 x2=0x0000000000000000 x3=0x000000086ec09208 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=57 name=resource-gpu-address storage=0x000000086ec09190 x0=0x0000010000080000 x1=0x000000086ec09190
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=55 name=resource-pool-create-pooled-resource storage=0x00000001005f7ca0 x0=0x000000086ed88180 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=54 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x0000000000000003 count=44 records=0x000000086ecf8c00 record=0x000000086ecf8cc0 record_resource=0x000000086ed88180 record_bytes=00000800000100000000b804010000000080b804010000000000b804010000008081d86e08000000000000000000000000800000000000001800000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed881c0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed881c0 x2=0x0000000000000001 x3=0x0000000000000103 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x0000000000000004 count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x00000001005f7d80 record=0x000000086ecf8d00 slot_descriptor_bytes=812cd2ef010000010000000000000000887d5f00010000000000000000000000987d5f00010000000000000000000000082cd2ef01000000c0f55e0001000000f07d5f0001000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=58 return_hook=1 x0=0x00000001005fde20 x1=0x0000000000000004 x2=0x0000000000000004 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=59 return_hook=1 x0=0x00000001005f7d80 x1=0x000000016fdfdd9f x2=0x0000000000000004 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x00000001005f7df0 bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000008000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=60 return_hook=1 x0=0x00000001005ea640 x1=0x00000001005f7df0 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x00000001005f7df0
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 80 01 00 01 00 00 00  | .........€......
+000010  01 01 00 01 30 44 00 00 00 00 00 00 00 00 00 00  | ....0D..........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00  | .........€......
+000050  00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00  | ................
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=25 gpu=10000090000 cpu=104b88000 size=8000 attributes=0 storage=0x4430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000008000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=60 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec09230 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=61 return_hook=1 x0=0x000000086ec09230 x1=0x000000086ec09230 x2=0x0000000000000000 x3=0x000000086ec092a8 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=61 name=resource-gpu-address storage=0x000000086ec09230 x0=0x0000010000090000 x1=0x000000086ec09230
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=59 name=resource-pool-create-pooled-resource storage=0x00000001005f7d80 x0=0x000000086ed88300 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=58 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x0000000000000004 count=44 records=0x000000086ecf8c00 record=0x000000086ecf8d00 record_resource=0x000000086ed88300 record_bytes=00000900000100000080b804010000000000b904010000000080b804010000000083d86e08000000000000000000000000800000000000001900000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed88340
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed88340 x2=0x0000000000000004 x3=0x0000000000000103 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x0000000000000005 count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x00000001005f7e60 record=0x000000086ecf8d40 slot_descriptor_bytes=812cd2ef010000010000000000000000687e5f00010000000000000000000000787e5f00010000000000000000000000082cd2ef01000000c0f55e0001000000d07e5f0001000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=62 return_hook=1 x0=0x00000001005fde20 x1=0x0000000000000005 x2=0x0000000000000001 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=63 return_hook=1 x0=0x00000001005f7e60 x1=0x000000016fdfdd9f x2=0x0000000000000001 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x00000001005f7ed0 bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000018000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=64 return_hook=1 x0=0x00000001005ea640 x1=0x00000001005f7ed0 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x00000001005f7ed0
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 80 01 00 01 00 00 00  | .........€......
+000010  01 01 00 01 30 44 00 00 00 00 00 00 00 00 00 00  | ....0D..........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00  | .........€......
+000050  00 00 00 00 00 00 00 00 00 00 00 18 00 00 00 00  | ................
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=26 gpu=100000a0000 cpu=104b90000 size=8000 attributes=0 storage=0x4430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000018000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=64 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec092d0 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=65 return_hook=1 x0=0x000000086ec092d0 x1=0x000000086ec092d0 x2=0x0000000000000000 x3=0x000000086ec09348 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=65 name=resource-gpu-address storage=0x000000086ec092d0 x0=0x00000100000a0000 x1=0x000000086ec092d0
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=63 name=resource-pool-create-pooled-resource storage=0x00000001005f7e60 x0=0x000000086ed88480 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=62 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x0000000000000005 count=44 records=0x000000086ecf8c00 record=0x000000086ecf8d40 record_resource=0x000000086ed88480 record_bytes=00000a00000100000000b904010000000080b904010000000000b904010000008084d86e08000000000000000000000000800000000000001a00000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed884c0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed884c0 x2=0x0000000000000001 x3=0x0000000000000103 x4=0x000000086ed60a80 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x0000000000000006 count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x00000001005f7f40 record=0x000000086ecf8d80 slot_descriptor_bytes=812cd2ef010000010000000000000000487f5f00010000000000000000000000587f5f00010000000000000000000000082cd2ef01000000c0f55e0001000000b07f5f0001000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=66 return_hook=1 x0=0x00000001005fde20 x1=0x0000000000000006 x2=0x0000000000000004 x3=0x0000000000000000 x4=0x000000086ed60a80 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=67 return_hook=1 x0=0x00000001005f7f40 x1=0x000000016fdfdd9f x2=0x0000000000000004 x3=0x0000000000000000 x4=0x000000086ed60a80 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x00000001005f7fb0 bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000018000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=68 return_hook=1 x0=0x00000001005ea640 x1=0x00000001005f7fb0 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x00000001005f7fb0
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 80 01 00 01 00 00 00  | .........€......
+000010  01 01 00 01 30 44 00 00 00 00 00 00 00 00 00 00  | ....0D..........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00  | .........€......
+000050  00 00 00 00 00 00 00 00 00 00 00 18 00 00 00 00  | ................
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=27 gpu=100000b0000 cpu=104b98000 size=8000 attributes=0 storage=0x4430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000018000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=68 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec09370 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=69 return_hook=1 x0=0x000000086ec09370 x1=0x000000086ec09370 x2=0x0000000000000000 x3=0x000000086ec093e8 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=69 name=resource-gpu-address storage=0x000000086ec09370 x0=0x00000100000b0000 x1=0x000000086ec09370
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=67 name=resource-pool-create-pooled-resource storage=0x00000001005f7f40 x0=0x000000086ed88600 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=66 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x0000000000000006 count=44 records=0x000000086ecf8c00 record=0x000000086ecf8d80 record_resource=0x000000086ed88600 record_bytes=00000b00000100000080b904010000000000ba04010000000080b904010000000086d86e08000000000000000000000000800000000000001b00000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed88640
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed88640 x2=0x0000000000000004 x3=0x0000000000000103 x4=0x000000086ed61480 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x000000000000000b count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x000000086ed50070 record=0x000000086ecf8ec0 slot_descriptor_bytes=812cd2ef0100000100000000000000007800d56e0800000000000000000000008800d56e080000000000000000000000082cd2ef01000000c0f55e000100000030835f0001000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=70 return_hook=1 x0=0x00000001005fde20 x1=0x000000000000000b x2=0x0000000000000004 x3=0x0000000000000000 x4=0x000000086ed61480 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=71 return_hook=1 x0=0x000000086ed50070 x1=0x000000016fdfdd9f x2=0x0000000000000004 x3=0x0000000000000000 x4=0x000000086ed61480 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x00000001005f8330 bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000018000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=72 return_hook=1 x0=0x00000001005ea640 x1=0x00000001005f8330 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x00000001005f8330
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 80 01 00 01 00 00 00  | .........€......
+000010  01 01 00 01 30 44 00 00 00 00 00 00 00 00 00 00  | ....0D..........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00  | .........€......
+000050  00 00 00 00 00 00 00 00 00 00 00 18 00 00 00 00  | ................
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=28 gpu=100000c0000 cpu=104ba0000 size=8000 attributes=0 storage=0x4430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000018000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=72 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec09410 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=73 return_hook=1 x0=0x000000086ec09410 x1=0x000000086ec09410 x2=0x0000000000000000 x3=0x000000086ec09488 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=73 name=resource-gpu-address storage=0x000000086ec09410 x0=0x00000100000c0000 x1=0x000000086ec09410
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=71 name=resource-pool-create-pooled-resource storage=0x000000086ed50070 x0=0x000000086ed88780 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=70 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x000000000000000b count=44 records=0x000000086ecf8c00 record=0x000000086ecf8ec0 record_resource=0x000000086ed88780 record_bytes=00000c00000100000000ba04010000000080ba04010000000000ba04010000008087d86e08000000000000000000000000800000000000001c00000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed887c0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed887c0 x2=0x0000000000000004 x3=0x0000000000000103 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x000000000000000d count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x000000086ed50150 record=0x000000086ecf8f40 slot_descriptor_bytes=812cd2ef0100000100000000000000005801d56e0800000000000000000000006801d56e080000000000000000000000082cd2ef01000000c0f55e000100000010845f0001000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=74 return_hook=1 x0=0x00000001005fde20 x1=0x000000000000000d x2=0x0000000000000001 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=75 return_hook=1 x0=0x000000086ed50150 x1=0x000000016fdfdd9f x2=0x0000000000000001 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x00000001005f8410 bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000008000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=76 return_hook=1 x0=0x00000001005ea640 x1=0x00000001005f8410 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x00000001005f8410
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 80 01 00 01 00 00 00  | .........€......
+000010  01 01 00 01 30 44 00 00 00 00 00 00 00 00 00 00  | ....0D..........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00  | .........€......
+000050  00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00  | ................
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=29 gpu=100000d0000 cpu=104ba8000 size=8000 attributes=0 storage=0x4430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000008000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=76 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec094b0 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=77 return_hook=1 x0=0x000000086ec094b0 x1=0x000000086ec094b0 x2=0x0000000000000000 x3=0x000000086ec09528 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=77 name=resource-gpu-address storage=0x000000086ec094b0 x0=0x00000100000d0000 x1=0x000000086ec094b0
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=75 name=resource-pool-create-pooled-resource storage=0x000000086ed50150 x0=0x000000086ed88900 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=74 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x000000000000000d count=44 records=0x000000086ecf8c00 record=0x000000086ecf8f40 record_resource=0x000000086ed88900 record_bytes=00000d00000100000080ba04010000000000bb04010000000080ba04010000000089d86e08000000000000000000000000800000000000001d00000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed88940
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed88940 x2=0x0000000000000001 x3=0x0000000000000103 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x000000000000000e count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x000000086ed501c0 record=0x000000086ecf8f80 slot_descriptor_bytes=812cd2ef010000010000000000000000c801d56e080000000000000000000000d801d56e080000000000000000000000082cd2ef01000000c0f55e000100000080845f0001000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=78 return_hook=1 x0=0x00000001005fde20 x1=0x000000000000000e x2=0x0000000000000004 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=79 return_hook=1 x0=0x000000086ed501c0 x1=0x000000016fdfdd9f x2=0x0000000000000004 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x00000001005f8480 bytes=000000000000000000800100010000000101000130c400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000038000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=80 return_hook=1 x0=0x00000001005ea640 x1=0x00000001005f8480 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x00000001005f8480
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 80 01 00 01 00 00 00  | .........€......
+000010  01 01 00 01 30 C4 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00  | .........€......
+000050  00 00 00 00 00 00 00 00 00 00 00 38 00 00 00 00  | ...........8....
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=30 gpu=28000 cpu=104bb0000 size=8000 attributes=0 storage=0xc430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=000000000000000000800100010000000101000130c400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000038000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=80 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec09550 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=81 return_hook=1 x0=0x000000086ec09550 x1=0x000000086ec09550 x2=0x0000000000000000 x3=0x000000086ec095c8 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=81 name=resource-gpu-address storage=0x000000086ec09550 x0=0x0000000000028000 x1=0x000000086ec09550
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=79 name=resource-pool-create-pooled-resource storage=0x000000086ed501c0 x0=0x000000086ed88a80 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=78 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x000000000000000e count=44 records=0x000000086ecf8c00 record=0x000000086ecf8f80 record_resource=0x000000086ed88a80 record_bytes=00800200000000000000bb04010000000080bb04010000000000bb0401000000808ad86e08000000000000000000000000800000000000001e00000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed88ac0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed88ac0 x2=0x0000000000000004 x3=0x0000000000000103 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x0000000000000016 count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x000000086ed50540 record=0x000000086ecf9180 slot_descriptor_bytes=812cd2ef0100000100000000000000004805d56e0800000000000000000000005805d56e080000000000000000000000082cd2ef01000000c0f55e0001000000a002424c04000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=82 return_hook=1 x0=0x00000001005fde20 x1=0x0000000000000016 x2=0x0000000000000001 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=83 return_hook=1 x0=0x000000086ed50540 x1=0x000000016fdfdd9f x2=0x0000000000000001 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000044c4202a0 bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000008400000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=84 return_hook=1 x0=0x00000001005ea640 x1=0x000000044c4202a0 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000044c4202a0
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 80 01 00 01 00 00 00  | .........€......
+000010  01 01 00 01 30 44 00 00 00 00 00 00 00 00 00 00  | ....0D..........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00  | .........€......
+000050  00 00 00 00 00 00 00 00 00 00 00 08 40 00 00 00  | ............@...
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=31 gpu=100000e0000 cpu=104bb8000 size=8000 attributes=0 storage=0x4430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000008001000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000008400000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=84 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec095f0 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=85 return_hook=1 x0=0x000000086ec095f0 x1=0x000000086ec095f0 x2=0x0000000000000000 x3=0x000000086ec09668 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=85 name=resource-gpu-address storage=0x000000086ec095f0 x0=0x00000100000e0000 x1=0x000000086ec095f0
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=83 name=resource-pool-create-pooled-resource storage=0x000000086ed50540 x0=0x000000086ed88c00 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=82 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x0000000000000016 count=44 records=0x000000086ecf8c00 record=0x000000086ecf9180 record_resource=0x000000086ed88c00 record_bytes=00000e00000100000080bb04010000000000bc04010000000080bb0401000000008cd86e08000000000000000000000000800000000000001f00000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed88c40
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed88c40 x2=0x0000000000000001 x3=0x0000000000000103 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x000000000000001e count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x000000086ed508c0 record=0x000000086ecf9380 slot_descriptor_bytes=812cd2ef010000010000000000000000c808d56e080000000000000000000000d808d56e080000000000000000000000082cd2ef01000000c0f55e00010000002006424c04000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=86 return_hook=1 x0=0x00000001005fde20 x1=0x000000000000001e x2=0x0000000000000001 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=87 return_hook=1 x0=0x000000086ed508c0 x1=0x000000016fdfdd9f x2=0x0000000000000001 x3=0x0000000000000000 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000044c420620 bytes=000000000000000000800100010000000101000130c400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000048000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=88 return_hook=1 x0=0x00000001005ea640 x1=0x000000044c420620 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000044c420620
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 80 01 00 01 00 00 00  | .........€......
+000010  01 01 00 01 30 C4 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00  | .........€......
+000050  00 00 00 00 00 00 00 00 00 00 00 48 00 00 00 00  | ...........H....
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=32 gpu=38000 cpu=104bc0000 size=8000 attributes=0 storage=0xc430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=000000000000000000800100010000000101000130c400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000048000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=88 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec09690 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=89 return_hook=1 x0=0x000000086ec09690 x1=0x000000086ec09690 x2=0x0000000000000000 x3=0x000000086ec09708 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=89 name=resource-gpu-address storage=0x000000086ec09690 x0=0x0000000000038000 x1=0x000000086ec09690
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=87 name=resource-pool-create-pooled-resource storage=0x000000086ed508c0 x0=0x000000086ed88d80 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=86 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x000000000000001e count=44 records=0x000000086ecf8c00 record=0x000000086ecf9380 record_resource=0x000000086ed88d80 record_bytes=00800300000000000000bc04010000000080bc04010000000000bc0401000000808dd86e08000000000000000000000000800000000000002000000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed88dc0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed88dc0 x2=0x0000000000000001 x3=0x0000000000000103 x4=0x000000086ed61e80 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x000000000000001f count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x000000086ed50930 record=0x000000086ecf93c0 slot_descriptor_bytes=812cd2ef0100000100000000000000003809d56e0800000000000000000000004809d56e080000000000000000000000082cd2ef01000000c0f55e00010000009006424c04000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=90 return_hook=1 x0=0x00000001005fde20 x1=0x000000000000001f x2=0x0000000000000001 x3=0x0000000000000000 x4=0x000000086ed61e80 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=91 return_hook=1 x0=0x000000086ed50930 x1=0x000000016fdfdd9f x2=0x0000000000000001 x3=0x0000000000000000 x4=0x000000086ed61e80 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000044c420690 bytes=0000000000000000209c0100010000000101000130c40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000209c000000000000000000000000000000000048000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=92 return_hook=1 x0=0x00000001005ea640 x1=0x000000044c420690 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000044c420690
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdca0, 88), struct:
+000000  00 00 00 00 00 00 00 00 20 9C 01 00 01 00 00 00  | ........ .......
+000010  01 01 00 01 30 C4 00 00 00 00 00 00 00 00 00 00  | ....0...........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 20 9C 00 00 00 00 00 00  | ........ .......
+000050  00 00 00 00 00 00 00 00 00 00 00 48 00 00 00 00  | ...........H....
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=33 gpu=48000 cpu=104bc8000 size=c000 attributes=0 storage=0xc430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000209c0100010000000101000130c40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000209c000000000000000000000000000000000048000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=92 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec09730 x1=0x000000016fdfdc98
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=93 return_hook=1 x0=0x000000086ec09730 x1=0x000000086ec09730 x2=0x0000000000000000 x3=0x000000086ec097a8 x4=0x00000001000a7c3f x5=0x000000016fdfd730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=93 name=resource-gpu-address storage=0x000000086ec09730 x0=0x0000000000048000 x1=0x000000086ec09730
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=91 name=resource-pool-create-pooled-resource storage=0x000000086ed50930 x0=0x000000086ed88f00 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=90 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x000000000000001f count=44 records=0x000000086ecf8c00 record=0x000000086ecf93c0 record_resource=0x000000086ed88f00 record_bytes=00800400000000000080bc04010000000040bd04010000000080bc0401000000008fd86e08000000000000000000000000c00000000000002100000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed88f40
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed88f40 x2=0x0000000000000001 x3=0x0000000000000103 x4=0x000000086ed62880 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ecd4040
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ecd4040 x2=0x0000000000000080 x3=0x0000000000000000 x4=0x000000086ed62880 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x000000000000000a count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x000000086ed50000 record=0x000000086ecf8e80 slot_descriptor_bytes=812cd2ef0100000100000000000000000800d56e0800000000000000000000001800d56e080000000000000000000000082cd2ef01000000c0f55e0001000000c0825f0001000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=94 return_hook=1 x0=0x00000001005fde20 x1=0x000000000000000a x2=0x0000000000000000 x3=0x0000000104b7439c x4=0x0000000104b741c0 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=95 return_hook=1 x0=0x000000086ed50000 x1=0x000000016fdfdd7f x2=0x0000000000000000 x3=0x0000000104b7439c x4=0x0000000104b741c0 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x00000001005f82c0 bytes=0000000000000000809b0100010000000101000130440000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000809b000000000000000000000000000000000018000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=96 return_hook=1 x0=0x00000001005ea640 x1=0x00000001005f82c0 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x00000001005f82c0
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdc80, 88), struct:
+000000  00 00 00 00 00 00 00 00 80 9B 01 00 01 00 00 00  | ........€.......
+000010  01 01 00 01 30 44 00 00 00 00 00 00 00 00 00 00  | ....0D..........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 80 9B 00 00 00 00 00 00  | ........€.......
+000050  00 00 00 00 00 00 00 00 00 00 00 18 00 00 00 00  | ................
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=34 gpu=100000f0000 cpu=104bd4000 size=c000 attributes=0 storage=0x4430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000809b0100010000000101000130440000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000809b000000000000000000000000000000000018000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=96 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec097d0 x1=0x000000016fdfdc78
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=97 return_hook=1 x0=0x000000086ec097d0 x1=0x000000086ec097d0 x2=0x0000000000000000 x3=0x000000086ec09848 x4=0x00000001000a7c3f x5=0x000000016fdfd710
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=97 name=resource-gpu-address storage=0x000000086ec097d0 x0=0x00000100000f0000 x1=0x000000086ec097d0
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=95 name=resource-pool-create-pooled-resource storage=0x000000086ed50000 x0=0x000000086ed89080 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=94 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x000000000000000a count=44 records=0x000000086ecf8c00 record=0x000000086ecf8e80 record_resource=0x000000086ed89080 record_bytes=00000f00000100000040bd04010000000000be04010000000040bd04010000008090d86e08000000000000000000000000c00000000000002200000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed890c0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed890c0 x2=0x0000000000000001 x3=0x0000000000000103 x4=0x00000001000a7c3f x5=0x000000016fdfd710
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086f098e40
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086f098e40 x2=0x0000000000000001 x3=0x0000000000000000 x4=0x0000000000000001 x5=0x000000016fdfd710
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086f099000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086f099000 x2=0x0000000000000003 x3=0x000000010023df00 x4=0x000000086ec68660 x5=0x0000000000000000
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=before storage=0x00000001005fde20 index=0x0000000000000013 count=44 slots=0x000000086ecb8900 records=0x000000086ecf8c00 slot_descriptor=0x000000086ed503f0 record=0x000000086ecf90c0 slot_descriptor_bytes=812cd2ef010000010000000000000000f803d56e0800000000000000000000000804d56e080000000000000000000000082cd2ef01000000c0f55e00010000005001424c04000000680000000000000000366e010000000000000000000000000000000000000000 record_bytes=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=alloc-resource-at-index capture_id=98 return_hook=1 x0=0x00000001005fde20 x1=0x0000000000000013 x2=0x0000000000000000 x3=0x0000000000000000 x4=0x000000086ec68660 x5=0x0000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-pool-create-pooled-resource capture_id=99 return_hook=1 x0=0x000000086ed503f0 x1=0x000000016fdfddcf x2=0x0000000000000000 x3=0x0000000000000000 x4=0x000000086ec68660 x5=0x0000000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_CREATE_RECORD address=0x000000044c420150 bytes=0000000000000000000401000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000008480000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-create capture_id=100 return_hook=1 x0=0x00000001005ea640 x1=0x000000044c420150 x2=0x0000000000000068 x3=0x0000000000000001 x4=0x0000000000000000 x5=0x000000044c420150
+Selector 9, 3B03, 3B03
+AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_capacity=88
+3B03: call 9 (out 0x16fdfdcd0, 88), struct:
+000000  00 00 00 00 00 00 00 00 00 04 01 00 01 00 00 00  | ................
+000010  01 01 00 01 30 44 00 00 00 00 00 00 00 00 00 00  | ....0D..........
+000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+*
+000040  00 00 00 00 00 00 00 00 00 04 00 00 00 00 00 00  | ................
+000050  00 00 00 00 00 00 00 00 00 00 00 08 48 00 00 00  | ............H...
+000060  00 00 00 00 00 00 00 00 
+AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
+MODERN_ALLOCATE_MEM handle=35 gpu=10000100000 cpu=104be0000 size=4000 attributes=0 storage=0x4430 write_combined=0 private=0 reused=0
+MODERN_ALLOCATE_REQUEST size_units_candidate=0
+MODERN_ALLOCATE_REQUEST bytes=0000000000000000000401000100000001010001304400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000008480000000000000000000000
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=100 name=resource-create storage=0x00000001005ea640 x0=0x000000086ec09870 x1=0x000000016fdfdcc8
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-gpu-address capture_id=101 return_hook=1 x0=0x000000086ec09870 x1=0x000000086ec09870 x2=0x0000000000000000 x3=0x000000086ec098e8 x4=0x00000001000a7c3f x5=0x000000016fdfd760
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=101 name=resource-gpu-address storage=0x000000086ec09870 x0=0x0000010000100000 x1=0x000000086ec09870
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=99 name=resource-pool-create-pooled-resource storage=0x000000086ed503f0 x0=0x000000086ed89200 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_RETURN capture_id=98 name=alloc-resource-at-index storage=0x00000001005fde20 x0=0x0000000000000000 x1=0x0000000000000103
+AO46_AGX_PRIVATE_WINSYS_SLOT phase=after storage=0x00000001005fde20 index=0x0000000000000013 count=44 records=0x000000086ecf8c00 record=0x000000086ecf90c0 record_resource=0x000000086ed89200 record_bytes=00001000000100000000be04010000000040be04010000000000be04010000000092d86e08000000000000000000000000400000000000002300000000000000
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed89240
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed89240 x2=0x0000000000000001 x3=0x0000000000000103 x4=0x000000086ed63280 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ed89240
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ed89240 x2=0x0000000000000003 x3=0x0000000000000000 x4=0x000000086ed63280 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_RESOURCE_LIST_BINDING list=0x00000001005fdeb0 binding=0x000000086ecd4040
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-list-add-resource capture_id=0 return_hook=0 x0=0x00000001005fdeb0 x1=0x000000086ecd4040 x2=0x0000000000000080 x3=0xfffff0007fc00000 x4=0x000000044c420cc0 x5=0x0000000000001120
+AO46_AGX_PRIVATE_WINSYS_CALL name=end-segment capture_id=0 return_hook=0 x0=0x00000001005fde20 x1=0x0000000000000103 x2=0x0000000000000103 x3=0x0000000000000103 x4=0x000000016fdfdd58 x5=0x000000016fdfdd54
+AO46_AGX_PRIVATE_WINSYS_CALL name=command-buffer-fill capture_id=0 return_hook=0 x0=0x00000001005fc260 x1=0x00000001fd6d92a8 x2=0x000000016fe86190 x3=0x00000001005f7500 x4=0x000000016fe86200 x5=0x0000000000000001
+AO46_AGX_PRIVATE_WINSYS_CALL name=queue-submit capture_id=0 return_hook=0 x0=0x00000001005f46f0 x1=0x0000000000000000 x2=0x0000000000000001 x3=0x000000016fe86190 x4=0x0000000000000040 x5=0x000000016fe86214
+MODERN_TRAP4_TRANSPORT queue=1 index=0 descriptor_bytes=64 carrier_offset=132 carrier_prefix=256 valid=1
+MODERN_SUBMIT queue=1 header=2/1 completion0=86ec68660 completion1=86ec68a20
+MODERN_RESOURCE_REFERENCE source_handle=24 source_offset=0 target_handle=21 gpu_delta=0
+MODERN_RESOURCE_REFERENCE source_handle=24 source_offset=0x8 target_handle=22 gpu_delta=0
+MODERN_RESOURCE_SCAN mapped=17 changed=17 references=2 bytes_per_resource=65536
+MODERN_SUBMIT_AUX pointer=0x16fe86214 descriptor_offset=132 readable_prefix=256
+MODERN_SUBMIT_CARRIER queue=1 offset=132 prefix=256 fingerprint=b149875a6bc936e7
+000000  00 00 00 00 C9 00 EE BB 26 7D FB A3 00 00 00 00  | ........&}......
+000010  00 00 00 00 00 00 00 00 00 00 00 00 20 00 00 00  | ............ ...
+000020  00 00 00 00 70 00 00 00 00 00 00 00 30 00 00 00  | ....p.......0...
+000030  00 00 00 00 00 63 E8 6F 01 00 00 00 E1 FF FF FF  | .....c.o........
+000040  FF FF FF FF 20 00 00 00 00 00 00 00 00 00 00 00  | .... ...........
+000050  00 00 00 00 00 75 5F 00 01 00 00 00 00 63 E8 6F  | .....u_......c.o
+000060  01 00 00 00 01 00 00 00 00 00 00 00 C0 62 E8 6F  | .............b.o
+000070  01 00 00 00 E8 49 A2 A8 01 00 00 00 01 00 00 00  | .....I..........
+000080  00 00 00 00 00 00 00 00 00 00 00 00 A8 0C 24 ED  | ..............$.
+000090  01 00 00 00 01 00 00 00 00 00 00 00 00 75 5F 00  | .............u_.
+0000A0  01 00 00 00 28 00 00 00 00 00 00 00 60 67 E8 6F  | ....(.......`g.o
+0000B0  01 00 00 00 18 27 EF 8F 01 00 00 00 00 00 00 00  | .....'..........
+0000C0  00 00 00 00 00 75 5F 00 01 00 00 00 01 00 00 00  | .....u_.........
+0000D0  00 00 00 00 01 00 00 00 00 00 00 00 30 00 00 00  | ............0...
+0000E0  00 00 00 00 00 00 00 00 00 00 00 00 60 C2 5F 00  | ............`._.
+0000F0  01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+
+MODERN_SUBMIT_AUX_DIFF queue=1 baseline=256
+MODERN_SUBMIT_AUX_EXTENDED bytes=4096
+MODERN_SUBMIT_CARRIER_EXTENDED queue=1 prefix=4096 opaque_slot=0x1ff800000
+AO46_AGX_PRIVATE_WINSYS_CALL name=trap4 capture_id=0 return_hook=0 x0=0x0000000000003b03 x1=0x0000000000000000 x2=0x0000000000000001 x3=0x0000000000000040 x4=0x000000016fe86190 x5=0x000000016fe86214
+Trap4 connect=3B03, index=0, p1=1, p2=40, p3=16fe86190, p4=16fe86214, result=0
+Dequeueing (dataQueue=0x100334000, data=0x16ff9e510, buffer 40)
+Return "(os/kern) successful", got 40 bytes
+MODERN_COMPLETION queue=1 token=86ec68660 bytes=40
+60 86 C6 6E 08 00 00 00 F5 E4 96 80 D1 58 02 00 4F B5 C4 80 D1 58 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+Dequeueing (dataQueue=0x100334000, data=0x16ff9e510, buffer 40)
+Return "(iokit/common) data underrun", got 40 bytes
+Dequeueing (dataQueue=0x100334000, data=0x16ff9e510, buffer 40)
+Return "(os/kern) successful", got 40 bytes
+MODERN_COMPLETION queue=1 token=86ec68a20 bytes=40
+20 8A C6 6E 08 00 00 00 B2 BE C9 80 D1 58 02 00 0A E1 C9 80 D1 58 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+Dequeueing (dataQueue=0x100334000, data=0x16ff9e510, buffer 40)
+Return "(iokit/common) data underrun", got 40 bytes
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec09050 x1=0x00000001fd95aea8 x2=0x000000086f098fc0 x3=0x0000000000000001 x4=0x000000086f181890 x5=0x0000000000000002
+Trap1 connect=3B03, index=1, p1=16, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec08fb0 x1=0x00000001fd95aea8 x2=0x000000086f098e00 x3=0x0000000000000001 x4=0x000000086f181890 x5=0x0000000000000002
+Trap1 connect=3B03, index=1, p1=15, result=0
+Selector 8, 3B03, 3B03
+AGX_CALL selector=8 scalar_in=1 struct_in=0 scalar_out_capacity=0 struct_out_capacity=0
+3B03: call 8 (out 0x0, 0) 1
+MODERN_NOTIFICATION_PORT_STATE phase=before selector=8 connect=3B03 id=1 port=2E07 right=1 refs=1 result=0
+MODERN_NOTIFICATION_PORT_STATE phase=before selector=8 connect=3B03 id=1 port=2E07 right=0 refs=0 result=0
+MODERN_NOTIFICATION_PORT_STATE phase=before selector=8 connect=3B03 id=1 port=2E07 right=2 refs=0 result=0
+Selector 17, 3B03, 3B03
+AGX_CALL selector=17 scalar_in=1 struct_in=0 scalar_out_capacity=0 struct_out_capacity=0
+3B03: call 11 (out 0x0, 0) 1
+MODERN_NOTIFICATION_PORT_STATE phase=before selector=17 connect=3B03 id=1 port=2E07 right=1 refs=0 result=0xf
+MODERN_NOTIFICATION_PORT_STATE phase=before selector=17 connect=3B03 id=1 port=2E07 right=0 refs=0 result=0xf
+MODERN_NOTIFICATION_PORT_STATE phase=before selector=17 connect=3B03 id=1 port=2E07 right=2 refs=0 result=0xf
+MODERN_NOTIFICATION_PORT_STATE phase=after selector=17 connect=3B03 id=1 port=2E07 right=1 refs=0 result=0xf
+MODERN_NOTIFICATION_PORT_STATE phase=after selector=17 connect=3B03 id=1 port=2E07 right=0 refs=0 result=0xf
+MODERN_NOTIFICATION_PORT_STATE phase=after selector=17 connect=3B03 id=1 port=2E07 right=2 refs=0 result=0xf
+AGX_RESULT selector=17 status=0 scalar_out=0 struct_out=0
+MODERN_QUEUE_LIFECYCLE selector=17 id=1
+MODERN_NOTIFICATION_PORT_STATE phase=after selector=8 connect=3B03 id=1 port=2E07 right=1 refs=0 result=0xf
+MODERN_NOTIFICATION_PORT_STATE phase=after selector=8 connect=3B03 id=1 port=2E07 right=0 refs=0 result=0xf
+MODERN_NOTIFICATION_PORT_STATE phase=after selector=8 connect=3B03 id=1 port=2E07 right=2 refs=0 result=0xf
+AGX_RESULT selector=8 status=0 scalar_out=0 struct_out=0
+MODERN_QUEUE_LIFECYCLE selector=8 id=1
+Selector 15, 3B03, 3B03
+AGX_CALL selector=15 scalar_in=1 struct_in=0 scalar_out_capacity=0 struct_out_capacity=0
+3B03: call F (out 0x0, 0) 2
+AGX_RESULT selector=15 status=0 scalar_out=0 struct_out=0
+MODERN_OPAQUE_LIFECYCLE selector=15 value=2
+Selector 15, 3B03, 3B03
+AGX_CALL selector=15 scalar_in=1 struct_in=0 scalar_out_capacity=0 struct_out_capacity=0
+3B03: call F (out 0x0, 0) 1
+AGX_RESULT selector=15 status=0 scalar_out=0 struct_out=0
+MODERN_OPAQUE_LIFECYCLE selector=15 value=1
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec090f0 x1=0x00000001fd95aea8 x2=0x000000086ed88000 x3=0x0000000000000001 x4=0x000000016fdfddf0 x5=0x000000016fdfde4f
+Trap1 connect=3B03, index=1, p1=17, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec09190 x1=0x00000001fd95aea8 x2=0x000000086ed88180 x3=0x0000000000000001 x4=0x000000086ed88080 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=18, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec09230 x1=0x00000001fd95aea8 x2=0x000000086ed88300 x3=0x0000000000000001 x4=0x000000086ed88200 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=19, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec092d0 x1=0x00000001fd95aea8 x2=0x000000086ed88480 x3=0x0000000000000001 x4=0x000000086ed88380 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=1a, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec09370 x1=0x00000001fd95aea8 x2=0x000000086ed88600 x3=0x0000000000000001 x4=0x000000086ed88500 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=1b, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec097d0 x1=0x00000001fd95aea8 x2=0x000000086ed89080 x3=0x0000000000000001 x4=0x000000086ed88680 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=22, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec09410 x1=0x00000001fd95aea8 x2=0x000000086ed88780 x3=0x0000000000000001 x4=0x000000086ed89100 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=1c, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec094b0 x1=0x00000001fd95aea8 x2=0x000000086ed88900 x3=0x0000000000000001 x4=0x000000086ed88800 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=1d, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec09550 x1=0x00000001fd95aea8 x2=0x000000086ed88a80 x3=0x0000000000000001 x4=0x000000086ed88980 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=1e, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec09870 x1=0x00000001fd95aea8 x2=0x000000086ed89200 x3=0x0000000000000001 x4=0x000000086ed88b00 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=23, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec095f0 x1=0x00000001fd95aea8 x2=0x000000086ed88c00 x3=0x0000000000000001 x4=0x000000086ed89280 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=1f, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec09690 x1=0x00000001fd95aea8 x2=0x000000086ed88d80 x3=0x0000000000000001 x4=0x000000086ed88c80 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=20, result=0
+AO46_AGX_PRIVATE_WINSYS_CALL name=resource-release capture_id=0 return_hook=0 x0=0x000000086ec09730 x1=0x00000001fd95aea8 x2=0x000000086ed88f00 x3=0x0000000000000001 x4=0x000000086ed88e00 x5=0x000000016fdfdd00
+Trap1 connect=3B03, index=1, p1=21, result=0
+AO46_AGX_BUFFER_BINDING complete
+Process 12280 launched: '/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/mesa/build-ao46-asahi-arm64/src/asahi/lib/asahi_macos_public_buffer_binding_trace' (arm64)
+Process 12280 exited with status = 0 (0x00000000)

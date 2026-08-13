@@ -1,0 +1,94 @@
+java version "25.0.2" 2026-01-20 LTS
+Java(TM) SE Runtime Environment (build 25.0.2+10-LTS-69)
+Java HotSpot(TM) 64-Bit Server VM (build 25.0.2+10-LTS-69, mixed mode)
+INFO  Using log config file: jar:file:/opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /Users/gitanshchakravarty/Library/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /Users/gitanshchakravarty/Library/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Loading previous preferences: /Users/gitanshchakravarty/Library/ghidra/ghidra_12.0.3_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Class search complete (314 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (844 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldOffset has been called by org.apache.felix.framework.util.SecureAction (file:/opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/Base/lib/org.apache.felix.framework-7.0.5.jar)
+WARNING: Please consider reporting this to the maintainers of class org.apache.felix.framework.util.SecureAction
+WARNING: sun.misc.Unsafe::staticFieldOffset will be removed in a future release
+INFO  HEADLESS Script Paths:
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/Base/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/FunctionID/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/FileFormats/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Processors/Atmel/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Processors/8051/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Processors/DATA/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Processors/JVM/ghidra_scripts
+    /Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/scripts/ghidra
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Debug/Debugger/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/BSim/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/BytePatterns/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/PyGhidra/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/Decompiler/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/VersionTracking/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/PDB/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Processors/PIC/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /private/tmp/ao46-ghidra-agxcompiler.cD3N2n/project/AO46AGXCompilerCore (HeadlessAnalyzer)  
+INFO  Opening project: /private/tmp/ao46-ghidra-agxcompiler.cD3N2n/project/AO46AGXCompilerCore (HeadlessProject)  
+INFO  REPORT: Processing project file: /AGXCompilerCore (HeadlessAnalyzer)  
+INFO  ANALYZING all memory and code: /AGXCompilerCore (HeadlessAnalyzer)  
+INFO  hit non-returning function, restarting decompiler switch analyzer later (DecompilerSwitchAnalyzer)  
+INFO  Packed database cache: /var/tmp/gitanshchakravarty-ghidra/packed-db-cache (PackedDatabaseCache)  
+INFO  Applied data type archive: mac_osx (ApplyDataArchiveAnalyzer)  
+INFO  Resolving External Symbols of [/AGXCompilerCore] - 79 unresolved symbols, no external libraries configured - skipping (ExternalSymbolResolverAnalyzer)  
+INFO  -----------------------------------------------------
+    AARCH64 ELF PLT Thunks                     0.000 secs
+    ASCII Strings                              0.412 secs
+    Apply Data Archives                        0.136 secs
+    Basic Constant Reference Analyzer          6.150 secs
+    CFStrings                                  0.007 secs
+    Call Convention ID                         2.303 secs
+    Call-Fixup Installer                       0.028 secs
+    Create Address Tables                      0.704 secs
+    Create Function                            0.000 secs
+    Data Reference                             0.916 secs
+    Decompiler Switch Analysis                 0.439 secs
+    Decompiler Switch Analysis - One Time      2.473 secs
+    Demangler GNU                              0.203 secs
+    Disassemble Entry Points                   0.398 secs
+    Embedded Media                             0.059 secs
+    External Entry References                  0.001 secs
+    External Symbol Resolver                   0.004 secs
+    Function ID                                0.013 secs
+    Function Start Search                      0.357 secs
+    Function Start Search After Code           0.260 secs
+    Function Start Search After Data           0.231 secs
+    Mach-O Function Starts                     0.095 secs
+    Non-Returning Functions - Discovered       1.153 secs
+    Non-Returning Functions - Known            0.026 secs
+    Objective-C Message Analyzer               0.002 secs
+    Objective-C Type Metadata Analyzer         0.006 secs
+    Reference                                  0.982 secs
+    Shared Return Calls                        0.613 secs
+    Stack                                      0.680 secs
+    Subroutine References                      0.524 secs
+    Subroutine References - One Time           0.000 secs
+-----------------------------------------------------
+     Total Time   19 secs
+-----------------------------------------------------
+ (AutoAnalysisManager)  
+INFO  REPORT: Analysis succeeded for file: /AGXCompilerCore (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: AO46ExportAGXCompilerCoreGraph.java '/private/tmp/ao46-ghidra-agxcompiler.cD3N2n/output/agx-compiler-core-20260813.txt'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/scripts/ghidra/AO46ExportAGXCompilerCoreGraph.java (HeadlessAnalyzer)  
+INFO  ANALYZING changes made by post scripts: /AGXCompilerCore (HeadlessAnalyzer)  
+INFO  REPORT: Post-analysis succeeded for file: /AGXCompilerCore (HeadlessAnalyzer)  
+INFO  REPORT: Save succeeded for processed file: /AGXCompilerCore (HeadlessAnalyzer)  

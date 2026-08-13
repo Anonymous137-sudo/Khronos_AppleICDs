@@ -1,0 +1,518 @@
+AO46 GPUCompiler target and output ownership report
+program=libGPUCompilerImpl.dylib
+image_base=242dfb000
+
+### target=set_target_triple
+STATUS: function was not recovered
+### target=set_target_arch
+STATUS: function was not recovered
+### target=lower
+STATUS: function was not recovered
+### target=lower_to_buffer
+STATUS: function was not recovered
+### target=write_metal_library_to_buffer
+===== writeMetalLibToBuffer entry=2431990d8 =====
+direct_callers=3
+  caller=specializeFunctionToBuffer entry=242e59df0
+  caller=specializeDynamicLibraryToBuffer entry=242e5a388
+  caller=stitchToBuffer entry=242e5ab20
+direct_callees=1
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327022c
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+/* metalfe::GPUCompiler::writeMetalLibToBuffer(std::unique_ptr<llvm::air::MetalLib,
+   std::default_delete<llvm::air::MetalLib> >) */
+
+void metalfe::GPUCompiler::writeMetalLibToBuffer(void)
+
+{
+  long local_198;
+  undefined4 local_190;
+  undefined8 local_188;
+  undefined8 local_180;
+  undefined8 uStack_178;
+  undefined1 local_170;
+  undefined8 local_168;
+  undefined4 local_160;
+  undefined1 **local_158;
+  undefined1 *local_150;
+  undefined8 local_148;
+  undefined8 uStack_140;
+  undefined1 auStack_138 [256];
+  undefined8 local_38;
+  
+  local_38 = *_DAT_28f6ec2f0;
+  local_148 = 0;
+  uStack_140 = 0;
+  local_158 = &local_150;
+  local_150 = auStack_138;
+  local_190 = 0;
+  local_170 = 0;
+  local_168 = 0;
+  local_160 = 1;
+  local_198 = _DAT_28f68f808 + 0x10;
+  local_180 = 0;
+  uStack_178 = 0;
+  local_188 = 0;
+                    /* WARNING: Subroutine does not return */
+  ::_AIRNTAddLegalizationPasses_Legalizer_Default(&local_198,0,0,0);
+}
+
+
+
+### target=device_lowering_set_target
+===== setTarget entry=242eb03a0 =====
+direct_callers=0
+direct_callees=1
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327425c
+
+/* llvm::airdevlower::DeviceLowering::setTarget(llvm::Triple const&) */
+
+void llvm::airdevlower::DeviceLowering::setTarget(Triple *param_1)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ::_AIRNTAddLegalizationPasses_Legalizer_Default(param_1 + 0x200);
+}
+
+
+
+### target=device_lowering_lower
+===== lower entry=2431aeb88 =====
+direct_callers=0
+direct_callees=2
+  callee=FUN_2431b1574 entry=2431b1574
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327246c
+
+/* llvm::airdevlower::DeviceLowering::lower(std::unique_ptr<llvm::Module,
+   std::default_delete<llvm::Module> >) */
+
+void __thiscall llvm::airdevlower::DeviceLowering::lower(DeviceLowering *this,long *param_2)
+
+{
+  long local_230 [4];
+  undefined2 local_210;
+  undefined1 auStack_80 [48];
+  undefined1 auStack_50 [16];
+  
+  FUN_2431b1574(auStack_50,*(undefined8 *)(this + 0x10),*(undefined8 *)this);
+  local_230[0] = *param_2 + 0xd8;
+  local_210 = 0x104;
+                    /* WARNING: Subroutine does not return */
+  ::_AIRNTAddLegalizationPasses_Legalizer_Default(auStack_80,local_230);
+}
+
+
+
+### target=fetch_plugin_for_architecture
+STATUS: function was not recovered
+### target=emit_executable_image
+===== emitExecutableImage entry=24306e34c =====
+direct_callers=0
+direct_callees=14
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=243270acc
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327495c
+  callee=upgradeModule entry=24306e820
+  callee=validateFunctions entry=2430923b8
+  callee=loadModules entry=24306e93c
+  callee=create entry=242fbc3a8
+  callee=lowerModule entry=24306f97c
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327233c
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327472c
+  callee=FUN_24307ad68 entry=24307ad68
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327442c
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327444c
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=2432744dc
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327443c
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+/* llvm::airnt::TranslatorPlugin::emitExecutableImage(llvm::MutableArrayRef<std::unique_ptr<llvm::Module,
+   std::default_delete<llvm::Module> > >, llvm::raw_svector_ostream&) const */
+
+void llvm::airnt::TranslatorPlugin::emitExecutableImage
+               (undefined8 *param_1,Module *param_2,undefined8 *param_3,long param_4,
+               undefined8 param_5)
+
+{
+  Module *pMVar1;
+  Module *pMVar2;
+  Module *pMVar3;
+  int iVar4;
+  long *plVar5;
+  ulong uVar6;
+  long lVar7;
+  NativeScript *pNVar8;
+  undefined8 *puVar9;
+  long lVar10;
+  Module *local_c0;
+  undefined8 uStack_b8;
+  Module *local_a8;
+  Module *local_a0;
+  undefined8 *local_98;
+  undefined8 local_90;
+  undefined8 local_88 [4];
+  long local_68;
+  
+  local_68 = *_DAT_28f6ec2f0;
+  local_90 = DAT_243274bd8;
+  lVar10 = param_4 << 3;
+  local_98 = local_88;
+  if (param_4 == 0) {
+    uVar6 = 0;
+  }
+  else {
+    uVar6 = 0;
+    lVar7 = lVar10;
+    puVar9 = param_3;
+    do {
+      if (local_90._4_4_ <= (uint)uVar6) {
+                    /* WARNING: Subroutine does not return */
+        ::_AIRNTAddLegalizationPasses_Legalizer_Default(&local_98,local_88,uVar6 + 1,8);
+      }
+      local_88[uVar6] = *puVar9;
+      uVar6 = (ulong)((int)local_90 + 1U);
+      local_90 = CONCAT44(local_90._4_4_,(int)local_90 + 1U);
+      puVar9 = puVar9 + 1;
+      lVar7 = lVar7 + -8;
+    } while (lVar7 != 0);
+  }
+  pNVar8 = *(NativeScript **)(param_2 + 200);
+  if (((ulong)*(uint *)(param_2 + 0xf0) - 1 == uVar6) &&
+     ((ulong)*(uint *)(param_2 + 0xf0) * 8 + -8 == uVar6 * 8)) {
+                    /* WARNING: Subroutine does not return */
+    ::_AIRNTAddLegalizationPasses_Legalizer_Default(*(undefined8 *)(param_2 + 0xe8),local_88);
+  }
+  if (param_4 != 0) {
+    do {
+      uVar6 = upgradeModule(param_2);
+      if ((uVar6 & 1) == 0) goto LAB_24306e530;
+      lVar10 = lVar10 + -8;
+    } while (lVar10 != 0);
+    pNVar8 = *(NativeScript **)(param_2 + 200);
+  }
+  uVar6 = validateFunctions((TranslatorPlugin *)param_2,(Module *)*param_3,pNVar8,
+                            (NativeScript *)0x0);
+  if (((uVar6 & 1) == 0) ||
+     (loadModules((TranslatorPlugin *)&local_c0,param_2,param_3,param_4,
+                  *(undefined8 *)(param_2 + 200)), pMVar1 = local_c0, local_c0 == (Module *)0x0)) {
+LAB_24306e530:
+    *(undefined1 *)param_1 = 0;
+    *(undefined1 *)(param_1 + 2) = 0;
+  }
+  else {
+    air::Reflection::create(local_c0);
+    pMVar2 = local_c0;
+    local_a0 = pMVar1;
+    lowerModule(&local_c0,param_2,&local_a0,*(undefined8 *)(param_2 + 200),0);
+    pMVar3 = local_a0;
+    pMVar1 = local_c0;
+    local_a0 = (Module *)0x0;
+    if (pMVar3 != (Module *)0x0) {
+                    /* WARNING: Subroutine does not return */
+      ::_AIRNTAddLegalizationPasses_Legalizer_Default();
+    }
+    if (local_c0 == (Module *)0x0) {
+      *(undefined1 *)param_1 = 0;
+      *(undefined1 *)(param_1 + 2) = 0;
+    }
+    else {
+      air::Reflection::create(local_c0);
+      pMVar3 = local_c0;
+      local_a8 = pMVar1;
+      iVar4 = (**(code **)(*(long *)param_2 + 0xa8))(param_2,&local_a8,param_5);
+      pMVar1 = local_a8;
+      local_a8 = (Module *)0x0;
+      if (pMVar1 != (Module *)0x0) {
+                    /* WARNING: Subroutine does not return */
+        ::_AIRNTAddLegalizationPasses_Legalizer_Default();
+      }
+      if (iVar4 != 0) {
+        local_c0 = (Module *)0x0;
+        uStack_b8 = 0;
+        *param_1 = pMVar2;
+        param_1[1] = pMVar3;
+        *(undefined1 *)(param_1 + 2) = 1;
+        FUN_24307ad68(&local_c0);
+        goto LAB_24306e538;
+      }
+      *(undefined1 *)param_1 = 0;
+      *(undefined1 *)(param_1 + 2) = 0;
+      if (pMVar3 != (Module *)0x0) {
+        if (*(long *)(pMVar3 + 0x38) != 0) {
+          *(long *)(pMVar3 + 0x40) = *(long *)(pMVar3 + 0x38);
+                    /* WARNING: Subroutine does not return */
+          ::_AIRNTAddLegalizationPasses_Legalizer_Default();
+        }
+        lVar10 = *(long *)(pMVar3 + 0x10);
+        if (lVar10 != 0) {
+          plVar5 = *(long **)pMVar3;
+          if (plVar5 == (long *)0x0) {
+            local_c0 = (Module *)&PTR_FUN_29bfa9250;
+                    /* WARNING: Subroutine does not return */
+            ::_AIRNTAddLegalizationPasses_Legalizer_Default(lVar10,0x1000c8077774924);
+          }
+          (**(code **)(*plVar5 + 0x18))(plVar5,lVar10,*(long *)(pMVar3 + 0x18));
+        }
+        if ((pMVar3[8] == (Module)0x1) && (*(long **)pMVar3 != (long *)0x0)) {
+          (**(code **)(**(long **)pMVar3 + 8))();
+        }
+        *(long *)pMVar3 = 0;
+        pMVar3[8] = (Module)0x0;
+        *(long *)(pMVar3 + 0x18) = 0;
+        *(long *)(pMVar3 + 0x10) = 0;
+        *(long *)(pMVar3 + 0x28) = 0;
+        *(long *)(pMVar3 + 0x20) = 0;
+                    /* WARNING: Subroutine does not return */
+        ::_AIRNTAddLegalizationPasses_Legalizer_Default(pMVar3,0x1030c405e58727a);
+      }
+    }
+    if (pMVar2 != (Module *)0x0) {
+      if (*(long *)(pMVar2 + 0x38) != 0) {
+        *(long *)(pMVar2 + 0x40) = *(long *)(pMVar2 + 0x38);
+                    /* WARNING: Subroutine does not return */
+        ::_AIRNTAddLegalizationPasses_Legalizer_Default();
+      }
+      lVar10 = *(long *)(pMVar2 + 0x10);
+      if (lVar10 != 0) {
+        plVar5 = *(long **)pMVar2;
+        if (plVar5 == (long *)0x0) {
+          local_c0 = (Module *)&PTR_FUN_29bfa9250;
+                    /* WARNING: Subroutine does not return */
+          ::_AIRNTAddLegalizationPasses_Legalizer_Default(lVar10,0x1000c8077774924);
+        }
+        (**(code **)(*plVar5 + 0x18))(plVar5,lVar10,*(long *)(pMVar2 + 0x18));
+      }
+      if ((pMVar2[8] == (Module)0x1) && (*(long **)pMVar2 != (long *)0x0)) {
+        (**(code **)(**(long **)pMVar2 + 8))();
+      }
+      *(long *)pMVar2 = 0;
+      pMVar2[8] = (Module)0x0;
+      *(long *)(pMVar2 + 0x18) = 0;
+      *(long *)(pMVar2 + 0x10) = 0;
+      *(long *)(pMVar2 + 0x28) = 0;
+      *(long *)(pMVar2 + 0x20) = 0;
+                    /* WARNING: Subroutine does not return */
+      ::_AIRNTAddLegalizationPasses_Legalizer_Default(pMVar2,0x1030c405e58727a);
+    }
+  }
+LAB_24306e538:
+  if (local_98 != local_88) {
+                    /* WARNING: Subroutine does not return */
+    ::_AIRNTAddLegalizationPasses_Legalizer_Default();
+  }
+  if (*_DAT_28f6ec2f0 != local_68) {
+                    /* WARNING: Subroutine does not return */
+    ::_AIRNTAddLegalizationPasses_Legalizer_Default();
+  }
+  return;
+}
+
+
+
+### target=opaque_plugin_supported_implementations
+===== getSupportedImpls entry=243073d84 =====
+direct_callers=0
+direct_callees=1
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=2432720bc
+
+/* llvm::airnt::OpaquePlugin::getSupportedImpls(llvm::MachO::Architecture) const */
+
+void __thiscall llvm::airnt::OpaquePlugin::getSupportedImpls(undefined8 param_1,undefined8 param_2)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ::_AIRNTAddLegalizationPasses_Legalizer_Default(param_2);
+}
+
+
+
+### target=matching_plugin_supported_implementations
+===== getSupportedImpls entry=243072e34 =====
+direct_callers=0
+direct_callees=1
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=2432720bc
+
+/* llvm::airnt::MatchingPlugin::getSupportedImpls(llvm::MachO::Architecture) const */
+
+void __thiscall
+llvm::airnt::MatchingPlugin::getSupportedImpls(undefined8 param_1,undefined8 param_2)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ::_AIRNTAddLegalizationPasses_Legalizer_Default(param_2);
+}
+
+
+
+### target=plugin_load
+===== load entry=24306bedc =====
+direct_callers=0
+direct_callees=6
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327448c
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327497c
+  callee=preflight entry=242e6649c
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=24327443c
+  callee=_AIRNTAddLegalizationPasses_Legalizer_Default entry=243271acc
+  callee=FUN_242e2cf98 entry=242e2cf98
+
+/* WARNING: Removing unreachable block (ram,0x00024306bff8) */
+/* llvm::airnt::Plugin::load(llvm::StringRef, bool) */
+
+void llvm::airnt::Plugin::load(long param_1,ulong param_2)
+
+{
+  long lVar1;
+  ulong uVar2;
+  char local_a8 [24];
+  undefined8 local_90;
+  undefined8 uStack_88;
+  undefined8 local_80;
+  long local_78;
+  ulong uStack_70;
+  
+  local_90 = 0;
+  uStack_88 = 0;
+  local_80 = 0;
+  local_78 = param_1;
+  uStack_70 = param_2;
+  if (param_1 == 0) {
+    local_a8[0] = '\0';
+    local_a8[1] = '\0';
+    local_a8[2] = '\0';
+    local_a8[3] = '\0';
+    local_a8[4] = '\0';
+    local_a8[5] = '\0';
+    local_a8[6] = '\0';
+    local_a8[7] = '\0';
+    local_a8[8] = '\0';
+    local_a8[9] = '\0';
+    local_a8[10] = '\0';
+    local_a8[0xb] = '\0';
+    local_a8[0xc] = '\0';
+    local_a8[0xd] = '\0';
+    local_a8[0xe] = '\0';
+    local_a8[0xf] = '\0';
+    local_a8[0x10] = '\0';
+    local_a8[0x11] = '\0';
+    local_a8[0x12] = '\0';
+    local_a8[0x13] = '\0';
+    local_a8[0x14] = '\0';
+    local_a8[0x15] = '\0';
+    local_a8[0x16] = '\0';
+    local_a8[0x17] = '\0';
+  }
+  else {
+    if (0x7ffffffffffffff6 < param_2) goto LAB_24306df50;
+    if (0x16 < param_2) {
+      lVar1 = 0x19;
+      if ((param_2 | 7) != 0x17) {
+        lVar1 = (param_2 | 7) + 1;
+      }
+                    /* WARNING: Subroutine does not return */
+      ::_AIRNTAddLegalizationPasses_Legalizer_Default(lVar1,0x1000c0077774924);
+    }
+    local_a8[0x17] = (char)param_2;
+    if (param_2 != 0) {
+                    /* WARNING: Subroutine does not return */
+      ::_AIRNTAddLegalizationPasses_Legalizer_Default(local_a8,param_1,param_2);
+    }
+                    /* WARNING: Ignoring partial resolution of indirect */
+    local_a8[0] = '\0';
+  }
+  uVar2 = llvm_utils::sys::DynamicLibrary::preflight(local_a8,(string *)&local_90);
+  if ((uVar2 & 1) == 0) {
+                    /* WARNING: Subroutine does not return */
+    ::_AIRNTAddLegalizationPasses_Legalizer_Default(0x38,0x1093c403f48558a);
+  }
+  if (local_78 == 0) {
+    local_a8[0] = '\0';
+    local_a8[1] = '\0';
+    local_a8[2] = '\0';
+    local_a8[3] = '\0';
+    local_a8[4] = '\0';
+    local_a8[5] = '\0';
+    local_a8[6] = '\0';
+    local_a8[7] = '\0';
+    local_a8[8] = '\0';
+    local_a8[9] = '\0';
+    local_a8[10] = '\0';
+    local_a8[0xb] = '\0';
+    local_a8[0xc] = '\0';
+    local_a8[0xd] = '\0';
+    local_a8[0xe] = '\0';
+    local_a8[0xf] = '\0';
+    local_a8[0x10] = '\0';
+    local_a8[0x11] = '\0';
+    local_a8[0x12] = '\0';
+    local_a8[0x13] = '\0';
+    local_a8[0x14] = '\0';
+    local_a8[0x15] = '\0';
+    local_a8[0x16] = '\0';
+    local_a8[0x17] = '\0';
+  }
+  else {
+    if (0x7ffffffffffffff6 < param_2) {
+LAB_24306df50:
+                    /* WARNING: Subroutine does not return */
+      FUN_242e2cf98();
+    }
+    if (0x16 < param_2) {
+      lVar1 = 0x19;
+      if ((param_2 | 7) != 0x17) {
+        lVar1 = (param_2 | 7) + 1;
+      }
+                    /* WARNING: Subroutine does not return */
+      ::_AIRNTAddLegalizationPasses_Legalizer_Default(lVar1,0x1000c0077774924);
+    }
+    local_a8[0x17] = (char)param_2;
+    if (param_2 != 0) {
+                    /* WARNING: Subroutine does not return */
+      ::_AIRNTAddLegalizationPasses_Legalizer_Default(local_a8,local_78,param_2);
+    }
+                    /* WARNING: Ignoring partial resolution of indirect */
+    local_a8[0] = '\0';
+  }
+                    /* WARNING: Subroutine does not return */
+  ::_AIRNTAddLegalizationPasses_Legalizer_Default(local_a8,&local_90);
+}
+
+
+
+### target=default_plugin_wrapper
+===== _AIRNTWrapPlugin_Wrapper_Default entry=24306bb10 =====
+direct_callers=0
+direct_callees=0
+
+undefined8 _AIRNTWrapPlugin_Wrapper_Default(void)
+
+{
+  return 0;
+}
+
+
+
+### target=default_wrapped_plugins
+===== _AIRNTGetWrappedPlugins_Wrapper_Default entry=24306bb18 =====
+direct_callers=0
+direct_callees=0
+
+void _AIRNTGetWrappedPlugins_Wrapper_Default
+               (undefined8 param_1,undefined8 *param_2,undefined8 *param_3,undefined8 *param_4,
+               undefined8 *param_5,undefined8 *param_6,undefined8 *param_7,undefined8 *param_8,
+               undefined8 *param_9,undefined8 *param_10)
+
+{
+  *param_2 = 0;
+  *param_3 = 0;
+  *param_6 = 0;
+  *param_5 = 0;
+  *param_4 = 0;
+  *param_9 = 0;
+  *param_8 = 0;
+  *param_7 = 0;
+  *param_10 = 0;
+  return;
+}
+
+
+

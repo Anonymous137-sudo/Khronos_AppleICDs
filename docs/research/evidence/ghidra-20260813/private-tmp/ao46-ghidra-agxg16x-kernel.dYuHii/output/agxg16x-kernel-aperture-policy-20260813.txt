@@ -1,0 +1,3739 @@
+AO46 AGXG16X kernel ownership report
+program=AGXG16X.arm64e
+image_base=fffffe000712cfb0
+
+===== device_user_client_method_ownership =====
+selector_range=0x100..0x112
+entries=19
+selector=0x100 handler=authenticated_or_indirect
+selector=0x101 handler=authenticated_or_indirect
+selector=0x102 handler=authenticated_or_indirect
+selector=0x103 handler=authenticated_or_indirect
+selector=0x104 handler=authenticated_or_indirect
+selector=0x105 handler=authenticated_or_indirect
+selector=0x106 handler=authenticated_or_indirect
+selector=0x107 handler=absent
+selector=0x108 handler=absent
+selector=0x109 handler=authenticated_or_indirect
+selector=0x10a handler=authenticated_or_indirect
+selector=0x10b handler=authenticated_or_indirect
+selector=0x10c handler=authenticated_or_indirect
+selector=0x10d handler=authenticated_or_indirect
+selector=0x10e handler=absent
+selector=0x10f handler=authenticated_or_indirect
+selector=0x110 handler=authenticated_or_indirect
+selector=0x111 handler=absent
+selector=0x112 handler=authenticated_or_indirect
+
+===== accelerator_new_resource address=0xfffffe0008963168 =====
+symbol=newResource
+entry=fffffe0008963168
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d8b20 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXAccelerator::newResource() */
+
+void AGXAccelerator::newResource(void)
+
+{
+                    /* WARNING: Could not recover jumptable at 0xfffffe0008963198. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+  (**(code **)(AGXResource::gMetaClass + 0xa8))
+            (&AGXResource::gMetaClass,(undefined8 *)(AGXResource::gMetaClass + 0xa8));
+  return;
+}
+
+
+
+===== accelerator_restricted_range_mapping address=0xfffffe000896625c =====
+symbol=createRestrictedRangeMapping
+entry=fffffe000896625c
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d8b31 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXAccelerator::createRestrictedRangeMapping(IOGPUDevice*, IOMemoryDescriptor*,
+   IOGPUNewResourceArgs*) */
+
+undefined8 __thiscall
+AGXAccelerator::createRestrictedRangeMapping
+          (AGXAccelerator *this,IOGPUDevice *param_1,IOMemoryDescriptor *param_2,
+          IOGPUNewResourceArgs *param_3)
+
+{
+  long *plVar1;
+  undefined8 uVar2;
+  
+  if (*(int *)(this + 0xecd4) == 0) {
+                    /* WARNING: Could not recover jumptable at 0xfffffe00089662d4. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+    uVar2 = (**(code **)(PTR_DAT_fffffe0007e9e570 + 0x930))();
+    return uVar2;
+  }
+  if ((param_1 != (IOGPUDevice *)0x0) &&
+     (plVar1 = *(long **)(param_1 + 0x58), plVar1 != (long *)0x0)) {
+                    /* WARNING: Could not recover jumptable at 0xfffffe00089662b0. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+    uVar2 = (**(code **)(*plVar1 + 0x238))
+                      (plVar1,param_2,param_3,param_3,(undefined8 *)(*plVar1 + 0x238));
+    return uVar2;
+  }
+  return 0;
+}
+
+
+
+===== user_client_method_table_lookup address=0xfffffe00089980f4 =====
+symbol=getTargetAndMethodForIndex
+entry=fffffe00089980f4
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d8d72 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXDeviceUserClient::getTargetAndMethodForIndex(IOService**, unsigned int) */
+
+undefined1 * __thiscall
+AGXDeviceUserClient::getTargetAndMethodForIndex
+          (AGXDeviceUserClient *this,IOService **param_1,uint param_2)
+
+{
+  undefined1 *puVar1;
+  long lVar2;
+  
+  *param_1 = (IOService *)this;
+  if (param_2 - 0x100 < 0x13) {
+    lVar2 = (ulong)(param_2 - 0x100) * 0x30;
+    puVar1 = &getTargetAndMethodForIndex(IOService**,unsigned_int)::kAGXDeviceMethods + (int)lVar2;
+    if (lVar2 - (int)lVar2 != 0) {
+      puVar1 = (undefined1 *)
+               ((ulong)(&getTargetAndMethodForIndex(IOService**,unsigned_int)::kAGXDeviceMethods +
+                       lVar2) & 0xffffffffffff | 0x2bad000000000000);
+    }
+    if (*(long *)(puVar1 + 8) != 0) {
+      return puVar1;
+    }
+  }
+                    /* WARNING: Could not recover jumptable at 0xfffffe0008998154. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+  puVar1 = (undefined1 *)(**(code **)(PTR_DAT_fffffe0007e9e550 + 0x980))();
+  return puVar1;
+}
+
+
+
+===== queue_process_segment_kernel_command address=0xfffffe000898c140 =====
+symbol=processSegmentKernelCommand
+entry=fffffe000898c140
+direct_callers=0
+direct_callees=15
+  callee=parseAndValidate entry=fffffe00089ea308
+  callee=parseAndValidate entry=fffffe00089e7670
+  callee=updateChannelPriority entry=fffffe000898bdb0
+  callee=parseAndValidate entry=fffffe000899e3ec
+  callee=processFastRender entry=fffffe000898d8d4
+  callee=parseAndValidate entry=fffffe0008a12070
+  callee=processMLEncoderCommand entry=fffffe000898dea0
+  callee=parseAndValidate entry=fffffe0008a0695c
+  callee=processRender entry=fffffe000898cb08
+  callee=parseAndValidate entry=fffffe0008997718
+  callee=processSharedEventSignalInternal entry=fffffe00089890e8
+  callee=getLateEvalEventForSharedEvent entry=fffffe00089ec300
+  callee=processLateEvalWait entry=fffffe00089863dc
+  callee=processCompute entry=fffffe000898dcb0
+  callee=hostKtraceEvent entry=fffffe00089733e4
+static_references=
+  reference=fffffe000d0d8d09 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXCommandQueue::processSegmentKernelCommand(IOGPUSegmentResourceList*, IOGPUKernelCommand
+   const*, IOGPUKernelCommand const*, unsigned char const*, unsigned char const*,
+   IOGPUCommandQueueCommandBufferArgs const*) */
+
+void __thiscall
+AGXCommandQueue::processSegmentKernelCommand
+          (AGXCommandQueue *this,IOGPUSegmentResourceList *param_1,IOGPUKernelCommand *param_2,
+          IOGPUKernelCommand *param_3,uchar *param_4,uchar *param_5,
+          IOGPUCommandQueueCommandBufferArgs *param_6)
+
+{
+  int *piVar1;
+  CompositeSubtypeState *pCVar2;
+  AGXRenderHardwareKernelCommand AVar3;
+  AGXRenderHardwareKernelCommand AVar4;
+  int iVar5;
+  ulong uVar6;
+  AGXHardwareKernelCommand *this_00;
+  AGXFastRenderHardwareKernelCommand *this_01;
+  AGXLateEvalEvent *pAVar7;
+  undefined1 *puVar8;
+  undefined8 uVar9;
+  bool bVar10;
+  bool bVar11;
+  uint uVar12;
+  undefined4 uVar13;
+  long lVar14;
+  long lVar15;
+  AGXSharedStreamParser *pAVar16;
+  IOSurfaceSharedEvent *pIVar17;
+  ulonglong uVar18;
+  undefined8 in_stack_ffffffffffffff00;
+  CompositeSubtypeState *pCVar19;
+  uint7 uVar20;
+  undefined *local_e0;
+  undefined8 local_d8;
+  undefined8 local_d0;
+  IOGPUSegmentResourceList *local_c8;
+  uchar *local_c0;
+  uchar *puStack_b8;
+  uchar *local_b0;
+  IOGPUKernelCommand *local_a0;
+  IOGPUKernelCommand *pIStack_98;
+  IOGPUKernelCommand *local_90;
+  undefined *local_88;
+  undefined8 uStack_80;
+  undefined8 local_78;
+  undefined8 local_70;
+  undefined8 uStack_68;
+  
+  if ((*(int *)(this + 0x450) == 5) && ((*(byte *)(*(long *)(this + 0x538) + 0x1af08) & 1) == 0)) {
+    *(undefined4 *)(this + 0x528) = 0x108;
+    return;
+  }
+  if (7 < *(ulong *)(this + 0x550) || (1L << (*(ulong *)(this + 0x550) & 0x3f) & 0x8bU) == 0) {
+    *(undefined4 *)(this + 0x528) = 0x10;
+    return;
+  }
+  pIStack_98 = param_3;
+  local_90 = param_2;
+  if (param_3 < param_2) {
+    pIStack_98 = (IOGPUKernelCommand *)0x0;
+    local_90 = (IOGPUKernelCommand *)0x0;
+  }
+  puStack_b8 = param_5;
+  local_b0 = param_4;
+  if (param_5 < param_4) {
+    puStack_b8 = (uchar *)0x0;
+    local_b0 = (uchar *)0x0;
+  }
+  local_d0 = 0;
+  local_d8 = 0;
+  local_e0 = &DAT_fffffe0007eb2298;
+  local_c8 = param_1;
+  local_c0 = local_b0;
+  local_a0 = local_90;
+  uVar6 = AGXKernelCommand::parseAndValidate
+                    ((AGXKernelCommand *)&local_e0,(AGXSharedStreamParser *)&local_a0);
+  if ((uVar6 & 1) == 0) {
+    *(undefined4 *)(this + 0x528) = local_d8._4_4_;
+    return;
+  }
+  if ((local_d8 & 1) == 0) {
+LAB_fffffe000898c960:
+    func_0xfffffe000c080318
+              ("AGXk: %s:%d:%s: !!! Assertion failed: %s: stream validator is invalid!\n");
+    return;
+  }
+  if ((int)local_d0 != 0x10000) {
+    (**(code **)(PTR_DAT_fffffe0007e9e530 + 0x170))
+              (this,param_1,param_2,param_3,param_4,param_5,param_6);
+    return;
+  }
+  this_00 = (AGXHardwareKernelCommand *)
+            func_0xfffffe000bf12c44
+                      (&os_detail::IOKit_typed_allocator<AGXHardwareKernelCommand,false>::kt_view()
+                        ::kt_view,0x178);
+  this_00[8] = (AGXHardwareKernelCommand)0x0;
+  *(undefined4 *)(this_00 + 0xc) = 0;
+  *(undefined **)this_00 = &DAT_fffffe0007eac8d8;
+  pAVar16 = (AGXSharedStreamParser *)(this_00 + 0xd0);
+  *(undefined8 *)(this_00 + 0xd8) = 0;
+  *(undefined8 *)pAVar16 = 0;
+  *(undefined8 *)(this_00 + 0x18) = 0;
+  *(undefined8 *)(this_00 + 0x10) = 0;
+  *(undefined8 *)(this_00 + 0x28) = 0;
+  *(undefined8 *)(this_00 + 0x20) = 0;
+  *(undefined8 *)(this_00 + 0x38) = 0;
+  *(undefined8 *)(this_00 + 0x30) = 0;
+  *(undefined8 *)(this_00 + 0x48) = 0;
+  *(undefined8 *)(this_00 + 0x40) = 0;
+  *(undefined8 *)(this_00 + 0x58) = 0;
+  *(undefined8 *)(this_00 + 0x50) = 0;
+  *(undefined8 *)(this_00 + 0x68) = 0;
+  *(undefined8 *)(this_00 + 0x60) = 0;
+  *(undefined8 *)(this_00 + 0x78) = 0;
+  *(undefined8 *)(this_00 + 0x70) = 0;
+  *(undefined8 *)(this_00 + 0x88) = 0;
+  *(undefined8 *)(this_00 + 0x80) = 0;
+  *(undefined8 *)(this_00 + 0x98) = 0;
+  *(undefined8 *)(this_00 + 0x90) = 0;
+  *(undefined8 *)(this_00 + 0xa8) = 0;
+  *(undefined8 *)(this_00 + 0xa0) = 0;
+  *(undefined8 *)(this_00 + 0xb8) = 0;
+  *(undefined8 *)(this_00 + 0xb0) = 0;
+  *(undefined8 *)(this_00 + 200) = 0;
+  *(undefined8 *)(this_00 + 0xc0) = 0;
+  *(undefined8 *)(this_00 + 0xe8) = 0;
+  *(undefined8 *)(this_00 + 0xe0) = 0;
+  this_00[0xf0] = (AGXHardwareKernelCommand)0x0;
+  *(undefined8 *)(this_00 + 0x100) = 0;
+  *(undefined8 *)(this_00 + 0xf8) = 0;
+  *(undefined8 *)(this_00 + 0x16a) = 0;
+  *(undefined8 *)(this_00 + 0x162) = 0;
+  *(undefined8 *)(this_00 + 0x150) = 0;
+  *(undefined8 *)(this_00 + 0x148) = 0;
+  *(undefined8 *)(this_00 + 0x160) = 0;
+  *(undefined8 *)(this_00 + 0x158) = 0;
+  *(undefined8 *)(this_00 + 0x130) = 0;
+  *(undefined8 *)(this_00 + 0x128) = 0;
+  *(undefined8 *)(this_00 + 0x140) = 0;
+  *(undefined8 *)(this_00 + 0x138) = 0;
+  *(undefined8 *)(this_00 + 0x110) = 0;
+  *(undefined8 *)(this_00 + 0x108) = 0;
+  *(undefined8 *)(this_00 + 0x120) = 0;
+  *(undefined8 *)(this_00 + 0x118) = 0;
+  uVar6 = AGXHardwareKernelCommand::parseAndValidate
+                    (this_00,(AGXSharedStreamParser *)&local_a0,(AGXSharedStreamParser *)&local_c0);
+  if ((uVar6 & 1) == 0) {
+    uVar13 = *(undefined4 *)(this_00 + 0xc);
+LAB_fffffe000898c51c:
+    *(undefined4 *)(this + 0x528) = uVar13;
+    goto LAB_fffffe000898c8d0;
+  }
+  if (((byte)this_00[8] & 1) == 0) goto LAB_fffffe000898c960;
+  if (*(int *)(this_00 + 0x94) != 0) goto LAB_fffffe000898c8d0;
+  uVar12 = *(uint *)(this + 0x818);
+  lVar14 = *(long *)(this + 0x538);
+  if (*(int *)(lVar14 + 0xecf0) != 0) {
+    lVar15 = (ulong)uVar12 * 4;
+    piVar1 = (int *)(lVar14 + 0xecf8 + (long)(int)lVar15);
+    if (lVar15 - (int)lVar15 != 0) {
+      piVar1 = (int *)(lVar14 + 0xecf8 + lVar15 & 0xffffffffffffU | 0x2bad000000000000);
+    }
+    if (*piVar1 == 0) {
+      uVar12 = *(uint *)(lVar14 + 0xed00);
+    }
+  }
+  pCVar2 = *(CompositeSubtypeState **)(*(long *)(this + 0x520) + 0x138);
+  uVar9 = *(undefined8 *)(*(long *)(this + 0x520) + 0x140);
+  if (uVar12 != *(uint *)(this + 0x814)) {
+    *(uint *)(this + 0x814) = uVar12;
+    updateChannelPriority(this);
+  }
+  uVar6 = (**(code **)(*(long *)this + 0x220))(this,1);
+  if ((uVar6 & 1) == 0) {
+    if (((byte)(*(AGXAccelerator **)(this + 0x538))[0x1aed4] >> 3 & 1) != 0) {
+      AGXAccelerator::hostKtraceEvent(*(AGXAccelerator **)(this + 0x538),0x362,2,this,1,0,0,0);
+    }
+    uVar13 = 8;
+    goto LAB_fffffe000898c51c;
+  }
+  if (((byte)this_00[8] & 1) == 0) goto LAB_fffffe000898c960;
+  iVar5 = *(int *)(this_00 + 0xb0);
+  if (iVar5 < 3) {
+    if (iVar5 == 1) {
+      *(int *)(*(long *)(this + 0x520) + 0xd0) = *(int *)(*(long *)(this + 0x520) + 0xd0) + 1;
+      this_01 = (AGXFastRenderHardwareKernelCommand *)
+                func_0xfffffe000bf12c44
+                          (&os_detail::IOKit_typed_allocator<AGXRenderHardwareKernelCommand,false>::
+                            kt_view()::kt_view,0x288);
+      *(AGXRenderHardwareKernelCommand *)(this_01 + 8) = (AGXRenderHardwareKernelCommand)0x0;
+      *(undefined4 *)(this_01 + 0xc) = 0;
+      *(undefined **)this_01 = &DAT_fffffe0007eb0f80;
+      *(AGXRenderHardwareKernelCommand *)(this_01 + 0x10) = (AGXRenderHardwareKernelCommand)0x0;
+      *(undefined8 *)(this_01 + 0x18) = 0;
+      *(undefined4 *)(this_01 + 0x1bc) = 0;
+      *(AGXRenderHardwareKernelCommand *)(this_01 + 0x1c0) = (AGXRenderHardwareKernelCommand)0x0;
+      *(undefined8 *)(this_01 + 0x200) = 0;
+      *(AGXRenderHardwareKernelCommand *)(this_01 + 0x208) = (AGXRenderHardwareKernelCommand)0x0;
+      *(undefined8 *)(this_01 + 0x28) = 0;
+      *(undefined8 *)(this_01 + 0x20) = 0;
+      *(undefined8 *)(this_01 + 0x38) = 0;
+      *(undefined8 *)(this_01 + 0x30) = 0;
+      *(undefined8 *)(this_01 + 0x48) = 0;
+      *(undefined8 *)(this_01 + 0x40) = 0;
+      *(undefined8 *)(this_01 + 0x58) = 0;
+      *(undefined8 *)(this_01 + 0x50) = 0;
+      *(undefined8 *)(this_01 + 0x68) = 0;
+      *(undefined8 *)(this_01 + 0x60) = 0;
+      *(undefined8 *)(this_01 + 0x78) = 0;
+      *(undefined8 *)(this_01 + 0x70) = 0;
+      *(undefined8 *)(this_01 + 0x88) = 0;
+      *(undefined8 *)(this_01 + 0x80) = 0;
+      *(undefined8 *)(this_01 + 0x98) = 0;
+      *(undefined8 *)(this_01 + 0x90) = 0;
+      *(undefined8 *)(this_01 + 0xa8) = 0;
+      *(undefined8 *)(this_01 + 0xa0) = 0;
+      *(undefined8 *)(this_01 + 0xb8) = 0;
+      *(undefined8 *)(this_01 + 0xb0) = 0;
+      *(undefined8 *)(this_01 + 200) = 0;
+      *(undefined8 *)(this_01 + 0xc0) = 0;
+      *(undefined8 *)(this_01 + 0xd8) = 0;
+      *(undefined8 *)(this_01 + 0xd0) = 0;
+      *(undefined8 *)(this_01 + 0xe8) = 0;
+      *(undefined8 *)(this_01 + 0xe0) = 0;
+      *(undefined8 *)(this_01 + 0xf8) = 0;
+      *(undefined8 *)(this_01 + 0xf0) = 0;
+      *(undefined8 *)(this_01 + 0x108) = 0;
+      *(undefined8 *)(this_01 + 0x100) = 0;
+      *(undefined8 *)(this_01 + 0x118) = 0;
+      *(undefined8 *)(this_01 + 0x110) = 0;
+      *(undefined8 *)(this_01 + 0x128) = 0;
+      *(undefined8 *)(this_01 + 0x120) = 0;
+      *(undefined8 *)(this_01 + 0x138) = 0;
+      *(undefined8 *)(this_01 + 0x130) = 0;
+      *(undefined8 *)(this_01 + 0x148) = 0;
+      *(undefined8 *)(this_01 + 0x140) = 0;
+      *(undefined8 *)(this_01 + 0x158) = 0;
+      *(undefined8 *)(this_01 + 0x150) = 0;
+      *(undefined8 *)(this_01 + 0x168) = 0;
+      *(undefined8 *)(this_01 + 0x160) = 0;
+      *(undefined8 *)(this_01 + 0x178) = 0;
+      *(undefined8 *)(this_01 + 0x170) = 0;
+      *(undefined8 *)(this_01 + 0x188) = 0;
+      *(undefined8 *)(this_01 + 0x180) = 0;
+      *(undefined8 *)(this_01 + 0x198) = 0;
+      *(undefined8 *)(this_01 + 400) = 0;
+      *(undefined8 *)(this_01 + 0x1a8) = 0;
+      *(undefined8 *)(this_01 + 0x1a0) = 0;
+      *(undefined8 *)(this_01 + 0x1b2) = 0;
+      *(undefined8 *)(this_01 + 0x1aa) = 0;
+      *(undefined4 *)(this_01 + 0x1f7) = 0;
+      *(undefined8 *)(this_01 + 0x1e0) = 0;
+      *(undefined8 *)(this_01 + 0x1d8) = 0;
+      *(undefined8 *)(this_01 + 0x1f0) = 0;
+      *(undefined8 *)(this_01 + 0x1e8) = 0;
+      *(undefined8 *)(this_01 + 0x218) = 0;
+      *(undefined8 *)(this_01 + 0x210) = 0;
+      *(undefined8 *)(this_01 + 0x228) = 0;
+      *(undefined8 *)(this_01 + 0x220) = 0;
+      *(undefined8 *)(this_01 + 0x238) = 0;
+      *(undefined8 *)(this_01 + 0x230) = 0;
+      *(undefined8 *)(this_01 + 0x248) = 0;
+      *(undefined8 *)(this_01 + 0x240) = 0;
+      *(undefined8 *)(this_01 + 600) = 0;
+      *(undefined8 *)(this_01 + 0x250) = 0;
+      *(undefined8 *)(this_01 + 0x268) = 0;
+      *(undefined8 *)(this_01 + 0x260) = 0;
+      *(undefined8 *)(this_01 + 0x278) = 0;
+      *(undefined8 *)(this_01 + 0x270) = 0;
+      *(undefined4 *)(this_01 + 0x280) = 0;
+      uVar6 = AGXRenderHardwareKernelCommand::parseAndValidate
+                        ((AGXRenderHardwareKernelCommand *)this_01,pAVar16);
+      if ((uVar6 & 1) == 0) {
+        *(undefined4 *)(this + 0x528) = *(undefined4 *)(this_01 + 0xc);
+      }
+      else {
+        (**(code **)(**(long **)(*(long *)(this + 0x538) + 0x5b0) + 0x248))
+                  (*(long **)(*(long *)(this + 0x538) + 0x5b0),1,*(undefined4 *)(this + 0x80c));
+        if (((byte)*(AGXRenderHardwareKernelCommand *)(this_01 + 8) & 1) == 0)
+        goto LAB_fffffe000898c960;
+        AVar3 = *(AGXRenderHardwareKernelCommand *)(this_01 + 0x1d9);
+        AVar4 = *(AGXRenderHardwareKernelCommand *)(this_01 + 0x1da);
+        pCVar19 = (CompositeSubtypeState *)
+                  (CONCAT71((int7)((ulong)in_stack_ffffffffffffff00 >> 8),AVar4) &
+                  0xffffffffffffff01);
+        bVar10 = SUB81(uVar9,0);
+        uVar6 = processRender(this,this_00,(AGXRenderHardwareKernelCommand *)this_01,
+                              (AGXSegmentKernelCommand *)(local_d8 & 0xff),(ulonglong)local_c8,
+                              (ulonglong)pCVar2,bVar10,(bool)((byte)AVar3 & 1),pCVar19);
+        if ((uVar6 & 1) != 0) goto LAB_fffffe000898c664;
+        uVar20 = (uint7)((ulong)pCVar19 >> 8);
+        if (*(int *)(this + 0x528) == 0x10a) {
+          *(undefined4 *)(this + 0x528) = 0;
+          pCVar19 = (CompositeSubtypeState *)(CONCAT71(uVar20,AVar4) & 0xffffffffffffff01);
+          bVar11 = false;
+LAB_fffffe000898cac8:
+          uVar6 = processRender(this,this_00,(AGXRenderHardwareKernelCommand *)this_01,
+                                (AGXSegmentKernelCommand *)(local_d8 & 0xff),(ulonglong)local_c8,
+                                (ulonglong)pCVar2,bVar10,bVar11,pCVar19);
+          if ((uVar6 & 1) != 0) goto LAB_fffffe000898c664;
+        }
+        else if (*(int *)(this + 0x528) == 0x109) {
+          *(undefined4 *)(this + 0x528) = 0;
+          pCVar19 = (CompositeSubtypeState *)((ulong)uVar20 << 8);
+          bVar11 = (bool)((byte)AVar3 & 1);
+          goto LAB_fffffe000898cac8;
+        }
+        (**(code **)(**(long **)(*(long *)(this + 0x538) + 0x5b0) + 0x248))
+                  (*(long **)(*(long *)(this + 0x538) + 0x5b0),0,*(undefined4 *)(this + 0x80c));
+      }
+LAB_fffffe000898c664:
+      puVar8 = &os_detail::IOKit_typed_allocator<AGXRenderHardwareKernelCommand,false>::kt_view()::
+                kt_view;
+      uVar9 = 0x288;
+    }
+    else {
+      if (iVar5 != 2) {
+LAB_fffffe000898c518:
+        uVar13 = 0x106;
+        goto LAB_fffffe000898c51c;
+      }
+      *(int *)(*(long *)(this + 0x520) + 0xd0) = *(int *)(*(long *)(this + 0x520) + 0xd0) + 1;
+      this_01 = (AGXFastRenderHardwareKernelCommand *)
+                func_0xfffffe000bf12c44
+                          (&os_detail::
+                            IOKit_typed_allocator<AGXFastRenderHardwareKernelCommand,false>::
+                            kt_view()::kt_view,0x158);
+      this_01[8] = (AGXFastRenderHardwareKernelCommand)0x0;
+      *(undefined4 *)(this_01 + 0xc) = 0;
+      *(undefined **)this_01 = &DAT_fffffe0007ea3198;
+      this_01[0x10] = (AGXFastRenderHardwareKernelCommand)0x0;
+      *(undefined8 *)(this_01 + 0x18) = 0;
+      *(undefined8 *)(this_01 + 0x28) = 0;
+      *(undefined8 *)(this_01 + 0x20) = 0;
+      *(undefined8 *)(this_01 + 0x38) = 0;
+      *(undefined8 *)(this_01 + 0x30) = 0;
+      *(undefined8 *)(this_01 + 0x48) = 0;
+      *(undefined8 *)(this_01 + 0x40) = 0;
+      *(undefined8 *)(this_01 + 0x58) = 0;
+      *(undefined8 *)(this_01 + 0x50) = 0;
+      *(undefined8 *)(this_01 + 0x68) = 0;
+      *(undefined8 *)(this_01 + 0x60) = 0;
+      *(undefined8 *)(this_01 + 0x78) = 0;
+      *(undefined8 *)(this_01 + 0x70) = 0;
+      *(undefined8 *)(this_01 + 0x88) = 0;
+      *(undefined8 *)(this_01 + 0x80) = 0;
+      *(undefined8 *)(this_01 + 0x98) = 0;
+      *(undefined8 *)(this_01 + 0x90) = 0;
+      *(undefined8 *)(this_01 + 0xa8) = 0;
+      *(undefined8 *)(this_01 + 0xa0) = 0;
+      *(undefined8 *)(this_01 + 0xb8) = 0;
+      *(undefined8 *)(this_01 + 0xb0) = 0;
+      *(undefined8 *)(this_01 + 200) = 0;
+      *(undefined8 *)(this_01 + 0xc0) = 0;
+      *(undefined8 *)(this_01 + 0xd8) = 0;
+      *(undefined8 *)(this_01 + 0xd0) = 0;
+      *(undefined8 *)(this_01 + 0xe4) = 0;
+      *(undefined8 *)(this_01 + 0xdc) = 0;
+      this_01[0x150] = (AGXFastRenderHardwareKernelCommand)0x0;
+      *(undefined8 *)(this_01 + 0x138) = 0;
+      *(undefined8 *)(this_01 + 0x130) = 0;
+      *(undefined8 *)(this_01 + 0x148) = 0;
+      *(undefined8 *)(this_01 + 0x140) = 0;
+      *(undefined8 *)(this_01 + 0x118) = 0;
+      *(undefined8 *)(this_01 + 0x110) = 0;
+      *(undefined8 *)(this_01 + 0x128) = 0;
+      *(undefined8 *)(this_01 + 0x120) = 0;
+      *(undefined8 *)(this_01 + 0xf8) = 0;
+      *(undefined8 *)(this_01 + 0xf0) = 0;
+      *(undefined8 *)(this_01 + 0x108) = 0;
+      *(undefined8 *)(this_01 + 0x100) = 0;
+      uVar6 = AGXFastRenderHardwareKernelCommand::parseAndValidate(this_01,pAVar16);
+      if ((uVar6 & 1) == 0) {
+        *(undefined4 *)(this + 0x528) = *(undefined4 *)(this_01 + 0xc);
+      }
+      else {
+        (**(code **)(**(long **)(*(long *)(this + 0x538) + 0x5b0) + 0x248))
+                  (*(long **)(*(long *)(this + 0x538) + 0x5b0),1,*(undefined4 *)(this + 0x80c));
+        uVar6 = processFastRender((AGXHardwareKernelCommand *)this,
+                                  (AGXFastRenderHardwareKernelCommand *)this_00,
+                                  (AGXSegmentKernelCommand *)this_01,local_d8 & 0xff,
+                                  (ulonglong)local_c8,pCVar2);
+        if ((uVar6 & 1) == 0) {
+          (**(code **)(**(long **)(*(long *)(this + 0x538) + 0x5b0) + 0x248))
+                    (*(long **)(*(long *)(this + 0x538) + 0x5b0),0,*(undefined4 *)(this + 0x80c));
+        }
+      }
+      puVar8 = &os_detail::IOKit_typed_allocator<AGXFastRenderHardwareKernelCommand,false>::
+                kt_view()::kt_view;
+      uVar9 = 0x158;
+    }
+  }
+  else {
+    if (iVar5 != 3) {
+      if (iVar5 != 6) goto LAB_fffffe000898c518;
+      local_88 = &DAT_fffffe0007eb28f0;
+      uStack_80 = 0;
+      local_70 = 0;
+      uStack_68 = 0;
+      local_78 = 0;
+      uVar6 = AGXMLEncoderSharedEventKernelCommand::parseAndValidate
+                        ((AGXMLEncoderSharedEventKernelCommand *)&local_88,pAVar16);
+      if ((uVar6 & 1) != 0) {
+        processMLEncoderCommand(this,this_00,(AGXMLEncoderSharedEventKernelCommand *)&local_88);
+        goto LAB_fffffe000898c8d0;
+      }
+      uVar13 = uStack_80._4_4_;
+      goto LAB_fffffe000898c51c;
+    }
+    *(int *)(*(long *)(this + 0x520) + 0xcc) = *(int *)(*(long *)(this + 0x520) + 0xcc) + 1;
+    this_01 = (AGXFastRenderHardwareKernelCommand *)
+              func_0xfffffe000bf12c44
+                        (&os_detail::IOKit_typed_allocator<AGXComputeHardwareKernelCommand,false>::
+                          kt_view()::kt_view,0xf0);
+    *(AGXComputeHardwareKernelCommand *)(this_01 + 8) = (AGXComputeHardwareKernelCommand)0x0;
+    *(undefined4 *)(this_01 + 0xc) = 0;
+    *(undefined **)this_01 = &DAT_fffffe0007ea1400;
+    *(AGXComputeHardwareKernelCommand *)(this_01 + 0x10) = (AGXComputeHardwareKernelCommand)0x0;
+    *(undefined8 *)(this_01 + 0x18) = 0;
+    *(undefined8 *)(this_01 + 0x28) = 0;
+    *(undefined8 *)(this_01 + 0x20) = 0;
+    *(undefined8 *)(this_01 + 0x38) = 0;
+    *(undefined8 *)(this_01 + 0x30) = 0;
+    *(undefined8 *)(this_01 + 0x48) = 0;
+    *(undefined8 *)(this_01 + 0x40) = 0;
+    *(undefined8 *)(this_01 + 0x58) = 0;
+    *(undefined8 *)(this_01 + 0x50) = 0;
+    *(undefined8 *)(this_01 + 0x68) = 0;
+    *(undefined8 *)(this_01 + 0x60) = 0;
+    *(undefined8 *)(this_01 + 0x78) = 0;
+    *(undefined8 *)(this_01 + 0x70) = 0;
+    *(undefined8 *)(this_01 + 0x88) = 0;
+    *(undefined8 *)(this_01 + 0x80) = 0;
+    *(undefined8 *)(this_01 + 0x98) = 0;
+    *(undefined8 *)(this_01 + 0x90) = 0;
+    *(undefined8 *)(this_01 + 0xa8) = 0;
+    *(undefined8 *)(this_01 + 0xa0) = 0;
+    *(undefined8 *)(this_01 + 0xb8) = 0;
+    *(undefined8 *)(this_01 + 0xb0) = 0;
+    *(undefined8 *)(this_01 + 200) = 0;
+    *(undefined8 *)(this_01 + 0xc0) = 0;
+    *(undefined8 *)(this_01 + 0xd8) = 0;
+    *(undefined8 *)(this_01 + 0xd0) = 0;
+    *(undefined8 *)(this_01 + 0xe5) = 0;
+    *(undefined8 *)(this_01 + 0xdd) = 0;
+    uVar6 = AGXComputeHardwareKernelCommand::parseAndValidate
+                      ((AGXComputeHardwareKernelCommand *)this_01,pAVar16);
+    if ((uVar6 & 1) == 0) {
+      uVar13 = *(undefined4 *)(this_01 + 0xc);
+LAB_fffffe000898c908:
+      *(undefined4 *)(this + 0x528) = uVar13;
+    }
+    else {
+      if ((*(byte *)(*(long *)(this_01 + 0x18) + 0x252) & 1) != 0) {
+        pIVar17 = *(IOSurfaceSharedEvent **)(this + 0x900);
+        if (pIVar17 == (IOSurfaceSharedEvent *)0x0) {
+          pIVar17 = (IOSurfaceSharedEvent *)
+                    func_0xfffffe000abdc148(*(undefined8 *)(*(long *)(this + 0x538) + 0xf0));
+          if (pIVar17 == (IOSurfaceSharedEvent *)0x0) {
+            uVar13 = 1;
+            goto LAB_fffffe000898c908;
+          }
+          *(IOSurfaceSharedEvent **)(this + 0x900) = pIVar17;
+        }
+        uVar18 = *(ulonglong *)(this + 0x8f8);
+        func_0xfffffe000a7d8828(*(undefined8 *)(*(long *)(this + 0x538) + 0x158),4);
+        lVar14 = *(long *)(this + 0x538);
+        if ((*(byte *)(lVar14 + 0x1aed4) >> 3 & 1) != 0) {
+          func_0xfffffe000b7a132c(*(undefined8 *)(lVar14 + 0x1aed8));
+          func_0xfffffe000bcd27b4(0x85930d10,pIVar17,uVar18,1,0,0);
+          func_0xfffffe000b7a2728(*(undefined8 *)(lVar14 + 0x1aed8));
+        }
+        uVar6 = processSharedEventSignalInternal
+                          (this,pIVar17,uVar18,0,(AGXHardwareKernelCommand *)0x0);
+        if ((uVar6 & 1) == 0) {
+          *(undefined4 *)(this + 0x528) = 8;
+        }
+        pIVar17 = *(IOSurfaceSharedEvent **)(this + 0x900);
+        uVar18 = *(ulonglong *)(this + 0x8f8);
+        iVar5 = *(int *)(*(long *)(this + 0x538) + 0x284);
+        pAVar7 = (AGXLateEvalEvent *)
+                 AGXLateEvalEventTable::getLateEvalEventForSharedEvent
+                           (*(AGXLateEvalEventTable **)
+                             (*(long *)(*(long *)(this + 0x538) + 0x11918) + 0x10),pIVar17);
+        if (pAVar7 == (AGXLateEvalEvent *)0x0) {
+          *(undefined4 *)(this + 0x528) = 10;
+        }
+        else {
+          uVar12 = iVar5 * 1000 - 1000;
+          if (3999 < uVar12) {
+            uVar12 = 4000;
+          }
+          iVar5 = processLateEvalWait(this,pAVar7,uVar18,uVar12,(AGXHardwareKernelCommand *)0x0,
+                                      false);
+          if (iVar5 != 0) {
+            func_0xfffffe000abdcb00
+                      (pIVar17,*(undefined8 *)(*(long *)(this + 0x538) + 0x420),uVar18,0,this,
+                       sharedEventCallback);
+            (**(code **)(*(long *)pAVar7 + 0x28))(pAVar7);
+          }
+        }
+        *(long *)(this + 0x8f8) = *(long *)(this + 0x8f8) + 1;
+      }
+      (**(code **)(**(long **)(*(long *)(this + 0x538) + 0x5b0) + 0x248))
+                (*(long **)(*(long *)(this + 0x538) + 0x5b0),1,*(undefined4 *)(this + 0x80c));
+      uVar6 = processCompute((AGXHardwareKernelCommand *)this,
+                             (AGXComputeHardwareKernelCommand *)this_00,
+                             (AGXSegmentKernelCommand *)this_01,local_d8 & 0xff,(ulonglong)local_c8,
+                             pCVar2);
+      if ((uVar6 & 1) == 0) {
+        (**(code **)(**(long **)(*(long *)(this + 0x538) + 0x5b0) + 0x248))
+                  (*(long **)(*(long *)(this + 0x538) + 0x5b0),0,*(undefined4 *)(this + 0x80c));
+      }
+    }
+    puVar8 = &os_detail::IOKit_typed_allocator<AGXComputeHardwareKernelCommand,false>::kt_view()::
+              kt_view;
+    uVar9 = 0xf0;
+  }
+  func_0xfffffe000bf12c5c(puVar8,this_01,uVar9);
+LAB_fffffe000898c8d0:
+  func_0xfffffe000bf12c5c
+            (&os_detail::IOKit_typed_allocator<AGXHardwareKernelCommand,false>::kt_view()::kt_view,
+             this_00,0x178);
+  return;
+}
+
+
+
+===== queue_process_compute_setup address=0xfffffe000898df60 =====
+symbol=processComputeSetup
+entry=fffffe000898df60
+direct_callers=1
+  caller=processCompute entry=fffffe000898dcb0
+direct_callees=17
+  callee=traceEvent entry=fffffe000899baec
+  callee=logProtectionViolation entry=fffffe0008990988
+  callee=checkEventForDifferentContextID entry=fffffe0008990a3c
+  callee=stripExternalBarriers entry=fffffe000898f95c
+  callee=generateMTLFenceBarrier entry=fffffe0008988158
+  callee=generateMTLBarriers entry=fffffe00089850d4
+  callee=updateBarrierEvent entry=fffffe0008985280
+  callee=chooseCLWorkQueue entry=fffffe0008987ca0
+  callee=allocateSpillBufferData entry=fffffe000897d75c
+  callee=iterateBlocksBindOrderLocked entry=fffffe00089d03e8
+  callee=syncUMAPoolPriority entry=fffffe000897fa9c
+  callee=prepareMappings entry=fffffe00089e9810
+  callee=fwTokenEncode entry=fffffe00089f5ee8
+  callee=processTimestampList entry=fffffe000898fa90
+  callee=populateCommandHWDSIDData entry=fffffe0008990148
+  callee=traceUpdate entry=fffffe000899bdb4
+  callee=updateMTLFenceEvents entry=fffffe0008988430
+static_references=
+  reference=fffffe000d0d8d12 type=DATA owner=static-data
+  reference=fffffe000898ddd0 type=UNCONDITIONAL_CALL owner=processCompute
+static_reference_count=2
+
+/* WARNING: Removing unreachable block (ram,0xfffffe000898f304) */
+/* WARNING: Removing unreachable block (ram,0xfffffe000898ef3c) */
+/* WARNING: Removing unreachable block (ram,0xfffffe000898ee7c) */
+/* WARNING: Removing unreachable block (ram,0xfffffe000898eebc) */
+/* WARNING: Removing unreachable block (ram,0xfffffe000898f1b4) */
+/* WARNING: Removing unreachable block (ram,0xfffffe000898f5fc) */
+/* WARNING: Removing unreachable block (ram,0xfffffe000898ee3c) */
+/* AGXCommandQueue::processComputeSetup(AGXCLCommandDescriptor&, AGXAllocationList2*,
+   AGXHardwareKernelCommand const&, AGXSegmentKernelCommand const&, CompositeSubtypeState*,
+   AGXComputeHardwareKernelCommand const&, unsigned long long, unsigned long long) */
+
+undefined8
+AGXCommandQueue::processComputeSetup
+          (AGXCLCommandDescriptor *param_1,AGXAllocationList2 *param_2,
+          AGXHardwareKernelCommand *param_3,AGXSegmentKernelCommand *param_4,
+          CompositeSubtypeState *param_5,AGXComputeHardwareKernelCommand *param_6,ulonglong param_7,
+          ulonglong param_8)
+
+{
+  byte bVar1;
+  bool bVar2;
+  int iVar3;
+  uint uVar4;
+  long lVar5;
+  long *plVar6;
+  long lVar7;
+  long lVar8;
+  undefined8 uVar9;
+  undefined8 *puVar10;
+  long lVar11;
+  uint uVar12;
+  ulong uVar13;
+  ulong uVar14;
+  ulong uVar15;
+  ulonglong uVar16;
+  ulonglong uVar17;
+  ulong uVar18;
+  AGXChannel *this;
+  ulong uVar19;
+  long lVar20;
+  ulong uVar21;
+  AGXResource *pAVar22;
+  ulong uVar23;
+  AGXGPUMemBlockPool *pAVar24;
+  undefined8 uVar25;
+  ulong uVar26;
+  undefined8 uVar27;
+  undefined8 uVar28;
+  undefined8 uVar29;
+  undefined8 uVar30;
+  undefined8 uVar31;
+  undefined8 uVar32;
+  undefined8 uVar33;
+  undefined8 uVar34;
+  undefined8 local_280;
+  undefined8 uStack_278;
+  undefined8 uStack_270;
+  undefined8 uStack_268;
+  undefined8 local_260;
+  undefined8 uStack_258;
+  undefined8 uStack_250;
+  undefined8 uStack_248;
+  AGXSpillBufferAllocError local_1f1;
+  undefined8 local_1f0;
+  undefined8 uStack_1e8;
+  undefined8 uStack_1e0;
+  undefined8 local_1d8;
+  undefined8 local_1d0;
+  undefined8 uStack_1c8;
+  undefined8 uStack_1c0;
+  undefined8 uStack_1b8;
+  undefined8 local_1b0;
+  undefined8 uStack_1a8;
+  undefined8 uStack_1a0;
+  undefined8 uStack_198;
+  undefined8 local_190;
+  undefined8 uStack_188;
+  ulong local_180;
+  undefined8 local_170;
+  undefined8 uStack_168;
+  undefined8 uStack_160;
+  undefined8 uStack_158;
+  undefined8 local_150;
+  undefined8 uStack_148;
+  undefined8 uStack_140;
+  undefined8 uStack_138;
+  undefined8 local_130;
+  undefined8 uStack_128;
+  undefined8 uStack_120;
+  undefined8 uStack_118;
+  undefined8 local_110;
+  undefined8 uStack_108;
+  undefined8 uStack_100;
+  undefined8 uStack_f8;
+  undefined8 local_f0;
+  undefined8 uStack_e8;
+  undefined8 uStack_e0;
+  undefined8 uStack_d8;
+  undefined8 local_d0;
+  undefined8 uStack_c8;
+  undefined8 uStack_c0;
+  undefined8 uStack_b8;
+  undefined8 local_b0;
+  undefined8 uStack_a8;
+  code *local_a0;
+  undefined *local_98;
+  undefined8 *local_90;
+  undefined8 uStack_88;
+  undefined8 uStack_80;
+  undefined8 uStack_78;
+  
+  uStack_c8 = 0;
+  local_d0 = 0;
+  uStack_b8 = 0;
+  uStack_c0 = 0;
+  uStack_e8 = 0;
+  local_f0 = 0;
+  uStack_d8 = 0;
+  uStack_e0 = 0;
+  uStack_108 = 0;
+  local_110 = 0;
+  uStack_f8 = 0;
+  uStack_100 = 0;
+  uStack_128 = 0;
+  local_130 = 0;
+  uStack_118 = 0;
+  uStack_120 = 0;
+  uStack_148 = 0;
+  local_150 = 0;
+  uStack_138 = 0;
+  uStack_140 = 0;
+  uStack_168 = 0;
+  local_170 = 0;
+  uStack_158 = 0;
+  uStack_160 = 0;
+  uVar17 = *(ulonglong *)(param_2 + 0x100);
+  func_0xfffffe000a7c25e0(&local_f0);
+  func_0xfffffe000a7c25e0(&local_170);
+  func_0xfffffe000a7c25e0(&local_130);
+  lVar8 = *(long *)(param_1 + 0x538);
+  if ((*(byte *)(lVar8 + 0x1aed5) & 1) != 0) {
+    AGXEventMachine::traceEvent(*(AGXEventMachine **)(lVar8 + 0x140),0x80b,param_1 + 0x4e0,uVar17);
+    lVar8 = *(long *)(param_1 + 0x538);
+  }
+  func_0xfffffe000a7c3bec(*(undefined8 *)(lVar8 + 0x140),param_1 + 0x4e0,&local_f0);
+  uStack_88 = 0;
+  local_90 = (undefined8 *)0x0;
+  uStack_78 = 0;
+  uStack_80 = 0;
+  uStack_a8 = 0;
+  local_b0 = (undefined *)0x0;
+  local_98 = (undefined *)0x0;
+  local_a0 = (code *)0x0;
+  func_0xfffffe000a7c25e0(&local_b0);
+  uStack_1c8 = 0;
+  local_1d0 = 0;
+  uStack_1b8 = 0;
+  uStack_1c0 = 0;
+  uStack_1e8 = 0;
+  local_1f0 = 0;
+  local_1d8 = 0;
+  uStack_1e0 = 0;
+  uVar18 = *(ulong *)(*(long *)(param_1 + 0x538) + 0x6d0);
+  uVar13 = *(ulong *)(param_1 + 0x550);
+  func_0xfffffe000a7c25e0(&local_1f0);
+  lVar8 = *(long *)(param_3 + 0x18);
+  uVar15 = *(ulong *)(lVar8 + 0x20);
+  if (uVar15 == 0) {
+    uVar19 = 0;
+    uVar21 = 0xffffffffffffffff;
+  }
+  else {
+    uVar19 = 0;
+    uVar21 = 0xffffffffffffffff;
+    uVar23 = 0;
+    uVar14 = 1;
+    do {
+      pAVar22 = *(AGXResource **)(*(long *)(lVar8 + 0x18) + uVar23 * 8);
+      func_0xfffffe000a7c3bec
+                (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),*(undefined8 *)(pAVar22 + 0x18)
+                 ,&local_1f0);
+      uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+      lVar5 = func_0xfffffe000a7cd16c(pAVar22);
+      func_0xfffffe000a7c3bec(uVar25,lVar5 + 0x100,&local_b0);
+      uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+      lVar5 = func_0xfffffe000a7cd16c(pAVar22);
+      func_0xfffffe000a7c3bec(uVar25,lVar5 + 0x180,&local_130);
+      uVar26 = (ulong)*(uint *)(pAVar22 + 0x14);
+      uVar23 = uVar26;
+      if (((byte)pAVar22[0xc2] & 1) != 0) {
+        uVar23 = 0xffffffffffffffff;
+      }
+      if ((uVar18 >> 0x34 & 1) != 0) {
+        if ((uVar26 & ~uVar13) != 0) {
+          logProtectionViolation(pAVar22,uVar26,uVar13,"CL Read");
+        }
+        if (((uVar13 & (uVar26 ^ 0xffffffffffffffff)) != 0) && (((byte)pAVar22[0xc2] & 1) == 0)) {
+          logProtectionViolation(pAVar22,uVar26,uVar13,"CL Write");
+        }
+      }
+      uVar19 = uVar19 | uVar26;
+      uVar21 = uVar23 & uVar21;
+      bVar2 = uVar14 < uVar15;
+      uVar23 = uVar14;
+      uVar14 = (ulong)((int)uVar14 + 1);
+    } while (bVar2);
+  }
+  lVar8 = *(long *)(param_3 + 0x68);
+  uVar15 = *(ulong *)(lVar8 + 0x20);
+  if (uVar15 != 0) {
+    uVar23 = 0;
+    uVar14 = 1;
+    do {
+      pAVar22 = *(AGXResource **)(*(long *)(lVar8 + 0x18) + uVar23 * 8);
+      func_0xfffffe000a7c3bec
+                (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),*(undefined8 *)(pAVar22 + 0x18)
+                 ,&local_1f0);
+      uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+      lVar5 = func_0xfffffe000a7cd16c(pAVar22);
+      func_0xfffffe000a7c3bec(uVar25,lVar5 + 0x100,&local_b0);
+      uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+      lVar5 = func_0xfffffe000a7cd16c(pAVar22);
+      func_0xfffffe000a7c3bec(uVar25,lVar5 + 0x180,&local_130);
+      uVar26 = (ulong)*(uint *)(pAVar22 + 0x14);
+      uVar23 = uVar26;
+      if (((byte)pAVar22[0xc2] & 1) != 0) {
+        uVar23 = 0xffffffffffffffff;
+      }
+      if ((uVar18 >> 0x34 & 1) != 0) {
+        if ((uVar26 & ~uVar13) != 0) {
+          logProtectionViolation(pAVar22,uVar26,uVar13,"CL Read");
+        }
+        if (((uVar13 & (uVar26 ^ 0xffffffffffffffff)) != 0) && (((byte)pAVar22[0xc2] & 1) == 0)) {
+          logProtectionViolation(pAVar22,uVar26,uVar13,"CL Write");
+        }
+      }
+      uVar19 = uVar19 | uVar26;
+      uVar21 = uVar23 & uVar21;
+      bVar2 = uVar14 < uVar15;
+      uVar23 = uVar14;
+      uVar14 = (ulong)((int)uVar14 + 1);
+    } while (bVar2);
+  }
+  lVar8 = *(long *)(param_3 + 0x10);
+  uVar15 = *(ulong *)(lVar8 + 0x20);
+  if (uVar15 != 0) {
+    uVar23 = 0;
+    uVar14 = 1;
+    do {
+      pAVar22 = *(AGXResource **)(*(long *)(lVar8 + 0x18) + uVar23 * 8);
+      lVar5 = func_0xfffffe000a7cd16c(pAVar22);
+      if (*(char *)(lVar5 + 0x11) < '\0') {
+        lVar20 = *(long *)(pAVar22 + 0x18);
+        func_0xfffffe000a7c3bec
+                  (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),lVar20 + 0x40,&local_1f0);
+        uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+        lVar5 = func_0xfffffe000a7cd16c(pAVar22);
+        func_0xfffffe000a7c3bec(uVar25,lVar5 + 0x140,&local_b0);
+        uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+        lVar5 = func_0xfffffe000a7cd16c(pAVar22);
+        func_0xfffffe000a7c3bec(uVar25,lVar5 + 0x180,&local_130);
+        checkEventForDifferentContextID((AGXCommandQueue *)param_1,lVar20 + 0x40,2);
+      }
+      uVar23 = (ulong)*(uint *)(pAVar22 + 0x14);
+      if (((uVar18 >> 0x34 & 1) != 0) && ((uVar23 & ~uVar13) != 0)) {
+        logProtectionViolation(pAVar22,uVar23,uVar13,"CL Read");
+      }
+      uVar19 = uVar19 | uVar23;
+      Hint_Prefetch(*(undefined8 *)(pAVar22 + 0x18),2,0,1);
+      bVar2 = uVar14 < uVar15;
+      uVar23 = uVar14;
+      uVar14 = (ulong)((int)uVar14 + 1);
+    } while (bVar2);
+  }
+  lVar8 = *(long *)(param_3 + 0x60);
+  uVar15 = *(ulong *)(lVar8 + 0x20);
+  if (uVar15 != 0) {
+    uVar23 = 0;
+    uVar14 = 1;
+    do {
+      pAVar22 = *(AGXResource **)(*(long *)(lVar8 + 0x18) + uVar23 * 8);
+      lVar5 = func_0xfffffe000a7cd16c(pAVar22);
+      if (*(char *)(lVar5 + 0x11) < '\0') {
+        func_0xfffffe000a7c3bec
+                  (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),
+                   *(long *)(pAVar22 + 0x18) + 0x40,&local_1f0);
+        uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+        lVar5 = func_0xfffffe000a7cd16c(pAVar22);
+        func_0xfffffe000a7c3bec(uVar25,lVar5 + 0x140,&local_b0);
+        uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+        lVar5 = func_0xfffffe000a7cd16c(pAVar22);
+        func_0xfffffe000a7c3bec(uVar25,lVar5 + 0x180,&local_130);
+      }
+      uVar23 = (ulong)*(uint *)(pAVar22 + 0x14);
+      if (((uVar18 >> 0x34 & 1) != 0) && ((uVar23 & ~uVar13) != 0)) {
+        logProtectionViolation(pAVar22,uVar23,uVar13,"CL Read");
+      }
+      uVar19 = uVar19 | uVar23;
+      Hint_Prefetch(*(undefined8 *)(pAVar22 + 0x18),2,0,1);
+      bVar2 = uVar14 < uVar15;
+      uVar23 = uVar14;
+      uVar14 = (ulong)((int)uVar14 + 1);
+    } while (bVar2);
+  }
+  lVar8 = *(long *)(param_1 + 0x538);
+  if ((*(byte *)(lVar8 + 0x1aed5) & 1) != 0) {
+    AGXEventMachine::traceEvent(*(AGXEventMachine **)(lVar8 + 0x140),0x801,&local_1f0,uVar17);
+    lVar8 = *(long *)(param_1 + 0x538);
+  }
+  func_0xfffffe000a7c3bec(*(undefined8 *)(lVar8 + 0x140),&local_1f0,&local_f0);
+  if ((uVar19 & (*(ulong *)(param_1 + 0x550) ^ 0xffffffffffffffff)) != 0 ||
+      ((*(ulong *)(param_1 + 0x550) | uVar19) & (uVar21 ^ 0xffffffffffffffff)) != 0) {
+    if ((*(byte *)(*(long *)(param_1 + 0x538) + 0x247) & 1) != 0) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe000712cfb0,PTR_DAT_fffffe0007e9e5a8,0x11,
+                 "protection violation: %016llx -> %016llx -> %016llx");
+    }
+    (**(code **)(*(long *)param_1 + 0x1b0))(param_1,0x10);
+    (**(code **)(*(long *)param_2 + 0x28))(param_2);
+    *(undefined4 *)(param_1 + 0x528) = 0x10;
+    return 0;
+  }
+  uStack_1c8 = 0;
+  local_1d0 = 0;
+  uStack_1b8 = 0;
+  uStack_1c0 = 0;
+  uStack_1e8 = 0;
+  local_1f0 = 0;
+  local_1d8 = 0;
+  uStack_1e0 = 0;
+  stripExternalBarriers((AGXCommandQueue *)param_1,(IOGPUEvent *)&local_b0,(IOGPUEvent *)&local_1f0)
+  ;
+  func_0xfffffe000a7c3bec(*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),&local_1f0,&local_170)
+  ;
+  generateMTLFenceBarrier((AGXCommandQueue *)param_1,param_4,0,&local_f0,&local_170,uVar17);
+  func_0xfffffe000a7c3bec
+            (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),param_1 + 0x598,&local_130);
+  AGXCommandBuffer::generateMTLBarriers
+            (*(AGXCommandBuffer **)(param_1 + 0x678),*(uint *)(param_4 + 0xb4),
+             *(uint *)(param_4 + 0xb8));
+  AGXCommandBuffer::updateBarrierEvent
+            (*(AGXCommandBuffer **)(param_1 + 0x678),*(uint *)(param_4 + 0xc4),
+             (IOGPUEvent *)&local_f0,(IOGPUEvent *)&local_170,uVar17);
+  if ((*(byte *)(*(long *)(param_5 + 0x18) + 0x251) & 1) != 0) {
+    func_0xfffffe000a7c3bec
+              (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),param_1 + 0x4a0,&local_f0);
+  }
+  func_0xfffffe000a7e47ec(param_2,*(undefined8 *)(param_1 + 0x520));
+  (**(code **)(*(long *)param_2 + 0x1a0))(param_2,*(undefined8 *)(param_1 + 0x678));
+  lVar8 = chooseCLWorkQueue((AGXCommandQueue *)param_1,(IOGPUEvent *)&local_f0);
+  *(long *)(param_1 + 0x850) = lVar8;
+  if (lVar8 != 0) {
+    this = *(AGXChannel **)(lVar8 + 0x218);
+    *(AGXChannel **)(param_1 + 0x840) = this;
+    if (((byte)param_5[8] & 1) == 0) {
+LAB_fffffe000898f68c:
+      uVar25 = func_0xfffffe000c080318
+                         ("AGXk: %s:%d:%s: !!! Assertion failed: %s: stream validator is invalid!\n"
+                         );
+      return uVar25;
+    }
+    local_180 = *(ulong *)(param_5 + 0x90);
+    uStack_1a8 = *(undefined8 *)(param_5 + 0x68);
+    local_1b0 = *(undefined8 *)(param_5 + 0x60);
+    uStack_198 = *(undefined8 *)(param_5 + 0x78);
+    uStack_1a0 = *(undefined8 *)(param_5 + 0x70);
+    uStack_188 = *(undefined8 *)(param_5 + 0x88);
+    local_190 = *(undefined8 *)(param_5 + 0x80);
+    uStack_1e8 = *(undefined8 *)(param_5 + 0x28);
+    local_1f0 = *(undefined8 *)(param_5 + 0x20);
+    local_1d8 = *(undefined8 *)(param_5 + 0x38);
+    uStack_1e0 = *(undefined8 *)(param_5 + 0x30);
+    uStack_1c8 = *(undefined8 *)(param_5 + 0x48);
+    local_1d0 = *(undefined8 *)(param_5 + 0x40);
+    uStack_1b8 = *(undefined8 *)(param_5 + 0x58);
+    uStack_1c0 = *(undefined8 *)(param_5 + 0x50);
+    if ((local_180 >> 0x28 & 1) == 0) {
+      bVar1 = 0;
+    }
+    else {
+      if (((byte)param_5[0xec] & 1) == 0) {
+        bVar1 = *(int *)(param_1 + 0x80c) - 1U < 2;
+      }
+      else {
+        bVar1 = true;
+      }
+      if ((*(byte *)(*(long *)(param_1 + 0x538) + 0xeda0) & 1) != 0) {
+        bVar1 = (byte)(*(uint *)(*(long *)(param_1 + 0x538) + 0xeda4) >>
+                      (ulong)(*(uint *)(param_1 + 0x80c) & 0x1f));
+      }
+    }
+    local_1f1 = (AGXSpillBufferAllocError)0x0;
+    uVar13 = AGXChannel::allocateSpillBufferData
+                       (this,(AGXCommandDescriptor *)param_2,(AGXSpillDesc *)&local_1f0,
+                        (bool)(bVar1 & 1),&local_1f1);
+    if ((uVar13 & 1) == 0) {
+      (**(code **)(*(long *)param_2 + 0x28))(param_2);
+      *(uint *)(param_1 + 0x528) = (byte)local_1f1 & 0xfc | 0x202;
+      return 0;
+    }
+    lVar8 = *(long *)(this + 0x78);
+    if (lVar8 != 0) {
+      uVar16 = *(ulonglong *)(lVar8 + 0x38);
+      pAVar24 = *(AGXGPUMemBlockPool **)(lVar8 + 0x50);
+      local_b0 = PTR_DAT_fffffe0007e9e390;
+      uStack_a8 = DAT_fffffe000712d728;
+      local_a0 = ____ZN18AGXGPUMemBlockPool26mergeBarrierEventsUnlockedEP10IOGPUEventy_block_invoke;
+      local_90 = &local_f0;
+      local_98 = &___block_descriptor_tmp_22;
+      func_0xfffffe000bf137cc(*(undefined8 *)(pAVar24 + 0x10));
+      AGXGPUMemBlockPool::iterateBlocksBindOrderLocked
+                (pAVar24,(_func_bool_sBlock_ptr *)&local_b0,uVar16);
+      func_0xfffffe000bf138cc(*(undefined8 *)(pAVar24 + 0x10));
+    }
+    iVar3 = AGXChannel::syncUMAPoolPriority(this);
+    if (iVar3 == 0) {
+      (**(code **)(*(long *)param_2 + 0x28))(param_2);
+      *(undefined4 *)(param_1 + 0x528) = 0x112;
+      return 0;
+    }
+    if (((byte)param_5[8] & 1) == 0) goto LAB_fffffe000898f68c;
+    uVar13 = *(ulong *)(param_5 + 200);
+    uVar12 = *(uint *)(param_5 + 0xd0);
+    uVar28 = *(undefined8 *)(param_5 + 0xa0);
+    uVar27 = *(undefined8 *)(param_5 + 0x98);
+    uVar9 = *(undefined8 *)(param_5 + 0xd8);
+    uVar30 = *(undefined8 *)(param_5 + 0xd0);
+    uVar29 = *(undefined8 *)(param_5 + 200);
+    uVar32 = *(undefined8 *)(param_5 + 0xc0);
+    uVar31 = *(undefined8 *)(param_5 + 0xb8);
+    uVar34 = *(undefined8 *)(param_5 + 0xb0);
+    uVar33 = *(undefined8 *)(param_5 + 0xa8);
+    uVar25 = *(undefined8 *)(this + 0x180);
+    *(undefined8 *)(param_2 + 0x7b8) = *(undefined8 *)(this + 0x188);
+    *(undefined8 *)(param_2 + 0x778) = uVar25;
+    *(undefined8 *)(param_2 + 0x830) = uVar32;
+    *(undefined8 *)(param_2 + 0x828) = uVar31;
+    *(undefined8 *)(param_2 + 0x840) = uVar30;
+    *(undefined8 *)(param_2 + 0x838) = uVar29;
+    *(undefined8 *)(param_2 + 0x848) = uVar9;
+    *(undefined8 *)(param_2 + 0x810) = uVar28;
+    *(undefined8 *)(param_2 + 0x808) = uVar27;
+    *(undefined8 *)(param_2 + 0x820) = uVar34;
+    *(undefined8 *)(param_2 + 0x818) = uVar33;
+    *(AGXAllocationList2 **)(param_2 + 0x850) = param_2 + 0x858;
+    *(undefined4 *)(param_2 + 0x788) = 0xffffffff;
+    if ((((byte)param_1[0x81e] & 1) == 0) && (*(int *)(param_3 + 0x8c) != 0)) {
+      plVar6 = (long *)func_0xfffffe000abddd74(*(undefined8 *)(param_1 + 0x538));
+      if (*(int *)(param_3 + 0x8c) != 0) {
+        lVar8 = 0;
+        uVar15 = 0;
+        do {
+          uVar18 = func_0xfffffe000a7e4714
+                             (param_2,*(undefined8 *)(*(long *)(param_3 + 0x80) + lVar8),
+                              *(undefined4 *)((undefined8 *)(*(long *)(param_3 + 0x80) + lVar8) + 1)
+                              ,plVar6);
+          if ((uVar18 & 1) == 0) {
+            (**(code **)(*(long *)param_2 + 0x28))(param_2);
+            *(undefined4 *)(param_1 + 0x528) = 0x10f;
+            if (plVar6 != (long *)0x0) {
+              (**(code **)(*plVar6 + 0x28))(plVar6);
+              return 0;
+            }
+            return 0;
+          }
+          uVar15 = uVar15 + 1;
+          lVar8 = lVar8 + 0x10;
+        } while (uVar15 < *(uint *)(param_3 + 0x8c));
+      }
+      if (plVar6 != (long *)0x0) {
+        (**(code **)(*plVar6 + 0x28))(plVar6);
+      }
+    }
+    if (((byte)param_1[0x80a] >> (ulong)(*(uint *)(*(long *)(param_1 + 0x850) + 0xe8) & 0x1f) & 1)
+        != 0) {
+      param_6 = (AGXComputeHardwareKernelCommand *)0x0;
+    }
+    *(AGXComputeHardwareKernelCommand **)(param_2 + 0x1a0) = param_6;
+    *(ulonglong *)(param_2 + 0x1a8) = param_7;
+    if (param_1[0x80a] == (AGXCLCommandDescriptor)0x0) {
+      func_0xfffffe000a7c39e4
+                (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),param_1 + 0x7c8,param_1 + 0x708
+                );
+      func_0xfffffe000a7c25e0(param_1 + 0x7c8);
+    }
+    lVar8 = *(long *)(param_1 + 0x538);
+    if (((*(byte *)(lVar8 + 0xf568) & 1) != 0) &&
+       (((byte)param_1[0x80a] >> (ulong)(*(uint *)(*(long *)(param_1 + 0x850) + 0xe8) & 0x1f) & 1)
+        == 0)) {
+      if ((*(byte *)(lVar8 + 0x1aed5) & 1) != 0) {
+        AGXEventMachine::traceEvent
+                  (*(AGXEventMachine **)(lVar8 + 0x140),0x80c,param_1 + 0x708,uVar17);
+        lVar8 = *(long *)(param_1 + 0x538);
+      }
+      func_0xfffffe000a7c3bec(*(undefined8 *)(lVar8 + 0x140),param_1 + 0x708,&local_f0);
+    }
+    uStack_258 = 0;
+    local_260 = 0;
+    uStack_248 = 0;
+    uStack_250 = 0;
+    uStack_278 = 0;
+    local_280 = 0;
+    uStack_268 = 0;
+    uStack_270 = 0;
+    iVar3 = stripExternalBarriers
+                      ((AGXCommandQueue *)param_1,(IOGPUEvent *)&local_f0,(IOGPUEvent *)&local_280);
+    if (iVar3 != 0) {
+      lVar8 = *(long *)(param_1 + 0x538);
+      if ((*(byte *)(lVar8 + 0x1aed5) & 1) != 0) {
+        AGXEventMachine::traceEvent
+                  (*(AGXEventMachine **)(lVar8 + 0x140),0x80b,param_1 + 0x4e0,uVar17);
+        lVar8 = *(long *)(param_1 + 0x538);
+      }
+      func_0xfffffe000a7c3bec(*(undefined8 *)(lVar8 + 0x140),param_1 + 0x4e0,&local_280);
+    }
+    func_0xfffffe000a7c3bec
+              (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),param_1 + 0x598,&local_280);
+    if ((uVar17 != 0) && ((*(byte *)(*(long *)(param_1 + 0x538) + 0x1aed5) & 1) != 0)) {
+      AGXEventMachine::traceEvent
+                (*(AGXEventMachine **)(*(long *)(param_1 + 0x538) + 0x140),0x81b,param_1 + 0x598,
+                 uVar17);
+    }
+    func_0xfffffe000a7e4c4c(param_2,&local_280);
+    if ((*(byte *)(*(long *)(param_1 + 0x538) + 0x1aed5) & 1) != 0) {
+      AGXEventMachine::traceEvent
+                (*(AGXEventMachine **)(*(long *)(param_1 + 0x538) + 0x140),0x806,&local_280,uVar17);
+    }
+    lVar5 = *(long *)(param_1 + 0x840);
+    func_0xfffffe000a7b8c34(lVar5,*(undefined8 *)(param_1 + 0x490));
+    lVar8 = *(long *)(lVar5 + 0x10) + 0xf938;
+    lVar5 = (ulong)*(uint *)(lVar5 + 0x18) * 8;
+    plVar6 = (long *)(lVar8 + (int)lVar5);
+    if (lVar5 - (int)lVar5 != 0) {
+      plVar6 = (long *)(lVar8 + lVar5 & 0xffffffffffffU | 0x2bad000000000000);
+    }
+    if ((*plVar6 != 0) &&
+       (iVar3 = AGXInternalResource::prepareMappings(*(AGXInternalResource **)(*plVar6 + 0x70)),
+       iVar3 == 0)) {
+      uVar4 = (**(code **)(*(long *)this + 0x1e8))(this);
+      *(uint *)(param_2 + 0x2d0) = uVar4;
+      *(AGXChannel **)(param_2 + 0x170) = this;
+      lVar8 = (ulong)*(uint *)(this + 0x18) * 8;
+      plVar6 = (long *)(*(long *)(param_1 + 0x538) + 0xf938 + (long)(int)lVar8);
+      if (lVar8 - (int)lVar8 != 0) {
+        plVar6 = (long *)(*(long *)(param_1 + 0x538) + 0xf938 + lVar8 & 0xffffffffffffU |
+                         0x2bad000000000000);
+      }
+      lVar8 = *plVar6;
+      bVar2 = true;
+      if ((*(byte *)(lVar8 + 0x19) & 1) != 0) {
+        if (uVar4 == *(uint *)(lVar8 + 0x1c)) {
+          bVar2 = *(int *)(lVar8 + 0x20) != 2;
+        }
+        else {
+          bVar2 = true;
+        }
+      }
+      *(byte *)(lVar8 + 0x18) = *(byte *)(lVar8 + 0x18) & 1 | bVar2;
+      *(ulong *)(lVar8 + 0x1c) = (ulong)uVar4 | 0x200000000;
+      *(undefined1 *)(lVar8 + 0x19) = 1;
+      lVar8 = *(long *)(this + 0x1a8);
+      if (*(long *)(lVar8 + 0x50) != 0) {
+        func_0xfffffe000a7e45fc(param_2);
+      }
+      if (*(long *)(lVar8 + 0x58) != 0) {
+        func_0xfffffe000a7e45fc(param_2);
+      }
+      if (((byte)param_5[8] & 1) == 0) goto LAB_fffffe000898f68c;
+      if (((byte)param_5[0x10] & 1) != 0) {
+        uVar25 = func_0xfffffe000c080318
+                           ("AGXk: %s:%d:%s: !!! Assertion failed: %s: invalid state!\n");
+        return uVar25;
+      }
+      param_5[0x10] = (CompositeSubtypeState)0x1;
+      puVar10 = *(undefined8 **)(param_5 + 0x18);
+      *(undefined8 *)(param_2 + 0x460) = *puVar10;
+      *(undefined8 *)(param_2 + 0x468) = puVar10[1];
+      *(undefined8 *)(param_2 + 0x470) = puVar10[2];
+      *(undefined8 *)(param_2 + 0x488) = puVar10[5];
+      *(undefined8 *)(param_2 + 0x490) = puVar10[6];
+      *(undefined8 *)(param_2 + 0x498) = puVar10[7];
+      *(undefined8 *)(param_2 + 0x4a0) = puVar10[8];
+      *(undefined8 *)(param_2 + 0x4a8) = puVar10[9];
+      *(undefined8 *)(param_2 + 0x4b0) = puVar10[10];
+      uVar25 = puVar10[0xb];
+      *(undefined8 *)(param_2 + 0x4c0) = puVar10[0xc];
+      *(undefined8 *)(param_2 + 0x4b8) = uVar25;
+      *(undefined8 *)(param_2 + 0x4c8) = puVar10[0xe];
+      *(undefined8 *)(param_2 + 0x4d0) = puVar10[0xf];
+      *(undefined8 *)(param_2 + 0x4d8) = puVar10[0x10];
+      *(undefined8 *)(param_2 + 0x4e0) = puVar10[0x11];
+      uVar25 = puVar10[3];
+      *(undefined8 *)(param_2 + 0x480) = puVar10[4];
+      *(undefined8 *)(param_2 + 0x478) = uVar25;
+      param_2[0x520] = (AGXAllocationList2)(*(byte *)((long)puVar10 + 500) & 1);
+      param_2[0x522] = (AGXAllocationList2)(*(byte *)((long)puVar10 + 0x24d) & 1);
+      *(undefined8 *)(param_2 + 0x530) = puVar10[0x2f];
+      *(undefined8 *)(param_2 + 0x528) = puVar10[0x15];
+      param_2[0x608] = *(AGXAllocationList2 *)(puVar10 + 0x1a);
+      *(undefined4 *)(param_2 + 0x4ec) = *(undefined4 *)(puVar10 + 0x18);
+      param_2[0x4e8] = (AGXAllocationList2)(*(byte *)((long)puVar10 + 0xc4) & 1);
+      *(undefined8 *)(param_2 + 0x4f0) = puVar10[0x19];
+      uVar25 = puVar10[0x3f];
+      *(undefined8 *)(param_2 + 0x558) = puVar10[0x40];
+      *(undefined8 *)(param_2 + 0x550) = uVar25;
+      uVar25 = puVar10[0x41];
+      *(undefined8 *)(param_2 + 0x568) = puVar10[0x42];
+      *(undefined8 *)(param_2 + 0x560) = uVar25;
+      uVar25 = puVar10[0x43];
+      *(undefined8 *)(param_2 + 0x578) = puVar10[0x44];
+      *(undefined8 *)(param_2 + 0x570) = uVar25;
+      uVar25 = puVar10[0x45];
+      *(undefined8 *)(param_2 + 0x5a0) = puVar10[0x46];
+      *(undefined8 *)(param_2 + 0x598) = uVar25;
+      *(undefined8 *)(param_2 + 0x5a8) = puVar10[0x47];
+      *(undefined4 *)(param_2 + 0x5b0) = *(undefined4 *)(puVar10 + 0x48);
+      param_2[0x609] = (AGXAllocationList2)(*(byte *)((long)puVar10 + 0x249) & 1);
+      *(undefined8 *)(param_2 + 0x540) = puVar10[0x13];
+      *(undefined4 *)(param_2 + 0x548) = *(undefined4 *)(puVar10 + 0x14);
+      param_2[0x60a] = (AGXAllocationList2)(*(byte *)((long)puVar10 + 0x24a) & 1);
+      param_2[0x60b] = (AGXAllocationList2)(*(byte *)((long)puVar10 + 0x24b) & 1);
+      param_2[0x750] = (AGXAllocationList2)(*(byte *)((long)puVar10 + 0x24c) & 1);
+      param_2[0x868] = (AGXAllocationList2)(*(byte *)((long)puVar10 + 0x24e) & 1);
+      param_2[0x869] = (AGXAllocationList2)(*(byte *)(puVar10 + 0x4a) & 1);
+      *(undefined4 *)(param_2 + 0x754) = *(undefined4 *)((long)puVar10 + 0xa4);
+      param_2[0x5b9] = (AGXAllocationList2)(*(byte *)((long)puVar10 + 0x24f) & 1);
+      *(undefined4 *)(param_2 + 0x3f8) = *(undefined4 *)(puVar10 + 0x4c);
+      *(undefined4 *)(param_2 + 0x86c) = *(undefined4 *)(puVar10 + 0x16);
+      *(undefined8 *)(param_2 + 0x870) = puVar10[0x17];
+      *(ulong *)(param_2 + 0x588) = uVar13 >> 0x20;
+      *(ulong *)(param_2 + 0x580) = uVar13 & 0xffffffff;
+      *(ulong *)(param_2 + 0x590) = (ulong)uVar12;
+      param_2[0x5b8] = (AGXAllocationList2)((int)uVar13 != 0);
+      *(undefined8 *)(param_2 + 0x4f8) = local_1f0;
+      *(undefined8 *)(param_2 + 0x500) = local_1d8;
+      *(undefined4 *)(param_2 + 0x508) = local_1d0._4_4_;
+      *(undefined8 *)(param_2 + 0x518) = uStack_1e0;
+      *(undefined8 *)(param_2 + 0x510) = uStack_1e8;
+      param_2[0x521] = (AGXAllocationList2)(bVar1 & 1);
+      if (((byte)param_5[8] & 1) == 0) goto LAB_fffffe000898f68c;
+      uVar13 = AGXMTLCounterSampler::fwTokenEncode
+                         (*(AGXMTLCounterSampler **)(*(long *)(param_1 + 0x538) + 0xf5d0),
+                          *(IOGPUDevice **)(param_1 + 0x490),
+                          *(IOGPUWeakResourceSet **)(param_3 + 0x50),
+                          (AGXMTLCounterStateRec *)(param_5 + 0xe0),(ulonglong *)(param_2 + 0x758),
+                          (ulonglong *)(param_2 + 0x760),(IOGPUCommandDescriptor *)param_2);
+      if ((uVar13 & 1) == 0) goto LAB_fffffe000898edec;
+      if (((byte)param_4[8] & 1) == 0) goto LAB_fffffe000898f68c;
+      if (*(int *)(param_4 + 0xa4) != 0) {
+        if (*(uint *)(param_4 + 0x150) != 0 || *(uint *)(param_4 + 0x154) != 0) {
+          uVar13 = processTimestampList
+                             ((AGXHardwareKernelCommand *)param_1,(AGXAllocationList2 *)param_3,
+                              (AGXCommandDescriptor *)param_2,
+                              (AGXCommandTimestampListDescriptorRec *)(param_2 + 0x768),
+                              *(uint *)(param_4 + 0x150),*(uint *)(param_4 + 0x154),
+                              *(AGXTimestampListEntryRec **)(param_4 + 0x160));
+          if ((uVar13 & 1) == 0) goto LAB_fffffe000898edec;
+          if (((byte)param_4[8] & 1) == 0) goto LAB_fffffe000898f68c;
+        }
+      }
+      if (*(int *)(param_4 + 0xa0) != 0) {
+        populateCommandHWDSIDData
+                  ((AGXCommandQueue *)param_1,(AGXHardwareKernelCommand *)param_4,
+                   *(IOGPUChannel **)(param_1 + 0x840),2,(AGXCommandHWDSIDData *)(param_2 + 0x618));
+      }
+      if (*(int *)(*(long *)(param_1 + 0x8a0) + 0x34) == 0) {
+        param_2[0x2c8] = (AGXAllocationList2)0x0;
+        func_0xfffffe000a7c39e4
+                  (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),&local_280,param_2 + 0x288);
+        (**(code **)(**(long **)(param_1 + 0x840) + 0x160))(**(long **)(param_1 + 0x840) + 0x160);
+        plVar6 = *(long **)(param_1 + 0x840);
+        plVar6[5] = *(long *)(param_1 + 0x410);
+        uVar25 = (**(code **)(*(long *)param_2 + 0x1b8))(*(long *)param_2 + 0x1b8,param_2);
+        (**(code **)(*plVar6 + 0x168))(*plVar6 + 0x168,plVar6,0,uVar25);
+        *(undefined4 *)(param_2 + 0x60c) = *(undefined4 *)(*(long *)(param_1 + 0x840) + 0x18);
+        func_0xfffffe000a7e4bec(param_2);
+        if ((*(byte *)(*(long *)(param_1 + 0x538) + 0x1aed5) & 1) != 0) {
+          uStack_88 = 0;
+          local_90 = (undefined8 *)0x0;
+          uStack_78 = 0;
+          uStack_80 = 0;
+          uStack_a8 = 0;
+          local_b0 = (undefined *)0x0;
+          local_98 = (undefined *)0x0;
+          local_a0 = (code *)0x0;
+          func_0xfffffe000a7c25e0(&local_b0);
+          lVar8 = **(long **)(param_1 + 0x840);
+          (**(code **)(lVar8 + 0x158))(lVar8 + 0x158,*(long **)(param_1 + 0x840),&local_b0);
+          AGXEventMachine::traceUpdate
+                    (*(AGXEventMachine **)(*(long *)(*(long *)(param_1 + 0x538) + 0x140) + 0x10),
+                     0x80a,local_b0._4_4_,*(undefined4 *)(*(long *)(param_1 + 0x850) + 0xe8),uVar17)
+          ;
+        }
+        uVar12 = *(uint *)(param_4 + 0xc4);
+        if (uVar12 != 0) {
+          uVar25 = *(undefined8 *)(param_2 + 0x100);
+          lVar8 = *(long *)(param_1 + 0x678);
+          do {
+            uVar4 = (uVar12 & 0xaaaaaaaa) >> 1 | (uVar12 & 0x55555555) << 1;
+            uVar4 = (uVar4 & 0xcccccccc) >> 2 | (uVar4 & 0x33333333) << 2;
+            uVar4 = (uVar4 & 0xf0f0f0f0) >> 4 | (uVar4 & 0xf0f0f0f) << 4;
+            uVar4 = (uVar4 & 0xff00ff00) >> 8 | (uVar4 & 0xff00ff) << 8;
+            lVar20 = LZCOUNT(uVar4 >> 0x10 | uVar4 << 0x10);
+            lVar5 = lVar20 * 0x40;
+            func_0xfffffe000a7c3bec
+                      (*(undefined8 *)(*(long *)(lVar8 + 0x18) + 0x140),param_2 + 0x80,
+                       lVar8 + 0xdc0 + lVar5);
+            func_0xfffffe000a7c3bec
+                      (*(undefined8 *)(*(long *)(lVar8 + 0x18) + 0x140),&local_170,
+                       lVar8 + 0x12c0 + lVar5);
+            if ((*(byte *)(*(long *)(lVar8 + 0x18) + 0x1aed5) & 1) != 0) {
+              AGXEventMachine::traceEvent
+                        (*(AGXEventMachine **)(*(long *)(lVar8 + 0x18) + 0x140),0x350,
+                         lVar8 + 0xdc0 + lVar5,uVar25);
+            }
+            uVar12 = uVar12 & (1 << (ulong)((uint)lVar20 & 0x1f) ^ 0xffffffffU);
+          } while (uVar12 != 0);
+        }
+        AGXCommandBuffer::generateMTLBarriers
+                  (*(AGXCommandBuffer **)(param_1 + 0x678),*(uint *)(param_4 + 0xbc),
+                   *(uint *)(param_4 + 0xc0));
+        func_0xfffffe000a7c3bec
+                  (*(undefined8 *)(*(long *)(*(long *)(param_1 + 0x840) + 0x10) + 0x140),&local_170,
+                   *(long *)(param_1 + 0x840) + 0x100);
+        lVar8 = *(long *)(param_1 + 0x840);
+        uStack_88 = 0;
+        local_90 = (undefined8 *)0x0;
+        uStack_78 = 0;
+        uStack_80 = 0;
+        uStack_a8 = 0;
+        local_b0 = (undefined *)0x0;
+        local_98 = (undefined *)0x0;
+        local_a0 = (code *)0x0;
+        stripExternalBarriers
+                  (*(AGXCommandQueue **)(lVar8 + 0x1f8),(IOGPUEvent *)&local_130,
+                   (IOGPUEvent *)&local_b0);
+        func_0xfffffe000a7c3bec
+                  (*(undefined8 *)(*(long *)(lVar8 + 0x10) + 0x140),&local_b0,lVar8 + 0x140);
+        func_0xfffffe000a7e4310(param_2,*(undefined8 *)(param_3 + 0x70));
+        lVar8 = *(long *)(param_1 + 0x840);
+        lVar5 = *(long *)(param_3 + 0x18);
+        uVar13 = *(ulong *)(lVar5 + 0x20);
+        if (uVar13 != 0) {
+          uVar15 = 0;
+          uVar18 = 1;
+          do {
+            lVar20 = *(long *)(*(long *)(lVar5 + 0x18) + uVar15 * 8);
+            func_0xfffffe000a7cc964(lVar20,0,0);
+            func_0xfffffe000a7cc778(lVar20,*(undefined8 *)(param_1 + 0x840),1);
+            if ((*(byte *)(*(long *)(param_1 + 0x538) + 0x6d1) >> 1 & 1) == 0) {
+              uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              func_0xfffffe000a7c3bec(uVar25,lVar8 + 0x100,lVar7 + 0x100);
+              uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              func_0xfffffe000a7c3bec(uVar25,lVar8 + 0x100,lVar7 + 0x140);
+              uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              func_0xfffffe000a7c3bec(uVar25,lVar8 + 0x140,lVar7 + 0x180);
+            }
+            else {
+              plVar6 = *(long **)(param_1 + 0x840);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              (**(code **)(*plVar6 + 0x158))(plVar6,lVar7 + 0x140);
+              plVar6 = *(long **)(param_1 + 0x840);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              lVar11 = *plVar6;
+              (**(code **)(lVar11 + 0x158))(lVar11 + 0x158,plVar6,lVar7 + 0x100);
+            }
+            func_0xfffffe000a7e4488(param_2,*(undefined8 *)(lVar20 + 0x28));
+            bVar2 = uVar18 < uVar13;
+            uVar15 = uVar18;
+            uVar18 = (ulong)((int)uVar18 + 1);
+          } while (bVar2);
+        }
+        lVar5 = *(long *)(param_3 + 0x68);
+        uVar13 = *(ulong *)(lVar5 + 0x20);
+        if (uVar13 != 0) {
+          uVar15 = 0;
+          uVar18 = 1;
+          do {
+            lVar20 = *(long *)(*(long *)(lVar5 + 0x18) + uVar15 * 8);
+            func_0xfffffe000a7cc964(lVar20,0,0);
+            func_0xfffffe000a7cc778(lVar20,*(undefined8 *)(param_1 + 0x840),1);
+            if ((*(byte *)(*(long *)(param_1 + 0x538) + 0x6d1) >> 1 & 1) == 0) {
+              uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              func_0xfffffe000a7c3bec(uVar25,lVar8 + 0x100,lVar7 + 0x100);
+              uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              func_0xfffffe000a7c3bec(uVar25,lVar8 + 0x100,lVar7 + 0x140);
+              uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              func_0xfffffe000a7c3bec(uVar25,lVar8 + 0x140,lVar7 + 0x180);
+            }
+            else {
+              plVar6 = *(long **)(param_1 + 0x840);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              (**(code **)(*plVar6 + 0x158))(plVar6,lVar7 + 0x140);
+              plVar6 = *(long **)(param_1 + 0x840);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              lVar11 = *plVar6;
+              (**(code **)(lVar11 + 0x158))(lVar11 + 0x158,plVar6,lVar7 + 0x100);
+            }
+            func_0xfffffe000a7e4488(param_2,*(undefined8 *)(lVar20 + 0x28));
+            bVar2 = uVar18 < uVar13;
+            uVar15 = uVar18;
+            uVar18 = (ulong)((int)uVar18 + 1);
+          } while (bVar2);
+        }
+        lVar5 = *(long *)(param_3 + 0x10);
+        uVar13 = *(ulong *)(lVar5 + 0x20);
+        if (uVar13 != 0) {
+          uVar15 = 0;
+          uVar18 = 1;
+          do {
+            lVar20 = *(long *)(*(long *)(lVar5 + 0x18) + uVar15 * 8);
+            func_0xfffffe000a7cc778(lVar20,*(undefined8 *)(param_1 + 0x840),0);
+            if ((*(byte *)(*(long *)(param_1 + 0x538) + 0x6d1) >> 1 & 1) == 0) {
+              uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              func_0xfffffe000a7c3bec(uVar25,lVar8 + 0x100,lVar7 + 0x100);
+              uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              func_0xfffffe000a7c3bec(uVar25,lVar8 + 0x140,lVar7 + 0x180);
+            }
+            else {
+              plVar6 = *(long **)(param_1 + 0x840);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              (**(code **)(*plVar6 + 0x158))(plVar6,lVar7 + 0x100);
+            }
+            func_0xfffffe000a7e4488(param_2,*(undefined8 *)(lVar20 + 0x28));
+            bVar2 = uVar18 < uVar13;
+            uVar15 = uVar18;
+            uVar18 = (ulong)((int)uVar18 + 1);
+          } while (bVar2);
+        }
+        lVar5 = *(long *)(param_3 + 0x60);
+        uVar13 = *(ulong *)(lVar5 + 0x20);
+        if (uVar13 != 0) {
+          uVar15 = 0;
+          uVar18 = 1;
+          do {
+            lVar20 = *(long *)(*(long *)(lVar5 + 0x18) + uVar15 * 8);
+            func_0xfffffe000a7cc778(lVar20,*(undefined8 *)(param_1 + 0x840),0);
+            if ((*(byte *)(*(long *)(param_1 + 0x538) + 0x6d1) >> 1 & 1) == 0) {
+              uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              func_0xfffffe000a7c3bec(uVar25,lVar8 + 0x100,lVar7 + 0x100);
+              uVar25 = *(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              func_0xfffffe000a7c3bec(uVar25,lVar8 + 0x140,lVar7 + 0x180);
+            }
+            else {
+              plVar6 = *(long **)(param_1 + 0x840);
+              lVar7 = func_0xfffffe000a7cd16c(lVar20);
+              (**(code **)(*plVar6 + 0x158))(plVar6,lVar7 + 0x100);
+            }
+            func_0xfffffe000a7e4488(param_2,*(undefined8 *)(lVar20 + 0x28));
+            bVar2 = uVar18 < uVar13;
+            uVar15 = uVar18;
+            uVar18 = (ulong)((int)uVar18 + 1);
+          } while (bVar2);
+        }
+        lVar8 = *(long *)(param_3 + 0x48);
+        uVar13 = *(ulong *)(lVar8 + 0x20);
+        if (uVar13 != 0) {
+          uVar15 = 0;
+          uVar18 = 1;
+          do {
+            func_0xfffffe000a7e4488
+                      (param_2,*(undefined8 *)
+                                (*(long *)(*(long *)(lVar8 + 0x18) + uVar15 * 8) + 0x28));
+            bVar2 = uVar18 < uVar13;
+            uVar15 = uVar18;
+            uVar18 = (ulong)((int)uVar18 + 1);
+          } while (bVar2);
+        }
+        lVar8 = *(long *)(this + 0x78);
+        if (lVar8 != 0) {
+          lVar5 = func_0xfffffe000be9c88c(this,*(undefined8 *)PTR_DAT_fffffe0007e9e3b8);
+          uVar17 = *(ulonglong *)(lVar8 + 0x38);
+          pAVar24 = *(AGXGPUMemBlockPool **)(lVar8 + 0x50);
+          local_b0 = PTR_DAT_fffffe0007e9e390;
+          uStack_a8 = DAT_fffffe000712d728;
+          local_a0 = ____ZN18AGXGPUMemBlockPool22setEventStampsUnlockedEiy_block_invoke;
+          local_98 = &___block_descriptor_tmp_23;
+          local_90 = (undefined8 *)CONCAT44(local_90._4_4_,*(undefined4 *)(lVar5 + 0x18));
+          func_0xfffffe000bf137cc(*(undefined8 *)(pAVar24 + 0x10));
+          AGXGPUMemBlockPool::iterateBlocksBindOrderLocked
+                    (pAVar24,(_func_bool_sBlock_ptr *)&local_b0,uVar17);
+          func_0xfffffe000bf138cc(*(undefined8 *)(pAVar24 + 0x10));
+        }
+        *(undefined8 *)(param_2 + 0x2e0) = *(undefined8 *)(this + 0x1d8);
+        uStack_88 = 0;
+        local_90 = (undefined8 *)0x0;
+        uStack_78 = 0;
+        uStack_80 = 0;
+        uStack_a8 = 0;
+        local_b0 = (undefined *)0x0;
+        local_98 = (undefined *)0x0;
+        local_a0 = (code *)0x0;
+        func_0xfffffe000a7c25e0(&local_b0);
+        lVar8 = **(long **)(param_1 + 0x840);
+        (**(code **)(lVar8 + 0x158))(lVar8 + 0x158,*(long **)(param_1 + 0x840),&local_b0);
+        func_0xfffffe000a7c3bec
+                  (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),
+                   *(long *)(param_1 + 0x840) + 0x100,&local_170);
+        func_0xfffffe000a7c3bec
+                  (*(undefined8 *)(*(long *)(param_1 + 0x538) + 0x140),
+                   *(long *)(param_1 + 0x840) + 0x140,&local_170);
+        if ((*(byte *)(*(long *)(param_1 + 0x538) + 0x6d1) >> 1 & 1) != 0) {
+          (**(code **)(**(long **)(param_1 + 0x840) + 0x158))
+                    (*(long **)(param_1 + 0x840),&local_170);
+        }
+        updateMTLFenceEvents((AGXCommandQueue *)param_1,param_4,2,&local_b0,&local_170);
+        return 1;
+      }
+      (**(code **)(*(long *)param_2 + 0x148))(param_2);
+    }
+  }
+  (**(code **)(*(long *)param_2 + 0x28))(param_2);
+LAB_fffffe000898edec:
+  *(undefined4 *)(param_1 + 0x528) = 8;
+  return 0;
+}
+
+
+
+===== queue_set_protection_options address=0xfffffe000898bbe0 =====
+symbol=setProtectionOptions
+entry=fffffe000898bbe0
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d8d01 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXCommandQueue::setProtectionOptions(unsigned long long) */
+
+void __thiscall AGXCommandQueue::setProtectionOptions(AGXCommandQueue *this,ulonglong param_1)
+
+{
+  code *pcVar1;
+  ulong unaff_x30;
+  
+  if (((*(byte *)(*(long *)(this + 0x538) + 0xee94) & 1) != 0) &&
+     (*(ulonglong *)(this + 0x550) != param_1)) {
+    (**(code **)(**(long **)(this + 0x678) + 0x158))(*(long **)(this + 0x678),0,0);
+  }
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar1 = (code *)SoftwareBreakpoint(0xc471,0xfffffe000898bc80);
+    (*pcVar1)();
+  }
+                    /* WARNING: Could not recover jumptable at 0xfffffe000898bc88. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+  (**(code **)(PTR_DAT_fffffe0007e9e530 + 0x188))(this,param_1,PTR_DAT_fffffe0007e9e530 + 0x188);
+  return;
+}
+
+
+
+===== user_client_invalidate_usc_instruction_cache address=0xfffffe00089979e4 =====
+symbol=invalidateICache
+entry=fffffe00089979e4
+direct_callers=0
+direct_callees=1
+  callee=waitForDeviceControlCompletion entry=fffffe000899fef8
+static_references=
+  reference=fffffe000d0d8d62 type=DATA owner=static-data
+static_reference_count=1
+
+/* WARNING: Removing unreachable block (ram,0xfffffe0008997ac0) */
+/* AGXDeviceUserClient::invalidateICache(_AGXUSCICacheInvalidate*) */
+
+undefined8 __thiscall
+AGXDeviceUserClient::invalidateICache(AGXDeviceUserClient *this,_AGXUSCICacheInvalidate *param_1)
+
+{
+  undefined4 *puVar1;
+  uint uVar2;
+  int iVar3;
+  long lVar4;
+  undefined8 uVar5;
+  long lVar6;
+  AGFIAcceleratorDeviceControlEntry *pAVar7;
+  undefined4 local_68;
+  undefined4 local_64;
+  ulong local_60;
+  undefined8 uStack_58;
+  undefined8 uStack_50;
+  undefined8 uStack_48;
+  undefined8 local_40;
+  undefined8 uStack_38;
+  undefined8 local_30;
+  uint local_28;
+  undefined4 local_24;
+  
+  lVar4 = func_0xfffffe000a7de79c(*(undefined8 *)(this + 0x120));
+  if (*(uint *)param_1 < 3) {
+    if (*(uint *)(lVar4 + 0x230) != 0xffffffff) {
+      lVar6 = (ulong)*(uint *)param_1 * 4;
+      puVar1 = (undefined4 *)(&DAT_fffffe000712e070 + (int)lVar6);
+      if (lVar6 - (int)lVar6 != 0) {
+        puVar1 = (undefined4 *)
+                 ((ulong)(&DAT_fffffe000712e070 + lVar6) & 0xffffffffffff | 0x2bad000000000000);
+      }
+      local_64 = *puVar1;
+      uStack_58 = 0;
+      uStack_48 = 0;
+      uStack_50 = 0;
+      local_30 = 0;
+      uStack_38 = 0;
+      local_40 = 0;
+      local_60 = (ulong)*(uint *)(lVar4 + 0x230);
+      local_68 = 0x32;
+      pAVar7 = *(AGFIAcceleratorDeviceControlEntry **)(*(long *)(this + 0xf8) + 0x5b0);
+      local_24 = 2;
+      uVar2 = (**(code **)(*(long *)(pAVar7 + 0x898) + 0x30))(pAVar7 + 0x898);
+      local_28 = 0;
+      lVar4 = **(long **)(*(long *)(pAVar7 + 0x298) + 0x3e0);
+      iVar3 = (**(code **)(lVar4 + 0x1e8))
+                        (lVar4 + 0x1e8,*(long **)(*(long *)(pAVar7 + 0x298) + 0x3e0),
+                         AGXAccelerator::submitDeviceControl,&local_68,&local_24,&local_28,0);
+      if ((iVar3 == 0) && (((byte)local_24 >> 1 & 1) != 0)) {
+        AGXFirmware::waitForDeviceControlCompletion(pAVar7,uVar2,local_28);
+      }
+    }
+    uVar5 = 0;
+  }
+  else {
+    uVar5 = 0xe00002bc;
+  }
+  return uVar5;
+}
+
+
+
+===== user_client_device_va_range address=0xfffffe0008997db4 =====
+symbol=getDeviceUserVARange
+entry=fffffe0008997db4
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d8d67 type=DATA owner=static-data
+static_reference_count=1
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+/* AGXDeviceUserClient::getDeviceUserVARange(AGXDeviceUserVARangeInfo&) */
+
+undefined8 __thiscall
+AGXDeviceUserClient::getDeviceUserVARange
+          (AGXDeviceUserClient *this,AGXDeviceUserVARangeInfo *param_1)
+
+{
+  undefined8 uVar1;
+  
+  uVar1 = _DAT_fffffe000712dc70;
+  *(undefined8 *)(param_1 + 8) = _UNK_fffffe000712dc78;
+  *(undefined8 *)param_1 = uVar1;
+  return 0;
+}
+
+
+
+===== user_client_external_method_dispatch address=0xfffffe00089996c0 =====
+symbol=externalMethod
+entry=fffffe00089996c0
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d8d87 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXDeviceUserClient::externalMethod(unsigned int, IOExternalMethodArguments*,
+   IOExternalMethodDispatch*, OSObject*, void*) */
+
+void AGXDeviceUserClient::externalMethod
+               (uint param_1,IOExternalMethodArguments *param_2,IOExternalMethodDispatch *param_3,
+               OSObject *param_4,void *param_5)
+
+{
+                    /* WARNING: Could not recover jumptable at 0xfffffe00089996f0. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+  (**(code **)(PTR_DAT_fffffe0007e9e550 + 0x890))();
+  return;
+}
+
+
+
+===== gart_code_range_info address=0xfffffe00089f3ca8 =====
+symbol=getCodeGartRangeInfo
+entry=fffffe00089f3ca8
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d95b3 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXGart::getCodeGartRangeInfo(unsigned long long*, unsigned long long*) */
+
+bool __thiscall AGXGart::getCodeGartRangeInfo(AGXGart *this,ulonglong *param_1,ulonglong *param_2)
+
+{
+  if (param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0) {
+    *param_1 = 0x1000000000;
+    *param_2 = 0x5c00000000;
+  }
+  return param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0;
+}
+
+
+
+===== gart_allocate_range address=0xfffffe00089f3e20 =====
+symbol=allocate
+entry=fffffe00089f3e20
+direct_callers=2
+  caller=allocate entry=fffffe00089ee824
+  caller=allocate entry=fffffe0008a0cf48
+direct_callees=0
+static_references=
+  reference=fffffe000d0d95b5 type=DATA owner=static-data
+  reference=fffffe00089ee884 type=UNCONDITIONAL_CALL owner=allocate
+  reference=fffffe0008a0cfa8 type=UNCONDITIONAL_CALL owner=allocate
+static_reference_count=3
+
+/* AGXGart::allocate(unsigned long long, unsigned long long, unsigned int) */
+
+long __thiscall AGXGart::allocate(AGXGart *this,ulonglong param_1,ulonglong param_2,uint param_3)
+
+{
+  AGXGart *pAVar1;
+  int iVar2;
+  long lVar3;
+  ulong uVar4;
+  ulong uVar5;
+  ulong uVar6;
+  long local_48;
+  
+  func_0xfffffe000a7e71e4();
+  local_48 = 0;
+  if (param_3 - 0xd < 2) {
+    lVar3 = func_0xfffffe000c080318("AGXk: %s:%d:%s: !!! Cannot allocate from unmapped range!\n");
+    return lVar3;
+  }
+  if (param_3 != 0) {
+    uVar4 = param_2 >> ((ulong)_agxk_gart_page_shift & 0x3f);
+    uVar5 = param_1 >> ((ulong)_agxk_gart_page_shift & 0x3f);
+    uVar6 = uVar5 + uVar4 & -uVar4;
+    if (uVar4 == 0) {
+      uVar6 = uVar5 + 1;
+    }
+    lVar3 = (ulong)param_3 * 8;
+    pAVar1 = this + (long)(int)lVar3 + 0x240;
+    if (lVar3 != (int)lVar3) {
+      pAVar1 = (AGXGart *)((ulong)(this + lVar3 + 0x240) & 0xffffffffffff | 0x2bad000000000000);
+    }
+    iVar2 = (**(code **)(**(long **)pAVar1 + 0x170))(*(long **)pAVar1,uVar6,&local_48);
+    lVar3 = 0;
+    if (iVar2 != 0) {
+      lVar3 = (ulong)param_3 * 8;
+      pAVar1 = this + (long)(int)lVar3 + 0xb8;
+      if (lVar3 - (int)lVar3 != 0) {
+        pAVar1 = (AGXGart *)((ulong)(this + lVar3 + 0xb8) & 0xffffffffffff | 0x2bad000000000000);
+      }
+      *(ulonglong *)pAVar1 = *(long *)pAVar1 + param_1;
+      lVar3 = local_48 << ((ulong)_agxk_gart_page_shift & 0x3f);
+    }
+    func_0xfffffe000a7e71f0(this);
+    return lVar3;
+  }
+  lVar3 = func_0xfffffe000c080318("AGXk: %s:%d:%s: !!! Cannot allocate from default range!\n");
+  return lVar3;
+}
+
+
+
+===== gart_allocate_memory_map address=0xfffffe00089f5004 =====
+symbol=allocate
+entry=fffffe00089f5004
+direct_callers=2
+  caller=allocate entry=fffffe00089f0164
+  caller=allocate entry=fffffe0008a0e2a8
+direct_callees=0
+static_references=
+  reference=fffffe000d0d95d0 type=DATA owner=static-data
+  reference=fffffe00089f01b4 type=UNCONDITIONAL_CALL owner=allocate
+  reference=fffffe0008a0e320 type=UNCONDITIONAL_CALL owner=allocate
+static_reference_count=3
+
+/* AGXGart::allocate(IOGPUMemoryMap*) */
+
+long __thiscall AGXGart::allocate(AGXGart *this,IOGPUMemoryMap *param_1)
+
+{
+  ushort uVar1;
+  int iVar2;
+  ulong uVar3;
+  long lVar4;
+  ulong uVar5;
+  ulong uVar6;
+  ulong uVar7;
+  undefined8 *puVar8;
+  ulong uVar9;
+  ulong uVar10;
+  ulong uVar11;
+  ulong local_48;
+  
+  func_0xfffffe000a7e71e4();
+  if ((*(ushort *)(param_1 + 0x10) >> 6 & 1) == 0) {
+    uVar10 = 0;
+  }
+  else {
+    uVar10 = (**(code **)(*(long *)param_1 + 0x158))(param_1);
+  }
+  uVar3 = (**(code **)(*(long *)param_1 + 0x188))(param_1);
+  uVar1 = *(ushort *)(param_1 + 0x12);
+  uVar11 = (ulong)uVar1;
+  uVar7 = (ulong)_agxk_gart_page_shift;
+  uVar5 = (ulong)(*(uint *)(param_1 + 0x14) >> (uVar7 & 0x3f));
+  uVar6 = uVar3 >> (uVar7 & 0x3f);
+  local_48 = 0;
+  uVar9 = uVar6 + uVar5 & -uVar5;
+  if (uVar5 == 0) {
+    uVar9 = uVar6 + 1;
+  }
+  if (uVar1 - 0xd < 2) {
+    lVar4 = func_0xfffffe000c080318("AGXk: %s:%d:%s: !!! Cannot allocate from unmapped range!\n");
+    return lVar4;
+  }
+  if (uVar1 == 0) {
+    lVar4 = func_0xfffffe000c080318("AGXk: %s:%d:%s: !!! Cannot allocate from default range!\n");
+    return lVar4;
+  }
+  if (uVar10 == 0) {
+    iVar2 = (**(code **)(**(long **)(this + uVar11 * 8 + 0x240) + 0x170))
+                      (*(long **)(this + uVar11 * 8 + 0x240),uVar9,&local_48);
+    uVar10 = local_48;
+    if (iVar2 != 0) goto LAB_fffffe00089f51a4;
+  }
+  else {
+    uVar10 = uVar10 >> (uVar7 & 0x3f);
+    if (((uVar5 - 1 & uVar10) == 0) &&
+       (uVar9 = (**(code **)(**(long **)(this + uVar11 * 8 + 0x240) + 0x178))
+                          (*(long **)(this + uVar11 * 8 + 0x240),uVar10,uVar9), (uVar9 & 1) != 0)) {
+LAB_fffffe00089f51a4:
+      *(ulong *)(this + uVar11 * 8 + 0xb8) = *(long *)(this + uVar11 * 8 + 0xb8) + uVar3;
+      lVar4 = uVar10 << ((ulong)_agxk_gart_page_shift & 0x3f);
+      if (lVar4 != 0) {
+        *(undefined8 *)(param_1 + 0x38) = 0;
+        puVar8 = *(undefined8 **)(this + 0x1c0);
+        *(undefined8 **)(param_1 + 0x40) = puVar8;
+        *puVar8 = param_1;
+        *(IOGPUMemoryMap **)(this + 0x1c0) = param_1 + 0x38;
+      }
+      goto LAB_fffffe00089f51e0;
+    }
+  }
+  lVar4 = 0;
+LAB_fffffe00089f51e0:
+  func_0xfffffe000a7e71f0(this);
+  return lVar4;
+}
+
+
+
+===== resource_initialization address=0xfffffe0008a08434 =====
+symbol=initialize
+entry=fffffe0008a08434
+direct_callers=0
+direct_callees=6
+  callee=setResourceTwiddled entry=fffffe0008a08eac
+  callee=initialize entry=fffffe0008a27af4
+  callee=getGPUVirtualLengthWithinLayer entry=fffffe00089f13a4
+  callee=bufferAdd entry=fffffe00089f5e4c
+  callee=getPrimaryMemoryDescriptor entry=fffffe0008a090f8
+  callee=withDescriptor entry=fffffe0008a07df0
+static_references=
+  reference=fffffe000d0d9783 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXResource::initialize(IOGPUDevice*, IOGPUNewResourceArgs*, unsigned long long) */
+
+ulong __thiscall
+AGXResource::initialize
+          (AGXResource *this,IOGPUDevice *param_1,IOGPUNewResourceArgs *param_2,ulonglong param_3)
+
+{
+  long lVar1;
+  AGXResource AVar2;
+  IOGPUNewResourceArgs IVar3;
+  byte bVar4;
+  ushort uVar5;
+  uint uVar6;
+  uint uVar7;
+  uint uVar8;
+  uint uVar9;
+  uint uVar10;
+  bool bVar11;
+  bool bVar12;
+  int iVar13;
+  undefined4 uVar14;
+  uint uVar15;
+  ulong uVar16;
+  long lVar17;
+  long lVar18;
+  IOMemoryDescriptor *pIVar19;
+  long *plVar20;
+  undefined1 uVar21;
+  uint uVar22;
+  uint uVar23;
+  uint uVar24;
+  ulong uVar25;
+  int iVar26;
+  uint uVar27;
+  uint uVar28;
+  ulong uVar29;
+  uint uVar30;
+  undefined8 uVar31;
+  agxsTwiddledBlockInfo *this_00;
+  uint uVar32;
+  uint uVar33;
+  ulong uVar34;
+  ulong uVar35;
+  
+  if ((param_2 != (IOGPUNewResourceArgs *)0x0) && (param_3 < 0x68)) {
+    return 0;
+  }
+  uVar16 = (**(code **)(PTR_DAT_fffffe0007e9e4f0 + 0x158))(this,param_1,param_2);
+  if ((int)uVar16 == 0) {
+    return uVar16;
+  }
+  AVar2 = this[0x10];
+  if (param_2 == (IOGPUNewResourceArgs *)0x0) {
+    bVar11 = false;
+    if (AVar2 != (AGXResource)0x80) goto LAB_fffffe0008a08568;
+LAB_fffffe0008a084d8:
+    if (*(long *)(this + 0x30) != 0) goto LAB_fffffe0008a084e0;
+LAB_fffffe0008a08570:
+    if ((param_2 != (IOGPUNewResourceArgs *)0x0) && (((byte)param_2[0x5c] >> 5 & 1) != 0)) {
+      this[0xb1] = (AGXResource)0x1;
+      uVar16 = AGXMTLCounterSampler::bufferAdd
+                         (*(AGXMTLCounterSampler **)(*(long *)(this + 0x50) + 0xf5d0),
+                          (AGXShared *)param_1,this);
+      if ((uVar16 & 1) == 0) {
+        this[0xb1] = (AGXResource)0x0;
+        return 0;
+      }
+      goto LAB_fffffe0008a08a70;
+    }
+    if ((bool)(((AVar2 == (AGXResource)0x0 || AVar2 == (AGXResource)0x80) ||
+               AVar2 == (AGXResource)0x40) & bVar11)) {
+      uVar16 = *(ulong *)(param_2 + 0x58);
+      if ((uVar16 & 1) != 0) {
+        uVar16 = setResourceTwiddled(this,param_2,false);
+        if ((int)uVar16 == 0) {
+          return uVar16;
+        }
+        uVar16 = *(ulong *)(param_2 + 0x58);
+      }
+      if ((uVar16 >> 0x27 & 1) != 0) {
+        if (param_1 == (IOGPUDevice *)0x0) {
+          return 0;
+        }
+        if (*(AGXResource **)(this + 0x28) == (AGXResource *)0x0) {
+          return 0;
+        }
+        if (*(long *)(param_2 + 0x60) == 0) {
+          return 0;
+        }
+        pIVar19 = (IOMemoryDescriptor *)getPrimaryMemoryDescriptor(*(AGXResource **)(this + 0x28));
+        if (pIVar19 == (IOMemoryDescriptor *)0x0) {
+          return 0;
+        }
+        uVar22 = *(uint *)(param_2 + 0x60);
+        uVar15 = (**(code **)(*(long *)pIVar19 + 0x1e8))();
+        plVar20 = (long *)AGXRepeatedMemoryDescriptor::withDescriptor(pIVar19,uVar22,uVar15);
+        if (plVar20 == (long *)0x0) {
+          return 0;
+        }
+        lVar18 = func_0xfffffe000a7f73f0(*(undefined8 *)(param_1 + 0x48),0,plVar20);
+        if (lVar18 == 0) {
+          (**(code **)(*plVar20 + 0x28))(plVar20);
+          return 0;
+        }
+        if (*(long **)(this + 0x28) != (long *)0x0) {
+          (**(code **)(**(long **)(this + 0x28) + 0x28))();
+        }
+        *(long *)(this + 0x28) = lVar18;
+        (**(code **)(*plVar20 + 0x28))(plVar20);
+      }
+      if (AVar2 == (AGXResource)0x40) {
+        uVar31 = func_0xfffffe000a7cd16c(this);
+        lVar18 = func_0xfffffe000be9c88c(uVar31,&gMetaClass);
+        lVar18 = func_0xfffffe000be9c88c
+                           (*(undefined8 *)(lVar18 + 0x28),&AGXVirtualMemory::gMetaClass);
+        if (lVar18 == 0) {
+          return 0;
+        }
+        if (*(long *)(lVar18 + 0xb8) != 0) {
+          uVar16 = *(ulong *)(param_2 + 0x58);
+          if ((uVar16 >> 0x31 & 1) == 0) {
+            uVar35 = uVar16 >> 0x28 & 0xf;
+            uVar15 = 1 << uVar35;
+            uVar25 = uVar16 >> 0x2c & 0xf;
+            uVar6 = 1 << uVar25;
+            uVar5 = *(ushort *)(param_2 + 8);
+            uVar22 = (uint)*(ushort *)(param_2 + 10);
+            uVar32 = (uint)*(ushort *)(param_2 + 0xc);
+            if ((uVar16 & 0x1000000000000) != 0) {
+              uVar22 = 1;
+              uVar32 = (uint)*(ushort *)(param_2 + 10);
+            }
+            uVar23 = (uint)uVar16;
+            if (((uVar23 >> 0xd & 1) != 0) && (uVar32 == 1)) {
+              uVar32 = (uint)(byte)param_2[0x10];
+            }
+            uVar16 = (((ulong)uVar15 + (ulong)uVar5) - 1 & -(ulong)uVar15) >> uVar35;
+            uVar29 = (((ulong)uVar6 + (ulong)uVar22) - 1 & -(ulong)uVar6) >> uVar25;
+            uVar28 = uVar23 >> 0x17 & 0xf;
+            if (1 < uVar28) {
+              uVar27 = (uint)uVar16;
+              uVar28 = (uint)uVar29;
+              if (uVar27 <= uVar28) {
+                uVar27 = uVar28;
+              }
+              uVar28 = 0;
+              if (uVar27 != 0) {
+                uVar28 = 0x20 - (int)LZCOUNT(uVar27);
+              }
+            }
+            uVar27 = uVar23 >> 0xf & 0xf;
+            IVar3 = param_2[0x13];
+            this_00 = (agxsTwiddledBlockInfo *)(lVar18 + 0xd2);
+            *(undefined8 *)this_00 = 0;
+            uVar8 = uVar23 >> 0x13 & 0xf;
+            *(undefined8 *)(lVar18 + 0xda) = 0;
+            *(undefined8 *)(lVar18 + 0xe2) = 0;
+            uVar24 = (uint)*(ulong *)(param_2 + 0x58);
+            agxsTwiddledBlockInfo::initialize
+                      (this_00,(ulong)uVar5,(ulong)uVar22,uVar27,uVar8,uVar32,
+                       (uint)(byte)IVar3 << (ulong)(uVar23 >> 1 & 7),uVar24 >> 0x17 & 0xf,
+                       (byte)(uVar24 >> 4) & 7,(byte)(*(ulong *)(param_2 + 0x58) >> 0x1f) & 7);
+            uVar23 = *(uint *)(param_2 + 0x58) >> 0x17 & 0xf;
+            *(uint *)(lVar18 + 0xf8) = uVar23;
+            lVar17 = func_0xfffffe000bf12984(uVar23 << 2);
+            *(long *)(lVar18 + 0xf0) = lVar17;
+            uVar23 = *(uint *)(param_2 + 0x58) >> 0x17 & 0xf;
+            if (uVar23 == 0) {
+              uVar24 = 0;
+            }
+            else {
+              uVar24 = 0;
+              uVar34 = 0;
+              uVar9 = 0;
+              if (uVar27 != 0) {
+                uVar9 = ((uVar27 + uVar5) - 1) / uVar27;
+              }
+              uVar27 = uVar9;
+              if (uVar9 < 2) {
+                uVar27 = 1;
+              }
+              uVar10 = 0;
+              if (uVar8 != 0) {
+                uVar10 = ((uVar8 + uVar22) - 1) / uVar8;
+              }
+              uVar8 = uVar10;
+              if (uVar10 < 2) {
+                uVar8 = 1;
+              }
+              uVar30 = 0;
+              if ((uVar15 <= uVar27) && (uVar6 <= uVar8)) {
+                uVar27 = 0;
+                uVar24 = 0;
+                uVar34 = 0;
+                uVar8 = (uVar5 + uVar15) - 1 >> uVar35;
+                uVar22 = (uVar22 + uVar6) - 1 >> uVar25;
+                do {
+                  uVar33 = (uint)uVar34;
+                  uVar30 = -1 << (ulong)(uVar33 & 0x1f);
+                  bVar11 = (uVar8 & (uVar30 ^ 0xffffffff)) != 0;
+                  uVar23 = uVar22 >> (ulong)(uVar33 & 0x1f);
+                  if (!bVar11) {
+                    uVar23 = 0;
+                  }
+                  uVar33 = uVar8 >> (ulong)(uVar33 & 0x1f);
+                  bVar12 = (uVar22 & (uVar30 ^ 0xffffffff)) == 0;
+                  if (bVar12) {
+                    uVar33 = 0;
+                  }
+                  uVar30 = 0;
+                  if (!bVar12) {
+                    uVar30 = (uint)bVar11;
+                  }
+                  uVar24 = (uVar22 * uVar8 >> (ulong)(uVar27 & 0x1f)) + uVar24 + uVar23 + uVar33 +
+                           uVar30;
+                  *(uint *)(lVar17 + uVar34 * 4) = uVar24;
+                  uVar34 = uVar34 + 1;
+                  uVar23 = *(uint *)(param_2 + 0x58) >> 0x17 & 0xf;
+                  if (uVar23 <= uVar34) goto LAB_fffffe0008a088cc;
+                  uVar30 = (uint)uVar34;
+                  uVar33 = uVar9 >> (ulong)(uVar30 & 0x1f);
+                  if (uVar33 < 2) {
+                    uVar33 = 1;
+                  }
+                  uVar7 = uVar10 >> (ulong)(uVar30 & 0x1f);
+                  if (uVar7 < 2) {
+                    uVar7 = 1;
+                  }
+                } while ((uVar15 <= uVar33) && (uVar27 = uVar27 + 2, uVar6 <= uVar7));
+              }
+              uVar25 = agxsTwiddledBlockInfo::getGPUVirtualLengthWithinLayer
+                                 (this_00,uVar30,uVar23 - uVar30);
+              uVar24 = uVar24 + (int)((uVar25 & 0xffffffff) + 0x3fff >> 0xe);
+              *(uint *)(lVar17 + uVar34 * 4) = uVar24;
+            }
+LAB_fffffe0008a088cc:
+            *(ulong *)(lVar18 + 0x100) = (ulong)uVar24;
+            *(undefined8 *)(lVar18 + 0xda) = 0;
+            *(undefined8 *)(lVar18 + 0xe2) = 0;
+            *(undefined8 *)this_00 = 0;
+            agxsTwiddledBlockInfo::initialize
+                      (this_00,uVar16,uVar29,1,1,uVar32,1,uVar28,1,
+                       (byte)(*(ulong *)(param_2 + 0x58) >> 0x1f) & 7);
+            lVar17 = func_0xfffffe000bf12984((ulong)*(byte *)(lVar18 + 0xda) << 2);
+            *(long *)(lVar18 + 0x108) = lVar17;
+            bVar4 = *(byte *)(lVar18 + 0xda);
+            if (bVar4 != 0) {
+              uVar16 = 0;
+              do {
+                uVar14 = agxsTwiddledBlockInfo::getGPUVirtualLengthWithinLayer
+                                   (this_00,0,(uint)uVar16);
+                *(undefined4 *)(lVar17 + uVar16 * 4) = uVar14;
+                uVar16 = uVar16 + 1;
+              } while (bVar4 != uVar16);
+            }
+            uVar16 = agxsTwiddledBlockInfo::getGPUVirtualLengthWithinLayer(this_00,0,(uint)bVar4);
+            if (*(char *)(lVar18 + 0xe7) == '\0') {
+              bVar11 = *(char *)(lVar18 + 0xe8) != '\0';
+            }
+            else {
+              bVar11 = true;
+            }
+            bVar4 = *(byte *)(lVar18 + 0xe3);
+            if (1 < *(ushort *)(lVar18 + 0xd6)) {
+              bVar11 = true;
+            }
+            if (bVar4 < 3) {
+              if (bVar4 == 1) {
+                lVar17 = 0x4000;
+                if (!(bool)((uVar16 & 0xffffffffffffc000) != 0 & bVar11)) {
+                  lVar17 = 0x40;
+                }
+              }
+              else {
+                lVar17 = 0x4000;
+                if (!(bool)((uVar16 & 0xffffffffffffc000) != 0 & bVar11)) {
+                  lVar17 = 0x80;
+                }
+                if (bVar4 != 2) {
+                  lVar17 = 0;
+                }
+              }
+            }
+            else {
+              lVar17 = 0x4000;
+              if (!(bool)((uVar16 & 0xffffffffffffc000) != 0 & bVar11)) {
+                lVar17 = 0x80;
+              }
+              lVar1 = 0x4000;
+              if (!(bool)((uVar16 & 0xffffffffffffc000) != 0 & bVar11)) {
+                lVar1 = 0x80;
+              }
+              if (bVar4 != 4) {
+                lVar1 = 0;
+              }
+              if (bVar4 != 3) {
+                lVar17 = lVar1;
+              }
+            }
+            *(ulong *)(lVar18 + 0x110) = (uVar16 + lVar17) - 1 & -lVar17;
+            uVar21 = 1;
+          }
+          else {
+            uVar21 = 0;
+          }
+          *(undefined1 *)(lVar18 + 0xd1) = uVar21;
+        }
+      }
+      if (((uint)*(undefined8 *)(param_2 + 0x58) >> 0x1b & 1) != 0) {
+        uVar22 = (uint)*(undefined8 *)(param_2 + 0x58) >> 0x1c & 7;
+        if (uVar22 - 2 < 3) {
+          uVar16 = (ulong)(*(uint *)(param_2 + 0x14) >> 0xf & 1);
+          if (param_2 == (IOGPUNewResourceArgs *)0x0) {
+            return uVar16;
+          }
+          if ((*(uint *)(param_2 + 0x14) >> 0xf & 1) == 0) {
+            return uVar16;
+          }
+        }
+        else if ((uVar22 < 2) ||
+                ((uVar22 == 5 && ((*(byte *)(*(long *)(this + 0x50) + 0x6d6) >> 3 & 1) != 0)))) {
+          uVar16 = (ulong)((*(uint *)(param_2 + 0x14) & 0x8000) == 0);
+          if (param_2 == (IOGPUNewResourceArgs *)0x0) {
+            return uVar16;
+          }
+          if ((*(uint *)(param_2 + 0x14) & 0x8000) != 0) {
+            return uVar16;
+          }
+        }
+      }
+      goto LAB_fffffe0008a08a70;
+    }
+  }
+  else {
+    bVar11 = param_2[0x13] != (IOGPUNewResourceArgs)0x0;
+    if (AVar2 == (AGXResource)0x80) goto LAB_fffffe0008a084d8;
+LAB_fffffe0008a08568:
+    if (AVar2 != (AGXResource)0x82) goto LAB_fffffe0008a08570;
+LAB_fffffe0008a084e0:
+    lVar17 = func_0xfffffe000a7cd16c(this);
+    lVar18 = *(long *)(lVar17 + 0x28);
+    uVar31 = *(undefined8 *)(*(long *)(lVar17 + 0x30) + 0x10);
+    iVar13 = func_0xfffffe000abee85c(uVar31);
+    if (iVar13 == 0) {
+      if ((param_2 != (IOGPUNewResourceArgs *)0x0) && (((byte)param_2[0x58] & 1) != 0)) {
+        uVar16 = setResourceTwiddled(this,param_2,true);
+        if ((uVar16 & 1) == 0) {
+          return 0;
+        }
+        goto LAB_fffffe0008a08a70;
+      }
+      *(undefined1 *)(lVar18 + 0xd4) = 0;
+    }
+    else {
+      uVar16 = func_0xfffffe000abe6df8(uVar31,*(undefined4 *)(*(long *)(lVar17 + 0x30) + 0x4c));
+      if ((uVar16 & 0xffffffff & _agxk_gart_page_mask >> 4) != 0) {
+        return 0;
+      }
+      uVar22 = (uint)(uVar16 >> 8) & 0xffffff;
+      if ((uint)uVar16 < 0x200 || 0xffffffef < uVar22 - 0x11) {
+        return 0;
+      }
+      if ((uVar22 - 1 & 0xfffffff0) != 0x10) {
+        return 0;
+      }
+      *(undefined1 *)(lVar18 + 0xd4) = 1;
+      *(undefined4 *)(lVar18 + 0xd8) = 0x20;
+      *(uint *)(lVar18 + 0xdc) = uVar22;
+    }
+  }
+  if (param_2 == (IOGPUNewResourceArgs *)0x0) {
+    return 1;
+  }
+LAB_fffffe0008a08a70:
+  this[0xb0] = (AGXResource)((byte)(*(uint *)(param_2 + 0x14) >> 0xd) & 1);
+  this[0xc0] = (AGXResource)((byte)(uint)((ulong)*(undefined8 *)(param_2 + 0x58) >> 0x23) & 1);
+  this[0xc1] = (AGXResource)((byte)(uint)((ulong)*(undefined8 *)(param_2 + 0x58) >> 0x24) & 1);
+  this[0xc2] = (AGXResource)((byte)(uint)((ulong)*(undefined8 *)(param_2 + 0x58) >> 0x26) & 1);
+  uVar16 = *(ulong *)(param_2 + 0x20);
+  if (uVar16 == 0) {
+    return 1;
+  }
+  uVar25 = uVar16 >> 0x24;
+  if (uVar25 != 0) {
+    if (uVar16 >> 0x22 < 0x1b) {
+      iVar13 = 1;
+    }
+    else {
+      if (uVar16 >> 0x21 < 0x37) {
+        return 0;
+      }
+      if (uVar16 >> 0x20 < 0x6f) {
+        iVar13 = 2;
+      }
+      else if (uVar16 < 0x6fffc00000) {
+        iVar13 = 3;
+      }
+      else if (uVar25 < 7) {
+        iVar13 = 4;
+      }
+      else if (uVar16 >> 0x28 == 0) {
+        if (8 < uVar25) {
+          return 0;
+        }
+        iVar13 = 6;
+      }
+      else if (uVar16 >> 0x28 < 3) {
+        iVar13 = 5;
+      }
+      else {
+        if (uVar16 < 0xfffffc1fffe00000) {
+          return 0;
+        }
+        if (uVar16 < 0xfffffc2000000000) {
+          iVar13 = 7;
+        }
+        else if (uVar16 < 0xfffffc20c0000000) {
+          iVar13 = 8;
+        }
+        else if (uVar16 < 0xfffffc2180000000) {
+          iVar13 = 9;
+        }
+        else if (uVar16 < 0xfffffc2181400000) {
+          iVar13 = 10;
+        }
+        else if (uVar16 < 0xfffffc2185400000) {
+          iVar13 = 0xb;
+        }
+        else {
+          if (0xfffffc21893fffff < uVar16) {
+            return 0;
+          }
+          iVar13 = 0xc;
+        }
+      }
+    }
+    if (!CARRY8(uVar16,*(ulong *)(param_2 + 0x28))) {
+      uVar16 = (uVar16 + *(ulong *)(param_2 + 0x28)) - 1;
+      uVar25 = uVar16 >> 0x24;
+      if (uVar25 != 0) {
+        if (uVar16 >> 0x22 < 0x1b) {
+          iVar26 = 1;
+        }
+        else {
+          if (uVar16 >> 0x21 < 0x37) {
+            return 0;
+          }
+          if (uVar16 >> 0x20 < 0x6f) {
+            iVar26 = 2;
+          }
+          else if (uVar16 < 0x6fffc00000) {
+            iVar26 = 3;
+          }
+          else if (uVar25 < 7) {
+            iVar26 = 4;
+          }
+          else if (uVar16 >> 0x28 == 0) {
+            if (8 < uVar25) {
+              return 0;
+            }
+            iVar26 = 6;
+          }
+          else if (uVar16 >> 0x28 < 3) {
+            iVar26 = 5;
+          }
+          else {
+            if (uVar16 < 0xfffffc1fffe00000) {
+              return 0;
+            }
+            if (uVar16 < 0xfffffc2000000000) {
+              iVar26 = 7;
+            }
+            else if (uVar16 < 0xfffffc20c0000000) {
+              iVar26 = 8;
+            }
+            else if (uVar16 < 0xfffffc2180000000) {
+              iVar26 = 9;
+            }
+            else if (uVar16 < 0xfffffc2181400000) {
+              iVar26 = 10;
+            }
+            else if (uVar16 < 0xfffffc2185400000) {
+              iVar26 = 0xb;
+            }
+            else {
+              if (0xfffffc21893fffff < uVar16) {
+                return 0;
+              }
+              iVar26 = 0xc;
+            }
+          }
+        }
+        return (ulong)(iVar13 == iVar26);
+      }
+    }
+  }
+  return 0;
+}
+
+
+
+===== resource_remove_from_aperture address=0xfffffe0008a07f04 =====
+symbol=removeFromAperture
+entry=fffffe0008a07f04
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d977a type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXResource::removeFromAperture() */
+
+void AGXResource::removeFromAperture(void)
+
+{
+  return;
+}
+
+
+
+===== resource_add_to_aperture address=0xfffffe0008a07f0c =====
+symbol=addToAperture
+entry=fffffe0008a07f0c
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d977c type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXResource::addToAperture() */
+
+undefined8 AGXResource::addToAperture(void)
+
+{
+  return 0;
+}
+
+
+
+===== resource_aperture_memory_descriptor address=0xfffffe0008a07f90 =====
+symbol=getApertureMemoryDescriptor
+entry=fffffe0008a07f90
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d977e type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXResource::getApertureMemoryDescriptor(unsigned long long*) */
+
+undefined8 AGXResource::getApertureMemoryDescriptor(ulonglong *param_1)
+
+{
+  return 0;
+}
+
+
+
+===== resource_mapping_options address=0xfffffe0008a0805c =====
+symbol=getMappingOptions
+entry=fffffe0008a0805c
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d9781 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXResource::getMappingOptions(IOGPUNewResourceArgs*, unsigned long long) const */
+
+ulong AGXResource::getMappingOptions(IOGPUNewResourceArgs *param_1,ulonglong param_2)
+
+{
+  ulong uVar1;
+  IOGPUNewResourceArgs IVar2;
+  uint uVar3;
+  bool bVar4;
+  int iVar5;
+  ulong uVar6;
+  long lVar7;
+  ulong uVar8;
+  uint uVar9;
+  uint uVar10;
+  ulong uVar11;
+  undefined8 uVar12;
+  
+  uVar6 = (**(code **)(PTR_DAT_fffffe0007e9e4f0 + 0x160))();
+  IVar2 = param_1[0x10];
+  if (param_2 == 0) {
+    bVar4 = false;
+    if (IVar2 != (IOGPUNewResourceArgs)0x80) goto LAB_fffffe0008a0813c;
+LAB_fffffe0008a080b8:
+    if (*(long *)(param_1 + 0x30) != 0) {
+LAB_fffffe0008a080c0:
+      lVar7 = func_0xfffffe000a7cd154(param_1);
+      uVar12 = *(undefined8 *)(*(long *)(lVar7 + 0x30) + 0x10);
+      iVar5 = func_0xfffffe000abee85c(uVar12);
+      if (iVar5 == 0) {
+        uVar8 = 0x500000000;
+      }
+      else {
+        uVar8 = func_0xfffffe000abe6df8(uVar12,*(undefined4 *)(*(long *)(lVar7 + 0x30) + 0x4c));
+        if ((((uVar8 & 0xffffffff & _agxk_gart_page_mask >> 4) != 0) ||
+            (uVar9 = (uint)(uVar8 >> 8) & 0xffffff, (uint)uVar8 < 0x200 || 0xffffffef < uVar9 - 0x11
+            )) || ((uVar9 - 1 & 0xfffffff0) != 0x10)) {
+          return 0;
+        }
+        uVar8 = 0x300000000;
+      }
+      iVar5 = func_0xfffffe000abeebd0(uVar12);
+      uVar11 = uVar6 & 0xffffffffc | 0x1000f00000010;
+      if (iVar5 == 0) {
+        uVar11 = uVar8 | uVar6;
+      }
+      return uVar11;
+    }
+  }
+  else {
+    bVar4 = *(char *)(param_2 + 0x13) != '\0';
+    if (IVar2 == (IOGPUNewResourceArgs)0x80) goto LAB_fffffe0008a080b8;
+LAB_fffffe0008a0813c:
+    if (IVar2 == (IOGPUNewResourceArgs)0x82) goto LAB_fffffe0008a080c0;
+  }
+  if (((byte)param_1[0xb1] & 1) != 0) {
+    return uVar6 & 0xfffffffc | 0x8500000001;
+  }
+  if (!(bool)((((byte)IVar2 & 0xbf) == 0 || IVar2 == (IOGPUNewResourceArgs)0x80) & bVar4)) {
+    if (IVar2 == (IOGPUNewResourceArgs)0x3) {
+      return 0;
+    }
+    return uVar6;
+  }
+  uVar9 = (uint)*(undefined8 *)(param_2 + 0x58);
+  if ((uVar9 >> 0x1b & 1) == 0) {
+    uVar8 = *(ulong *)(param_2 + 0x20);
+    if ((uVar8 == 0) || (*(long *)(param_2 + 0x28) == 0)) {
+      return uVar6 | 0x500000000;
+    }
+    uVar11 = uVar8 >> 0x24;
+    if (uVar11 != 0) {
+      if (uVar8 >> 0x22 < 0x1b) {
+        return uVar6 | 0x100000000;
+      }
+      if (0x36 < uVar8 >> 0x21) {
+        if (uVar8 >> 0x20 < 0x6f) {
+          return uVar6 | 0x200000000;
+        }
+        if (uVar8 < 0x6fffc00000) {
+          return uVar6 | 0x300000000;
+        }
+        if (uVar11 < 7) {
+          return uVar6 | 0x400000000;
+        }
+        if (uVar8 >> 0x28 == 0) {
+          if (uVar11 < 9) {
+            return uVar6 | 0x600000000;
+          }
+        }
+        else {
+          if (uVar8 >> 0x28 < 3) {
+            return uVar6 | 0x500000000;
+          }
+          if (0xfffffc1fffdfffff < uVar8) {
+            if (uVar8 < 0xfffffc2000000000) {
+              return uVar6 | 0x700000000;
+            }
+            if (uVar8 < 0xfffffc20c0000000) {
+              return uVar6 | 0x800000000;
+            }
+            if (uVar8 < 0xfffffc2180000000) {
+              return uVar6 | 0x20900000000;
+            }
+            if (uVar8 < 0xfffffc2181400000) {
+              return uVar6 | 0xa00000000;
+            }
+            if (uVar8 < 0xfffffc2185400000) {
+              return uVar6 | 0xb00000000;
+            }
+            if (uVar8 < 0xfffffc2189400000) {
+              return uVar6 | 0xc00000000;
+            }
+          }
+        }
+      }
+    }
+    uVar6 = func_0xfffffe000c080318
+                      (
+                      "AGXk: %s:%d:%s: !!! Assertion failed: %s: attempting to encode illegal memory range\n"
+                      );
+    return uVar6;
+  }
+  uVar10 = *(uint *)(param_2 + 0x14) & 0x8000;
+  uVar8 = 0x500000000;
+  if (uVar10 != 0) {
+    uVar8 = 0x100000000;
+  }
+  uVar9 = uVar9 >> 0x1c & 7;
+  uVar10 = uVar10 >> 0xf;
+  uVar11 = 1;
+  if (uVar9 < 4) {
+    if (uVar9 == 1) {
+LAB_fffffe0008a08270:
+      uVar11 = 3;
+    }
+    else {
+      uVar3 = 0;
+      if (uVar9 != 2) {
+        uVar3 = uVar10;
+      }
+      uVar10 = uVar3;
+      uVar11 = 1;
+    }
+  }
+  else {
+    if (uVar9 == 4) goto LAB_fffffe0008a08270;
+    if (uVar9 == 5) {
+      if ((*(byte *)(*(long *)(param_1 + 0x50) + 0x6d6) >> 3 & 1) != 0) {
+        uVar11 = uVar6 & 2 | 1;
+        uVar8 = 0x300000000;
+        goto LAB_fffffe0008a08280;
+      }
+      uVar11 = 1;
+    }
+  }
+  uVar11 = uVar11 & (uVar6 & 2 | 1);
+LAB_fffffe0008a08280:
+  uVar1 = 0x1000000000;
+  if (uVar10 == 0) {
+    uVar1 = 0;
+  }
+  return uVar11 | uVar6 & 0xfffffffc | uVar1 | uVar8;
+}
+
+
+
+===== resource_new_kernel_resource address=0xfffffe0008a095f4 =====
+symbol=newKernelResource
+entry=fffffe0008a095f4
+direct_callers=5
+  caller=createNewHWPBManager entry=fffffe00089f9478
+  caller=setupSceneState entry=fffffe00089fb080
+  caller=updateGtpOnlyBuffers entry=fffffe0008a06cbc
+  caller=updateRenderTarget entry=fffffe0008a06f44
+  caller=init entry=fffffe0008a1ad7c
+direct_callees=0
+static_references=
+  reference=fffffe000d0d9797 type=DATA owner=static-data
+  reference=fffffe00089f9540 type=UNCONDITIONAL_CALL owner=createNewHWPBManager
+  reference=fffffe00089fb284 type=UNCONDITIONAL_CALL owner=setupSceneState
+  reference=fffffe00089fb3d4 type=UNCONDITIONAL_CALL owner=setupSceneState
+  reference=fffffe0008a06e6c type=UNCONDITIONAL_CALL owner=updateGtpOnlyBuffers
+  reference=fffffe0008a071d8 type=UNCONDITIONAL_CALL owner=updateRenderTarget
+  reference=fffffe0008a1ae4c type=UNCONDITIONAL_CALL owner=init
+static_reference_count=7
+
+/* WARNING: Removing unreachable block (ram,0xfffffe0008a096b4) */
+/* AGXResource::newKernelResource(AGXAccelerator*, AGXShared*, unsigned long long, unsigned long
+   long, eGartRange, bool) */
+
+long * AGXResource::newKernelResource
+                 (long param_1,long param_2,undefined8 param_3,ulong param_4,long param_5)
+
+{
+  int iVar1;
+  long *plVar2;
+  long lVar3;
+  ulong uVar4;
+  undefined8 local_48;
+  
+  local_48 = 0;
+  plVar2 = (long *)func_0xfffffe000a7ca88c
+                             (param_1,param_2,0,param_3,*(uint *)(param_1 + 0x18e00) | 99,&local_48)
+  ;
+  if (plVar2 != (long *)0x0) {
+    (**(code **)(*plVar2 + 0x20))(plVar2);
+    (**(code **)(*plVar2 + 0x28))(plVar2);
+    iVar1 = (**(code **)(*plVar2 + 0x148))(*plVar2 + 0x148,plVar2,param_2,0,0);
+    if (iVar1 != 0) {
+      if ((param_4 >> 0x25 & 1) != 0) {
+        lVar3 = func_0xfffffe000be9c88c(plVar2[5],&AGXAllocation::gMetaClass);
+        *(undefined1 *)(lVar3 + 0xd4) = 3;
+      }
+      uVar4 = (**(code **)(*plVar2 + 0x178))(plVar2,param_4 & 0x5000000003 | param_5 << 0x20 | 4);
+      if ((uVar4 & 1) != 0) {
+        return plVar2;
+      }
+    }
+    if (param_2 == 0) {
+      (**(code **)(*plVar2 + 0x28))(plVar2);
+    }
+    else {
+      (**(code **)(*plVar2 + 0x170))(plVar2,param_2);
+    }
+  }
+  return (long *)0x0;
+}
+
+
+
+===== kernel_resource_initializer address=0xfffffe0008a1ad7c =====
+symbol=init
+entry=fffffe0008a1ad7c
+direct_callers=0
+direct_callees=2
+  callee=init entry=fffffe000897ba50
+  callee=newKernelResource entry=fffffe0008a095f4
+static_references=
+  reference=fffffe000d0d9899 type=DATA owner=static-data
+static_reference_count=1
+
+/* WARNING: Removing unreachable block (ram,0xfffffe0008a1ae9c) */
+/* AGXTAChannel::init(AGXCommandQueue const*, AGXWorkQueue*, int, int, unsigned long long) */
+
+undefined8
+AGXTAChannel::init(AGXCommandQueue *param_1,AGXWorkQueue *param_2,int param_3,int param_4,
+                  ulonglong param_5)
+
+{
+  int iVar1;
+  undefined8 uVar2;
+  long *plVar3;
+  undefined8 in_x5;
+  long lVar4;
+  undefined4 uVar5;
+  
+  uVar2 = AGXChannel::init((AGXChannel *)param_1,param_2,param_3,param_4,param_5,in_x5,0);
+  *(undefined4 *)(param_1 + 0x20c) = 0;
+  lVar4 = *(long *)(param_2 + 0x538);
+  if (*(int *)(lVar4 + 0xf50c) == 2) {
+    uVar5 = *(undefined4 *)(lVar4 + 0xf514);
+    goto LAB_fffffe0008a1ae04;
+  }
+  uVar5 = 0;
+  if (*(int *)(lVar4 + 0xf50c) != 1) goto LAB_fffffe0008a1ae04;
+  iVar1 = *(int *)(lVar4 + 0xf518);
+  if (iVar1 == 2) {
+LAB_fffffe0008a1adf0:
+    uVar5 = 0;
+    *(undefined4 *)(lVar4 + 0xf518) = 0;
+  }
+  else {
+    if (iVar1 == 1) {
+      uVar5 = 2;
+    }
+    else {
+      if (iVar1 != 0) goto LAB_fffffe0008a1adf0;
+      uVar5 = 1;
+    }
+    *(undefined4 *)(lVar4 + 0xf518) = uVar5;
+  }
+LAB_fffffe0008a1ae04:
+  *(undefined4 *)(param_1 + 0x210) = uVar5;
+  lVar4 = (**(code **)(*(long *)param_1 + 0x228))(param_1,param_1 + 0x208);
+  if (lVar4 != 0) {
+    plVar3 = (long *)AGXResource::newKernelResource
+                               (*(undefined8 *)(param_1 + 0x10),*(undefined8 *)(param_2 + 0x490),
+                                lVar4,3,5);
+    *(long **)(param_1 + 0x200) = plVar3;
+    if (plVar3 == (long *)0x0) {
+      uVar2 = 0;
+    }
+    else {
+      (**(code **)(*plVar3 + 0x20))();
+      lVar4 = **(long **)(param_1 + 0x200);
+      (**(code **)(lVar4 + 0x170))
+                (lVar4 + 0x170,*(long **)(param_1 + 0x200),*(undefined8 *)(param_2 + 0x490));
+    }
+  }
+  return uVar2;
+}
+
+
+
+===== secure_gart_restricted_range_mapping address=0xfffffe0008a0cab4 =====
+symbol=createRestrictedRangeMapping
+entry=fffffe0008a0cab4
+direct_callers=0
+direct_callees=1
+  callee=createMappingInAperture entry=fffffe0008a30800
+static_references=
+  reference=fffffe000d0d97db type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXSecureGart::createRestrictedRangeMapping(IOMemoryDescriptor*, IOGPUNewResourceArgs*) */
+
+undefined8
+AGXSecureGart::createRestrictedRangeMapping
+          (IOMemoryDescriptor *param_1,IOGPUNewResourceArgs *param_2)
+
+{
+  ulong uVar1;
+  undefined8 uVar2;
+  long lVar3;
+  
+  lVar3 = *(long *)(param_1 + 0x10);
+  func_0xfffffe000b7a42bc(*(undefined8 *)(lVar3 + 0x115f8));
+  func_0xfffffe000b7a42bc(*(undefined8 *)(lVar3 + 0x11600));
+  if (*(int *)(*(long *)(param_1 + 0x10) + 0x115f0) == 0) {
+    lVar3 = *(long *)(param_1 + 0x330);
+    uVar1 = (**(code **)(*(long *)param_2 + 0x1f0))(param_2);
+    if ((AGXUATMux::sUseIOUAT & 1) == 0) {
+      uVar2 = AGXUnifiedAddressTranslator::createMappingInAperture
+                        ((uint)*(undefined8 *)(lVar3 + 0x18),(IOMemoryDescriptor *)param_2,
+                         (uint)uVar1,(long)(1 << (ulong)(*(uint *)PTR_DAT_fffffe0007e9e388 & 0x1f)),
+                         uVar1);
+    }
+    else {
+      uVar2 = func_0xfffffe000c00d560(*(undefined8 *)(lVar3 + 0x10),0,param_2,1);
+    }
+    lVar3 = *(long *)(param_1 + 0x10);
+    func_0xfffffe000b7a53e8(*(undefined8 *)(lVar3 + 0x11600));
+    func_0xfffffe000b7a53e8(*(undefined8 *)(lVar3 + 0x115f8));
+    return uVar2;
+  }
+  uVar2 = func_0xfffffe000c080318
+                    ("AGXk: %s:%d:%s: !!! AGXSecureGart::createRestrictedRangeMapping\n");
+  return uVar2;
+}
+
+
+
+===== secure_gart_code_range_info address=0xfffffe0008a0cbdc =====
+symbol=getCodeGartRangeInfo
+entry=fffffe0008a0cbdc
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d97dd type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXSecureGart::getCodeGartRangeInfo(unsigned long long*, unsigned long long*) */
+
+bool __thiscall
+AGXSecureGart::getCodeGartRangeInfo(AGXSecureGart *this,ulonglong *param_1,ulonglong *param_2)
+
+{
+  ulonglong uVar1;
+  ulonglong uVar2;
+  ulonglong uVar3;
+  bool bVar4;
+  
+  if (param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0) {
+    uVar1 = 0x100000000;
+    if (AGXUATMux::sARMCodeRangeSize == '\0') {
+      uVar1 = 0;
+    }
+    bVar4 = ((byte)this[0x338] & 1) == 0;
+    uVar2 = 0x1000000000;
+    if (bVar4) {
+      uVar2 = AGXUATMux::sARMCodeRangeStart;
+    }
+    uVar3 = 0x5c00000000;
+    if (bVar4) {
+      uVar3 = uVar1;
+    }
+    *param_1 = uVar2;
+    *param_2 = uVar3;
+  }
+  return param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0;
+}
+
+
+
+===== secure_gart_allocate address=0xfffffe0008a0cf48 =====
+symbol=allocate
+entry=fffffe0008a0cf48
+direct_callers=0
+direct_callees=1
+  callee=allocate entry=fffffe00089f3e20
+static_references=
+  reference=fffffe000d0d97e4 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXSecureGart::allocate(unsigned long long, unsigned long long, unsigned int) */
+
+undefined8 __thiscall
+AGXSecureGart::allocate(AGXSecureGart *this,ulonglong param_1,ulonglong param_2,uint param_3)
+
+{
+  undefined8 uVar1;
+  
+  func_0xfffffe000a7e71e4();
+  if ((1 << (ulong)(param_3 & 0x1f) & 0x9f80U) != 0) {
+    func_0xfffffe000b7a132c(AGXGart::fSharedAllocatorLock);
+    this[0x2f8] = (AGXSecureGart)0x1;
+  }
+  uVar1 = AGXGart::allocate((AGXGart *)this,param_1,param_2,param_3);
+  if (((byte)this[0x2f8] & 1) != 0) {
+    this[0x2f8] = (AGXSecureGart)0x0;
+    func_0xfffffe000b7a2728(AGXGart::fSharedAllocatorLock);
+  }
+  func_0xfffffe000a7e71f0(this);
+  return uVar1;
+}
+
+
+
+===== secure_gart_map_with_address address=0xfffffe0008a0d470 =====
+symbol=mapWithAddress
+entry=fffffe0008a0d470
+direct_callers=0
+direct_callees=1
+  callee=doMap entry=fffffe0008a2ffbc
+static_references=
+  reference=fffffe000d0d97e8 type=DATA owner=static-data
+static_reference_count=1
+
+/* WARNING: Removing unreachable block (ram,0xfffffe0008a0d644) */
+/* AGXSecureGart::mapWithAddress(IOMemoryDescriptor*, unsigned long long, unsigned long long,
+   unsigned char, eAGXProtectionOptions) */
+
+bool __thiscall
+AGXSecureGart::mapWithAddress
+          (AGXSecureGart *this,IOMemoryDescriptor *param_1,ulonglong param_2,ulonglong param_3,
+          undefined8 param_5,undefined8 param_6)
+
+{
+  bool bVar1;
+  uint uVar2;
+  int iVar3;
+  uint uVar4;
+  long *plVar5;
+  ulong uVar6;
+  long lVar7;
+  char cVar8;
+  
+  if ((((byte)this[0x358] & 1) == 0) && (*(int *)(this + 0x2cc) == 0)) {
+    cVar8 = '\x02';
+  }
+  else {
+    uVar2 = (**(code **)(*(long *)this + 0x220))(this);
+    cVar8 = '\x02';
+    if ((uint)param_6 != uVar2) {
+      cVar8 = ((uint)param_6 & (uVar2 ^ 0xffffffff)) == 0;
+    }
+    if (((byte)this[0x358] & 1) != 0) {
+      plVar5 = *(long **)(this + 0x340);
+      if ((plVar5 != (long *)0x0) &&
+         (iVar3 = (**(code **)(*plVar5 + 400))(plVar5,param_1,param_2,param_3,param_5,param_6),
+         iVar3 == 0)) {
+        return false;
+      }
+      plVar5 = *(long **)(this + 0x348);
+      if ((plVar5 != (long *)0x0) &&
+         (iVar3 = (**(code **)(*plVar5 + 400))(plVar5,param_1,param_2,param_3,param_5,param_6),
+         iVar3 == 0)) {
+        bVar1 = false;
+        lVar7 = 1;
+LAB_fffffe0008a0d728:
+        (**(code **)(**(long **)(this + lVar7 * 8 + 0x338) + 0x198))
+                  (*(long **)(this + lVar7 * 8 + 0x338),param_1,param_2,param_3,param_6);
+        if (bVar1) {
+          (**(code **)(**(long **)(this + lVar7 * 8 + 0x330) + 0x198))
+                    (*(long **)(this + lVar7 * 8 + 0x330),param_1,param_2,param_3,param_6);
+        }
+        return false;
+      }
+      plVar5 = *(long **)(this + 0x350);
+      if ((plVar5 != (long *)0x0) &&
+         (uVar6 = (**(code **)(*plVar5 + 400))(plVar5,param_1,param_2,param_3,param_5,param_6),
+         (uVar6 & 1) == 0)) {
+        bVar1 = true;
+        lVar7 = 2;
+        goto LAB_fffffe0008a0d728;
+      }
+    }
+    if (cVar8 == '\0') {
+      return true;
+    }
+  }
+  uVar4 = (**(code **)(*(long *)this + 0x270))(this,param_2,param_5,0,0,0,0);
+  iVar3 = (**(code **)(*(long *)param_1 + 0x1e8))(*(long *)param_1 + 0x1e8,param_1);
+  uVar2 = uVar4 & 0xfffffdfd;
+  if (iVar3 != 2) {
+    uVar2 = uVar4;
+  }
+  uVar4 = uVar2 & 0xfffffdff;
+  if (cVar8 != '\x01') {
+    uVar4 = uVar2;
+  }
+  lVar7 = *(long *)(this + 0x10);
+  func_0xfffffe000b7a42bc(*(undefined8 *)(lVar7 + 0x115f8));
+  func_0xfffffe000b7a42bc(*(undefined8 *)(lVar7 + 0x11600));
+  if ((AGXUATMux::sUseIOUAT & 1) == 0) {
+    iVar3 = AGXUnifiedAddressTranslator::doMap
+                      (*(AGXUnifiedAddressTranslator **)(*(long *)(this + 0x330) + 0x18),param_1,
+                       param_2,param_3,uVar4);
+  }
+  else {
+    iVar3 = func_0xfffffe000c00cab0
+                      (*(undefined8 *)(*(long *)(this + 0x330) + 0x10),param_1,param_2,param_3,uVar4
+                      );
+  }
+  lVar7 = *(long *)(this + 0x10);
+  func_0xfffffe000b7a53e8(*(undefined8 *)(lVar7 + 0x11600));
+  func_0xfffffe000b7a53e8(*(undefined8 *)(lVar7 + 0x115f8));
+  return iVar3 == 0;
+}
+
+
+
+===== uat_map_page_table address=0xfffffe0008a2ffbc =====
+symbol=doMap
+entry=fffffe0008a2ffbc
+direct_callers=3
+  caller=mapInThisGart entry=fffffe0008a0c1f0
+  caller=mapWithAddress entry=fffffe0008a0d470
+  caller=map entry=fffffe0008a303a0
+direct_callees=2
+  callee=commitUnmaps entry=fffffe0008a2f2f4
+  callee=issueTLBI entry=fffffe0008a2f6ac
+static_references=
+  reference=fffffe000d0d9a5b type=DATA owner=static-data
+  reference=fffffe0008a0c48c type=UNCONDITIONAL_CALL owner=mapInThisGart
+  reference=fffffe0008a0c548 type=UNCONDITIONAL_CALL owner=mapInThisGart
+  reference=fffffe0008a0c710 type=UNCONDITIONAL_CALL owner=mapInThisGart
+  reference=fffffe0008a0c7ac type=UNCONDITIONAL_CALL owner=mapInThisGart
+  reference=fffffe0008a0d6d4 type=UNCONDITIONAL_CALL owner=mapWithAddress
+  reference=fffffe0008a3048c type=UNCONDITIONAL_CALL owner=map
+static_reference_count=7
+
+/* AGXUnifiedAddressTranslator::doMap(IOMemoryDescriptor*, unsigned long long, unsigned long long,
+   unsigned int) */
+
+undefined8 __thiscall
+AGXUnifiedAddressTranslator::doMap
+          (AGXUnifiedAddressTranslator *this,IOMemoryDescriptor *param_1,ulonglong param_2,
+          ulonglong param_3,uint param_4)
+
+{
+  ulong uVar1;
+  uint uVar2;
+  int iVar3;
+  ulong uVar4;
+  ulong uVar5;
+  undefined8 uVar6;
+  ulong uVar7;
+  ulong uVar8;
+  ulong uVar9;
+  long local_90;
+  long local_88;
+  long local_68;
+  
+  commitUnmaps(this);
+  func_0xfffffe000b7a132c(*(undefined8 *)(this + 0x150));
+  uVar4 = (**(code **)(*(long *)this + 0x1b0))(this,param_2,param_3);
+  if ((uVar4 & 1) == 0) {
+    func_0xfffffe000b7a2728(*(undefined8 *)(this + 0x150));
+    uVar6 = 0xe00002bc;
+  }
+  else {
+    uVar2 = *(uint *)PTR_DAT_fffffe0007e9e388;
+    iVar3 = 1 << (ulong)(uVar2 & 0x1f);
+    local_68 = 0;
+    uVar4 = (ulong)(iVar3 - 1);
+    if ((param_3 & uVar4) != 0) {
+      uVar6 = func_0xfffffe000c080318
+                        (
+                        "AGXk: %s:%d:%s: !!! isAlignedToPOT(virtual_length, (uint32_t)cached_page_size)failed: %llu/%u\n"
+                        );
+      return uVar6;
+    }
+    if ((param_2 & uVar4) != 0) {
+      uVar6 = func_0xfffffe000c080318
+                        (
+                        "AGXk: %s:%d:%s: !!! isAlignedToPOT(base_virtual_address, (uint32_t)cached_page_size)failed: 0x%llX/%u\n"
+                        );
+      return uVar6;
+    }
+    uVar5 = (**(code **)(*(long *)param_1 + 0x158))(param_1,0,&local_68,0);
+    if (uVar5 != 0) {
+      local_90 = 0;
+      local_88 = 0;
+      do {
+        uVar7 = (ulong)(uint)~(-1 << (ulong)(*(uint *)PTR_DAT_fffffe0007e9e388 & 0x1f));
+        uVar9 = uVar5 & (uVar7 ^ 0xffffffffffffffff);
+        if ((uVar9 & uVar4) != 0) {
+          uVar6 = func_0xfffffe000c080318
+                            (
+                            "AGXk: %s:%d:%s: !!! isAlignedToPOT(physical_address, (uint32_t)cached_page_size)failed: 0x%llX/%u\n"
+                            );
+          return uVar6;
+        }
+        uVar5 = local_68 + uVar7 + (uVar5 & uVar7) & (uVar7 ^ 0xffffffffffffffff);
+        if ((uVar5 & uVar4) != 0) {
+          uVar6 = func_0xfffffe000c080318
+                            (
+                            "AGXk: %s:%d:%s: !!! isAlignedToPOT(aligned_segment_length, (uint32_t)cached_page_size)failed: %u/%u\n"
+                            );
+          return uVar6;
+        }
+        uVar7 = uVar5 >> ((ulong)uVar2 & 0x3f) & 0xffffffff;
+        if (uVar7 != 0) {
+          uVar8 = 0;
+          do {
+            uVar1 = local_88 + param_2 + (uVar8 << ((ulong)uVar2 & 0x3f));
+            if ((uVar1 & uVar4) != 0) {
+              uVar6 = func_0xfffffe000c080318
+                                (
+                                "AGXk: %s:%d:%s: !!! isAlignedToPOT(page_virtual_address, (uint32_t)cached_page_size)failed: 0x%llX/%u\n"
+                                );
+              return uVar6;
+            }
+            if (param_3 <= uVar1 - param_2) goto LAB_fffffe0008a301e8;
+            (**(code **)(*(long *)this + 0x1c0))(this,uVar1,uVar9,param_4);
+            uVar9 = uVar9 + (long)iVar3;
+            uVar8 = uVar8 + 1;
+          } while (uVar7 != uVar8);
+        }
+        local_90 = local_68 + local_90;
+        local_88 = uVar5 + local_88;
+        uVar5 = (**(code **)(*(long *)param_1 + 0x158))(param_1,local_90,&local_68,0);
+      } while (uVar5 != 0);
+    }
+LAB_fffffe0008a301e8:
+    if ((*(int *)(this + 0x164) != 0) && (*(int *)(this + 0x148) != -1)) {
+      if (*(int *)(this + 0x184) == 0) {
+        (**(code **)(**(long **)(this + 0x18) + 0x1178))();
+      }
+      else {
+        DataSynchronizationBarrier(3,3,0);
+      }
+      issueTLBI(this,*(uint *)(this + 0x148),param_2,param_3);
+      if (*(int *)(this + 0x184) == 0) {
+        (**(code **)(**(long **)(this + 0x18) + 0x1178))();
+      }
+      else {
+        DataSynchronizationBarrier(3,3,0);
+      }
+    }
+    func_0xfffffe000b7a2728(*(undefined8 *)(this + 0x150));
+    uVar6 = 0;
+  }
+  return uVar6;
+}
+
+
+
+===== uat_create_aperture_mapping address=0xfffffe0008a30800 =====
+symbol=createMappingInAperture
+entry=fffffe0008a30800
+direct_callers=1
+  caller=createRestrictedRangeMapping entry=fffffe0008a0cab4
+direct_callees=0
+static_references=
+  reference=fffffe000d0d9a65 type=DATA owner=static-data
+  reference=fffffe0008a0cb7c type=UNCONDITIONAL_CALL owner=createRestrictedRangeMapping
+static_reference_count=2
+
+/* WARNING: Control flow encountered bad instruction data */
+/* WARNING: Possible PIC construction at 0xfffffe0008a30878: Changing call to branch */
+/* WARNING: Removing unreachable block (ram,0xfffffe0008a3087c) */
+/* WARNING: Removing unreachable block (ram,0xfffffe0008a30880) */
+/* AGXUnifiedAddressTranslator::createMappingInAperture(unsigned int, IOMemoryDescriptor*, unsigned
+   int, unsigned long long, unsigned long) */
+
+undefined8
+AGXUnifiedAddressTranslator::createMappingInAperture
+          (uint param_1,IOMemoryDescriptor *param_2,uint param_3,ulonglong param_4,ulong param_5)
+
+{
+  code *pcVar1;
+  long *plVar2;
+  ulong unaff_x30;
+  undefined8 local_38;
+  
+  plVar2 = *(long **)((ulong)param_1 + 0x170);
+  if (plVar2 == (long *)0x0) {
+    if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+      pcVar1 = (code *)SoftwareBreakpoint(0xc471,0xfffffe0008a30900);
+      (*pcVar1)();
+    }
+  }
+  else {
+    local_38 = 0;
+    (**(code **)(*plVar2 + 0x170))(plVar2,param_3,&local_38);
+    if (param_2 == (IOMemoryDescriptor *)0x0) {
+      return 0;
+    }
+  }
+                    /* WARNING: Bad instruction - Truncating control flow here */
+  halt_baddata();
+}
+
+
+
+===== name_fragment=createRestrictedRangeMapping =====
+matches=3
+===== name_match=createRestrictedRangeMapping =====
+symbol=createRestrictedRangeMapping
+entry=fffffe000896625c
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d8b31 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXAccelerator::createRestrictedRangeMapping(IOGPUDevice*, IOMemoryDescriptor*,
+   IOGPUNewResourceArgs*) */
+
+undefined8 __thiscall
+AGXAccelerator::createRestrictedRangeMapping
+          (AGXAccelerator *this,IOGPUDevice *param_1,IOMemoryDescriptor *param_2,
+          IOGPUNewResourceArgs *param_3)
+
+{
+  long *plVar1;
+  undefined8 uVar2;
+  
+  if (*(int *)(this + 0xecd4) == 0) {
+                    /* WARNING: Could not recover jumptable at 0xfffffe00089662d4. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+    uVar2 = (**(code **)(PTR_DAT_fffffe0007e9e570 + 0x930))();
+    return uVar2;
+  }
+  if ((param_1 != (IOGPUDevice *)0x0) &&
+     (plVar1 = *(long **)(param_1 + 0x58), plVar1 != (long *)0x0)) {
+                    /* WARNING: Could not recover jumptable at 0xfffffe00089662b0. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+    uVar2 = (**(code **)(*plVar1 + 0x238))
+                      (plVar1,param_2,param_3,param_3,(undefined8 *)(*plVar1 + 0x238));
+    return uVar2;
+  }
+  return 0;
+}
+
+
+
+===== name_match=createRestrictedRangeMapping =====
+symbol=createRestrictedRangeMapping
+entry=fffffe00089d8be4
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d934a type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXGart::createRestrictedRangeMapping(IOMemoryDescriptor*, IOGPUNewResourceArgs*) */
+
+undefined8
+AGXGart::createRestrictedRangeMapping(IOMemoryDescriptor *param_1,IOGPUNewResourceArgs *param_2)
+
+{
+  return 0;
+}
+
+
+
+===== name_match=createRestrictedRangeMapping =====
+symbol=createRestrictedRangeMapping
+entry=fffffe0008a0cab4
+direct_callers=0
+direct_callees=1
+  callee=createMappingInAperture entry=fffffe0008a30800
+static_references=
+  reference=fffffe000d0d97db type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXSecureGart::createRestrictedRangeMapping(IOMemoryDescriptor*, IOGPUNewResourceArgs*) */
+
+undefined8
+AGXSecureGart::createRestrictedRangeMapping
+          (IOMemoryDescriptor *param_1,IOGPUNewResourceArgs *param_2)
+
+{
+  ulong uVar1;
+  undefined8 uVar2;
+  long lVar3;
+  
+  lVar3 = *(long *)(param_1 + 0x10);
+  func_0xfffffe000b7a42bc(*(undefined8 *)(lVar3 + 0x115f8));
+  func_0xfffffe000b7a42bc(*(undefined8 *)(lVar3 + 0x11600));
+  if (*(int *)(*(long *)(param_1 + 0x10) + 0x115f0) == 0) {
+    lVar3 = *(long *)(param_1 + 0x330);
+    uVar1 = (**(code **)(*(long *)param_2 + 0x1f0))(param_2);
+    if ((AGXUATMux::sUseIOUAT & 1) == 0) {
+      uVar2 = AGXUnifiedAddressTranslator::createMappingInAperture
+                        ((uint)*(undefined8 *)(lVar3 + 0x18),(IOMemoryDescriptor *)param_2,
+                         (uint)uVar1,(long)(1 << (ulong)(*(uint *)PTR_DAT_fffffe0007e9e388 & 0x1f)),
+                         uVar1);
+    }
+    else {
+      uVar2 = func_0xfffffe000c00d560(*(undefined8 *)(lVar3 + 0x10),0,param_2,1);
+    }
+    lVar3 = *(long *)(param_1 + 0x10);
+    func_0xfffffe000b7a53e8(*(undefined8 *)(lVar3 + 0x11600));
+    func_0xfffffe000b7a53e8(*(undefined8 *)(lVar3 + 0x115f8));
+    return uVar2;
+  }
+  uVar2 = func_0xfffffe000c080318
+                    ("AGXk: %s:%d:%s: !!! AGXSecureGart::createRestrictedRangeMapping\n");
+  return uVar2;
+}
+
+
+
+===== name_fragment=getCodeGartRangeInfo =====
+matches=2
+===== name_match=getCodeGartRangeInfo =====
+symbol=getCodeGartRangeInfo
+entry=fffffe00089f3ca8
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d95b3 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXGart::getCodeGartRangeInfo(unsigned long long*, unsigned long long*) */
+
+bool __thiscall AGXGart::getCodeGartRangeInfo(AGXGart *this,ulonglong *param_1,ulonglong *param_2)
+
+{
+  if (param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0) {
+    *param_1 = 0x1000000000;
+    *param_2 = 0x5c00000000;
+  }
+  return param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0;
+}
+
+
+
+===== name_match=getCodeGartRangeInfo =====
+symbol=getCodeGartRangeInfo
+entry=fffffe0008a0cbdc
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d97dd type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXSecureGart::getCodeGartRangeInfo(unsigned long long*, unsigned long long*) */
+
+bool __thiscall
+AGXSecureGart::getCodeGartRangeInfo(AGXSecureGart *this,ulonglong *param_1,ulonglong *param_2)
+
+{
+  ulonglong uVar1;
+  ulonglong uVar2;
+  ulonglong uVar3;
+  bool bVar4;
+  
+  if (param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0) {
+    uVar1 = 0x100000000;
+    if (AGXUATMux::sARMCodeRangeSize == '\0') {
+      uVar1 = 0;
+    }
+    bVar4 = ((byte)this[0x338] & 1) == 0;
+    uVar2 = 0x1000000000;
+    if (bVar4) {
+      uVar2 = AGXUATMux::sARMCodeRangeStart;
+    }
+    uVar3 = 0x5c00000000;
+    if (bVar4) {
+      uVar3 = uVar1;
+    }
+    *param_1 = uVar2;
+    *param_2 = uVar3;
+  }
+  return param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0;
+}
+
+
+
+===== name_fragment=createMappingInAperture =====
+matches=2
+===== name_match=createMappingInAperture =====
+symbol=createMappingInAperture
+entry=fffffe0008a30800
+direct_callers=1
+  caller=createRestrictedRangeMapping entry=fffffe0008a0cab4
+direct_callees=0
+static_references=
+  reference=fffffe000d0d9a65 type=DATA owner=static-data
+  reference=fffffe0008a0cb7c type=UNCONDITIONAL_CALL owner=createRestrictedRangeMapping
+static_reference_count=2
+
+/* WARNING: Control flow encountered bad instruction data */
+/* WARNING: Possible PIC construction at 0xfffffe0008a30878: Changing call to branch */
+/* WARNING: Removing unreachable block (ram,0xfffffe0008a3087c) */
+/* WARNING: Removing unreachable block (ram,0xfffffe0008a30880) */
+/* AGXUnifiedAddressTranslator::createMappingInAperture(unsigned int, IOMemoryDescriptor*, unsigned
+   int, unsigned long long, unsigned long) */
+
+undefined8
+AGXUnifiedAddressTranslator::createMappingInAperture
+          (uint param_1,IOMemoryDescriptor *param_2,uint param_3,ulonglong param_4,ulong param_5)
+
+{
+  code *pcVar1;
+  long *plVar2;
+  ulong unaff_x30;
+  undefined8 local_38;
+  
+  plVar2 = *(long **)((ulong)param_1 + 0x170);
+  if (plVar2 == (long *)0x0) {
+    if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+      pcVar1 = (code *)SoftwareBreakpoint(0xc471,0xfffffe0008a30900);
+      (*pcVar1)();
+    }
+  }
+  else {
+    local_38 = 0;
+    (**(code **)(*plVar2 + 0x170))(plVar2,param_3,&local_38);
+    if (param_2 == (IOMemoryDescriptor *)0x0) {
+      return 0;
+    }
+  }
+                    /* WARNING: Bad instruction - Truncating control flow here */
+  halt_baddata();
+}
+
+
+
+===== name_match=createMappingInAperture =====
+symbol=createMappingInAperture
+entry=fffffe000e1d1300
+direct_callers=0
+direct_callees=0
+static_references=
+static_reference_count=0
+
+/* WARNING: Control flow encountered bad instruction data */
+/* WARNING: Unknown calling convention -- yet parameter storage is locked */
+/* IOUnifiedAddressTranslator::createMappingInAperture(unsigned int, IOMemoryDescriptor*, unsigned
+   int, unsigned long long, unsigned long) */
+
+void IOUnifiedAddressTranslator::createMappingInAperture
+               (uint param_1,IOMemoryDescriptor *param_2,uint param_3,ulonglong param_4,
+               ulong param_5)
+
+{
+                    /* WARNING: Bad instruction - Truncating control flow here */
+  halt_baddata();
+}
+
+
+
+===== name_fragment=getTargetAndMethodForIndex =====
+matches=1
+===== name_match=getTargetAndMethodForIndex =====
+symbol=getTargetAndMethodForIndex
+entry=fffffe00089980f4
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d8d72 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXDeviceUserClient::getTargetAndMethodForIndex(IOService**, unsigned int) */
+
+undefined1 * __thiscall
+AGXDeviceUserClient::getTargetAndMethodForIndex
+          (AGXDeviceUserClient *this,IOService **param_1,uint param_2)
+
+{
+  undefined1 *puVar1;
+  long lVar2;
+  
+  *param_1 = (IOService *)this;
+  if (param_2 - 0x100 < 0x13) {
+    lVar2 = (ulong)(param_2 - 0x100) * 0x30;
+    puVar1 = &getTargetAndMethodForIndex(IOService**,unsigned_int)::kAGXDeviceMethods + (int)lVar2;
+    if (lVar2 - (int)lVar2 != 0) {
+      puVar1 = (undefined1 *)
+               ((ulong)(&getTargetAndMethodForIndex(IOService**,unsigned_int)::kAGXDeviceMethods +
+                       lVar2) & 0xffffffffffff | 0x2bad000000000000);
+    }
+    if (*(long *)(puVar1 + 8) != 0) {
+      return puVar1;
+    }
+  }
+                    /* WARNING: Could not recover jumptable at 0xfffffe0008998154. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+  puVar1 = (undefined1 *)(**(code **)(PTR_DAT_fffffe0007e9e550 + 0x980))();
+  return puVar1;
+}
+
+
+
+===== name_fragment=newKernelResource =====
+matches=1
+===== name_match=newKernelResource =====
+symbol=newKernelResource
+entry=fffffe0008a095f4
+direct_callers=5
+  caller=createNewHWPBManager entry=fffffe00089f9478
+  caller=setupSceneState entry=fffffe00089fb080
+  caller=updateGtpOnlyBuffers entry=fffffe0008a06cbc
+  caller=updateRenderTarget entry=fffffe0008a06f44
+  caller=init entry=fffffe0008a1ad7c
+direct_callees=0
+static_references=
+  reference=fffffe000d0d9797 type=DATA owner=static-data
+  reference=fffffe00089f9540 type=UNCONDITIONAL_CALL owner=createNewHWPBManager
+  reference=fffffe00089fb284 type=UNCONDITIONAL_CALL owner=setupSceneState
+  reference=fffffe00089fb3d4 type=UNCONDITIONAL_CALL owner=setupSceneState
+  reference=fffffe0008a06e6c type=UNCONDITIONAL_CALL owner=updateGtpOnlyBuffers
+  reference=fffffe0008a071d8 type=UNCONDITIONAL_CALL owner=updateRenderTarget
+  reference=fffffe0008a1ae4c type=UNCONDITIONAL_CALL owner=init
+static_reference_count=7
+
+/* WARNING: Removing unreachable block (ram,0xfffffe0008a096b4) */
+/* AGXResource::newKernelResource(AGXAccelerator*, AGXShared*, unsigned long long, unsigned long
+   long, eGartRange, bool) */
+
+long * AGXResource::newKernelResource
+                 (long param_1,long param_2,undefined8 param_3,ulong param_4,long param_5)
+
+{
+  int iVar1;
+  long *plVar2;
+  long lVar3;
+  ulong uVar4;
+  undefined8 local_48;
+  
+  local_48 = 0;
+  plVar2 = (long *)func_0xfffffe000a7ca88c
+                             (param_1,param_2,0,param_3,*(uint *)(param_1 + 0x18e00) | 99,&local_48)
+  ;
+  if (plVar2 != (long *)0x0) {
+    (**(code **)(*plVar2 + 0x20))(plVar2);
+    (**(code **)(*plVar2 + 0x28))(plVar2);
+    iVar1 = (**(code **)(*plVar2 + 0x148))(*plVar2 + 0x148,plVar2,param_2,0,0);
+    if (iVar1 != 0) {
+      if ((param_4 >> 0x25 & 1) != 0) {
+        lVar3 = func_0xfffffe000be9c88c(plVar2[5],&AGXAllocation::gMetaClass);
+        *(undefined1 *)(lVar3 + 0xd4) = 3;
+      }
+      uVar4 = (**(code **)(*plVar2 + 0x178))(plVar2,param_4 & 0x5000000003 | param_5 << 0x20 | 4);
+      if ((uVar4 & 1) != 0) {
+        return plVar2;
+      }
+    }
+    if (param_2 == 0) {
+      (**(code **)(*plVar2 + 0x28))(plVar2);
+    }
+    else {
+      (**(code **)(*plVar2 + 0x170))(plVar2,param_2);
+    }
+  }
+  return (long *)0x0;
+}
+
+
+
+===== name_fragment=AGXUSCPrivMemPool =====
+matches=2
+===== name_match=AGXUSCPrivMemPool =====
+symbol=~AGXUSCPrivMemPoolUMA
+entry=fffffe0008a27078
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d9994 type=DATA owner=static-data
+static_reference_count=1
+
+/* WARNING: Control flow encountered bad instruction data */
+/* AGXUSCPrivMemPoolUMA::~AGXUSCPrivMemPoolUMA() */
+
+void __thiscall AGXUSCPrivMemPoolUMA::~AGXUSCPrivMemPoolUMA(AGXUSCPrivMemPoolUMA *this)
+
+{
+  code *pcVar1;
+  ulong unaff_x30;
+  
+  func_0xfffffe000a7c4c08();
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar1 = (code *)SoftwareBreakpoint(0xc471,0xfffffe0008a270b8);
+    (*pcVar1)();
+  }
+                    /* WARNING: Bad instruction - Truncating control flow here */
+  halt_baddata();
+}
+
+
+
+===== name_match=AGXUSCPrivMemPool =====
+symbol=~AGXUSCPrivMemPoolUMA
+entry=fffffe0008a270bc
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d9995 type=DATA owner=static-data
+static_reference_count=1
+
+/* WARNING: Control flow encountered bad instruction data */
+/* AGXUSCPrivMemPoolUMA::~AGXUSCPrivMemPoolUMA() */
+
+void __thiscall AGXUSCPrivMemPoolUMA::~AGXUSCPrivMemPoolUMA(AGXUSCPrivMemPoolUMA *this)
+
+{
+                    /* WARNING: Bad instruction - Truncating control flow here */
+  halt_baddata();
+}
+
+
+
+===== name_fragment=setProtectionOptions =====
+matches=1
+===== name_match=setProtectionOptions =====
+symbol=setProtectionOptions
+entry=fffffe000898bbe0
+direct_callers=0
+direct_callees=0
+static_references=
+  reference=fffffe000d0d8d01 type=DATA owner=static-data
+static_reference_count=1
+
+/* AGXCommandQueue::setProtectionOptions(unsigned long long) */
+
+void __thiscall AGXCommandQueue::setProtectionOptions(AGXCommandQueue *this,ulonglong param_1)
+
+{
+  code *pcVar1;
+  ulong unaff_x30;
+  
+  if (((*(byte *)(*(long *)(this + 0x538) + 0xee94) & 1) != 0) &&
+     (*(ulonglong *)(this + 0x550) != param_1)) {
+    (**(code **)(**(long **)(this + 0x678) + 0x158))(*(long **)(this + 0x678),0,0);
+  }
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar1 = (code *)SoftwareBreakpoint(0xc471,0xfffffe000898bc80);
+    (*pcVar1)();
+  }
+                    /* WARNING: Could not recover jumptable at 0xfffffe000898bc88. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+  (**(code **)(PTR_DAT_fffffe0007e9e530 + 0x188))(this,param_1,PTR_DAT_fffffe0007e9e530 + 0x188);
+  return;
+}
+
+
+

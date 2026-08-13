@@ -1,0 +1,1445 @@
+AO46 IOGPUFamily kernel ownership report
+program=IOGPUFamily.arm64e
+image_base=fffffe00079dac50
+
+===== user_client_new_resource address=0xfffffe000a7bc4e4 =====
+symbol=s_new_resource
+entry=fffffe000a7bc4e4
+direct_callers=0
+direct_callees=1
+  callee=new_resource entry=fffffe000a7bee1c
+
+/* WARNING: Removing unreachable block (ram,0xfffffe000a7bc598) */
+/* IOGPUDeviceUserClient::s_new_resource(IOGPUDeviceUserClient*, void*, IOExternalMethodArguments*)
+    */
+
+undefined8
+IOGPUDeviceUserClient::s_new_resource
+          (IOGPUDeviceUserClient *param_1,void *param_2,IOExternalMethodArguments *param_3)
+
+{
+  long *plVar1;
+  IOGPUNewResourceArgs *pIVar2;
+  ulong uVar3;
+  IOGPUNewResourceReturnData *pIVar4;
+  undefined1 auVar5 [16];
+  
+  pIVar4 = *(IOGPUNewResourceReturnData **)(param_3 + 0x58);
+  plVar1 = *(long **)(param_3 + 0x40);
+  if (plVar1 == (long *)0x0) {
+    plVar1 = (long *)0x0;
+    uVar3 = (ulong)*(uint *)(param_3 + 0x38);
+    pIVar2 = *(IOGPUNewResourceArgs **)(param_3 + 0x30);
+  }
+  else {
+    plVar1 = (long *)(**(code **)(*plVar1 + 0x228))(plVar1,0x1000);
+    if (plVar1 == (long *)0x0) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s failed to map arguments\n")
+      ;
+      return 0xe00002c8;
+    }
+    pIVar2 = (IOGPUNewResourceArgs *)(**(code **)(*plVar1 + 0x138))();
+    auVar5 = (**(code **)(**(long **)(param_3 + 0x40) + 0x1f0))(**(long **)(param_3 + 0x40) + 0x1f0)
+    ;
+    param_2 = auVar5._8_8_;
+    uVar3 = auVar5._0_8_;
+  }
+  auVar5._8_8_ = param_2;
+  auVar5._0_8_ = 0xe00002c2;
+  if ((pIVar2 != (IOGPUNewResourceArgs *)0x0) &&
+     (auVar5._0_8_ = 0xe00002c2, 0x57 < uVar3 && pIVar4 != (IOGPUNewResourceReturnData *)0x0)) {
+    auVar5 = new_resource(param_1,pIVar2,pIVar4,uVar3,(uint *)(param_3 + 0x60));
+  }
+  if (plVar1 != (long *)0x0) {
+    (**(code **)(*plVar1 + 0x28))(plVar1,auVar5._8_8_);
+  }
+  if (auVar5._0_4_ != 0) {
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s failed to create resource\n")
+    ;
+  }
+  return auVar5._0_8_;
+}
+
+
+
+===== user_client_resource_admission address=0xfffffe000a7bee1c =====
+symbol=new_resource
+entry=fffffe000a7bee1c
+direct_callers=1
+  caller=s_new_resource entry=fffffe000a7bc4e4
+direct_callees=1
+  callee=new_resource entry=fffffe000a7ddaa4
+
+/* IOGPUDeviceUserClient::new_resource(IOGPUNewResourceArgs*, IOGPUNewResourceReturnData*, unsigned
+   long long, unsigned int*) */
+
+undefined8 __thiscall
+IOGPUDeviceUserClient::new_resource
+          (IOGPUDeviceUserClient *this,IOGPUNewResourceArgs *param_1,
+          IOGPUNewResourceReturnData *param_2,ulonglong param_3,uint *param_4)
+
+{
+  undefined8 uVar1;
+  undefined8 uVar2;
+  
+  uVar1 = func_0xfffffe000b7f109c
+                    (*(undefined8 *)(*(long *)(*(long *)(this + 0x120) + 0x48) + 0x318));
+  uVar2 = IOGPUDevice::new_resource(*(IOGPUDevice **)(this + 0x120),param_1,param_2,param_3,param_4)
+  ;
+  func_0xfffffe000b7f109c(uVar1);
+  return uVar2;
+}
+
+
+
+===== device_user_client_start address=0xfffffe000a7be8c4 =====
+symbol=deviceUserClientStart
+entry=fffffe000a7be8c4
+direct_callers=0
+direct_callees=2
+  callee=isRestrictedClient entry=fffffe000a7dc8ac
+  callee=deviceUserClientStop entry=fffffe000a7beb00
+
+/* IOGPUDeviceUserClient::deviceUserClientStart() */
+
+undefined8 __thiscall IOGPUDeviceUserClient::deviceUserClientStart(IOGPUDeviceUserClient *this)
+
+{
+  IOGPUDeviceUserClient IVar1;
+  long *plVar2;
+  long lVar3;
+  undefined8 uVar4;
+  
+  plVar2 = (long *)(**(code **)(**(long **)(this + 0xf8) + 0x890))
+                             (*(long **)(this + 0xf8),this + 0x118);
+  *(long **)(this + 0x108) = plVar2;
+  if (plVar2 == (long *)0x0) {
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: getStampMemory failed\n");
+  }
+  else {
+    (**(code **)(*plVar2 + 0x20))();
+    lVar3 = func_0xfffffe000bf8856c
+                      (*(undefined8 *)(this + 0x108),**(undefined8 **)(this + 0xd8),0,0x4001001,0,0)
+    ;
+    *(long *)(this + 0x110) = lVar3;
+    if (lVar3 == 0) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s: fStampMemoryMap creation failed\n");
+    }
+    else {
+      lVar3 = (**(code **)(**(long **)(this + 0xf8) + 0x8c8))
+                        (*(long **)(this + 0xf8),**(undefined8 **)(this + 0xd8),
+                         *(undefined8 *)(this + 0x128));
+      *(long *)(this + 0x120) = lVar3;
+      if (lVar3 != 0) {
+        uVar4 = func_0xfffffe000be9bc18(1,&___globalObjectIDCounter);
+        *(undefined8 *)(this + 0xe8) = uVar4;
+        IVar1 = (IOGPUDeviceUserClient)
+                IOGPUDevice::isRestrictedClient(*(IOGPUDevice **)(this + 0x120));
+        this[0x103] = IVar1;
+        plVar2 = (long *)func_0xfffffe000bed9004(this,serialize_app_usage,0);
+        if (plVar2 == (long *)0x0) {
+          return 1;
+        }
+        (**(code **)(*(long *)this + 0x288))(this,"AppUsage",plVar2);
+        (**(code **)(*plVar2 + 0x28))(plVar2);
+        return 1;
+      }
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: createDevice failed\n");
+    }
+  }
+  deviceUserClientStop(this);
+  return 0;
+}
+
+
+
+===== device_user_client_external_method address=0xfffffe000a7becec =====
+symbol=externalMethod
+entry=fffffe000a7becec
+direct_callers=0
+direct_callees=0
+
+/* IOGPUDeviceUserClient::externalMethod(unsigned int, IOExternalMethodArguments*,
+   IOExternalMethodDispatch*, OSObject*, void*) */
+
+ulong IOGPUDeviceUserClient::externalMethod
+                (uint param_1,IOExternalMethodArguments *param_2,IOExternalMethodDispatch *param_3,
+                OSObject *param_4,void *param_5)
+
+{
+  uint uVar1;
+  ulong uVar2;
+  
+  uVar1 = 0xe00002c2;
+  if ((*(byte *)((ulong)param_1 + 0x100) & 1) == 0) {
+    uVar1 = 0xe00002d8;
+  }
+  else {
+    if (0x3b < (uint)param_2) {
+                    /* WARNING: Could not recover jumptable at 0xfffffe000a7beda0. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+      uVar2 = (**(code **)(PTR_DAT_fffffe0008468960 + 0x890))();
+      return uVar2;
+    }
+    if (*(long *)(param_3 + 0x10) == 0) {
+                    /* WARNING: Could not recover jumptable at 0xfffffe000a7bed78. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+      uVar2 = (**(code **)(PTR_DAT_fffffe0008468960 + 0x890))();
+      return uVar2;
+    }
+  }
+  return (ulong)uVar1;
+}
+
+
+
+===== user_client_new_command_queue address=0xfffffe000a7bc14c =====
+symbol=s_new_command_queue
+entry=fffffe000a7bc14c
+direct_callers=0
+direct_callees=3
+  callee=addObject entry=fffffe000a7b85a4
+  callee=set_queue_id entry=fffffe000a7f0488
+  callee=_update_command_queue_count entry=fffffe000a7bbb80
+
+/* IOGPUDeviceUserClient::s_new_command_queue(IOGPUDeviceUserClient*, void*,
+   IOExternalMethodArguments*) */
+
+undefined8
+IOGPUDeviceUserClient::s_new_command_queue
+          (IOGPUDeviceUserClient *param_1,void *param_2,IOExternalMethodArguments *param_3)
+
+{
+  int iVar1;
+  uint uVar2;
+  long *plVar3;
+  IOGPUObject *this;
+  ulong uVar4;
+  void *extraout_x1;
+  void *extraout_x1_00;
+  undefined8 uVar5;
+  ulong *puVar6;
+  
+  uVar5 = *(undefined8 *)(param_3 + 0x30);
+  puVar6 = *(ulong **)(param_3 + 0x58);
+  uVar2 = *(uint *)(*(long *)(*(long *)(param_1 + 0x120) + 0x88) + 0x30);
+  plVar3 = *(long **)(param_1 + 0xf8);
+  if (*(uint *)(plVar3 + 0x52) < uVar2) {
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+               "%s: The number of queues (%d) exceeding limit (%d), failing IOGPUCommandQueue creation\n"
+              );
+    plVar3 = *(long **)(param_1 + 0xf8);
+    param_2 = extraout_x1;
+    if ((*(byte *)((long)plVar3 + 0x244) >> 3 & 1) != 0) {
+      return 0xe0078001;
+    }
+  }
+  else if (*(uint *)((long)plVar3 + 0x28c) < uVar2) {
+    iVar1 = *(int *)(param_1 + 0x11c);
+    *(int *)(param_1 + 0x11c) = iVar1 + 1;
+    if (((uint)(iVar1 * -0x33333333) >> 1 | iVar1 * -0x80000000) < 0x1999999a) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s: Too many queues (%d) created, possibly leaking?\n");
+      plVar3 = *(long **)(param_1 + 0xf8);
+      param_2 = extraout_x1_00;
+    }
+  }
+  if (*(uint *)(param_3 + 0x38) < 0x408 || *(uint *)(param_3 + 0x38) != *(uint *)(plVar3 + 0x58)) {
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+               "%s: Invalid newCommandQueueArgsSize (%u) expected (%u)\n");
+    uVar5 = 0xe00002c2;
+  }
+  else {
+    this = (IOGPUObject *)(**(code **)(*plVar3 + 0x9e0))(plVar3,param_2);
+    if (this == (IOGPUObject *)0x0) {
+      uVar5 = 0xe00002bd;
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: newCommandQueue failed\n")
+      ;
+    }
+    else {
+      uVar4 = (**(code **)(*(long *)this + 0x198))
+                        (this,*(undefined8 *)(param_1 + 0xf8),*(undefined8 *)(param_1 + 0x120),uVar5
+                        );
+      if ((uVar4 & 1) == 0) {
+        func_0xfffffe000bee8f38
+                  (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: init failed\n");
+        (**(code **)(*(long *)this + 0x28))(this);
+        uVar5 = 0xe00002be;
+      }
+      else {
+        uVar2 = IOGPUNamespace::addObject
+                          (*(IOGPUNamespace **)(*(long *)(param_1 + 0x120) + 0x88),this);
+        if (uVar2 == 0) {
+          func_0xfffffe000bee8f38
+                    (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                     "%s: failed to add into name space\n");
+          (**(code **)(*(long *)this + 0x28))(this);
+          uVar5 = 0xe00002db;
+        }
+        else {
+          IOGPUCommandQueue::set_queue_id((IOGPUCommandQueue *)this,uVar2);
+          _update_command_queue_count(param_1,1);
+          uVar4 = *(ulong *)(this + 0x558);
+          *puVar6 = (ulong)uVar2;
+          puVar6[1] = uVar4;
+          (**(code **)(*(long *)this + 0x28))(this);
+          uVar5 = 0;
+        }
+      }
+    }
+  }
+  return uVar5;
+}
+
+
+
+===== user_client_submit_command_buffers address=0xfffffe000a7bc898 =====
+symbol=s_submit_command_buffers
+entry=fffffe000a7bc898
+direct_callers=0
+direct_callees=2
+  callee=retainCommandQueue entry=fffffe000a7dcd78
+  callee=submit_command_buffers entry=fffffe000a7ed0e8
+
+/* WARNING: Removing unreachable block (ram,0xfffffe000a7bc94c) */
+/* IOGPUDeviceUserClient::s_submit_command_buffers(IOGPUDeviceUserClient*, void*,
+   IOExternalMethodArguments*) */
+
+undefined8
+IOGPUDeviceUserClient::s_submit_command_buffers
+          (IOGPUDeviceUserClient *param_1,void *param_2,IOExternalMethodArguments *param_3)
+
+{
+  ulong uVar1;
+  ulong uVar2;
+  undefined1 auVar3 [16];
+  undefined1 auVar4 [16];
+  long *plVar5;
+  IOGPUCommandQueue *pIVar6;
+  IOGPUCommandQueueCommandBufferArgs *pIVar7;
+  ulong uVar8;
+  IOGPUCommandQueue *this;
+  code *pcVar9;
+  uint *puVar10;
+  undefined8 uVar11;
+  uint local_54;
+  
+  uVar11 = 0xe00002c2;
+  plVar5 = *(long **)(param_3 + 0x40);
+  if (plVar5 == (long *)0x0) {
+    if (*(int *)(param_3 + 0x28) != 4) {
+      return 0xe00002c2;
+    }
+    pIVar6 = (IOGPUCommandQueue *)0x0;
+    uVar8 = (ulong)*(uint *)(param_3 + 0x38);
+    pIVar7 = *(IOGPUCommandQueueCommandBufferArgs **)(param_3 + 0x30);
+  }
+  else {
+    pIVar6 = (IOGPUCommandQueue *)(**(code **)(*plVar5 + 0x228))(plVar5,0x1000);
+    if (pIVar6 == (IOGPUCommandQueue *)0x0) {
+      return 0xe00002c8;
+    }
+    pIVar7 = (IOGPUCommandQueueCommandBufferArgs *)(**(code **)(*(long *)pIVar6 + 0x138))();
+    uVar8 = (**(code **)(**(long **)(param_3 + 0x40) + 0x1f0))(**(long **)(param_3 + 0x40) + 0x1f0);
+    if (*(int *)(param_3 + 0x28) != 4) {
+      pcVar9 = *(code **)(*(long *)pIVar6 + 0x28);
+      goto LAB_fffffe000a7bcab8;
+    }
+  }
+  puVar10 = *(uint **)(param_3 + 0x20);
+  uVar1 = *(ulong *)(puVar10 + 4);
+  uVar2 = *(ulong *)(puVar10 + 6);
+  auVar3._8_8_ = 0;
+  auVar3._0_8_ = uVar2;
+  auVar4._8_8_ = 0;
+  auVar4._0_8_ = uVar1;
+  if (SUB168(auVar3 * auVar4,8) == 0) {
+    if (uVar8 == uVar2 * uVar1) {
+      this = (IOGPUCommandQueue *)
+             IOGPUDevice::retainCommandQueue(*(IOGPUDevice **)(param_1 + 0x120),*puVar10);
+      if (this != (IOGPUCommandQueue *)0x0) {
+        if (uVar2 != *(uint *)(*(long *)(this + 0x538) + 0x2b0)) {
+          func_0xfffffe000bee8f38
+                    (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                     "%s: cmdBufArgSize does not match config (%llu != %u)\n");
+          if (pIVar6 != (IOGPUCommandQueue *)0x0) {
+            (**(code **)(*(long *)pIVar6 + 0x28))(pIVar6);
+          }
+          pcVar9 = *(code **)(*(long *)this + 0x28);
+          pIVar6 = this;
+          goto LAB_fffffe000a7bcab8;
+        }
+        local_54 = 0;
+        uVar11 = IOGPUCommandQueue::submit_command_buffers(this,pIVar7,uVar1,uVar2,&local_54);
+        **(ulong **)(param_3 + 0x48) = (ulong)local_54;
+        (**(code **)(*(long *)this + 0x28))(this);
+      }
+    }
+    else {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s: bad structureInputSize (%lld != %llu)\n");
+    }
+  }
+  else {
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+               "%s: total size overflow (%llu * %llu)\n");
+  }
+  if (pIVar6 == (IOGPUCommandQueue *)0x0) {
+    return uVar11;
+  }
+  pcVar9 = *(code **)(*(long *)pIVar6 + 0x28);
+LAB_fffffe000a7bcab8:
+  (*pcVar9)(pIVar6);
+  return uVar11;
+}
+
+
+
+===== device_new_resource address=0xfffffe000a7ddaa4 =====
+symbol=new_resource
+entry=fffffe000a7ddaa4
+direct_callers=1
+  caller=new_resource entry=fffffe000a7bee1c
+direct_callees=17
+  callee=find_iosurface_for_id entry=fffffe000a7ec358
+  callee=newResourceGroup entry=fffffe000a7cbcd8
+  callee=newVirtualResource entry=fffffe000a7cbfe0
+  callee=newResourceWithIOSurface entry=fffffe000a7cb438
+  callee=newResourceWithParentResourceID entry=fffffe000a7cae00
+  callee=getResidentSize entry=fffffe000a7ca524
+  callee=getGPUVirtualAddressForUserProcess entry=fffffe000a7de424
+  callee=newResourceWithClientBuffer entry=fffffe000a7ca55c
+  callee=newResourceWithOptions entry=fffffe000a7ca8d4
+  callee=getMemoryDescriptor entry=fffffe000a7f7e7c
+  callee=newResourceWithClientAddressRanges entry=fffffe000a7cb7ac
+  callee=getClientSharedAddresses entry=fffffe000a7cc3b0
+  callee=prepareMapping entry=fffffe000a7f56f4
+  callee=completeMapping entry=fffffe000a7f5700
+  callee=addObject entry=fffffe000a7b85a4
+  callee=getProtectionOptions entry=fffffe000a7cb214
+  callee=getStorageResource entry=fffffe000a7cd16c
+
+/* WARNING: Removing unreachable block (ram,0xfffffe000a7de06c) */
+/* WARNING: Removing unreachable block (ram,0xfffffe000a7de204) */
+/* IOGPUDevice::new_resource(IOGPUNewResourceArgs*, IOGPUNewResourceReturnData*, unsigned long long,
+   unsigned int*) */
+
+undefined4 __thiscall
+IOGPUDevice::new_resource
+          (IOGPUDevice *this,IOGPUNewResourceArgs *param_1,IOGPUNewResourceReturnData *param_2,
+          ulonglong param_3,uint *param_4)
+
+{
+  uint uVar1;
+  int iVar2;
+  uint uVar3;
+  uint uVar4;
+  int iVar5;
+  long lVar6;
+  IOSurface *pIVar7;
+  undefined8 uVar8;
+  IOGPUResource *this_00;
+  ulong uVar9;
+  undefined8 uVar10;
+  IOGPUSysMemory *pIVar11;
+  undefined8 uVar12;
+  long *plVar13;
+  undefined8 uVar14;
+  undefined8 uVar15;
+  long lVar16;
+  undefined8 uVar17;
+  uint uVar18;
+  undefined4 uVar19;
+  IOGPUMemoryMap *this_01;
+  long local_70;
+  long local_68;
+  
+  uVar19 = 0xe00002c2;
+  if (param_3 < 0x58) {
+    return 0xe00002c2;
+  }
+  lVar6 = *(long *)(this + 0x48);
+  if ((ulong)*param_4 < (ulong)*(uint *)(lVar6 + 0x27c) + 0x58) {
+    return 0xe00002c2;
+  }
+  uVar4 = *(uint *)param_1;
+  if ((uVar4 & 0xf) == 0) {
+    if ((-*(long *)PTR_DAT_fffffe00084689f0 & (ulong)(*(long *)(lVar6 + 0x110) * 3) >> 2) <
+        *(ulong *)(param_1 + 0x48)) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s failed: try to wire down too much memory : %llu > %llu\n");
+      return 0xe00002c2;
+    }
+    if ((uVar4 >> 7 & 1) != 0) goto LAB_fffffe000a7ddb0c;
+    uVar18 = *(uint *)(param_1 + 4);
+    if (9 < (uVar18 >> 8 | uVar18 << 0x18)) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s invalid cache_mode 0x%x\n")
+      ;
+      return 0xe00002c2;
+    }
+  }
+  else {
+LAB_fffffe000a7ddb0c:
+    uVar18 = 0;
+  }
+  if (uVar4 == 0x82) {
+    pIVar7 = (IOSurface *)
+             IOGPU::find_iosurface_for_id((uint)lVar6,(task *)(ulong)*(uint *)(param_1 + 0x38));
+    if (pIVar7 == (IOSurface *)0x0) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s invalid IOSurface ID 0x%x\n");
+      return 0xe00002c2;
+    }
+    uVar4 = func_0xfffffe000abe6820();
+    if ((uVar4 != 0) && (uVar4 <= *(uint *)(param_1 + 0x3c))) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s invalid plane %d in IOSurface with %d planes\n");
+      goto LAB_fffffe000a7ddfc0;
+    }
+  }
+  else {
+    pIVar7 = (IOSurface *)0x0;
+  }
+  if (((byte)param_1[0x15] >> 3 & 1) != 0) {
+    iVar5 = *(int *)(param_1 + 0x50);
+    if (iVar5 != 0) goto LAB_fffffe000a7ddbec;
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+               "%s suballocation flag is set without parent resource id\n");
+    goto LAB_fffffe000a7ddfbc;
+  }
+  iVar5 = 0;
+LAB_fffffe000a7ddbec:
+  uVar4 = *(uint *)(*(long *)(this + 0x10) + 0x30);
+  if (*(uint *)(*(long *)(this + 0x48) + 0x294) <= uVar4) {
+    uVar1 = *(uint *)(*(long *)(this + 0x48) + 0x298);
+    uVar3 = 0;
+    if (uVar1 != 0) {
+      uVar3 = uVar4 / uVar1;
+    }
+    if (uVar4 == uVar3 * uVar1) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s: PID %d may be leaking IOGPUResource (count=%d)\n");
+    }
+  }
+  uVar4 = *(uint *)(param_1 + 0x30);
+  uVar1 = *(uint *)(param_1 + 0x34);
+  if (uVar4 < 2) {
+    uVar4 = 1;
+  }
+  local_68 = *(long *)(param_1 + 0x20);
+  local_70 = *(long *)(param_1 + 0x28);
+  iVar2 = *(int *)param_1;
+  if (iVar2 < 0x40) {
+    if (iVar2 != 0) {
+      if (iVar2 == 3) {
+        this_00 = (IOGPUResource *)
+                  IOGPUResource::newResourceGroup
+                            (*(IOGPU **)(this + 0x48),this,*(uint *)(param_1 + 0x38));
+        goto LAB_fffffe000a7dddd8;
+      }
+LAB_fffffe000a7ddf88:
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: Bogus resType = %d\n");
+      *(undefined8 *)(param_2 + 8) = 0;
+      *(undefined8 *)(param_2 + 0x10) = 0;
+      goto LAB_fffffe000a7ddfb8;
+    }
+    if (iVar5 != 0) {
+      uVar8 = *(undefined8 *)(this + 0x48);
+      uVar15 = *(undefined8 *)(param_1 + 0x18);
+      uVar10 = *(undefined8 *)(param_1 + 0x40);
+      uVar12 = *(undefined8 *)(param_1 + 0x48);
+      uVar17 = *(undefined8 *)(param_1 + 0x38);
+      uVar14 = 0;
+LAB_fffffe000a7dde08:
+      this_00 = (IOGPUResource *)
+                IOGPUResource::newResourceWithParentResourceID
+                          (uVar8,this,uVar14,uVar15,uVar12,uVar17,uVar10,param_2 + 8,iVar5);
+      goto LAB_fffffe000a7dde10;
+    }
+    if ((*(uint *)(param_1 + 0x14) >> 0xd & 1) == 0) {
+      lVar16 = *(long *)(param_1 + 0x18);
+      lVar6 = *(long *)(this + 0x48);
+      if (lVar16 != 0) goto LAB_fffffe000a7de12c;
+      uVar18 = uVar18 | 0x10063;
+    }
+    else {
+      lVar6 = *(long *)(this + 0x48);
+      lVar16 = *(long *)(param_1 + 0x18);
+LAB_fffffe000a7de12c:
+      uVar18 = 99;
+      if ((*(byte *)(lVar6 + 0x280) & 0x20) != 0) {
+        uVar18 = 0x763;
+      }
+    }
+    this_00 = (IOGPUResource *)
+              IOGPUResource::newResourceWithOptions
+                        (lVar6,this,0,lVar16,*(undefined8 *)(param_1 + 0x48),
+                         uVar18 | (*(uint *)(param_1 + 0x14) & 0x40000) << 5,param_2 + 8,param_1,
+                         &local_68,&local_70);
+    if (((byte)param_1[0x16] & 1) == 0) goto LAB_fffffe000a7dde10;
+    uVar19 = 0xe00002be;
+    if (this_00 != (IOGPUResource *)0x0) {
+      pIVar11 = (IOGPUSysMemory *)
+                func_0xfffffe000be9c88c(*(long *)(this_00 + 0x28),IOGPUSysMemory::metaClass);
+      if (pIVar11 != (IOGPUSysMemory *)0x0) {
+        uVar10 = IOGPUSysMemory::getMemoryDescriptor(pIVar11);
+        iVar5 = func_0xfffffe000bf92f18(uVar10,*(undefined8 *)(this + 0x50),4,1);
+        if (iVar5 != 0) {
+          func_0xfffffe000bee8f38
+                    (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                     "%s: setOwnership with no footprint failed: %08x\n");
+          *(undefined8 *)(param_2 + 8) = 0;
+          *(undefined8 *)(param_2 + 0x10) = 0;
+          (**(code **)(*(long *)this_00 + 0x170))(*(long *)this_00 + 0x170,this_00,this);
+          goto LAB_fffffe000a7ddfbc;
+        }
+      }
+      goto LAB_fffffe000a7dde14;
+    }
+  }
+  else {
+    if (iVar2 == 0x40) {
+      this_00 = (IOGPUResource *)
+                IOGPUResource::newVirtualResource(*(IOGPU **)(this + 0x48),this,param_1);
+      *(undefined8 *)(param_2 + 8) = 0;
+      if (this_00 == (IOGPUResource *)0x0) goto LAB_fffffe000a7ddfb8;
+      uVar4 = *(uint *)(param_1 + 0x50);
+      uVar10 = 0;
+      if (*(long **)(this_00 + 0x90) != (long *)0x0) {
+        uVar10 = (**(code **)(**(long **)(this_00 + 0x90) + 0x138))();
+      }
+      *(undefined8 *)(param_2 + 0x18) = uVar10;
+      goto LAB_fffffe000a7dde14;
+    }
+    if (iVar2 == 0x82) {
+      this_00 = (IOGPUResource *)
+                IOGPUResource::newResourceWithIOSurface
+                          (*(IOGPU **)(this + 0x48),this,pIVar7,*(uint *)(param_1 + 0x3c),
+                           *(uint *)(param_1 + 0x40));
+LAB_fffffe000a7dddd8:
+      *(undefined8 *)(param_2 + 8) = 0;
+    }
+    else {
+      if (iVar2 != 0x80) goto LAB_fffffe000a7ddf88;
+      if (iVar5 != 0) {
+        uVar8 = *(undefined8 *)(this + 0x48);
+        uVar15 = *(undefined8 *)(param_1 + 0x18);
+        uVar10 = *(undefined8 *)(param_1 + 0x40);
+        uVar12 = *(undefined8 *)(param_1 + 0x48);
+        uVar17 = *(undefined8 *)(param_1 + 0x38);
+        uVar14 = 0x80;
+        goto LAB_fffffe000a7dde08;
+      }
+      if (((byte)param_1[0x16] >> 5 & 1) == 0) {
+        this_00 = (IOGPUResource *)
+                  IOGPUResource::newResourceWithClientBuffer
+                            (*(IOGPU **)(this + 0x48),this,0x80,*(undefined8 *)(param_1 + 0x48),
+                             *(undefined8 *)(param_1 + 0x38),*(undefined8 *)(param_1 + 0x40),
+                             param_2 + 8);
+      }
+      else {
+        this_00 = (IOGPUResource *)
+                  IOGPUResource::newResourceWithClientAddressRanges
+                            (*(IOGPU **)(this + 0x48),this,(ulonglong *)(param_2 + 8),param_1);
+      }
+    }
+LAB_fffffe000a7dde10:
+    if (this_00 == (IOGPUResource *)0x0) {
+LAB_fffffe000a7ddfb8:
+      uVar19 = 0xe00002be;
+    }
+    else {
+LAB_fffffe000a7dde14:
+      uVar9 = (**(code **)(*(long *)this_00 + 0x148))(this_00,this,param_1,param_3);
+      if ((uVar9 & 1) == 0) {
+        func_0xfffffe000bee8f38
+                  (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: initialize failed\n");
+LAB_fffffe000a7ddf50:
+        uVar19 = 0xe00002bc;
+      }
+      else {
+        uVar10 = IOGPUResource::getResidentSize(this_00);
+        *(undefined8 *)(param_2 + 0x28) = uVar10;
+        if (((((byte)param_1[0x14] >> 6 & 1) != 0) && (*(long *)(this_00 + 0x28) != 0)) &&
+           (((byte)this_00[0x11] >> 5 & 1) != 0)) {
+          if (*(long *)(this_00 + 0x90) == 0) {
+            pIVar11 = (IOGPUSysMemory *)
+                      func_0xfffffe000be9c88c(*(long *)(this_00 + 0x28),IOGPUSysMemory::metaClass);
+            if (pIVar11 != (IOGPUSysMemory *)0x0) {
+              uVar10 = IOGPUSysMemory::getMemoryDescriptor(pIVar11);
+              plVar13 = (long *)func_0xfffffe000bf8856c
+                                          (uVar10,*(undefined8 *)PTR_DAT_fffffe00084689e8,0,1,0,0);
+              if (plVar13 != (long *)0x0) {
+                lVar6 = (**(code **)(*plVar13 + 0x138))();
+                if (lVar6 != 0) {
+                  func_0xfffffe000b734da0(lVar6,*(undefined8 *)(this_00 + 0x78));
+                }
+                (**(code **)(*plVar13 + 0x28))();
+              }
+            }
+          }
+          else {
+            *(uint *)(param_2 + 0x20) = *(uint *)(param_2 + 0x20) | 1;
+          }
+        }
+        uVar10 = (**(code **)(*(long *)this_00 + 0x150))(this_00,param_1,param_3);
+        if ((local_68 == 0) || (local_70 == 0)) {
+          if (((uint)uVar10 >> 2 & 1) != 0) {
+            iVar5 = (**(code **)(*(long *)this_00 + 0x180))(this_00,uVar10,uVar4);
+            if (iVar5 == 0) {
+              func_0xfffffe000bee8f38
+                        (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                         "%s: failed to create mapping.\n");
+              goto LAB_fffffe000a7ddf50;
+            }
+            goto LAB_fffffe000a7de030;
+          }
+        }
+        else {
+          iVar5 = (**(code **)(*(long *)this_00 + 0x188))(this_00);
+          if (iVar5 == 0) {
+            func_0xfffffe000bee8f38
+                      (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                       "%s: failed to create mapping at address 0x%llx with length 0x%llx.\n");
+            goto LAB_fffffe000a7ddf50;
+          }
+LAB_fffffe000a7de030:
+          if (*(long *)(this_00 + 0x20) == 0) {
+            *(undefined8 *)param_2 = 0;
+            lVar6 = 0;
+          }
+          else {
+            uVar9 = IOGPUResource::getGPUVirtualAddressForUserProcess(this_00);
+            *(ulong *)param_2 = uVar9 | (ulong)uVar1 << 0x20;
+            lVar6 = (**(code **)(**(long **)(this_00 + 0x20) + 0x168))
+                              (**(long **)(this_00 + 0x20) + 0x168);
+            if (((byte)this_00[0x10] & 0x7f) == 0) {
+              uVar9 = *(ulong *)(this_00 + 0x48);
+            }
+            else if (this_00[0x10] == (IOGPUResource)0x82) {
+              uVar9 = (ulong)*(uint *)(this_00 + 0x4c);
+            }
+            else {
+              uVar9 = 0;
+            }
+            lVar6 = lVar6 - uVar9;
+          }
+          *(long *)(param_2 + 0x50) = lVar6;
+        }
+        IOGPUResource::getClientSharedAddresses(this_00,(ulonglong *)(param_2 + 0x10));
+        if (*(int *)(*(long *)(this + 0x48) + 0x27c) != 0) {
+          (**(code **)(*(long *)this_00 + 0x168))(this_00,param_2 + 0x58);
+        }
+        if (((((byte)param_1[0x16] >> 1 & 1) != 0) &&
+            (this_01 = *(IOGPUMemoryMap **)(this_00 + 0x20), this_01 != (IOGPUMemoryMap *)0x0)) &&
+           (iVar5 = IOGPUMemoryMap::prepareMapping(this_01), iVar5 == 0)) {
+          IOGPUMemoryMap::completeMapping(this_01);
+        }
+        iVar5 = IOGPUNamespace::addObject(*(IOGPUNamespace **)(this + 0x10),(IOGPUObject *)this_00);
+        *(int *)(this_00 + 0x88) = iVar5;
+        if (iVar5 != 0) {
+          *(int *)(param_2 + 0x24) = iVar5;
+          uVar10 = IOGPUResource::getProtectionOptions(this_00);
+          *(undefined8 *)(param_2 + 0x48) = uVar10;
+          *(undefined8 *)(param_2 + 0x30) = *(undefined8 *)(this_00 + 0x70);
+          lVar6 = IOGPUResource::getStorageResource(this_00);
+          if ((lVar6 == 0) || (lVar6 = *(long *)(lVar6 + 0x28), lVar6 == 0)) {
+            *(undefined8 *)(param_2 + 0x38) = 0;
+          }
+          else {
+            *(undefined8 *)(param_2 + 0x38) = *(undefined8 *)(lVar6 + 0x70);
+            pIVar11 = (IOGPUSysMemory *)func_0xfffffe000be9c88c(lVar6,IOGPUSysMemory::metaClass);
+            if (pIVar11 != (IOGPUSysMemory *)0x0) {
+              IOGPUSysMemory::getMemoryDescriptor(pIVar11);
+              uVar10 = func_0xfffffe000bf8cb88();
+              if (___ktrace_kernel_enabled != 0) {
+                uVar8 = *(undefined8 *)(this_00 + 0x70);
+                uVar12 = func_0xfffffe000bf23ad4(*(undefined8 *)(this + 0x48));
+                func_0xfffffe000bcd27b4(0x85180118,uVar10,uVar8,uVar12,0,0);
+              }
+            }
+          }
+          *(undefined8 *)(param_2 + 0x40) = 0;
+          (**(code **)(*(long *)this_00 + 0x28))(this_00);
+          uVar19 = 0;
+          goto LAB_fffffe000a7ddfbc;
+        }
+        uVar19 = 0xe00002bd;
+      }
+      (**(code **)(*(long *)this_00 + 0x170))(this_00,this);
+      *(undefined8 *)(param_2 + 0x10) = 0;
+      *(undefined8 *)(param_2 + 8) = 0;
+      *(undefined8 *)(param_2 + 0x40) = 0;
+      *(undefined8 *)(param_2 + 0x38) = 0;
+    }
+  }
+LAB_fffffe000a7ddfbc:
+  if (pIVar7 == (IOSurface *)0x0) {
+    return uVar19;
+  }
+LAB_fffffe000a7ddfc0:
+  (**(code **)(*(long *)pIVar7 + 0x28))(pIVar7);
+  return uVar19;
+}
+
+
+
+===== device_is_restricted_client address=0xfffffe000a7dc8ac =====
+symbol=isRestrictedClient
+entry=fffffe000a7dc8ac
+direct_callers=1
+  caller=deviceUserClientStart entry=fffffe000a7be8c4
+direct_callees=1
+  callee=doesEntitlementExist entry=fffffe000a7dbe34
+
+/* IOGPUDevice::isRestrictedClient() */
+
+undefined8 __thiscall IOGPUDevice::isRestrictedClient(IOGPUDevice *this)
+
+{
+  code *pcVar1;
+  ulong uVar2;
+  undefined8 uVar3;
+  ulong unaff_x30;
+  
+  uVar2 = doesEntitlementExist(this,"com.apple.private.gpu-restricted");
+  if ((uVar2 & 1) != 0) {
+    return 1;
+  }
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar1 = (code *)SoftwareBreakpoint(0xc471,0xfffffe000a7dc904);
+    (*pcVar1)();
+  }
+  uVar3 = doesEntitlementExist(this,"com.apple.developer.gpu-restricted");
+  return uVar3;
+}
+
+
+
+===== device_create_user_gpu_task address=0xfffffe000a7de4c0 =====
+symbol=createUserGPUTask
+entry=fffffe000a7de4c0
+direct_callers=0
+direct_callees=0
+
+/* IOGPUDevice::createUserGPUTask(task*) */
+
+void __thiscall IOGPUDevice::createUserGPUTask(IOGPUDevice *this,task *param_1)
+
+{
+  undefined8 *puVar1;
+  
+  puVar1 = (undefined8 *)(**(long **)(this + 0x48) + 0x928);
+                    /* WARNING: Could not recover jumptable at 0xfffffe000a7de4f4. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+  (*(code *)*puVar1)(*(long **)(this + 0x48),param_1,puVar1);
+  return;
+}
+
+
+
+===== resource_initialize address=0xfffffe000a7cc3ec =====
+symbol=initialize
+entry=fffffe000a7cc3ec
+direct_callers=0
+direct_callees=1
+  callee=initEvent entry=fffffe000a7c25e0
+
+/* IOGPUResource::initialize(IOGPUDevice*, IOGPUNewResourceArgs*, unsigned long long) */
+
+undefined8
+IOGPUResource::initialize(IOGPUDevice *param_1,IOGPUNewResourceArgs *param_2,ulonglong param_3)
+
+{
+  IOGPUEvent *pIVar1;
+  uint uVar2;
+  
+  if (param_3 != 0) {
+    *(undefined4 *)(param_1 + 0x80) = *(undefined4 *)(param_3 + 8);
+    param_1[0x84] = *(IOGPUDevice *)(param_3 + 0x13);
+    uVar2 = *(uint *)(param_3 + 0x14);
+    if ((uVar2 >> 0xc & 1) != 0) {
+      *(uint *)(param_1 + 0x10) = *(uint *)(param_1 + 0x10) | 0x20000;
+      pIVar1 = (IOGPUEvent *)
+               func_0xfffffe000bf12438
+                         (&initialize(IOGPUDevice*,IOGPUNewResourceArgs*,unsigned_long_long)::
+                           kalloc_type_view_1253);
+      *(IOGPUEvent **)(param_1 + 0x58) = pIVar1;
+      IOGPUEventMachine::initEvent(pIVar1);
+      IOGPUEventMachine::initEvent((IOGPUEvent *)(*(long *)(param_1 + 0x58) + 0x40));
+      uVar2 = *(uint *)(param_3 + 0x14);
+    }
+    if ((uVar2 >> 0x16 & 1) != 0) {
+      *(uint *)(param_1 + 0x10) = *(uint *)(param_1 + 0x10) | 0x800000;
+    }
+  }
+  return 1;
+}
+
+
+
+===== resource_new_with_options address=0xfffffe000a7ca8d4 =====
+symbol=newResourceWithOptions
+entry=fffffe000a7ca8d4
+direct_callers=2
+  caller=new_resource entry=fffffe000a7ddaa4
+  caller=newResourceWithOptions entry=fffffe000a7ca88c
+direct_callees=5
+  callee=withOptions entry=fffffe000a7f6fc8
+  callee=getMemoryDescriptor entry=fffffe000a7f7e7c
+  callee=addProtectionOptions entry=fffffe000a7b75e0
+  callee=increment_allocated_size entry=fffffe000a7dd488
+  callee=get_iomd_ptr entry=fffffe000a7ca24c
+
+/* IOGPUResource::newResourceWithOptions(IOGPU*, IOGPUDevice*, eIOGPUResType, unsigned long long,
+   unsigned long long, unsigned int, unsigned long long*, IOGPUNewResourceArgs*, unsigned long
+   long&, unsigned long long&) */
+
+IOGPUResource *
+IOGPUResource::newResourceWithOptions
+          (IOGPU *param_1,IOGPUDevice *param_2,ulong param_3,ulong param_4,ulong param_5,
+          uint param_6,long *param_7,long param_8,ulong *param_9,ulong *param_10)
+
+{
+  IOGPUDevice *pIVar1;
+  task *ptVar2;
+  undefined *puVar3;
+  ulong uVar4;
+  IOGPUResource *this;
+  IOGPUSysMemory *this_00;
+  undefined8 uVar5;
+  undefined8 uVar6;
+  ulonglong uVar7;
+  IOGPUResource *pIVar8;
+  uint uVar9;
+  ulong uVar10;
+  task *ptVar11;
+  long lVar12;
+  ulong uVar13;
+  ulong uVar14;
+  undefined8 uVar15;
+  uint uVar16;
+  long local_78;
+  undefined8 local_68;
+  
+  if (((param_2 == (IOGPUDevice *)0x0) || (param_4 == 0)) || (((byte)param_2[0x40] >> 1 & 1) != 0))
+  {
+    if (0xf < param_4) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s: Unsupported protecton options (%016llx) bytes\n");
+      return (IOGPUResource *)0x0;
+    }
+    uVar4 = func_0xfffffe000abf4bd4(param_4);
+    puVar3 = PTR_DAT_fffffe00084689f0;
+    if (param_5 == 0) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: invalid arguments\n");
+      return (IOGPUResource *)0x0;
+    }
+    if (uVar4 >> 0x20 != 0) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s: Cannot store 64-bit protection options\n");
+      return (IOGPUResource *)0x0;
+    }
+    pIVar1 = param_2 + 0x50;
+    if (param_2 == (IOGPUDevice *)0x0) {
+      pIVar1 = (IOGPUDevice *)PTR_DAT_fffffe00084689e8;
+    }
+    ptVar11 = *(task **)pIVar1;
+    if (((param_8 == 0) || (uVar10 = *param_9, uVar10 == 0)) || (*param_10 == 0)) {
+      local_78 = 0;
+    }
+    else {
+      lVar12 = *(long *)PTR_DAT_fffffe00084689f0;
+      uVar13 = -lVar12;
+      uVar14 = uVar10 & uVar13;
+      local_78 = uVar10 - uVar14;
+      param_5 = local_78 + *param_10;
+      *param_10 = param_5;
+      *param_9 = uVar14;
+      *param_10 = (lVar12 + *param_10) - 1 & uVar13;
+    }
+    lVar12 = *(long *)puVar3;
+    this = (IOGPUResource *)(**(code **)(*(long *)param_1 + 0x8f0))(param_1,param_2,param_3);
+    if (this == (IOGPUResource *)0x0) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: createResource failed\n");
+      return (IOGPUResource *)0x0;
+    }
+    if (param_2 == (IOGPUDevice *)0x0) {
+      uVar16 = 0;
+    }
+    else {
+      uVar16 = 1;
+      if (((byte)param_1[0x244] & 0x80) == 0) {
+        uVar16 = (uint)(uVar4 == 0) & param_6 >> 0x10;
+      }
+    }
+    uVar10 = (param_5 + lVar12) - 1 & -lVar12;
+    if ((param_8 == 0) || ((*(byte *)(param_8 + 0x16) >> 4 & 1) == 0)) {
+      uVar7 = 0;
+    }
+    else {
+      uVar7 = *(ulonglong *)(param_8 + 0x50);
+    }
+    ptVar2 = ptVar11;
+    if (uVar16 == 0) {
+      ptVar2 = (task *)0x0;
+    }
+    this_00 = (IOGPUSysMemory *)
+              IOGPUSysMemory::withOptions
+                        (param_1,ptVar11,param_2,(IOGPUResource *)0x0,param_6,uVar10,uVar7,ptVar2);
+    if (this_00 == (IOGPUSysMemory *)0x0) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s: IOGPUSysMemory::withOptions failed\n");
+    }
+    else {
+      uVar5 = IOGPUSysMemory::getMemoryDescriptor(this_00);
+      *(IOGPUSysMemory **)(this + 0x28) = this_00;
+      if (uVar16 == 0) {
+        lVar12 = 0;
+LAB_fffffe000a7cac00:
+        *(uint *)(this + 0x14) = (uint)uVar4;
+        IOGPUMemory::addProtectionOptions((IOGPUMemory *)this_00,(uint)uVar4);
+        *(long *)(this + 0x48) = local_78;
+        *(long *)(this + 0x90) = lVar12;
+        *(ulong *)(this + 0x78) = uVar10;
+        if (param_8 == 0) {
+          uVar16 = *(uint *)(this + 0x10) | 0x400000;
+        }
+        else {
+          uVar16 = *(uint *)(this + 0x10) & 0xff800000 |
+                   *(uint *)(this + 0x10) & 0x3fffff |
+                   (*(uint *)(param_8 + 0x14) >> 0xe & 1) << 0x16;
+        }
+        if (param_2 == (IOGPUDevice *)0x0) {
+          *(uint *)(this + 0x10) = uVar16 | 0x400;
+        }
+        else {
+          uVar9 = uVar16 | 0x200;
+          *(uint *)(this + 0x10) = uVar9;
+          pIVar8 = this;
+          if ((uVar16 >> 0x16 & 1) == 0) {
+            while ((uVar9 & 0xff) == 0x82) {
+              uVar9 = *(uint *)(*(IOGPUResource **)(pIVar8 + 0x30) + 0x10);
+              pIVar8 = *(IOGPUResource **)(pIVar8 + 0x30);
+            }
+            if (((uVar9 & 0xff) == 0x40) || ((uVar9 & 0xf) != 0)) {
+              uVar7 = 0;
+            }
+            else {
+              uVar7 = *(ulonglong *)(pIVar8 + 0x78);
+            }
+            IOGPUDevice::increment_allocated_size(param_2,uVar7);
+          }
+        }
+        if (param_7 != (long *)0x0) {
+          if (*(long **)(this + 0x90) == (long *)0x0) {
+            lVar12 = 0;
+          }
+          else {
+            lVar12 = (**(code **)(**(long **)(this + 0x90) + 0x138))();
+            if (((byte)this[0x10] & 0x7f) == 0) {
+              uVar4 = *(ulong *)(this + 0x48);
+            }
+            else if (this[0x10] == (IOGPUResource)0x82) {
+              uVar4 = (ulong)*(uint *)(this + 0x4c);
+            }
+            else {
+              uVar4 = 0;
+            }
+            lVar12 = uVar4 + lVar12;
+          }
+          *param_7 = lVar12;
+        }
+        if (param_2 == (IOGPUDevice *)0x0) {
+          func_0xfffffe000bcd27b4
+                    (0x8509001c,0,*(undefined8 *)(this + 0x70),param_3 & 0xffffffff,
+                     *(undefined8 *)(this + 0x78),0);
+          uVar5 = 0;
+        }
+        else {
+          func_0xfffffe000bcd27b4
+                    (0x8509001c,*(undefined8 *)(param_2 + 0x38),*(undefined8 *)(this + 0x70),
+                     param_3 & 0xffffffff,*(undefined8 *)(this + 0x78),0);
+          uVar5 = *(undefined8 *)(param_2 + 0x38);
+        }
+        uVar15 = *(undefined8 *)(this + 0x70);
+        uVar6 = get_iomd_ptr(this);
+        local_68 = 0;
+        func_0xfffffe000b858710(uVar6,&local_68);
+        func_0xfffffe000bcd27b4(0x85090020,uVar5,uVar15,param_3 & 0xffffffff,local_68,0);
+        return this;
+      }
+      if ((param_8 == 0) || (-1 < *(char *)(param_8 + 0x15))) {
+        lVar12 = func_0xfffffe000bf8856c(uVar5,ptVar11,0,1,0,0);
+      }
+      else {
+        lVar12 = (**(code **)(*(long *)param_1 + 0x920))(param_1,param_2,uVar5,param_8);
+      }
+      if (lVar12 != 0) {
+        this_00 = *(IOGPUSysMemory **)(this + 0x28);
+        goto LAB_fffffe000a7cac00;
+      }
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s: failed to create client map\n");
+    }
+    (**(code **)(*(long *)this + 0x28))(this);
+  }
+  return (IOGPUResource *)0x0;
+}
+
+
+
+===== resource_new_with_client_address_ranges address=0xfffffe000a7cb7ac =====
+symbol=newResourceWithClientAddressRanges
+entry=fffffe000a7cb7ac
+direct_callers=1
+  caller=new_resource entry=fffffe000a7ddaa4
+direct_callees=3
+  callee=withClientRanges entry=fffffe000a7f6db0
+  callee=getMemoryDescriptor entry=fffffe000a7f7e7c
+  callee=increment_allocated_size entry=fffffe000a7dd488
+
+/* IOGPUResource::newResourceWithClientAddressRanges(IOGPU*, IOGPUDevice*, unsigned long long*,
+   IOGPUNewResourceArgs*) */
+
+long * IOGPUResource::newResourceWithClientAddressRanges
+                 (IOGPU *param_1,IOGPUDevice *param_2,ulonglong *param_3,
+                 IOGPUNewResourceArgs *param_4)
+
+{
+  ulong uVar1;
+  int iVar2;
+  bool bVar3;
+  bool bVar4;
+  int iVar5;
+  long *plVar6;
+  long *plVar7;
+  long *plVar8;
+  long lVar9;
+  IOGPUSysMemory *this;
+  undefined8 uVar10;
+  ulonglong uVar11;
+  undefined4 uVar12;
+  long *plVar13;
+  ulong uVar14;
+  uint uVar15;
+  ulong uVar16;
+  task *ptVar17;
+  
+  if (*(long *)(param_4 + 0x18) != 0) {
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+               "%s: disallowing protected resource\n");
+    return (long *)0x0;
+  }
+  if (param_2 == (IOGPUDevice *)0x0) {
+LAB_fffffe000a7cb9a4:
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: invalid arguments\n");
+    return (long *)0x0;
+  }
+  uVar14 = *(ulong *)(param_4 + 0x38);
+  uVar1 = *(ulong *)(param_4 + 0x40);
+  if ((uVar14 == 0 || uVar1 == 0) || 0xfffffffe < uVar1) goto LAB_fffffe000a7cb9a4;
+  ptVar17 = *(task **)(param_2 + 0x50);
+  plVar6 = (long *)(**(code **)(*(long *)param_1 + 0x8f0))(param_1,param_2,0x80);
+  if (plVar6 == (long *)0x0) {
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: createResource failed\n");
+    return (long *)0x0;
+  }
+  func_0xfffffe000b816ca0(ptVar17);
+  iVar5 = func_0xfffffe000b868958();
+  iVar2 = (int)*(long *)PTR_DAT_fffffe00084689f0;
+  if (*(long *)PTR_DAT_fffffe00084689f0 != (long)iVar5) {
+    iVar2 = iVar5;
+  }
+  uVar16 = (ulong)(iVar2 - 1U & (uint)uVar14);
+  plVar7 = (long *)func_0xfffffe000bf92170(uVar14 & -(long)iVar5,uVar16 + uVar1 * 0x10,0,ptVar17);
+  if (plVar7 == (long *)0x0) {
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+               "%s: failed to create descriptor\n");
+    plVar13 = (long *)0x0;
+    goto LAB_fffffe000a7cbc94;
+  }
+  plVar8 = (long *)(**(code **)(*plVar7 + 0x228))(plVar7,0x1000);
+  if (plVar8 == (long *)0x0) {
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,"%s: failed to create mapping\n")
+    ;
+    plVar13 = (long *)0x0;
+  }
+  else {
+    lVar9 = (**(code **)(*plVar8 + 0x138))();
+    bVar3 = (*(uint *)(param_4 + 0x14) & 0x30) != 0;
+    bVar4 = (*(uint *)(param_4 + 0x14) & 0x20) == 0;
+    this = (IOGPUSysMemory *)
+           IOGPUSysMemory::withClientRanges
+                     (param_1,ptVar17,(IOVirtualRange *)(lVar9 + uVar16),(uint)uVar1,bVar4 && bVar3)
+    ;
+    if (this == (IOGPUSysMemory *)0x0) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s: failed to make allocation\n");
+LAB_fffffe000a7cbaa4:
+      plVar13 = (long *)0x0;
+    }
+    else {
+      uVar10 = IOGPUSysMemory::getMemoryDescriptor(this);
+      plVar6[5] = (long)this;
+      if ((*(uint *)(param_4 + 0x14) >> 0xd & 1) == 0) {
+        if ((*(uint *)(param_4 + 0x14) >> 0xf & 1) == 0) {
+          uVar12 = 0x1001;
+          if (!bVar4 || !bVar3) {
+            uVar12 = 1;
+          }
+          lVar9 = func_0xfffffe000bf8856c(uVar10,*(undefined8 *)(param_2 + 0x50),0,uVar12,0,0);
+        }
+        else {
+          if (bVar4 && bVar3) {
+            func_0xfffffe000bee8f38
+                      (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                       "%s: Refusing to create mapping for readonly memory\n");
+            goto LAB_fffffe000a7cbaa4;
+          }
+          lVar9 = (**(code **)(*(long *)param_1 + 0x920))(param_1,param_2,uVar10,param_4);
+        }
+        if (lVar9 == 0) {
+          func_0xfffffe000bee8f38
+                    (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                     "%s: failed to create client map\n");
+          goto LAB_fffffe000a7cbaa4;
+        }
+        plVar6[0x12] = lVar9;
+        this = (IOGPUSysMemory *)plVar6[5];
+      }
+      lVar9 = (**(code **)(*(long *)this + 0x148))(this);
+      plVar6[0xf] = lVar9;
+      uVar15 = *(uint *)(plVar6 + 2) | 0x200;
+      *(uint *)(plVar6 + 2) = uVar15;
+      plVar13 = plVar6;
+      while ((uVar15 & 0xff) == 0x82) {
+        plVar13 = (long *)plVar13[6];
+        uVar15 = *(uint *)(plVar13 + 2);
+      }
+      if (((uVar15 & 0xff) == 0x40) || ((uVar15 & 0xf) != 0)) {
+        uVar11 = 0;
+      }
+      else {
+        uVar11 = plVar13[0xf];
+      }
+      IOGPUDevice::increment_allocated_size(param_2,uVar11);
+      if (param_3 != (ulonglong *)0x0) {
+        if ((long *)plVar6[0x12] == (long *)0x0) {
+          uVar11 = 0;
+        }
+        else {
+          lVar9 = (**(code **)(*(long *)plVar6[0x12] + 0x138))();
+          if ((*(byte *)(plVar6 + 2) & 0x7f) == 0) {
+            uVar14 = plVar6[9];
+          }
+          else if (*(byte *)(plVar6 + 2) == 0x82) {
+            uVar14 = (ulong)*(uint *)((long)plVar6 + 0x4c);
+          }
+          else {
+            uVar14 = 0;
+          }
+          uVar11 = uVar14 + lVar9;
+        }
+        *param_3 = uVar11;
+      }
+      func_0xfffffe000bcd27b4
+                (0x8509001c,*(undefined8 *)(param_2 + 0x38),plVar6[0xe],*(undefined4 *)param_4,
+                 plVar6[0xf],0);
+      plVar13 = plVar6;
+      plVar6 = (long *)0x0;
+    }
+    (**(code **)(*plVar8 + 0x28))();
+  }
+  (**(code **)(*plVar7 + 0x28))(plVar7);
+  if (plVar6 == (long *)0x0) {
+    return plVar13;
+  }
+LAB_fffffe000a7cbc94:
+  (**(code **)(*plVar6 + 0x28))(plVar6);
+  return plVar13;
+}
+
+
+
+===== resource_map_at_address_length address=0xfffffe000a7ccdf8 =====
+symbol=mapAtAddressLength
+entry=fffffe000a7ccdf8
+direct_callers=0
+direct_callees=1
+  callee=getGPUTask entry=fffffe000a7db4fc
+
+/* IOGPUResource::mapAtAddressLength(unsigned long long, unsigned long long, unsigned long long) */
+
+undefined8 __thiscall
+IOGPUResource::mapAtAddressLength
+          (IOGPUResource *this,ulonglong param_1,ulonglong param_2,ulonglong param_3)
+
+{
+  uint uVar1;
+  undefined8 uVar2;
+  long lVar3;
+  
+  uVar2 = IOGPUClientSharedMachine::getGPUTask(*(IOGPUClientSharedMachine **)(this + 0x68));
+  if (((uint)param_1 >> 4 & 1) == 0) {
+    uVar1 = *(uint *)(this + 0x10) & 0xf;
+    if (uVar1 == 0 || uVar1 == 2) {
+      lVar3 = (**(code **)(**(long **)(this + 0x28) + 0x160))
+                        (*(long **)(this + 0x28),uVar2,param_1,param_2,param_3);
+      *(long *)(this + 0x20) = lVar3;
+      if (lVar3 == 0) {
+        func_0xfffffe000bee8f38
+                  (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                   "%s: failed to create mapping. resType=0x%x\n");
+        return 0;
+      }
+    }
+    else if (uVar1 != 3) {
+      func_0xfffffe000bee8f38
+                (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+                 "%s: Unkown resource type. resType=0x%x\n");
+      return 0;
+    }
+    uVar2 = 1;
+  }
+  else {
+    func_0xfffffe000bee8f38
+              (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
+               "%s: Can\'t pin global ro resources to fixed address\n");
+    uVar2 = 0;
+  }
+  return uVar2;
+}
+
+
+
+===== resource_get_protection_options address=0xfffffe000a7cb214 =====
+symbol=getProtectionOptions
+entry=fffffe000a7cb214
+direct_callers=2
+  caller=new_resource entry=fffffe000a7ddaa4
+  caller=create_resource_iosurface entry=fffffe000a7de7c8
+direct_callees=0
+
+/* IOGPUResource::getProtectionOptions() const */
+
+undefined4 __thiscall IOGPUResource::getProtectionOptions(IOGPUResource *this)
+
+{
+  return *(undefined4 *)(this + 0x14);
+}
+
+
+
+===== memory_map_allocate_gpu_va address=0xfffffe000a7f5530 =====
+symbol=allocGPUVirtualAddress
+entry=fffffe000a7f5530
+direct_callers=0
+direct_callees=1
+  callee=add_mapping entry=fffffe000a7b6488
+
+/* IOGPUMemoryMap::allocGPUVirtualAddress() */
+
+undefined8 __thiscall IOGPUMemoryMap::allocGPUVirtualAddress(IOGPUMemoryMap *this)
+
+{
+  long lVar1;
+  ulong uVar2;
+  undefined8 uVar3;
+  
+  if ((*(ushort *)(this + 0x10) & 1) == 0) {
+    lVar1 = (**(code **)(**(long **)(this + 0x20) + 0x148))(*(long **)(this + 0x20),this);
+    uVar3 = 0;
+    if (lVar1 != 0) {
+      *(long *)(this + 0x28) = lVar1;
+      *(ushort *)(this + 0x10) = *(ushort *)(this + 0x10) | 1;
+      uVar2 = IOGPUMemory::add_mapping(*(IOGPUMemory **)(this + 0x18),this);
+      if ((uVar2 & 1) == 0) {
+        (**(code **)(*(long *)this + 0x180))(this);
+        uVar3 = 0;
+      }
+      else {
+        uVar3 = 1;
+      }
+    }
+    return uVar3;
+  }
+  return 1;
+}
+
+
+
+===== memory_map_set_allocation_parameters address=0xfffffe000a7f5a9c =====
+symbol=setAllocationParameters
+entry=fffffe000a7f5a9c
+direct_callers=0
+direct_callees=0
+
+/* IOGPUMemoryMap::setAllocationParameters(unsigned int, unsigned int) */
+
+void __thiscall
+IOGPUMemoryMap::setAllocationParameters(IOGPUMemoryMap *this,uint param_1,uint param_2)
+
+{
+  *(short *)(this + 0x12) = (short)param_1;
+  *(uint *)(this + 0x14) = param_2;
+  return;
+}
+
+
+
+===== memory_map_commit_gpu_page_table address=0xfffffe000a7f5c78 =====
+symbol=commitIntoGPUPageTable
+entry=fffffe000a7f5c78
+direct_callers=0
+direct_callees=0
+
+/* IOGPUMemoryMap::commitIntoGPUPageTable(unsigned long long) */
+
+void IOGPUMemoryMap::commitIntoGPUPageTable(ulonglong param_1)
+
+{
+                    /* WARNING: Could not recover jumptable at 0xfffffe000a7f5ca8. Too many branches
+                        */
+                    /* WARNING: Treating indirect jump as call */
+  (**(code **)(*(long *)param_1 + 400))(param_1,(undefined8 *)(*(long *)param_1 + 400));
+  return;
+}
+
+
+

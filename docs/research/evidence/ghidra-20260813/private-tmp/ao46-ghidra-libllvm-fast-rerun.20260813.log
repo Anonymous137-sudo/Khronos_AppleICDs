@@ -1,0 +1,50 @@
+java version "25.0.2" 2026-01-20 LTS
+Java(TM) SE Runtime Environment (build 25.0.2+10-LTS-69)
+Java HotSpot(TM) 64-Bit Server VM (build 25.0.2+10-LTS-69, mixed mode)
+INFO  Using log config file: jar:file:/opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /Users/gitanshchakravarty/Library/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /Users/gitanshchakravarty/Library/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Loading previous preferences: /Users/gitanshchakravarty/Library/ghidra/ghidra_12.0.3_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Class search complete (323 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (884 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldOffset has been called by org.apache.felix.framework.util.SecureAction (file:/opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/Base/lib/org.apache.felix.framework-7.0.5.jar)
+WARNING: Please consider reporting this to the maintainers of class org.apache.felix.framework.util.SecureAction
+WARNING: sun.misc.Unsafe::staticFieldOffset will be removed in a future release
+INFO  HEADLESS Script Paths:
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/Base/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/FunctionID/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/FileFormats/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Processors/Atmel/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Processors/8051/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Processors/DATA/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Processors/JVM/ghidra_scripts
+    /Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/scripts/ghidra
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Debug/Debugger/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/BSim/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/BytePatterns/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/PyGhidra/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/Decompiler/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/VersionTracking/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Features/PDB/ghidra_scripts
+    /opt/homebrew/Cellar/ghidra/12.1.2/libexec/Ghidra/Processors/PIC/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /private/tmp/ao46-ghidra-libllvm-fast.20260813/project/AO46LibLLVMFast (HeadlessAnalyzer)  
+INFO  Opening project: /private/tmp/ao46-ghidra-libllvm-fast.20260813/project/AO46LibLLVMFast (HeadlessProject)  
+INFO  REPORT: Processing project file: /libLLVM.dylib (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: AO46ExportAGXCompilePlanGraph.java '/private/tmp/ao46-ghidra-libllvm-fast.20260813/output/agx-compile-plan-fast.txt'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/scripts/ghidra/AO46ExportAGXCompilePlanGraph.java (HeadlessAnalyzer)  
+INFO  REPORT: Save succeeded for processed file: /libLLVM.dylib (HeadlessAnalyzer)  

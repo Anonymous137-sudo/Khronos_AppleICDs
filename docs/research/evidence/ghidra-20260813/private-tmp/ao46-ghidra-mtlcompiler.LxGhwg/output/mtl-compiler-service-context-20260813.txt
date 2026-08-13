@@ -1,0 +1,844 @@
+AO46 MTLCompilerService ownership report
+program=MTLCompilerService.arm64e
+image_base=100000000
+
+===== connection_context_constructor =====
+symbol=MTLConnectionCtx
+entry=1000009c8
+direct_callers=1
+  caller=getConnectionCtxInstance entry=1000025a4
+direct_callees=0
+
+/* WARNING: Heritage AFTER dead removal. Example location: x0 : 0x00010000095c */
+/* WARNING: Restarted to delay deadcode elimination for space: register */
+/* MTLConnectionCtx::MTLConnectionCtx(int, std::string const&) */
+
+MTLConnectionCtx * __thiscall
+MTLConnectionCtx::MTLConnectionCtx(MTLConnectionCtx *this,int param_1,string *param_2)
+
+{
+  CompilerPluginInterface *this_00;
+  undefined8 uVar1;
+  
+  *(undefined8 *)this = 0x32aaaba7;
+  *(undefined8 *)(this + 0x10) = 0;
+  *(undefined8 *)(this + 8) = 0;
+  *(undefined8 *)(this + 0x20) = 0;
+  *(undefined8 *)(this + 0x18) = 0;
+  *(undefined8 *)(this + 0x30) = 0;
+  *(undefined8 *)(this + 0x28) = 0;
+  *(undefined8 *)(this + 0x40) = 0;
+  *(undefined8 *)(this + 0x38) = 0;
+  *(undefined8 *)(this + 0x48) = 0;
+  *(int *)(this + 0x50) = param_1;
+  this_00 = operator_new(this,0x1080c407d05813f);
+  CompilerPluginInterface::CompilerPluginInterface(this_00,param_1);
+  *(CompilerPluginInterface **)(this + 0x40) = this_00;
+  uVar1 = (**(code **)(this_00 + 8))(param_2);
+  *(undefined8 *)(this + 0x48) = uVar1;
+  return this;
+}
+
+
+
+===== get_service =====
+symbol=getService
+entry=100000a7c
+direct_callers=2
+  caller=_compileRequestMain entry=100000ff4
+  caller=messageHandler entry=100001e6c
+direct_callees=2
+  callee=lock entry=1000051c0
+  callee=unlock entry=1000051d0
+
+/* MTLConnectionCtx::getService() */
+
+undefined8 __thiscall MTLConnectionCtx::getService(MTLConnectionCtx *this)
+
+{
+  undefined8 uVar1;
+  
+  std::mutex::lock();
+  uVar1 = *(undefined8 *)(this + 0x48);
+  std::mutex::unlock();
+  return uVar1;
+}
+
+
+
+===== get_dispatch =====
+symbol=getDispatch
+entry=100000ab0
+direct_callers=2
+  caller=_compileRequestMain entry=100000ff4
+  caller=messageHandler entry=100001e6c
+direct_callees=2
+  callee=lock entry=1000051c0
+  callee=unlock entry=1000051d0
+
+/* MTLConnectionCtx::getDispatch() */
+
+undefined8 __thiscall MTLConnectionCtx::getDispatch(MTLConnectionCtx *this)
+
+{
+  undefined8 uVar1;
+  
+  std::mutex::lock();
+  uVar1 = *(undefined8 *)(this + 0x40);
+  std::mutex::unlock();
+  return uVar1;
+}
+
+
+
+===== compile_request_main =====
+symbol=_compileRequestMain
+entry=100000ff4
+direct_callers=1
+  caller=messageHandler entry=100001e6c
+direct_callees=2
+  callee=getDispatch entry=100000ab0
+  callee=getService entry=100000a7c
+
+undefined8 _compileRequestMain(undefined4 *param_1)
+
+{
+  long lVar1;
+  undefined8 uVar2;
+  code *pcVar3;
+  undefined *local_48;
+  undefined8 local_40;
+  code *local_38;
+  undefined *puStack_30;
+  undefined4 *local_28;
+  
+  local_48 = PTR___NSConcreteStackBlock_100008370;
+  local_40 = DAT_100005a88;
+  local_38 = ___compileRequestMain_block_invoke;
+  puStack_30 = &___block_descriptor_40_e20_v36__0I8r_v12Q20r_28l;
+  *(undefined ***)(param_1 + 0xc) = &local_48;
+  local_28 = param_1;
+  lVar1 = MTLConnectionCtx::getDispatch(*(MTLConnectionCtx **)(param_1 + 0xe));
+  pcVar3 = *(code **)(lVar1 + 0x18);
+  uVar2 = MTLConnectionCtx::getService(*(MTLConnectionCtx **)(param_1 + 0xe));
+  (*pcVar3)(uVar2,*param_1,param_1[1],*(undefined8 *)(param_1 + 6),*(undefined8 *)(param_1 + 2),
+            *(undefined8 *)(param_1 + 0xc));
+  return 0;
+}
+
+
+
+===== send_reply =====
+symbol=sendReply
+entry=1000010b4
+direct_callers=3
+  caller=messageHandler entry=100001e6c
+  caller=____ZZN18MTLCompilerService15createHangTimerERKPU24objcproto13OS_xpc_object8NSObjectRKPU28objcproto17OS_dispatch_queueS0_ENK3$_0clEv_block_invoke entry=1000033d8
+  caller=___compileRequestMain_block_invoke entry=100001094
+direct_callees=7
+  callee=_xpc_dictionary_set_uint64 entry=100005730
+  callee=_xpc_dictionary_set_string entry=100005720
+  callee=_xpc_data_create entry=100005690
+  callee=_xpc_dictionary_set_value entry=100005740
+  callee=_xpc_release entry=100005780
+  callee=_xpc_dictionary_get_remote_connection entry=1000056d0
+  callee=_xpc_connection_send_message entry=100005650
+
+/* MTLCompilerService::sendReply(NSObject objcproto13OS_xpc_object* const&, NSObject
+   objcproto13OS_xpc_object* const&, unsigned int, void const*, unsigned long, char const*) */
+
+void MTLCompilerService::sendReply
+               (NSObject **param_1,NSObject **param_2,uint param_3,void *param_4,ulong param_5,
+               char *param_6)
+
+{
+  code *pcVar1;
+  undefined8 uVar2;
+  ulong unaff_x30;
+  
+  if (*param_1 == (NSObject *)0x0) {
+    return;
+  }
+  if (param_3 == 0) {
+    uVar2 = _xpc_data_create(param_4,param_5);
+    _xpc_dictionary_set_uint64(*param_1,"error",0);
+    _xpc_dictionary_set_value(*param_1,"reply",uVar2);
+    _xpc_release(uVar2);
+  }
+  else {
+    _xpc_dictionary_set_uint64(*param_1,"error",param_3);
+    if (param_6 != (char *)0x0) {
+      _xpc_dictionary_set_string(*param_1,"errorMessage",param_6);
+    }
+  }
+  uVar2 = _xpc_dictionary_get_remote_connection(*param_2);
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar1 = (code *)SoftwareBreakpoint(0xc471,0x100001184);
+    (*pcVar1)();
+  }
+  _xpc_connection_send_message(uVar2,*param_1);
+  return;
+}
+
+
+
+===== message_handler =====
+symbol=messageHandler
+entry=100001e6c
+direct_callers=1
+  caller=____ZN18MTLCompilerService12eventHandlerEPU24objcproto13OS_xpc_object8NSObject_block_invoke entry=100001da4
+direct_callees=36
+  callee=_xpc_dictionary_create_reply entry=1000056c0
+  callee=_xpc_dictionary_get_uint64 entry=1000056f0
+  callee=_xpc_dictionary_get_value entry=100005700
+  callee=_xpc_get_type entry=100005760
+  callee=_xpc_data_get_bytes_ptr entry=1000056a0
+  callee=_xpc_data_get_length entry=1000056b0
+  callee=_os_log_type_enabled entry=1000054d0
+  callee=sendReply entry=1000010b4
+  callee=_xpc_release entry=100005780
+  callee=_xpc_dictionary_get_string entry=1000056e0
+  callee=validateLLVMVersion entry=100002394
+  callee=MTLCompilerSandboxExtensions entry=100003d9c
+  callee=createIdleTimer entry=100001664
+  callee=createHangTimer entry=1000016c0
+  callee=getConnectionCtxInstance entry=1000025a4
+  callee=_pthread_mutex_lock entry=100005550
+  callee=getDispatch entry=100000ab0
+  callee=getService entry=100000a7c
+  callee=_pthread_mutex_unlock entry=100005560
+  callee=_xpc_fd_dup entry=100005750
+  callee=operator.new entry=100005240
+  callee=assignContextToArray entry=1000026b4
+  callee=setSandbox entry=100003e30
+  callee=beginCompilation entry=100002730
+  callee=_compileRequestMain entry=100000ff4
+  callee=removeContextFromArray entry=1000027b0
+  callee=endCompilation entry=100002848
+  callee=resetSandbox entry=100004280
+  callee=__release_shared[abi:nqe210106] entry=100002920
+  callee=_xpc_dictionary_set_bool entry=100005710
+  callee=_xpc_dictionary_get_remote_connection entry=1000056d0
+  callee=_xpc_connection_send_message entry=100005650
+  callee=messageHandler entry=100004e3c
+  callee=_dispatch_once entry=100005380
+  callee=messageHandler entry=100004b38
+  callee=_abort entry=100005330
+
+/* WARNING: Heritage AFTER dead removal. Example location: x0 : 0x000100002190 */
+/* WARNING: Restarted to delay deadcode elimination for space: register */
+/* MTLCompilerService::messageHandler(NSObject objcproto13OS_xpc_object*) */
+
+void __thiscall MTLCompilerService::messageHandler(MTLCompilerService *this,NSObject *param_1)
+
+{
+  NSObject *pNVar1;
+  NSObject *pNVar2;
+  ulong uVar3;
+  long lVar4;
+  undefined *puVar5;
+  long lVar6;
+  ulong uVar7;
+  ulonglong uVar8;
+  MTLCompilerService *this_00;
+  MTLSandboxExtensionContainer *this_01;
+  MTLConnectionCtx *this_02;
+  undefined8 uVar9;
+  undefined8 uVar10;
+  undefined *puVar11;
+  __shared_weak_count *this_03;
+  undefined8 uVar12;
+  __shared_weak_count *p_Var13;
+  uint uVar14;
+  int iVar15;
+  code *pcVar16;
+  ulong unaff_x30;
+  __shared_weak_count *local_b0;
+  __shared_weak_count *p_Stack_a8;
+  undefined *local_a0;
+  undefined8 local_98;
+  code *local_90;
+  undefined *puStack_88;
+  NSObject *local_80;
+  MTLCompilerService *pMStack_78;
+  NSObject *local_70;
+  NSObject *local_68;
+  
+  local_68 = param_1;
+  pNVar1 = (NSObject *)_xpc_dictionary_create_reply(param_1);
+  local_70 = pNVar1;
+  pNVar2 = (NSObject *)_xpc_dictionary_get_uint64(param_1,"requestType");
+  uVar14 = (uint)pNVar2;
+  if (uVar14 < 0x12) {
+    if ((1 << (ulong)(uVar14 & 0x1f) & 0x3edfaU) == 0) {
+      if (uVar14 == 9) {
+        if (isProbGuardMallocEnabled()::onceToken != -1) {
+          messageHandler(pNVar2);
+        }
+        if (isProbGuardMallocEnabled()::result == '\x01') {
+          _xpc_dictionary_set_bool(pNVar1,"ProbGuardMalloc",1);
+        }
+        uVar12 = _xpc_dictionary_get_remote_connection(param_1);
+        _xpc_connection_send_message(uVar12,pNVar1);
+        if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) == 0) {
+          _xpc_release(pNVar1);
+          return;
+        }
+                    /* WARNING: Does not return */
+        pcVar16 = (code *)SoftwareBreakpoint(0xc471,0x100002304);
+        (*pcVar16)();
+      }
+    }
+    else {
+      uVar3 = _xpc_dictionary_get_uint64(param_1,"connectionId");
+      if (((uVar3 < 0x40) && (lVar4 = _xpc_dictionary_get_value(param_1,"data"), lVar4 != 0)) &&
+         (puVar5 = (undefined *)_xpc_get_type(), puVar11 = PTR___xpc_type_data_1000083b0,
+         puVar5 == PTR___xpc_type_data_1000083b0)) {
+        lVar6 = _xpc_data_get_bytes_ptr(lVar4);
+        uVar7 = _xpc_data_get_length(lVar4);
+        if (((lVar6 != 0) && (uVar7 < 0x10000001)) && (uVar7 != 0)) {
+          if ((uVar14 == 0x10) && (uVar7 < 0x88)) {
+            pNVar2 = (NSObject *)_os_log_type_enabled(PTR___os_log_default_100008388,0x10);
+            if ((int)pNVar2 != 0) {
+              messageHandler(pNVar2);
+            }
+            sendReply(&local_70,&local_68,2,(void *)0x0,0,"Invalid request data size");
+            _xpc_release(pNVar1);
+          }
+          else {
+            pNVar2 = (NSObject *)_xpc_dictionary_get_value(param_1,"sandboxTokens");
+            uVar8 = _xpc_dictionary_get_uint64(param_1,"llvmVersion");
+            this_00 = (MTLCompilerService *)_xpc_dictionary_get_string(param_1,"pluginPath");
+            validateLLVMVersion(this_00,uVar8,pNVar1);
+            this_01 = (MTLSandboxExtensionContainer *)
+                      MTLSandboxExtensionContainer::MTLCompilerSandboxExtensions();
+            local_a0 = PTR___NSConcreteStackBlock_100008370;
+            local_98 = DAT_100005a98;
+            local_90 = 
+            ____ZN18MTLCompilerService14messageHandlerEPU24objcproto13OS_xpc_object8NSObject_block_invoke
+            ;
+            puStack_88 = &___block_descriptor_48_e8_32o_e5_v8__0l;
+            local_80 = param_1;
+            pMStack_78 = this;
+            if (messageHandler(NSObject*)::onceToken != -1) {
+              _dispatch_once(&messageHandler(NSObject*)::onceToken,&local_a0);
+            }
+            createIdleTimer(this,(NSObject **)(this + 0x68));
+            createHangTimer((NSObject **)this,&local_68);
+            this_02 = (MTLConnectionCtx *)getConnectionCtxInstance(this,uVar8,uVar3);
+            if (this_02 == (MTLConnectionCtx *)0x0) goto LAB_100002330;
+            if (this_00 == (MTLCompilerService *)0x0) {
+              iVar15 = -1;
+            }
+            else {
+              lVar4 = _xpc_dictionary_get_value(local_68,"targetData");
+              if ((lVar4 == 0) || (puVar5 = (undefined *)_xpc_get_type(lVar4), puVar5 != puVar11)) {
+                uVar9 = 0;
+                uVar12 = 0;
+              }
+              else {
+                uVar12 = _xpc_data_get_bytes_ptr(lVar4);
+                uVar9 = _xpc_data_get_length(lVar4);
+              }
+              _pthread_mutex_lock((pthread_mutex_t *)(this + 0x4a8));
+              lVar4 = MTLConnectionCtx::getDispatch(this_02);
+              pcVar16 = *(code **)(lVar4 + 0x20);
+              uVar10 = MTLConnectionCtx::getService(this_02);
+              (*pcVar16)(uVar10,this_00,uVar12,uVar9);
+              _pthread_mutex_unlock((pthread_mutex_t *)(this + 0x4a8));
+              iVar15 = (int)uVar10;
+              if ((int)uVar10 == -1) goto LAB_100002330;
+            }
+            if (((uVar14 == 0x10) &&
+                (lVar4 = _xpc_dictionary_get_value(local_68,"machOFD"), lVar4 != 0)) &&
+               (puVar11 = (undefined *)_xpc_get_type(), puVar11 == PTR___xpc_type_fd_1000083c8)) {
+              _xpc_fd_dup(lVar4);
+              *(long *)(lVar6 + 0x18) = (long)(int)puVar11;
+              *(undefined1 *)(lVar6 + 0x81) = 0;
+            }
+            lVar4 = _xpc_dictionary_get_uint64(local_68,"setRelaxedMath");
+            this_03 = operator_new(lVar4,0x1081c00db2a50d6);
+            *(undefined8 *)(this_03 + 8) = 0;
+            *(undefined8 *)(this_03 + 0x10) = 0;
+            p_Var13 = this_03 + 0x18;
+            *(int *)p_Var13 = iVar15;
+            *(undefined ***)this_03 = &PTR____shared_ptr_emplace_100008550;
+            *(uint *)(this_03 + 0x1c) = uVar14;
+            *(long *)(this_03 + 0x30) = lVar6;
+            *(NSObject **)(this_03 + 0x38) = local_68;
+            *(ulong *)(this_03 + 0x20) = uVar7;
+            *(ulong *)(this_03 + 0x28) = uVar3;
+            *(NSObject **)(this_03 + 0x40) = pNVar1;
+            *(undefined8 *)(this_03 + 0x48) = 0;
+            *(MTLConnectionCtx **)(this_03 + 0x50) = this_02;
+            local_b0 = p_Var13;
+            p_Stack_a8 = this_03;
+            _pthread_mutex_lock((pthread_mutex_t *)(this + 0x4a8));
+            assignContextToArray(this,(shared_ptr *)&local_b0);
+            MTLSandboxExtensionContainer::setSandbox(this_01,pNVar2);
+            beginCompilation(this,lVar4 != 0);
+            _pthread_mutex_unlock((pthread_mutex_t *)(this + 0x4a8));
+            _compileRequestMain(p_Var13);
+            _pthread_mutex_lock((pthread_mutex_t *)(this + 0x4a8));
+            removeContextFromArray(this,(shared_ptr *)&local_b0);
+            endCompilation(this,lVar4 != 0);
+            MTLSandboxExtensionContainer::resetSandbox(this_01,pNVar2);
+            _pthread_mutex_unlock((pthread_mutex_t *)(this + 0x4a8));
+            std::__shared_weak_count::__release_shared_abi_nqe210106_(this_03);
+          }
+          return;
+        }
+      }
+    }
+  }
+LAB_100002330:
+  _xpc_release(pNVar1);
+                    /* WARNING: Subroutine does not return */
+  _abort();
+}
+
+
+
+===== validate_request_type =====
+symbol=validateRequestType
+entry=100002354
+direct_callers=0
+direct_callees=0
+
+/* MTLCompilerService::validateRequestType(unsigned int) */
+
+uint __thiscall MTLCompilerService::validateRequestType(MTLCompilerService *this,uint param_1)
+
+{
+  return (uint)(param_1 < 0x12) & 0x3effaU >> (ulong)(param_1 & 0x1f);
+}
+
+
+
+===== validate_connection_id =====
+symbol=validateConnectionId
+entry=100002370
+direct_callers=0
+direct_callees=0
+
+/* MTLCompilerService::validateConnectionId(unsigned long long, NSObject objcproto13OS_xpc_object*)
+    */
+
+void __thiscall
+MTLCompilerService::validateConnectionId
+          (MTLCompilerService *this,ulonglong param_1,NSObject *param_2)
+
+{
+  if (param_1 < 0x40) {
+    return;
+  }
+  _xpc_release(param_2);
+                    /* WARNING: Subroutine does not return */
+  _abort();
+}
+
+
+
+===== validate_llvm_version =====
+symbol=validateLLVMVersion
+entry=100002394
+direct_callers=1
+  caller=messageHandler entry=100001e6c
+direct_callees=2
+  callee=_xpc_release entry=100005780
+  callee=_abort entry=100005330
+
+/* MTLCompilerService::validateLLVMVersion(unsigned long long, NSObject objcproto13OS_xpc_object*)
+    */
+
+void __thiscall
+MTLCompilerService::validateLLVMVersion
+          (MTLCompilerService *this,ulonglong param_1,NSObject *param_2)
+
+{
+  if (((1 < param_1 - 0x7d17) && (param_1 != 0xeda)) && (param_1 != 0xf3e)) {
+    _xpc_release(param_2);
+                    /* WARNING: Subroutine does not return */
+    _abort();
+  }
+  return;
+}
+
+
+
+===== validate_connection_context =====
+symbol=validateConnectionCtx
+entry=1000023d0
+direct_callers=0
+direct_callees=0
+
+/* MTLCompilerService::validateConnectionCtx(MTLConnectionCtx*, NSObject objcproto13OS_xpc_object*)
+    */
+
+void __thiscall
+MTLCompilerService::validateConnectionCtx
+          (MTLCompilerService *this,MTLConnectionCtx *param_1,NSObject *param_2)
+
+{
+  if (param_1 != (MTLConnectionCtx *)0x0) {
+    return;
+  }
+  _xpc_release(param_2);
+                    /* WARNING: Subroutine does not return */
+  _abort();
+}
+
+
+
+===== validate_plugin_index =====
+symbol=validatePluginIndex
+entry=1000023f0
+direct_callers=0
+direct_callees=0
+
+/* MTLCompilerService::validatePluginIndex(unsigned int, NSObject objcproto13OS_xpc_object*) */
+
+void __thiscall
+MTLCompilerService::validatePluginIndex(MTLCompilerService *this,uint param_1,NSObject *param_2)
+
+{
+  if (param_1 != 0xffffffff) {
+    return;
+  }
+  _xpc_release(param_2);
+                    /* WARNING: Subroutine does not return */
+  _abort();
+}
+
+
+
+===== validate_request_data_pointer_and_size =====
+symbol=validateRequestDataPointerAndSize
+entry=100002414
+direct_callers=0
+direct_callees=0
+
+/* MTLCompilerService::validateRequestDataPointerAndSize(void const*, unsigned long, NSObject
+   objcproto13OS_xpc_object*) */
+
+void __thiscall
+MTLCompilerService::validateRequestDataPointerAndSize
+          (MTLCompilerService *this,void *param_1,ulong param_2,NSObject *param_3)
+
+{
+  if ((param_1 != (void *)0x0) && (param_2 < 0x10000001)) {
+    return;
+  }
+  _xpc_release(param_3);
+                    /* WARNING: Subroutine does not return */
+  _abort();
+}
+
+
+
+===== validate_request_data_exists =====
+symbol=validateRequestDataExists
+entry=100002444
+direct_callers=0
+direct_callees=0
+
+/* MTLCompilerService::validateRequestDataExists(unsigned int, void const*, unsigned long, NSObject
+   objcproto13OS_xpc_object*) */
+
+void __thiscall
+MTLCompilerService::validateRequestDataExists
+          (MTLCompilerService *this,uint param_1,void *param_2,ulong param_3,NSObject *param_4)
+
+{
+  if ((param_1 != 9) && ((param_2 == (void *)0x0 || (param_3 == 0)))) {
+    _xpc_release(param_4);
+                    /* WARNING: Subroutine does not return */
+    _abort();
+  }
+  return;
+}
+
+
+
+===== get_connection_context =====
+symbol=getConnectionCtxInstance
+entry=1000025a4
+direct_callers=1
+  caller=messageHandler entry=100001e6c
+direct_callees=8
+  callee=_pthread_mutex_lock entry=100005550
+  callee=_pthread_mutex_unlock entry=100005560
+  callee=_os_log_type_enabled entry=1000054d0
+  callee=__emplace_unique_key_args<long_long,std::piecewise_construct_t_const&,std::tuple<long_long&&>,std::tuple<>> entry=10000373c
+  callee=operator.new entry=100005240
+  callee=MTLConnectionCtx entry=1000009c8
+  callee=reset[abi:nqe210106] entry=100003c8c
+  callee=getConnectionCtxInstance entry=100004e74
+
+/* WARNING: Heritage AFTER dead removal. Example location: x0 : 0x00010000264c */
+/* WARNING: Restarted to delay deadcode elimination for space: register */
+/* MTLCompilerService::getConnectionCtxInstance(unsigned long long, unsigned long long) */
+
+long __thiscall
+MTLCompilerService::getConnectionCtxInstance
+          (MTLCompilerService *this,ulonglong param_1,ulonglong param_2)
+
+{
+  long lVar1;
+  MTLConnectionCtx *this_00;
+  unique_ptr<MTLConnectionCtx,std::default_delete<MTLConnectionCtx>> *this_01;
+  long lVar2;
+  undefined1 auVar3 [16];
+  ulonglong local_58 [2];
+  ulonglong *local_48;
+  
+  _pthread_mutex_lock((pthread_mutex_t *)(this + 0x4a8));
+  if (param_2 < 0x40) {
+    local_48 = local_58;
+    local_58[0] = param_1;
+    lVar1 = std::
+            __hash_table<std::__hash_value_type<long_long,std::array<std::unique_ptr<MTLConnectionCtx,std::default_delete<MTLConnectionCtx>>,64ul>>,std::__unordered_map_hasher<long_long,std::pair<long_long_const,std::array<std::unique_ptr<MTLConnectionCtx,std::default_delete<MTLConnectionCtx>>,64ul>>,std::hash<long_long>,std::equal_to<long_long>,true>,std::__unordered_map_equal<long_long,std::pair<long_long_const,std::array<std::unique_ptr<MTLConnectionCtx,std::default_delete<MTLConnectionCtx>>,64ul>>,std::equal_to<long_long>,std::hash<long_long>,true>,std::allocator<std::pair<long_long_const,std::array<std::unique_ptr<MTLConnectionCtx,std::default_delete<MTLConnectionCtx>>,64ul>>>>
+            ::
+            __emplace_unique_key_args<long_long,std::piecewise_construct_t_const&,std::tuple<long_long&&>,std::tuple<>>
+                      ((longlong *)(this + 0x478),(piecewise_construct_t *)local_58,
+                       (tuple *)&std::piecewise_construct,(tuple *)&local_48);
+    this_01 = (unique_ptr<MTLConnectionCtx,std::default_delete<MTLConnectionCtx>> *)
+              (lVar1 + param_2 * 8 + 0x18);
+    lVar2 = *(long *)this_01;
+    if (lVar2 == 0) {
+      this_00 = operator_new(lVar1,0x10a0c408e0e2187);
+      MTLConnectionCtx::MTLConnectionCtx(this_00,(int)param_1,(string *)this);
+      std::unique_ptr<MTLConnectionCtx,std::default_delete<MTLConnectionCtx>>::reset_abi_nqe210106_
+                (this_01,this_00);
+      lVar2 = *(long *)this_01;
+    }
+    _pthread_mutex_unlock((pthread_mutex_t *)(this + 0x4a8));
+  }
+  else {
+    _pthread_mutex_unlock((pthread_mutex_t *)(this + 0x4a8));
+    auVar3 = _os_log_type_enabled(PTR___os_log_default_100008388,0x10);
+    if (auVar3._0_4_ != 0) {
+      getConnectionCtxInstance(auVar3._0_8_,auVar3._8_8_);
+    }
+    lVar2 = 0;
+  }
+  return lVar2;
+}
+
+
+
+===== assign_connection_context =====
+symbol=assignContextToArray
+entry=1000026b4
+direct_callers=1
+  caller=messageHandler entry=100001e6c
+direct_callees=3
+  callee=_os_log_type_enabled entry=1000054d0
+  callee=removeContextFromArray entry=100004eac
+  callee=__release_shared[abi:nqe210106] entry=100002920
+
+/* MTLCompilerService::assignContextToArray(std::shared_ptr<MTLCompilationContext> const&) */
+
+void __thiscall
+MTLCompilerService::assignContextToArray(MTLCompilerService *this,shared_ptr *param_1)
+
+{
+  code *pcVar1;
+  shared_ptr *psVar2;
+  __shared_weak_count *this_00;
+  long lVar3;
+  ulong uVar4;
+  long lVar5;
+  ulong unaff_x30;
+  
+  lVar3 = *(long *)param_1;
+  uVar4 = *(ulong *)(lVar3 + 0x10);
+  if (uVar4 < 0x40) {
+    lVar5 = *(long *)(param_1 + 8);
+    if (lVar5 != 0) {
+      *(long *)(lVar5 + 8) = *(long *)(lVar5 + 8) + 1;
+    }
+    this_00 = *(__shared_weak_count **)(this + uVar4 * 0x10 + 0x80);
+    *(long *)(this + uVar4 * 0x10 + 0x78) = lVar3;
+    *(long *)(this + uVar4 * 0x10 + 0x80) = lVar5;
+    if (this_00 != (__shared_weak_count *)0x0) {
+      if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+        pcVar1 = (code *)SoftwareBreakpoint(0xc471,0x100002724);
+        (*pcVar1)();
+      }
+      std::__shared_weak_count::__release_shared_abi_nqe210106_(this_00);
+      return;
+    }
+  }
+  else {
+    psVar2 = (shared_ptr *)_os_log_type_enabled(PTR___os_log_default_100008388,0x10);
+    if ((int)psVar2 != 0) {
+      removeContextFromArray(psVar2);
+    }
+  }
+  return;
+}
+
+
+
+===== begin_compilation =====
+symbol=beginCompilation
+entry=100002730
+direct_callers=1
+  caller=messageHandler entry=100001e6c
+direct_callees=3
+  callee=stop entry=100000e1c
+  callee=start entry=100000db4
+  callee=_setenv entry=1000055c0
+
+/* MTLCompilerService::beginCompilation(bool) */
+
+MTLCompilerService * __thiscall
+MTLCompilerService::beginCompilation(MTLCompilerService *this,bool param_1)
+
+{
+  MTLCompilerService *pMVar1;
+  uint uVar2;
+  MTLCompilerService *pMVar3;
+  
+  pMVar3 = this;
+  if (*(long *)(this + 0x70) == 0) {
+    if (*(MTLCompilerServiceTimer **)(this + 0x58) != (MTLCompilerServiceTimer *)0x0) {
+      MTLCompilerServiceTimer::stop(*(MTLCompilerServiceTimer **)(this + 0x58));
+    }
+    pMVar3 = (MTLCompilerService *)0x0;
+    if (*(MTLCompilerServiceTimer **)(this + 0x60) != (MTLCompilerServiceTimer *)0x0) {
+      pMVar3 = (MTLCompilerService *)
+               MTLCompilerServiceTimer::start(*(MTLCompilerServiceTimer **)(this + 0x60));
+    }
+  }
+  if (param_1) {
+    pMVar1 = this + 0x4a4;
+    if (*(int *)pMVar1 == 0) {
+      uVar2 = _setenv("MTL_REPLACE_FAST_MATH_WITH_RELAXED_MATH","1",1);
+      pMVar3 = (MTLCompilerService *)(ulong)uVar2;
+    }
+    LOAcquire();
+    *(int *)pMVar1 = *(int *)pMVar1 + 1;
+    LORelease();
+  }
+  *(long *)(this + 0x70) = *(long *)(this + 0x70) + 1;
+  return pMVar3;
+}
+
+
+
+===== remove_connection_context =====
+symbol=removeContextFromArray
+entry=1000027b0
+direct_callers=1
+  caller=messageHandler entry=100001e6c
+direct_callees=3
+  callee=_os_log_type_enabled entry=1000054d0
+  callee=removeContextFromArray entry=100004eac
+  callee=__release_shared[abi:nqe210106] entry=100002920
+
+/* MTLCompilerService::removeContextFromArray(std::shared_ptr<MTLCompilationContext> const&) */
+
+void __thiscall
+MTLCompilerService::removeContextFromArray(MTLCompilerService *this,shared_ptr *param_1)
+
+{
+  MTLCompilerService *pMVar1;
+  code *pcVar2;
+  shared_ptr *psVar3;
+  __shared_weak_count *p_Var4;
+  ulong unaff_x30;
+  
+  if (*(ulong *)(*(long *)param_1 + 0x10) < 0x40) {
+    pMVar1 = this + *(ulong *)(*(long *)param_1 + 0x10) * 0x10 + 0x78;
+    p_Var4 = *(__shared_weak_count **)(pMVar1 + 8);
+    *(undefined8 *)pMVar1 = 0;
+    *(undefined8 *)(pMVar1 + 8) = 0;
+    if (p_Var4 != (__shared_weak_count *)0x0) {
+      std::__shared_weak_count::__release_shared_abi_nqe210106_(p_Var4);
+    }
+    pMVar1 = this + *(long *)(*(long *)param_1 + 0x10) * 0x10 + 0x78;
+    p_Var4 = *(__shared_weak_count **)(pMVar1 + 8);
+    *(undefined8 *)pMVar1 = 0;
+    *(undefined8 *)(pMVar1 + 8) = 0;
+    if (p_Var4 != (__shared_weak_count *)0x0) {
+      if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+        pcVar2 = (code *)SoftwareBreakpoint(0xc471,0x100002838);
+        (*pcVar2)();
+      }
+      std::__shared_weak_count::__release_shared_abi_nqe210106_(p_Var4);
+      return;
+    }
+  }
+  else {
+    psVar3 = (shared_ptr *)_os_log_type_enabled(PTR___os_log_default_100008388,0x10);
+    if ((int)psVar3 != 0) {
+      removeContextFromArray(psVar3);
+    }
+  }
+  return;
+}
+
+
+
+===== end_compilation =====
+symbol=endCompilation
+entry=100002848
+direct_callers=1
+  caller=messageHandler entry=100001e6c
+direct_callees=4
+  callee=stop entry=100000e1c
+  callee=start entry=100000db4
+  callee=_pthread_cond_broadcast entry=1000054f0
+  callee=_setenv entry=1000055c0
+
+/* MTLCompilerService::endCompilation(bool) */
+
+MTLCompilerService * __thiscall
+MTLCompilerService::endCompilation(MTLCompilerService *this,bool param_1)
+
+{
+  MTLCompilerService *pMVar1;
+  MTLCompilerService *pMVar2;
+  code *pcVar3;
+  uint uVar4;
+  long lVar5;
+  ulong unaff_x30;
+  
+  lVar5 = *(long *)(this + 0x70);
+  *(long *)(this + 0x70) = lVar5 + -1;
+  pMVar2 = this;
+  if (lVar5 + -1 == 0) {
+    if (*(MTLCompilerServiceTimer **)(this + 0x60) != (MTLCompilerServiceTimer *)0x0) {
+      MTLCompilerServiceTimer::stop(*(MTLCompilerServiceTimer **)(this + 0x60));
+    }
+    if (*(MTLCompilerServiceTimer **)(this + 0x58) != (MTLCompilerServiceTimer *)0x0) {
+      MTLCompilerServiceTimer::start(*(MTLCompilerServiceTimer **)(this + 0x58));
+    }
+    uVar4 = _pthread_cond_broadcast((pthread_cond_t *)(this + 0x4e8));
+    pMVar2 = (MTLCompilerService *)(ulong)uVar4;
+  }
+  if (param_1) {
+    pMVar1 = this + 0x4a4;
+    LOAcquire();
+    *(int *)pMVar1 = *(int *)pMVar1 + -1;
+    LORelease();
+    if (*(int *)pMVar1 == 0) {
+      if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) == 0) {
+        uVar4 = _setenv("MTL_REPLACE_FAST_MATH_WITH_RELAXED_MATH","0",0);
+        return (MTLCompilerService *)(ulong)uVar4;
+      }
+                    /* WARNING: Does not return */
+      pcVar3 = (code *)SoftwareBreakpoint(0xc471,0x1000028e8);
+      (*pcVar3)();
+    }
+  }
+  return pMVar2;
+}
+
+
+

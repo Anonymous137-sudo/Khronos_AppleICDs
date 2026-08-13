@@ -1,0 +1,483 @@
+AO46 AGX compile-plan report
+program=libLLVM.dylib
+image_base=243971000
+
+===== agx_compile_plan_collect_configuration =====
+symbol=__ZN4llvm3AGX14AGXCompilePlan20collectConfigurationERNS0_14CompileRequestE entry=243fab52c
+references=2
+  ref=data from=Entry Point
+  ref=data from=2a2052ade
+direct_callees=0
+
+void __ZN4llvm3AGX14AGXCompilePlan20collectConfigurationERNS0_14CompileRequestE
+               (undefined8 *param_1,long *param_2)
+
+{
+  undefined8 uVar1;
+  undefined8 uVar2;
+  long lVar3;
+  long *plVar4;
+  undefined8 *puVar5;
+  
+  plVar4 = *(long **)*param_1;
+  lVar3 = plVar4[1];
+  if (((lVar3 != 0) || (lVar3 = *plVar4, lVar3 != 0)) || (lVar3 = plVar4[2], lVar3 != 0)) {
+    puVar5 = *(undefined8 **)(*param_2 + 0x38);
+    if ((puVar5 != (undefined8 *)0x0) &&
+       (puVar5 = (undefined8 *)*puVar5, puVar5 != (undefined8 *)0x0)) {
+      uVar2 = 3;
+      if (*(char *)(*param_2 + 0x11) == '\0') {
+        uVar2 = 1;
+      }
+      uVar1 = 2;
+      if (*(char *)(lVar3 + 0x60) == '\0') {
+        uVar1 = uVar2;
+      }
+                    /* WARNING: Could not recover jumptable at 0x000245800600. Too many branches */
+                    /* WARNING: Treating indirect jump as call */
+      (*pcRam000000029a2b9d60)(*puVar5,"instruction_selector",uVar1);
+      return;
+    }
+  }
+  return;
+}
+
+
+
+===== agx_compile_plan_execute =====
+symbol=__ZN4llvm3AGX14AGXCompilePlan7executeERNS0_14CompileRequestE entry=243fab534
+references=2
+  ref=data from=Entry Point
+  ref=data from=2a2052adf
+direct_callees=2
+  callee=_AfterColour entry=2457ffa24
+  callee=_AfterColour entry=2457ffb14
+
+void __ZN4llvm3AGX14AGXCompilePlan7executeERNS0_14CompileRequestE
+               (undefined1 *param_1,undefined8 *param_2,undefined8 *param_3)
+
+{
+  long *plVar1;
+  char ***pppcVar2;
+  long lVar3;
+  undefined8 *puVar4;
+  char cVar5;
+  int iVar6;
+  long lVar7;
+  ulong uVar8;
+  undefined8 uVar9;
+  undefined8 uVar10;
+  undefined8 *puVar11;
+  uint uVar12;
+  undefined1 *puVar13;
+  long *plVar14;
+  long *plVar15;
+  long lVar16;
+  undefined8 auStack_b0 [2];
+  char cStack_99;
+  long lStack_98;
+  undefined8 uStack_90;
+  undefined8 uStack_88;
+  char **ppcStack_80;
+  long lStack_78;
+  char cStack_69;
+  byte bStack_68;
+  undefined2 uStack_60;
+  long lStack_58;
+  
+  lStack_58 = *plRam000000028f6ec2f0;
+  plVar14 = (long *)((long *)*param_3)[1];
+  if (*(long *)*param_3 != 0) {
+    ppcStack_80 = (char **)0x247cb9150;
+    uStack_60 = 0x103;
+    lVar7 = func_0x0002445ecb08(plVar14,&ppcStack_80);
+    if (lVar7 == 0) {
+      lVar7 = func_0x0002445ecd30(plVar14,"agx.shaderHash",0xe);
+      lVar16 = *plVar14;
+      func_0x000244f48954(auStack_b0,plVar14);
+      func_0x000244f487d0(&ppcStack_80,auStack_b0);
+      pppcVar2 = (char ***)ppcStack_80;
+      if (-1 < (long)cStack_69) {
+        pppcVar2 = &ppcStack_80;
+      }
+      lVar3 = lStack_78;
+      if (-1 < cStack_69) {
+        lVar3 = (long)cStack_69;
+      }
+      uStack_88 = func_0x0002445df18c(lVar16,pppcVar2,lVar3);
+      lStack_98 = func_0x0002445e2bc4(lVar16,&uStack_88,1,0,1);
+      plVar15 = *(long **)(lVar7 + 0x30);
+      uVar12 = *(uint *)(plVar15 + 1);
+      if (uVar12 < *(uint *)((long)plVar15 + 0xc)) {
+        plVar1 = (long *)(*plVar15 + (ulong)uVar12 * 8);
+        *plVar1 = lStack_98;
+        if (lStack_98 != 0) {
+          func_0x0002445dd790(plVar1,lStack_98,2);
+          uVar12 = *(uint *)(plVar15 + 1);
+        }
+        *(uint *)(plVar15 + 1) = uVar12 + 1;
+      }
+      else {
+        func_0x0002445ea088(plVar15,&lStack_98);
+      }
+      if (cStack_69 < '\0') {
+        _AfterColour(ppcStack_80);
+      }
+      if (cStack_99 < '\0') {
+        _AfterColour(auStack_b0[0]);
+      }
+    }
+  }
+  uVar8 = func_0x000244f4782c(plVar14);
+  puVar13 = param_1;
+  if (uVar8 >> 0x20 == 0) goto LAB_243fab71c;
+  do {
+    func_0x000244f47948(&ppcStack_80,plVar14);
+    if ((bStack_68 & 1) == 0) {
+      uVar9 = func_0x0002445ecd30(plVar14,"agxcompiler.config",0x12);
+      lVar7 = *plVar14;
+      lStack_98 = func_0x0002445df18c(lVar7,"Request.ShaderType",0x12);
+      plVar14 = (long *)*plVar14;
+      puVar11 = (undefined8 *)func_0x000243facd64(param_3);
+      cVar5 = *(char *)((long)puVar11 + 0x17);
+      puVar4 = (undefined8 *)*puVar11;
+      if (-1 < (long)cVar5) {
+        puVar4 = puVar11;
+      }
+      lVar16 = puVar11[1];
+      if (-1 < cVar5) {
+        lVar16 = (long)cVar5;
+      }
+      uStack_90 = func_0x0002445df18c(plVar14,puVar4,lVar16);
+      uVar10 = func_0x0002445e2bc4(lVar7,&lStack_98,2,0,1);
+      func_0x0002445e4550(uVar9,uVar10);
+    }
+    if (param_2[1] == 0) {
+LAB_243fab5d0:
+      func_0x000243fa473c(puVar13,*(undefined8 *)*param_2,param_3);
+      param_1 = puVar13;
+    }
+    else {
+      func_0x0002451f0404(&lStack_98);
+      iVar6 = func_0x0002451ef860(param_2[1],param_3,&lStack_98);
+      if (iVar6 == 0) {
+        func_0x000243fad07c(&lStack_98);
+        goto LAB_243fab5d0;
+      }
+      param_1 = puVar13 + 8;
+      *puVar13 = 0;
+      func_0x000243fad034(param_1,&lStack_98);
+      func_0x000243fad07c(&lStack_98);
+    }
+    if ((bStack_68 == 1) && (cStack_69 < '\0')) {
+      _AfterColour(ppcStack_80);
+    }
+    if (*plRam000000028f6ec2f0 == lStack_58) {
+      return;
+    }
+    _AfterColour();
+LAB_243fab71c:
+    uVar9 = func_0x0002445ecd30(plVar14,"agxcompiler.config",0x12);
+    lVar7 = *plVar14;
+    ppcStack_80 = (char **)func_0x0002445df18c(lVar7,"Request.ShaderID",0x10);
+    uVar10 = func_0x0002446000c8(*plVar14);
+    iVar6 = func_0x0002451f03cc(param_3);
+    func_0x000244554df0(uVar10,(long)iVar6,0);
+    lStack_78 = func_0x0002445dea4c();
+    uVar10 = func_0x0002445e2bc4(lVar7,&ppcStack_80,2,0,1);
+    func_0x0002445e4550(uVar9,uVar10);
+    puVar13 = param_1;
+  } while( true );
+}
+
+
+
+===== agx_compile_plan_factory =====
+symbol=__ZN4llvm3AGX11AGXCompiler17createCompilePlanENS0_12PipelineTypeENS0_8OptimizeENS0_7LoggingENS0_10GlobalISelENS0_10RelocModelENS0_13CodeGenOutputE entry=2451eca84
+references=2
+  ref=data from=Entry Point
+  ref=data from=2a206047c
+direct_callees=0
+
+void __ZN4llvm3AGX11AGXCompiler17createCompilePlanENS0_12PipelineTypeENS0_8OptimizeENS0_7LoggingENS0_10GlobalISelENS0_10RelocModelENS0_13CodeGenOutputE
+               (undefined1 *param_1,long *param_2,undefined8 param_3,undefined8 param_4,
+               undefined8 param_5,undefined1 param_6,int param_7,undefined8 param_8)
+
+{
+  long lVar1;
+  undefined8 uVar2;
+  undefined8 uVar3;
+  long lVar4;
+  undefined8 uStack_30;
+  undefined8 uStack_28;
+  
+  lVar4 = *param_2;
+  lVar1 = 8;
+  if (param_7 != 1) {
+    lVar1 = 0;
+  }
+  func_0x0002451efd38(&uStack_30,lVar4 + 0x28,*(undefined8 *)(lVar4 + lVar1),lVar4 + 0x10,param_3,
+                      param_8,param_4,param_5,param_6);
+  uVar3 = uStack_28;
+  uVar2 = uStack_30;
+  *param_1 = 0;
+  uStack_30 = 0;
+  uStack_28 = 0;
+  *(undefined8 *)(param_1 + 0x10) = uVar3;
+  *(undefined8 *)(param_1 + 8) = uVar2;
+  func_0x0002451f0144(&uStack_30);
+  return;
+}
+
+
+
+===== agx_assemble_plan_execute =====
+symbol=__ZN4llvm3AGX15AGXAssemblePlan7executeERNS0_14CompileRequestERNS0_12CompileReplyE entry=2451ef860
+references=3
+  ref=data from=Entry Point
+  ref=data from=2a20604d0
+  ref=code owner=__ZN4llvm3AGX14AGXCompilePlan7executeERNS0_14CompileRequestE entry=243fab534
+direct_callees=6
+  callee=_AfterColour entry=2457ff984
+  callee=_AfterColour entry=2457ff3c4
+  callee=_AfterColour entry=2457ffa24
+  callee=_AfterColour entry=2457ffa94
+  callee=_AfterColour entry=2457ffb14
+  callee=_AfterColour entry=2457ff9e4
+
+/* WARNING: Removing unreachable block (ram,0x0002451efa3c) */
+/* WARNING: Removing unreachable block (ram,0x0002451efa88) */
+/* WARNING: Removing unreachable block (ram,0x0002451efb24) */
+/* WARNING: Removing unreachable block (ram,0x0002451efa4c) */
+
+bool __ZN4llvm3AGX15AGXAssemblePlan7executeERNS0_14CompileRequestERNS0_12CompileReplyE
+               (undefined8 *param_1,long *param_2,undefined8 param_3)
+
+{
+  char cVar1;
+  bool bVar2;
+  long lVar3;
+  ulong uVar4;
+  long *plVar5;
+  undefined8 *puVar6;
+  undefined2 uVar7;
+  undefined8 *****pppppuStack_1d0;
+  undefined8 *puStack_1c8;
+  undefined8 *puStack_1c0;
+  undefined8 uStack_1b0;
+  undefined8 uStack_1a8;
+  long lStack_1a0;
+  undefined1 auStack_198 [8];
+  undefined8 *****pppppuStack_190;
+  undefined7 uStack_188;
+  undefined1 uStack_181;
+  undefined7 uStack_180;
+  char cStack_179;
+  undefined8 *****pppppuStack_178;
+  undefined8 uStack_170;
+  undefined7 uStack_168;
+  char cStack_161;
+  undefined8 *****pppppuStack_160;
+  undefined8 *puStack_158;
+  undefined8 *puStack_150;
+  undefined8 *****apppppuStack_148 [2];
+  char cStack_131;
+  undefined8 *****pppppuStack_130;
+  undefined8 *puStack_128;
+  undefined8 *puStack_120;
+  undefined8 *****pppppuStack_110;
+  undefined8 uStack_108;
+  undefined8 uStack_100;
+  undefined2 uStack_f0;
+  char *pcStack_e0;
+  undefined4 uStack_d8;
+  undefined8 uStack_d0;
+  undefined8 uStack_c8;
+  undefined8 uStack_c0;
+  undefined1 uStack_b8;
+  undefined8 uStack_b0;
+  undefined4 uStack_a8;
+  undefined8 *puStack_a0;
+  undefined8 uStack_98;
+  undefined8 uStack_90;
+  undefined8 uStack_88;
+  undefined8 ****ppppuStack_80;
+  undefined8 uStack_78;
+  undefined8 uStack_70;
+  long *plStack_68;
+  long *aplStack_60 [2];
+  byte bStack_50;
+  long lStack_48;
+  
+  lStack_48 = *plRam000000028f6ec2f0;
+  func_0x0002451f03cc(param_2);
+  _AfterColour(&pcStack_e0);
+  lVar3 = func_0x000243fabbf8(param_1 + 1,&pcStack_e0);
+  if (lVar3 == 0) {
+    pcStack_e0 = "agx.shaderHash";
+    uStack_c0 = CONCAT62(uStack_c0._2_6_,0x103);
+    lVar3 = func_0x0002445ecb08(*(undefined8 *)(*param_2 + 8),&pcStack_e0);
+    uVar7 = 0;
+    bVar2 = false;
+    if (lVar3 != 0) {
+      puVar6 = *(undefined8 **)
+                (*(long *)(*(long *)**(undefined8 **)(lVar3 + 0x30) +
+                          (ulong)*(uint *)(*(long *)**(undefined8 **)(lVar3 + 0x30) + 8) * -8) + 8);
+      _AfterColour(&pcStack_e0,puVar6 + 3,*puVar6);
+      lVar3 = func_0x000243fabbf8(param_1 + 1,&pcStack_e0);
+      if (lVar3 != 0) goto LAB_2451ef8c4;
+      bVar2 = false;
+      uVar7 = 0;
+    }
+LAB_2451efa58:
+    if (*plRam000000028f6ec2f0 == lStack_48) {
+      return bVar2;
+    }
+    _AfterColour(bVar2);
+  }
+  else {
+LAB_2451ef8c4:
+    if (*(char *)(lVar3 + 0x3f) < '\0') {
+      func_0x000243ac6c74(&ppppuStack_80,*(undefined8 *)(lVar3 + 0x28),*(undefined8 *)(lVar3 + 0x30)
+                         );
+    }
+    else {
+      uStack_78 = *(undefined8 *)(lVar3 + 0x30);
+      ppppuStack_80 = *(undefined8 *****)(lVar3 + 0x28);
+      uStack_70 = *(undefined8 *)(lVar3 + 0x38);
+    }
+    uStack_98 = 0;
+    uStack_90 = 0;
+    uStack_88 = 0;
+    uStack_d8 = 0;
+    uStack_b8 = 0;
+    uStack_b0 = 0;
+    puStack_a0 = &uStack_98;
+    uStack_a8 = 0;
+    pcStack_e0 = &UNK_29c00cb48;
+    uStack_d0 = 0;
+    uStack_c8 = 0;
+    uStack_c0 = 0;
+    uVar7 = 0x104;
+    uStack_f0 = 0x104;
+    pppppuStack_110 = &ppppuStack_80;
+    func_0x000245704184(aplStack_60,&pppppuStack_110,0,1,0);
+    if ((bStack_50 & 1) == 0) {
+      pppppuStack_130 = (undefined8 ******)0x0;
+      uStack_108 = 0;
+      pppppuStack_110 = (undefined8 ******)0x0;
+      puStack_120 = (undefined8 *)0x0;
+      puStack_128 = (undefined8 *)0x0;
+      uStack_100 = 0;
+      if (*(int *)(param_1 + 6) == 3) {
+        _AfterColour(apppppuStack_148,aplStack_60[0][1],aplStack_60[0][2] - aplStack_60[0][1]);
+        puStack_158 = puStack_128;
+        pppppuStack_160 = pppppuStack_130;
+        puStack_150 = puStack_120;
+        puStack_128 = (undefined8 *)0x0;
+        puStack_120 = (undefined8 *)0x0;
+        pppppuStack_130 = (undefined8 *****)0x0;
+        func_0x000243facfbc(&plStack_68,apppppuStack_148,&pppppuStack_160);
+        func_0x0002451f040c(param_3,&plStack_68);
+        func_0x000243fad07c(&plStack_68);
+        pppppuStack_178 = &pppppuStack_160;
+        func_0x000243fa269c(&pppppuStack_178);
+      }
+      else {
+        _AfterColour(&pppppuStack_178,aplStack_60[0][1],aplStack_60[0][2] - aplStack_60[0][1]);
+        uVar4 = func_0x0002451ed530(*(undefined8 *)*param_1,&pppppuStack_178,&pcStack_e0,1);
+        if ((uVar4 & 1) == 0) goto LAB_2451efd18;
+        if (cStack_161 < '\0') {
+          func_0x000243ac6c74(&pppppuStack_190,pppppuStack_178,uStack_170);
+        }
+        else {
+          uStack_188 = (undefined7)uStack_170;
+          uStack_181 = (undefined1)((ulong)uStack_170 >> 0x38);
+          pppppuStack_190 = pppppuStack_178;
+          uStack_180 = uStack_168;
+          cStack_179 = cStack_161;
+        }
+        plStack_68 = (long *)_AfterColour(0x28,0x1093c40e92185c3);
+        cVar1 = cStack_179;
+        plStack_68[2] = (long)pppppuStack_190;
+        plStack_68[3] = CONCAT17(uStack_181,uStack_188);
+        *(ulong *)((long)plStack_68 + 0x1f) = CONCAT71(uStack_180,uStack_181);
+        uStack_188 = 0;
+        uStack_181 = 0;
+        uStack_180 = 0;
+        cStack_179 = '\0';
+        pppppuStack_190 = (undefined8 ******)0x0;
+        *(undefined4 *)(plStack_68 + 1) = 3;
+        *(char *)((long)plStack_68 + 0x27) = cVar1;
+        *plStack_68 = (long)&UNK_29bfc5df0;
+        if (puStack_128 < puStack_120) {
+          *puStack_128 = plStack_68;
+          plStack_68 = (long *)0x0;
+          puStack_128 = puStack_128 + 1;
+        }
+        else {
+          puStack_128 = (undefined8 *)func_0x000243fa539c(&pppppuStack_130,&plStack_68);
+          plVar5 = plStack_68;
+          plStack_68 = (long *)0x0;
+          if (plVar5 != (long *)0x0) {
+            (**(code **)(*plVar5 + 8))();
+          }
+        }
+        if (cStack_179 < '\0') {
+          _AfterColour(pppppuStack_190);
+        }
+        if (*(char *)((long)puStack_a0 + 0x17) < '\0') {
+          func_0x000243ac6c74(&uStack_1b0,*puStack_a0,puStack_a0[1]);
+        }
+        else {
+          uStack_1a8 = puStack_a0[1];
+          uStack_1b0 = *puStack_a0;
+          lStack_1a0 = puStack_a0[2];
+        }
+        puStack_1c8 = puStack_128;
+        pppppuStack_1d0 = pppppuStack_130;
+        puStack_1c0 = puStack_120;
+        puStack_128 = (undefined8 *)0x0;
+        puStack_120 = (undefined8 *)0x0;
+        pppppuStack_130 = (undefined8 *****)0x0;
+        func_0x000243facfbc(auStack_198,&uStack_1b0,&pppppuStack_1d0);
+        func_0x0002451f040c(param_3,auStack_198);
+        func_0x000243fad07c(auStack_198);
+        plStack_68 = (long *)&pppppuStack_1d0;
+        func_0x000243fa269c(&plStack_68);
+        apppppuStack_148[0] = pppppuStack_178;
+        cStack_131 = cStack_161;
+        if (lStack_1a0 < 0) {
+          _AfterColour(uStack_1b0);
+          apppppuStack_148[0] = pppppuStack_178;
+          cStack_131 = cStack_161;
+        }
+      }
+      if (cStack_131 < '\0') {
+        _AfterColour(apppppuStack_148[0]);
+      }
+      pppppuStack_178 = &pppppuStack_130;
+      func_0x000243fa269c(&pppppuStack_178);
+      pppppuStack_130 = &pppppuStack_110;
+      func_0x000243fa269c(&pppppuStack_130);
+      plVar5 = aplStack_60[0];
+      if (((bStack_50 & 1) == 0) && (aplStack_60[0] = (long *)0x0, plVar5 != (long *)0x0)) {
+        (**(code **)(*plVar5 + 8))();
+      }
+      func_0x000244f1292c(&pcStack_e0);
+      bVar2 = true;
+      uVar7 = 0x104;
+      goto LAB_2451efa58;
+    }
+  }
+  _AfterColour(&pppppuStack_130,"Fail to open asm shader file: ",&ppppuStack_80);
+  pppppuStack_110 = &pppppuStack_130;
+  uStack_f0 = uVar7;
+  func_0x0002456f8e5c(&pppppuStack_110,1);
+LAB_2451efd18:
+  plVar5 = (long *)func_0x0002456f8e28("Asm injection failed",1);
+  return *plVar5 != 0;
+}
+
+
+

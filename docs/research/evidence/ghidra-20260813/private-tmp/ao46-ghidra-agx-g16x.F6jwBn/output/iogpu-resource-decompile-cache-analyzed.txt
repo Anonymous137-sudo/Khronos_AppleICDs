@@ -1,0 +1,83 @@
+AO46 IOGPU resource and queue decompilation report
+program=IOGPU
+image_base=00000000
+
+===== resource_pool_create_pooled_resource offset=0x17c2c =====
+STATUS: function was not recovered
+
+===== command_queue_create offset=0x1cdb4 =====
+STATUS: function was not recovered
+
+===== command_queue_submit_command_buffers offset=0x1d090 =====
+STATUS: function was not recovered
+
+===== resource_list_add_resource offset=0x1f958 =====
+STATUS: function was not recovered
+
+===== name_fragment=initWithDevice =====
+symbol=initWithDevice:pointer:length:options:sysMemSize:vidMemSize:args:argsSize:deallocator:
+entry=1a56acae8
+
+/* Function Stack Size: 0x54 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_options_sysMemSize_vidMemSize_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_long_long param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             IOGPUNewResourceArgs *param_9,unsigned_int param_10,ID param_11,undefined4 param_12)
+
+{
+  ID IVar1;
+  undefined4 in_stack_ffffffffffffffe8;
+  
+  IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+                    (param_1,param_3,param_4,param_5,1,param_6,param_7,0,0,0,0,param_9,param_10,
+                     param_11,in_stack_ffffffffffffffe8);
+  return IVar1;
+}
+
+
+
+===== name_fragment=gpuAddress =====
+symbol=gpuAddress
+entry=1a56ac288
+
+/* Function Stack Size: 0x10 bytes */
+
+unsigned_long_long IOGPUMetalVisibleFunctionTable::gpuAddress(ID param_1,SEL param_2)
+
+{
+  objc_stub::doesNotRecognizeSelector_(param_1,param_2);
+  return 0;
+}
+
+
+
+===== name_fragment=virtualAddress =====
+symbol=virtualAddress
+entry=1a56b68b8
+
+/* Function Stack Size: 0x10 bytes */
+
+void * IOGPUMetalDeviceShmem::virtualAddress(ID param_1,SEL param_2)
+
+{
+  return *(void **)(param_1 + 0x88);
+}
+
+
+
+===== name_fragment=resourceSize =====
+symbol=resourceSize
+entry=1a56c1f24
+
+/* Function Stack Size: 0x10 bytes */
+
+unsigned_long_long IOGPUMetalResource::resourceSize(ID param_1,SEL param_2)
+
+{
+  return *(ulong *)(param_1 + (long)_res + 0x28) & 0xffffffffffffff;
+}
+
+
+

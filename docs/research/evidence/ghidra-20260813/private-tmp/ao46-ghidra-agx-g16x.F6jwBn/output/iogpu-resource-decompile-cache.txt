@@ -1,0 +1,28 @@
+AO46 IOGPU resource and queue decompilation report
+program=IOGPU
+image_base=00000000
+
+===== resource_pool_create_pooled_resource offset=0x17c2c =====
+STATUS: function was not recovered
+
+===== command_queue_create offset=0x1cdb4 =====
+STATUS: function was not recovered
+
+===== command_queue_submit_command_buffers offset=0x1d090 =====
+STATUS: function was not recovered
+
+===== resource_list_add_resource offset=0x1f958 =====
+STATUS: function was not recovered
+
+===== name_fragment=initWithDevice =====
+STATUS: function was not recovered
+
+===== name_fragment=gpuAddress =====
+STATUS: function was not recovered
+
+===== name_fragment=virtualAddress =====
+STATUS: function was not recovered
+
+===== name_fragment=resourceSize =====
+STATUS: function was not recovered
+

@@ -1,0 +1,16 @@
+AO46 AGX compile-plan report
+program=libLLVM.dylib
+image_base=243971000
+
+===== agx_compile_plan_collect_configuration =====
+STATUS: function was not recovered
+
+===== agx_compile_plan_execute =====
+STATUS: function was not recovered
+
+===== agx_compile_plan_factory =====
+STATUS: function was not recovered
+
+===== agx_assemble_plan_execute =====
+STATUS: function was not recovered
+

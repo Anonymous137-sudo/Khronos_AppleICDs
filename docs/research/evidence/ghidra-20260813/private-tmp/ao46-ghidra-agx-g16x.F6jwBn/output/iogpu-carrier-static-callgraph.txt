@@ -1,0 +1,5018 @@
+AO46 IOGPU resource and queue decompilation report
+program=IOGPU
+image_base=00000000
+
+===== metal_resource_init offset=0x1a56c1714 =====
+symbol=initWithDevice:options:args:argsSize:
+entry=1a56c1714
+direct_callers=10
+  caller=initWithDevice:iosurface:gpuAddress:args:argsSize: entry=1a56ad294
+  caller=initWithDevice:addressRanges:addressRangeCount:length:options:gpuAddress:args:argsSize: entry=1a56ad404
+  caller=initWithPrimaryBuffer:heapIndex:bufferIndex:bufferOffset:length:args:argsSize:gpuTag: entry=1a56ad0b8
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+  caller=initWithDevice:size:options:args:argsSize:desc: entry=1a56babf4
+  caller=initWithDevice:descriptor:placementSparseBytes:placementSparsePageSize:placementSparseMetaDataBytes:placementSparseResidencyBytes:args:argsSize: entry=1a56c45bc
+  caller=initWithDevice:descriptor:iosurface:plane:field:args:argsSize: entry=1a56c3fe0
+  caller=initWithBuffer:descriptor:sysMemOffset:sysMemRowBytes:vidMemSize:vidMemRowBytes:args:argsSize:isStrideTexture: entry=1a56c4e84
+  caller=initWithDevice:descriptor:sysMemPointer:sysMemSize:sysMemLength:sysMemRowBytes:args:argsSize:deallocator: entry=1a56c3d14
+  caller=initWithDevice:descriptor:sysMemSize:sysMemRowBytes:vidMemSize:vidMemRowBytes:args:argsSize: entry=1a56c3a74
+direct_callees=2
+  callee=initWithDevice:remoteStorageResource:options:args:argsSize: entry=1a56fa860
+  callee=initWithDevice:remoteStorageResource:options:args:argsSize: entry=1a56c1728
+
+/* Function Stack Size: 0x2c bytes */
+
+ID IOGPUMetalResource::initWithDevice_options_args_argsSize_
+             (ID param_1,SEL param_2,ID param_3,unsigned_long_long param_4,
+             IOGPUNewResourceArgs *param_5,unsigned_int param_6)
+
+{
+  ID IVar1;
+  
+  IVar1 = initWithDevice_remoteStorageResource_options_args_argsSize_
+                    (param_1,param_3,0,param_4,param_5,param_6);
+  return IVar1;
+}
+
+
+
+===== metal_resource_remote_storage_init offset=0x1a56c1728 =====
+symbol=initWithDevice:remoteStorageResource:options:args:argsSize:
+entry=1a56c1728
+direct_callers=1
+  caller=initWithDevice:options:args:argsSize: entry=1a56c1714
+direct_callees=25
+  callee=_objc_opt_class entry=1a56d7e5c
+  callee=_objc_opt_isKindOfClass entry=1a56d7e6c
+  callee=_objc_msgSendSuper2 entry=1a56d7e4c
+  callee=_objc_retain entry=1a56d7eac
+  callee=_objc_storeWeak entry=1a56d7ecc
+  callee=retainPeerConnection: entry=1a56fb800
+  callee=_getpid entry=1a56d7cdc
+  callee=deviceRef entry=1a56f9bc0
+  callee=_IOGPUResourceCreate entry=1a56c8780
+  callee=_IOGPUResourceGetClientShared entry=1a56c8a58
+  callee=_IOGPUResourceGetGlobalTraceObjectID entry=1a56c8ca0
+  callee=_IOGPUResourceGetResidentDataSize entry=1a56c8a28
+  callee=_objc_release entry=1a56d7e9c
+  callee=_IOGPUResourceGetDataBytes entry=1a56c89bc
+  callee=_IOGPUResourceGetGPUVirtualAddress entry=1a56c8a30
+  callee=_IOGPUResourceGeMetadataBytes entry=1a56c91cc
+  callee=_IOGPUResourceCreateAllocationIdentifierSet entry=1a56c8c8c
+  callee=_addResource: entry=1a56f8fa0
+  callee=addResourceToList: entry=1a56f9320
+  callee=registryID entry=1a56fb5c0
+  callee=currentAllocatedSize entry=1a56f9a80
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+  callee=-[IOGPUMetalResource_initWithDevice:remoteStorageResource:options:args:argsSize:].cold.3 entry=1a56d5780
+  callee=-[IOGPUMetalResource_initWithDevice:remoteStorageResource:options:args:argsSize:].cold.1 entry=1a56d572c
+  callee=-[IOGPUMetalResource_initWithDevice:remoteStorageResource:options:args:argsSize:].cold.2 entry=1a56d5758
+
+/* WARNING: Function: _objc_retain replaced with injection: _objc_retain_fixup */
+/* WARNING: Function: _objc_storeWeak replaced with injection: _objc_store_fixup */
+/* WARNING: Function: _objc_release replaced with injection: _objc_release_fixup */
+/* Function Stack Size: 0x34 bytes */
+
+ID IOGPUMetalResource::initWithDevice_remoteStorageResource_options_args_argsSize_
+             (ID param_1,SEL param_2,ID param_3,ID param_4,unsigned_long_long param_5,
+             IOGPUNewResourceArgs *param_6,unsigned_int param_7)
+
+{
+  uint uVar1;
+  uint uVar2;
+  __pid_t _Var3;
+  undefined8 uVar4;
+  ulong uVar5;
+  ID IVar6;
+  ID IVar7;
+  ID unaff_x19;
+  ID unaff_x20;
+  IOGPUNewResourceArgs *unaff_x21;
+  unsigned_int unaff_w22;
+  unsigned_long_long unaff_x23;
+  long unaff_x25;
+  long lVar8;
+  objc_super local_60;
+  
+  if (param_3 == 0) {
+    __IOGPUMetalResource_initWithDevice_remoteStorageResource_options_args_argsSize___cold_3();
+LAB_1a56c1a6c:
+    __IOGPUMetalResource_initWithDevice_remoteStorageResource_options_args_argsSize___cold_1();
+    param_7 = unaff_w22;
+LAB_1a56c1a70:
+    __IOGPUMetalResource_initWithDevice_remoteStorageResource_options_args_argsSize___cold_2();
+  }
+  else {
+    uVar4 = _objc_opt_class(PTR_IOGPUMetalDevice_1e6b15db8);
+    uVar5 = _objc_opt_isKindOfClass(param_3,uVar4);
+    unaff_x19 = param_3;
+    unaff_x20 = param_1;
+    unaff_x21 = param_6;
+    unaff_x23 = param_5;
+    unaff_w22 = param_7;
+    if ((uVar5 & 1) == 0) goto LAB_1a56c1a6c;
+    local_60.super_class = (class_t *)PTR_IOGPUMetalResource_1e6b192f8;
+    local_60.receiver = param_1;
+    unaff_x20 = _objc_msgSendSuper2(&local_60,"init");
+    if (unaff_x20 == 0) {
+      return 0;
+    }
+    lVar8 = (long)_res;
+    unaff_x25 = unaff_x20 + lVar8;
+    *(ID *)(unaff_x25 + 0x50) = param_3;
+    *(ID *)(unaff_x20 + (long)weakDevice) = param_3;
+    if (param_4 != 0) {
+      IVar6 = objc_stub::retainPeerConnection_
+                        (*(ID *)(unaff_x25 + 0x50),*(undefined8 *)(param_4 + lVar8 + 0x50));
+      if ((int)IVar6 == 0) {
+        return 0;
+      }
+      *(ID *)(unaff_x25 + 0xe8) = param_4;
+    }
+    *(undefined1 *)(unaff_x25 + 0xb0) = 1;
+    *(unsigned_long_long *)(unaff_x25 + 0x88) = param_5;
+    *(unsigned_long_long *)(unaff_x25 + 0x90) = param_5 >> 4 & 0xf;
+    *(unsigned_long_long *)(unaff_x25 + 0x98) = param_5 & 0xf;
+    _Var3 = _getpid();
+    *(__pid_t *)(unaff_x25 + 0xa0) = _Var3;
+    *(undefined8 *)(unaff_x25 + 0xa8) = 2;
+    *(undefined8 *)(unaff_x25 + 0xc0) = 0;
+    *(undefined8 *)(unaff_x25 + 0xb8) = 0;
+    *(undefined8 *)(unaff_x25 + 0xd0) = 0;
+    *(undefined8 *)(unaff_x25 + 200) = 0;
+    *(undefined1 *)(unaff_x25 + 0xd8) = 1;
+    *(undefined4 *)(unaff_x25 + 0xdc) = 0;
+    if (*(long *)(unaff_x25 + 0x90) == 3) {
+      *(undefined4 *)(unaff_x25 + 0x30) = 0;
+      *(undefined8 *)(unaff_x25 + 0x60) = 0;
+      *(undefined8 *)(unaff_x25 + 0x78) = 0;
+      *(undefined8 *)(unaff_x25 + 0x80) = 0;
+      *(undefined8 *)(unaff_x25 + 0x70) = 0;
+      *(ulong *)(unaff_x25 + 0x28) = (ulong)*(byte *)(unaff_x25 + 0x2f) << 0x38;
+      *(undefined1 *)(unaff_x25 + 0xb0) = 0;
+      *(undefined8 *)(unaff_x25 + 0x40) = 0;
+      *(undefined8 *)(unaff_x25 + 0x48) = 0;
+      *(undefined8 *)(unaff_x25 + 0x38) = 0;
+      goto LAB_1a56c19f8;
+    }
+    if ((param_5 & 0x300) == 0x100) {
+      (param_6->field0_0x0).field10_0x14 = (param_6->field0_0x0).field10_0x14 | 0x1000;
+    }
+    if (_initWithDevice_remoteStorageResource_options_args_argsSize__once_token != -1)
+    goto LAB_1a56c1a70;
+  }
+  uVar5 = *(ulong *)(unaff_x25 + 0x88);
+  if ((((uint)uVar5 >> 0x13 & 1) != 0) ||
+     ((((_initWithDevice_remoteStorageResource_options_args_argsSize__gAllowCPUMapping & 1) == 0 &&
+       (((uint)unaff_x23 >> 0x11 & 1) == 0)) && (*(long *)(unaff_x25 + 0x90) == 2)))) {
+    (unaff_x21->field0_0x0).field10_0x14 = (unaff_x21->field0_0x0).field10_0x14 | 0x2000;
+  }
+  uVar2 = (unaff_x21->field0_0x0).field10_0x14;
+  uVar1 = uVar2 | 0x30;
+  if ((uVar5 & 0x1000000) != 0) {
+    uVar1 = uVar2 & 0xfffffbcf | 0x10;
+  }
+  uVar2 = 0x400;
+  if ((unaff_x23 & 0x40000) != 0) {
+    uVar2 = 0x10400;
+  }
+  (unaff_x21->field0_0x0).field10_0x14 = uVar1 | uVar2;
+  IVar6 = objc_stub::deviceRef(*(ID *)(unaff_x25 + 0x50));
+  uVar4 = _IOGPUResourceCreate(IVar6,unaff_x21,param_7);
+  *(undefined8 *)(unaff_x25 + 0x70) = uVar4;
+  lVar8 = _IOGPUResourceGetClientShared();
+  *(long *)(unaff_x25 + 0x78) = lVar8;
+  if (lVar8 == 0) {
+    return 0;
+  }
+  *(undefined4 *)(unaff_x25 + 0x30) = *(undefined4 *)(*(long *)(unaff_x25 + 0x70) + 0x30);
+  uVar4 = _IOGPUResourceGetGlobalTraceObjectID();
+  *(undefined8 *)(unaff_x25 + 0x60) = uVar4;
+  uVar5 = _IOGPUResourceGetResidentDataSize(*(undefined8 *)(unaff_x25 + 0x70));
+  *(ulong *)(unaff_x25 + 0x28) =
+       uVar5 & 0xffffffffffffff | (ulong)*(byte *)(unaff_x25 + 0x2f) << 0x38;
+  lVar8 = *(long *)(unaff_x25 + 0x70);
+  if (*(uint *)(lVar8 + 0x34) == 0x82) {
+    *(undefined8 *)(unaff_x25 + 0x80) = 0;
+  }
+  else if (((*(uint *)(lVar8 + 0x34) >> 7 & 1) == 0) ||
+          ((*(byte *)((long)&(unaff_x21->field0_0x0).field10_0x14 + 2) >> 5 & 1) != 0)) {
+    uVar4 = _IOGPUResourceGetDataBytes();
+    *(undefined8 *)(unaff_x25 + 0x80) = uVar4;
+    lVar8 = *(long *)(unaff_x25 + 0x70);
+  }
+  else {
+    *(unsigned_long_long *)(unaff_x25 + 0x80) =
+         (unaff_x21->field0_0x0).field16_0x38.field0.field0_0x0;
+  }
+  uVar4 = _IOGPUResourceGetGPUVirtualAddress(lVar8);
+  *(undefined8 *)(unaff_x25 + 0x48) = uVar4;
+  *(undefined8 *)(unaff_x25 + 0xe0) = 0;
+  lVar8 = *(long *)(unaff_x25 + 0x70);
+  if (*(int *)(lVar8 + 0x34) == 0x40) {
+    uVar4 = _IOGPUResourceGeMetadataBytes();
+    *(undefined8 *)(unaff_x25 + 0xe0) = uVar4;
+    lVar8 = *(long *)(unaff_x25 + 0x70);
+  }
+  _IOGPUResourceCreateAllocationIdentifierSet(lVar8,unaff_x25 + 0x38,unaff_x25 + 0x40);
+  objc_stub::_addResource_(unaff_x19,unaff_x20);
+  *(ID *)(unaff_x20 + (long)weakSelf) = unaff_x20;
+  objc_stub::addResourceToList_(__ioGPUMemoryInfo,unaff_x20);
+LAB_1a56c19f8:
+  if (*___globalGPUCommPage != 0) {
+    uVar4 = *(undefined8 *)(unaff_x25 + 0x60);
+    uVar5 = *(ulong *)(unaff_x25 + 0x28);
+    IVar6 = objc_stub::registryID(unaff_x19);
+    IVar7 = objc_stub::currentAllocatedSize(unaff_x19);
+    _IOGPUDeviceTraceEvent(0,8,0xe,uVar4,uVar5 & 0xffffffffffffff,IVar6 & 0xffffffff,IVar7);
+  }
+  return unaff_x20;
+}
+
+
+
+===== metal_resource_virtual_address offset=0x1a56c1ee8 =====
+symbol=virtualAddress
+entry=1a56c1ee8
+direct_callers=0
+direct_callees=0
+
+/* Function Stack Size: 0x10 bytes */
+
+void * IOGPUMetalResource::virtualAddress(ID param_1,SEL param_2)
+
+{
+  return *(void **)(param_1 + (long)_res + 0x80);
+}
+
+
+
+===== metal_resource_gpu_address offset=0x1a56c1efc =====
+symbol=gpuAddress
+entry=1a56c1efc
+direct_callers=1
+  caller=copyAnnotations entry=1a56ad694
+direct_callees=0
+
+/* Function Stack Size: 0x10 bytes */
+
+unsigned_long_long IOGPUMetalResource::gpuAddress(ID param_1,SEL param_2)
+
+{
+  return *(unsigned_long_long *)(param_1 + (long)_res + 0x48);
+}
+
+
+
+===== metal_resource_size offset=0x1a56c1f24 =====
+symbol=resourceSize
+entry=1a56c1f24
+direct_callers=1
+  caller=allocatedSize entry=1a56c2670
+direct_callees=0
+
+/* Function Stack Size: 0x10 bytes */
+
+unsigned_long_long IOGPUMetalResource::resourceSize(ID param_1,SEL param_2)
+
+{
+  return *(ulong *)(param_1 + (long)_res + 0x28) & 0xffffffffffffff;
+}
+
+
+
+===== resource_pool_create_pooled_resource offset=0x1a56c2c2c =====
+symbol=_IOGPUMetalResourcePoolCreatePooledResource
+entry=1a56c2c2c
+direct_callers=1
+  caller=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex entry=1a56bc974
+direct_callees=8
+  callee=_os_unfair_lock_lock entry=1a56d7efc
+  callee=_objc_alloc entry=1a56d7dcc
+  callee=initWithDevice:options:args:argsSize: entry=1a56fa7e0
+  callee=setLabel: entry=1a56fbba0
+  callee=allocatedSize entry=1a56f93c0
+  callee=setPurgeableState: entry=1a56fbcc0
+  callee=_objc_retain entry=1a56d7eac
+  callee=_os_unfair_lock_unlock entry=1a56d7f0c
+
+/* WARNING: Function: _objc_retain replaced with injection: _objc_retain_fixup */
+
+ID _IOGPUMetalResourcePoolCreatePooledResource(long param_1,undefined1 *param_2)
+
+{
+  long lVar1;
+  long lVar2;
+  undefined4 uVar3;
+  ID IVar4;
+  undefined8 *puVar5;
+  undefined8 uVar6;
+  ID IVar7;
+  long *plVar8;
+  
+  _os_unfair_lock_lock(param_1 + 0x28);
+  uVar3 = *(undefined4 *)(param_1 + 0x58);
+  IVar7 = *(ID *)(param_1 + 0x18);
+  if (IVar7 == 0) {
+    IVar7 = *(ID *)(param_1 + 8);
+    if (IVar7 != 0) {
+      lVar1 = IVar7 + (long)IOGPUMetalPooledResource::_priv;
+      lVar2 = *(long *)(lVar1 + 8);
+      puVar5 = *(undefined8 **)(lVar1 + 0x10);
+      if (lVar2 == 0) {
+        uVar6 = 0;
+        *(undefined8 **)(param_1 + 0x10) = puVar5;
+      }
+      else {
+        *(undefined8 **)(lVar2 + IOGPUMetalPooledResource::_priv + 0x10) = puVar5;
+        uVar6 = *(undefined8 *)(IVar7 + (long)IOGPUMetalPooledResource::_priv + 8);
+        puVar5 = *(undefined8 **)(IVar7 + (long)IOGPUMetalPooledResource::_priv + 0x10);
+      }
+      *puVar5 = uVar6;
+      objc_stub::setPurgeableState_(IVar7,2);
+      goto LAB_1a56c2d50;
+    }
+    IVar7 = _objc_alloc(*(undefined8 *)(param_1 + 0x30));
+    IVar7 = objc_stub::initWithDevice_options_args_argsSize_
+                      (IVar7,*(undefined8 *)(param_1 + 0x38),0,*(undefined8 *)(param_1 + 0x40),
+                       (ulong)*(uint *)(param_1 + 0x48));
+    if (IVar7 == 0) goto LAB_1a56c2d70;
+    objc_stub::setLabel_(IVar7,&cf_IOGPUMetalResourcePool);
+    *param_2 = 0;
+    plVar8 = (long *)(IVar7 + (long)IOGPUMetalPooledResource::_priv);
+    IVar4 = objc_stub::allocatedSize(IVar7);
+    *(ID *)(param_1 + 0x60) = *(long *)(param_1 + 0x60) + IVar4;
+  }
+  else {
+    lVar1 = IVar7 + (long)IOGPUMetalPooledResource::_priv;
+    lVar2 = *(long *)(lVar1 + 8);
+    puVar5 = *(undefined8 **)(lVar1 + 0x10);
+    if (lVar2 == 0) {
+      uVar6 = 0;
+      *(undefined8 **)(param_1 + 0x20) = puVar5;
+    }
+    else {
+      *(undefined8 **)(lVar2 + IOGPUMetalPooledResource::_priv + 0x10) = puVar5;
+      uVar6 = *(undefined8 *)(IVar7 + (long)IOGPUMetalPooledResource::_priv + 8);
+      puVar5 = *(undefined8 **)(IVar7 + (long)IOGPUMetalPooledResource::_priv + 0x10);
+    }
+    *puVar5 = uVar6;
+LAB_1a56c2d50:
+    plVar8 = (long *)(IVar7 + (long)IOGPUMetalPooledResource::_priv);
+    *(int *)(param_1 + 0x2c) = *(int *)(param_1 + 0x2c) + -1;
+  }
+  *plVar8 = param_1;
+  *(undefined4 *)(plVar8 + 4) = uVar3;
+LAB_1a56c2d70:
+  _os_unfair_lock_unlock(param_1 + 0x28);
+  return IVar7;
+}
+
+
+
+===== command_queue_create offset=0x1a56c7db4 =====
+symbol=_IOGPUCommandQueueCreate
+entry=1a56c7db4
+direct_callers=2
+  caller=initIOGPUMTL4CommandQueue:descriptor:args:argsSize: entry=1a56d1ab4
+  caller=initWithDevice:descriptor:args:argsSize: entry=1a56b00cc
+direct_callees=14
+  callee=__CFRuntimeCreateInstance entry=1a56d78cc
+  callee=_CFRetain entry=1a56d730c
+  callee=_IOGPULogLeak entry=1a56c7a18
+  callee=_IOConnectCallMethod entry=1a56d73cc
+  callee=_IOGPUNotificationQueueCreate entry=1a56ba2bc
+  callee=_IOGPUNotificationQueueGetID entry=1a56ba824
+  callee=_os_log_type_enabled entry=1a56d7edc
+  callee=_IOGPUCommandQueueCreate.cold.2 entry=1a56d6164
+  callee=_CFRelease entry=1a56d72fc
+  callee=_IOGPUCommandQueueCreate.cold.3 entry=1a56d61d8
+  callee=_IOGPUCommandQueueCreate.cold.1 entry=1a56d6160
+  callee=_IOGPUCommandQueueCreate.cold.4 entry=1a56d6214
+  callee=___stack_chk_fail entry=1a56d79fc
+  callee=_abort entry=1a56d7a7c
+
+long _IOGPUCommandQueueCreate(long param_1,long param_2,undefined4 param_3)
+
+{
+  int iVar1;
+  long lVar2;
+  long lVar3;
+  undefined8 uVar4;
+  undefined8 local_60;
+  long local_58;
+  undefined8 local_50;
+  undefined8 local_48;
+  undefined8 local_40;
+  long local_38;
+  
+  local_38 = *DAT_1e598ebe0;
+  local_60 = 0x10;
+  uVar4 = *DAT_1e5910e88;
+  if (_IOGPUCommandQueueGetTypeID_onceToken != -1) {
+    _IOGPUCommandQueueCreate_cold_1();
+  }
+  lVar2 = __CFRuntimeCreateInstance(uVar4,_kIOGPUCommandQueueID,0x28,0);
+  if (lVar2 != 0) {
+    _CFRetain(param_1);
+    *(long *)(lVar2 + 0x10) = param_1;
+    *(undefined8 *)(lVar2 + 0x18) = 0;
+    *(undefined8 *)(lVar2 + 0x28) = 0;
+    *(undefined1 *)(lVar2 + 0x30) = 0;
+    _kIOGPUQueueCount = _kIOGPUQueueCount + 1;
+    if ((0x32 < _kIOGPUQueueCount) &&
+       ((_kIOGPUQueueCount * -0x3d70a3d7 + 0x51eb850U >> 1 | _kIOGPUQueueCount * -0x80000000) <
+        0x51eb851)) {
+      _IOGPULogLeak(*(undefined4 *)(param_1 + 0x10),_kIOGPUQueueCount);
+    }
+    local_58 = 0;
+    local_50 = 0;
+    *(bool *)(lVar2 + 0x30) = *(char *)(param_2 + 0x405) != '\0';
+    iVar1 = _IOConnectCallMethod
+                      (*(undefined4 *)(param_1 + 0x14),7,0,0,param_2,param_3,0,0,&local_58,&local_60
+                      );
+    if (iVar1 == 0) {
+      if (local_58 == 0) {
+        _IOGPUCommandQueueCreate_cold_4();
+        goto LAB_1a56c7fdc;
+      }
+      *(long *)(lVar2 + 0x18) = local_58;
+      *(undefined8 *)(lVar2 + 0x20) = local_50;
+      lVar3 = _IOGPUNotificationQueueCreate(param_1,0x100,0x28);
+      *(long *)(lVar2 + 0x28) = lVar3;
+      if (lVar3 == 0) {
+        iVar1 = _os_log_type_enabled(DAT_1e598f2d0,0x11);
+        param_1 = lVar2;
+        if (iVar1 != 0) {
+          _IOGPUCommandQueueCreate_cold_3();
+        }
+      }
+      else {
+        local_48 = *(undefined8 *)(lVar2 + 0x18);
+        local_40 = _IOGPUNotificationQueueGetID();
+        uVar4 = _IOConnectCallMethod(*(undefined4 *)(param_1 + 0x14),0x1c,&local_48,2,0,0,0,0,0,0);
+        if ((int)uVar4 == 0) goto LAB_1a56c7f98;
+        iVar1 = _os_log_type_enabled(DAT_1e598f2d0,0x11);
+        param_1 = lVar2;
+        if (iVar1 != 0) {
+          _IOGPUCommandQueueCreate_cold_2(uVar4);
+        }
+      }
+    }
+    else if (iVar1 == -0x1ff87fff) {
+                    /* WARNING: Subroutine does not return */
+      _abort();
+    }
+    _CFRelease(param_1);
+    lVar2 = 0;
+  }
+LAB_1a56c7f98:
+  if (*DAT_1e598ebe0 == local_38) {
+    return lVar2;
+  }
+LAB_1a56c7fdc:
+                    /* WARNING: Subroutine does not return */
+  ___stack_chk_fail();
+}
+
+
+
+===== command_queue_submit_command_buffers offset=0x1a56c8090 =====
+symbol=_IOGPUCommandQueueSubmitCommandBuffers
+entry=1a56c8090
+direct_callers=2
+  caller=_submitCommandBuffers:count: entry=1a56b0a14
+  caller=submitCommandBuffers entry=1a56d2570
+direct_callees=6
+  callee=_CFGetTypeID entry=1a56d72bc
+  callee=_IOGPUNotificationQueueWillSubmit entry=1a56ba86c
+  callee=_IOConnectTrap4 entry=1a56d744c
+  callee=_IOConnectCallMethod entry=1a56d73cc
+  callee=_IOGPUNotificationQueueDidSubmit entry=1a56ba8c4
+  callee=___stack_chk_fail entry=1a56d79fc
+
+undefined8
+_IOGPUCommandQueueSubmitCommandBuffers
+          (long param_1,ulong param_2,uint param_3,long param_4,ulong param_5,undefined4 *param_6)
+
+{
+  int iVar1;
+  long lVar2;
+  undefined8 uVar3;
+  undefined4 local_84;
+  undefined8 local_80;
+  undefined8 local_78;
+  ulong uStack_70;
+  ulong local_68;
+  ulong uStack_60;
+  long local_58;
+  
+  local_58 = *DAT_1e598ebe0;
+  uVar3 = 0xe00002c2;
+  if ((param_1 != 0) && (lVar2 = _CFGetTypeID(), lVar2 == _kIOGPUCommandQueueID)) {
+    if (*(long *)(param_1 + 0x28) == 0) {
+      uVar3 = 0xe0000001;
+    }
+    else if (param_4 != 0) {
+      iVar1 = param_3 << (ulong)(*(long *)(param_4 + 0x10) != 0);
+      _IOGPUNotificationQueueWillSubmit(*(long *)(param_1 + 0x28),iVar1);
+      if ((param_3 == 1) && (param_5 < 0x41)) {
+        uVar3 = _IOConnectTrap4(*(undefined4 *)(*(long *)(param_1 + 0x10) + 0x14),0,
+                                *(undefined8 *)(param_1 + 0x18),param_5,param_4,param_6);
+      }
+      else {
+        uStack_70 = param_2 & 0xffffffff;
+        local_78 = *(undefined8 *)(param_1 + 0x18);
+        local_68 = (ulong)param_3;
+        local_80 = 0;
+        local_84 = 1;
+        uStack_60 = param_5;
+        uVar3 = _IOConnectCallMethod
+                          (*(undefined4 *)(*(long *)(param_1 + 0x10) + 0x14),0x1d,&local_78,4,
+                           param_4,param_5 * local_68,&local_80,&local_84,0,0);
+        if (param_6 != (undefined4 *)0x0) {
+          *param_6 = (int)local_80;
+        }
+      }
+      if ((int)uVar3 != 0) {
+        _IOGPUNotificationQueueDidSubmit(*(undefined8 *)(param_1 + 0x28),iVar1);
+      }
+    }
+  }
+  if (*DAT_1e598ebe0 == local_58) {
+    return uVar3;
+  }
+                    /* WARNING: Subroutine does not return */
+  ___stack_chk_fail();
+}
+
+
+
+===== resource_list_add_resource offset=0x1a56ca958 =====
+symbol=_IOGPUResourceListAddResource
+entry=1a56ca958
+direct_callers=2
+  caller=addDebugResourceListInfo:flag: entry=1a56b3708
+  caller=_IOGPUResourceListMerge entry=1a56caa0c
+direct_callees=1
+  callee=__ioGPUResourceListAddResourceEntry entry=1a56cac68
+
+ulong _IOGPUResourceListAddResource(long param_1,long param_2,ushort param_3)
+
+{
+  ushort uVar1;
+  uint uVar2;
+  ulong uVar3;
+  ulong uVar4;
+  uint uVar5;
+  
+  uVar4 = (ulong)*(uint *)(param_2 + 0x10) * -0x61c8864680b583eb >>
+          ((ulong)(uint)-*(int *)(param_1 + 0x1e8) & 0x3f);
+  uVar5 = *(uint *)(*(long *)(param_1 + 0x1c8) + (uVar4 & 0xffffffff) * 4);
+  do {
+    if (uVar5 == 0) {
+      uVar4 = __ioGPUResourceListAddResourceEntry();
+      return uVar4;
+    }
+    uVar2 = (uVar5 & 0xaaaaaaaa) >> 1 | (uVar5 & 0x55555555) << 1;
+    uVar2 = (uVar2 & 0xcccccccc) >> 2 | (uVar2 & 0x33333333) << 2;
+    uVar2 = (uVar2 & 0xf0f0f0f0) >> 4 | (uVar2 & 0xf0f0f0f) << 4;
+    uVar2 = (uVar2 & 0xff00ff00) >> 8 | (uVar2 & 0xff00ff) << 8;
+    uVar2 = (uint)LZCOUNT(uVar2 >> 0x10 | uVar2 << 0x10);
+    uVar5 = uVar5 & (1 << (ulong)(uVar2 & 0x1f) ^ 0xffffffffU);
+    uVar2 = uVar2 + (int)uVar4 & *(int *)(param_1 + 0x1e0) - 1U;
+    uVar3 = *(ulong *)(*(long *)(param_1 + 0x1d8) + (ulong)uVar2 * 8);
+  } while (((uint)uVar3 & 0xffffff) != *(uint *)(param_2 + 0x10));
+  uVar1 = (ushort)(uVar3 >> 0x30);
+  uVar4 = uVar3;
+  if ((param_3 | uVar1) != uVar1) {
+    uVar4 = uVar3 & 0xffffffffffff | (ulong)(param_3 | uVar1) << 0x30;
+    *(ulong *)(*(long *)(param_1 + 0x1d8) + (ulong)uVar2 * 8) = uVar4;
+    *(ushort *)
+     (*(long *)(param_1 + 0x200) + (uVar3 >> 0x1b & 0x1fffff) * 0x40 + (uVar3 >> 0x18 & 7) * 2 +
+     0x30) = param_3 | uVar1;
+  }
+  return uVar4 >> 0x18 & 0xffffff;
+}
+
+
+
+===== metal_command_buffer_init offset=0x1a56add88 =====
+symbol=initWithQueue:retainedReferences:synchronousDebugMode:
+entry=1a56add88
+direct_callers=1
+  caller=initWithQueue:retainedReferences: entry=1a56adf00
+direct_callees=12
+  callee=_objc_opt_class entry=1a56d7e5c
+  callee=_objc_opt_isKindOfClass entry=1a56d7e6c
+  callee=_objc_msgSendSuper2 entry=1a56d7e4c
+  callee=_objc_retain entry=1a56d7eac
+  callee=_iogpumetal_atomic_add entry=1a56bf5d0
+  callee=deviceRef entry=1a56f9bc0
+  callee=_IOGPUDeviceGetNextGlobalTraceID entry=1a56c6b78
+  callee=_IOGPUMetalCommandBufferStoragePoolCreateStorage entry=1a56bd2a0
+  callee=_dispatch_semaphore_create entry=1a56d7bdc
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+  callee=_objc_release entry=1a56d7e9c
+  callee=-[IOGPUMetalCommandBuffer_initWithQueue:retainedReferences:synchronousDebugMode:].cold.1 entry=1a56d3a18
+
+/* WARNING: Function: _objc_retain replaced with injection: _objc_retain_fixup */
+/* WARNING: Function: _objc_release replaced with injection: _objc_release_fixup */
+/* Function Stack Size: 0x20 bytes */
+
+ID IOGPUMetalCommandBuffer::initWithQueue_retainedReferences_synchronousDebugMode_
+             (ID param_1,SEL param_2,ID param_3,bool param_4,bool param_5)
+
+{
+  int iVar1;
+  undefined8 uVar2;
+  ulong uVar3;
+  ID IVar4;
+  long lVar5;
+  bool bVar6;
+  ulong uVar7;
+  long lVar8;
+  undefined1 auVar9 [16];
+  objc_super local_50;
+  
+  uVar7 = (ulong)param_4;
+  IVar4 = param_3;
+  uVar3 = uVar7;
+  uVar2 = _objc_opt_class(PTR_IOGPUMetalCommandQueue_1e6b15db0);
+  bVar6 = (bool)uVar3;
+  uVar3 = _objc_opt_isKindOfClass(param_3,uVar2);
+  if ((uVar3 & 1) != 0) {
+    local_50.super_class = (class_t *)PTR_IOGPUMetalCommandBuffer_1e6b19228;
+    local_50.receiver = param_1;
+    IVar4 = _objc_msgSendSuper2(&local_50,"initWithQueue:retainedReferences:synchronousDebugMode:",
+                                param_3,uVar7,(ulong)param_5);
+    if (IVar4 != 0) {
+      lVar5 = *(long *)(param_3 + (long)IOGPUMetalCommandQueue::_device);
+      lVar8 = (long)_device;
+      *(long *)(IVar4 + lVar8) = lVar5;
+      _iogpumetal_atomic_add(lVar5 + IOGPUMetalDevice::_numCommandBuffers,1);
+      objc_stub::deviceRef(*(ID *)(IVar4 + lVar8));
+      uVar2 = _IOGPUDeviceGetNextGlobalTraceID();
+      iVar1 = *DAT_1e5924248;
+      *(undefined8 *)(IVar4 + (long)iVar1) = uVar2;
+      lVar5 = _IOGPUMetalCommandBufferStoragePoolCreateStorage
+                        (*(undefined8 *)
+                          (*(long *)(IVar4 + lVar8) +
+                          (long)IOGPUMetalDevice::_commandBufferStoragePool),uVar2,uVar7);
+      *(long *)(IVar4 + (long)_storage) = lVar5;
+      if (lVar5 == 0) {
+        IVar4 = 0;
+      }
+      else {
+        if (param_5 != 0) {
+          uVar2 = _dispatch_semaphore_create(1);
+          *(undefined8 *)(IVar4 + (long)_commitAndResetSem) = uVar2;
+        }
+        if (*___globalGPUCommPage != 0) {
+          _IOGPUDeviceTraceEvent(0,8,6,*(undefined8 *)(IVar4 + (long)iVar1),0,0,0);
+        }
+      }
+    }
+    return IVar4;
+  }
+  auVar9 = __IOGPUMetalCommandBuffer_initWithQueue_retainedReferences_synchronousDebugMode___cold_1
+                     ();
+  IVar4 = initWithQueue_retainedReferences_synchronousDebugMode_
+                    (auVar9._0_8_,auVar9._8_8_,IVar4,bVar6,0);
+  return IVar4;
+}
+
+
+
+===== metal_command_buffer_fill_arguments offset=0x1a56af554 =====
+symbol=fillCommandBufferArgs:commandQueue:
+entry=1a56af554
+direct_callers=0
+direct_callees=1
+  callee=__Block_copy entry=1a56d786c
+
+/* Function Stack Size: 0x20 bytes */
+
+void IOGPUMetalCommandBuffer::fillCommandBufferArgs_commandQueue_
+               (ID param_1,SEL param_2,IOGPUCommandQueueCommandBufferArgs *param_3,ID param_4)
+
+{
+  undefined8 uVar1;
+  undefined8 uVar2;
+  undefined4 uVar3;
+  long lVar4;
+  long lVar5;
+  unsigned_int uVar6;
+  undefined8 local_98;
+  undefined8 local_90;
+  code *local_88;
+  undefined *puStack_80;
+  ID local_78;
+  ID IStack_70;
+  undefined8 local_68;
+  undefined8 local_60;
+  code *local_58;
+  undefined *puStack_50;
+  ID local_48;
+  
+  lVar4 = *(long *)(param_1 + (long)_storage);
+  param_3->field0_0x0 =
+       *(unsigned_int *)(*(long *)(lVar4 + 0x20) + (long)IOGPUMetalDeviceShmem::_shmemID);
+  lVar5 = (long)IOGPUMetalDeviceShmem::_shmemID;
+  param_3->field1_0x4 = *(unsigned_int *)(*(long *)(lVar4 + 0x60) + lVar5);
+  uVar6 = 0;
+  if (*(long *)(lVar4 + 0x40) != 0) {
+    uVar6 = *(unsigned_int *)(*(long *)(lVar4 + 0x40) + lVar5);
+  }
+  param_3->field2_0x8 = uVar6;
+  uVar3 = 0;
+  if (*(long *)(lVar4 + 0x368) != 0) {
+    uVar3 = *(undefined4 *)(*(long *)(lVar4 + 0x368) + lVar5);
+  }
+  *(undefined4 *)&param_3->field6_0x20 = uVar3;
+  uVar2 = DAT_1a56e3548;
+  local_68 = DAT_1e598ebc0;
+  local_60 = DAT_1a56e3548;
+  local_58 = ___62__IOGPUMetalCommandBuffer_fillCommandBufferArgs_commandQueue___block_invoke;
+  puStack_50 = &___block_descriptor_40_e8_32o_e17_v36__0Q8Q16I24Q28l;
+  local_48 = param_1;
+  uVar1 = __Block_copy(&local_68);
+  *(undefined8 *)((long)&param_3->field3_0xc + 4) = uVar1;
+  *(undefined8 *)(param_1 + (long)_scheduledCallbackBlockPtr) = uVar1;
+  local_98 = DAT_1e598ebc0;
+  local_90 = uVar2;
+  local_88 = ___62__IOGPUMetalCommandBuffer_fillCommandBufferArgs_commandQueue___block_invoke_52;
+  puStack_80 = &___block_descriptor_48_e8_32o40o_e17_v36__0Q8Q16I24Q28l;
+  local_78 = param_1;
+  IStack_70 = param_4;
+  uVar2 = __Block_copy(&local_88,&local_98);
+  *(undefined8 *)((long)&param_3->field4_0x14 + 4) = uVar2;
+  *(undefined8 *)(param_1 + (long)_completedCallbackBlockPtr) = uVar2;
+  return;
+}
+
+
+
+===== metal_command_buffer_commit offset=0x1a56ae394 =====
+symbol=commit
+entry=1a56ae394
+direct_callers=0
+direct_callees=10
+  callee=validate entry=1a56fc280
+  callee=validate entry=1a56ae338
+  callee=_objc_msgSendSuper2 entry=1a56d7e4c
+  callee=isProfilingEnabled entry=1a56fac80
+  callee=kernelCommandCollectTimeStamp entry=1a56fad40
+  callee=kernelCommandCollectTimeStamp entry=1a56ae5c8
+  callee=_encodePurgedResources entry=1a56f9140
+  callee=_encodePurgedResources entry=1a56af250
+  callee=_IOGPUMetalCommandBufferStorageFinalizeShmemHeader entry=1a56bccec
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+
+/* Function Stack Size: 0x10 bytes */
+
+void IOGPUMetalCommandBuffer::commit(ID param_1,SEL param_2)
+
+{
+  ID IVar1;
+  objc_super local_40;
+  objc_super local_30;
+  
+  validate(param_1);
+  if (*(char *)(param_1 + (long)*DAT_1e5924278) == '\x01') {
+    local_30.super_class = (class_t *)PTR_IOGPUMetalCommandBuffer_1e6b19228;
+    local_30.receiver = param_1;
+    _objc_msgSendSuper2(&local_30,"bindLogState");
+  }
+  IVar1 = objc_stub::isProfilingEnabled(param_1);
+  if ((int)IVar1 != 0) {
+    kernelCommandCollectTimeStamp(param_1);
+  }
+  if (*(long *)(param_1 + (long)_purgedResources) != 0) {
+    _encodePurgedResources(param_1);
+  }
+  _IOGPUMetalCommandBufferStorageFinalizeShmemHeader(*(undefined8 *)(param_1 + (long)_storage));
+  if (*___globalGPUCommPage != 0) {
+    _IOGPUDeviceTraceEvent(0,8,7,*(undefined8 *)(param_1 + (long)*DAT_1e5924248),0,0,0);
+  }
+  local_40.super_class = (class_t *)PTR_IOGPUMetalCommandBuffer_1e6b19228;
+  local_40.receiver = param_1;
+  _objc_msgSendSuper2(&local_40,"commit");
+  return;
+}
+
+
+
+===== metal_command_queue_init offset=0x1a56b00cc =====
+symbol=initWithDevice:descriptor:args:argsSize:
+entry=1a56b00cc
+direct_callers=1
+  caller=initWithDevice:descriptor: entry=1a56b04ac
+direct_callees=29
+  callee=_objc_msgSendSuper2 entry=1a56d7e4c
+  callee=_objc_retain entry=1a56d7eac
+  callee=_bzero entry=1a56d7a9c
+  callee=_pid_for_task entry=1a56d7f1c
+  callee=_proc_pidpath entry=1a56d7f3c
+  callee=deviceRef entry=1a56f9bc0
+  callee=_IOGPUCommandQueueCreate entry=1a56c7db4
+  callee=disableAsyncCompletionDispatch entry=1a56f9ce0
+  callee=_IOGPUCommandQueueSetDispatchQueue entry=1a56c7fe4
+  callee=_IOGPUCommandQueueGetGlobalTraceObjectID entry=1a56c82c0
+  callee=_objc_autoreleasePoolPush entry=1a56d7e0c
+  callee=_objc_alloc_init entry=1a56d7ddc
+  callee=acceleratorPort entry=1a56f9280
+  callee=_IORegistryEntryCreateIterator entry=1a56d74fc
+  callee=_IOIteratorNext entry=1a56d749c
+  callee=_IORegistryEntryCreateCFProperty entry=1a56d74ec
+  callee=dictionaryWithObjects:forKeys:count: entry=1a56f9c00
+  callee=addObject: entry=1a56f9300
+  callee=_objc_release entry=1a56d7e9c
+  callee=_objc_autoreleasePoolPop entry=1a56d7dfc
+  callee=_IOObjectRelease entry=1a56d74bc
+  callee=sortUsingComparator: entry=1a56fbf20
+  callee=_os_log_type_enabled entry=1a56d7edc
+  callee=__os_log_impl entry=1a56d7a6c
+  callee=-[IOGPUMetalCommandQueue_initWithDevice:descriptor:args:argsSize:].cold.2 entry=1a56d3c88
+  callee=-[IOGPUMetalCommandQueue_initWithDevice:descriptor:args:argsSize:].cold.4 entry=1a56d3d1c
+  callee=-[IOGPUMetalCommandQueue_initWithDevice:descriptor:args:argsSize:].cold.3 entry=1a56d3cf0
+  callee=-[IOGPUMetalCommandQueue_initWithDevice:descriptor:args:argsSize:].cold.1 entry=1a56d3c5c
+  callee=___stack_chk_fail entry=1a56d79fc
+
+/* WARNING: Function: _objc_retain replaced with injection: _objc_retain_fixup */
+/* WARNING: Function: _objc_release replaced with injection: _objc_release_fixup */
+/* Function Stack Size: 0x2c bytes */
+
+ID IOGPUMetalCommandQueue::initWithDevice_descriptor_args_argsSize_
+             (ID param_1,SEL param_2,ID param_3,ID param_4,IOGPUDeviceNewCommandQueueArgs *param_5,
+             unsigned_int param_6)
+
+{
+  int *piVar1;
+  int iVar2;
+  ID IVar3;
+  ID IVar4;
+  long lVar5;
+  undefined8 uVar6;
+  undefined8 uVar7;
+  undefined8 uVar8;
+  long lVar9;
+  undefined1 auVar10 [16];
+  undefined4 local_b8;
+  undefined4 local_b4;
+  objc_super local_b0;
+  undefined4 local_a0;
+  ID local_9c;
+  cfstringStruct *local_88;
+  cfstringStruct *pcStack_80;
+  long local_78;
+  long lStack_70;
+  long local_68;
+  
+  auVar10._8_8_ = param_2;
+  auVar10._0_8_ = param_1;
+  local_68 = *DAT_1e598ebe0;
+  if (param_5 == (IOGPUDeviceNewCommandQueueArgs *)0x0) {
+    auVar10 = __IOGPUMetalCommandQueue_initWithDevice_descriptor_args_argsSize___cold_4();
+LAB_1a56b0444:
+    __IOGPUMetalCommandQueue_initWithDevice_descriptor_args_argsSize___cold_3
+              (auVar10._0_8_,auVar10._8_8_);
+  }
+  else {
+    if (param_6 < 0x408) goto LAB_1a56b0444;
+    local_b0.super_class = (class_t *)PTR_IOGPUMetalCommandQueue_1e6b19238;
+    local_b0.receiver = param_1;
+    IVar3 = _objc_msgSendSuper2(&local_b0,"initWithDevice:descriptor:");
+    uVar6 = 0;
+    if (IVar3 == 0) {
+LAB_1a56b03f8:
+      if (*DAT_1e598ebe0 == local_68) {
+        return IVar3;
+      }
+      goto LAB_1a56b044c;
+    }
+    *(ID *)(IVar3 + (long)_device) = param_3;
+    _bzero(param_5,0x408);
+    local_b4 = 0;
+    _pid_for_task(*DAT_1e598eea8,&local_b4);
+    _proc_pidpath(local_b4,param_5,0x400);
+    piVar1 = DAT_1e59242d8;
+    param_5->field1_0x400 = (int)*(undefined8 *)(IVar3 + (long)*DAT_1e59242e8);
+    param_5->field2_0x404 = *(unsigned_char *)(IVar3 + (long)*piVar1);
+    param_5->field3_0x405 = '\0';
+    IVar4 = objc_stub::deviceRef(param_3);
+    lVar5 = _IOGPUCommandQueueCreate(IVar4,param_5,param_6);
+    lVar9 = (long)_commandQueue;
+    *(long *)(IVar3 + lVar9) = lVar5;
+    if (lVar5 == 0) {
+      uVar6 = _objc_autoreleasePoolPush();
+      IVar3 = _objc_alloc_init(DAT_1e59107f8);
+      local_b8 = 0;
+      IVar4 = objc_stub::acceleratorPort(param_3);
+      iVar2 = _IORegistryEntryCreateIterator(IVar4,"IOService",0,&local_b8);
+      if (iVar2 == 0) {
+        uVar7 = _IOIteratorNext(local_b8);
+        iVar2 = (int)uVar7;
+        while (iVar2 != 0) {
+          uVar8 = _objc_autoreleasePoolPush();
+          lVar5 = _IORegistryEntryCreateCFProperty(uVar7,&cf_CommandQueueCount,0,0);
+          if ((lVar5 != 0) &&
+             (lVar9 = _IORegistryEntryCreateCFProperty(uVar7,&cf_IOUserClientCreator,0,0),
+             lVar9 != 0)) {
+            local_88 = &cf_Count;
+            pcStack_80 = &cf_Process;
+            local_78 = lVar5;
+            lStack_70 = lVar9;
+            IVar4 = objc_stub::dictionaryWithObjects_forKeys_count_
+                              (DAT_1e5910788,&local_78,&local_88,2);
+            objc_stub::addObject_(IVar3,IVar4);
+          }
+          _objc_autoreleasePoolPop(uVar8);
+          _IOObjectRelease(uVar7);
+          uVar7 = _IOIteratorNext(local_b8);
+          iVar2 = (int)uVar7;
+        }
+        _IOObjectRelease(local_b8);
+      }
+      objc_stub::sortUsingComparator_(IVar3,&___block_literal_global);
+      iVar2 = _os_log_type_enabled(DAT_1e598f2d0,0);
+      if (iVar2 != 0) {
+        local_a0 = (undefined4)DAT_1a56e3550;
+        local_9c = IVar3;
+        __os_log_impl(&::MACH_HEADER,DAT_1e598f2d0,0,
+                      "Command queue creation failed.  Worst processes %{public}@",&local_a0,0xc);
+      }
+      iVar2 = _os_log_type_enabled(DAT_1e598f2d0,0x11);
+      if (iVar2 != 0) {
+        __IOGPUMetalCommandQueue_initWithDevice_descriptor_args_argsSize___cold_2(IVar3);
+      }
+      _objc_autoreleasePoolPop(uVar6);
+      uVar6 = 0;
+      IVar3 = 0;
+      goto LAB_1a56b03f8;
+    }
+    *(undefined4 *)(IVar3 + (long)_resourceGroupsLock) = 0;
+    IVar4 = objc_stub::disableAsyncCompletionDispatch(param_4);
+    *(char *)(IVar3 + (long)_disableAsyncCompletionDispatch) = (char)IVar4;
+    if ((IVar4 & 1) != 0) {
+LAB_1a56b0218:
+      *(undefined8 *)(IVar3 + (long)_priority) = 1;
+      *(undefined8 *)(IVar3 + (long)_backgroundPriority) = 2;
+      uVar6 = _IOGPUCommandQueueGetGlobalTraceObjectID(*(undefined8 *)(IVar3 + lVar9));
+      *(undefined8 *)(IVar3 + (long)*DAT_1e59242c8) = uVar6;
+      goto LAB_1a56b03f8;
+    }
+    if (*(long *)(IVar3 + (long)*DAT_1e59242c0) != 0) {
+      _IOGPUCommandQueueSetDispatchQueue(*(undefined8 *)(IVar3 + lVar9));
+      goto LAB_1a56b0218;
+    }
+  }
+  uVar6 = __IOGPUMetalCommandQueue_initWithDevice_descriptor_args_argsSize___cold_1();
+LAB_1a56b044c:
+                    /* WARNING: Subroutine does not return */
+  ___stack_chk_fail(uVar6);
+}
+
+
+
+===== metal_command_queue_submit offset=0x1a56b09a0 =====
+symbol=submitCommandBuffers:count:
+entry=1a56b09a0
+direct_callers=0
+direct_callees=2
+  callee=_submitCommandBuffers:count: entry=1a56f9260
+  callee=_submitCommandBuffers:count: entry=1a56b0a14
+
+/* Function Stack Size: 0x20 bytes */
+
+void IOGPUMetalCommandQueue::submitCommandBuffers_count_
+               (ID param_1,SEL param_2,ID *param_3,unsigned_long_long param_4)
+
+{
+  ulong uVar1;
+  unsigned_long_long uVar2;
+  ulong uVar3;
+  
+  if (param_4 != 0) {
+    uVar3 = 0;
+    uVar2 = param_4;
+    do {
+      uVar1 = uVar2 - 0x20;
+      if (0x1f < uVar2) {
+        uVar2 = 0x20;
+      }
+      _submitCommandBuffers_count_(param_1,param_3,uVar2);
+      uVar3 = uVar3 + 0x20;
+      param_3 = param_3 + 0x20;
+      uVar2 = uVar1;
+    } while (uVar3 < param_4);
+  }
+  return;
+}
+
+
+
+===== metal_command_queue_submit_internal offset=0x1a56b0a14 =====
+symbol=_submitCommandBuffers:count:
+entry=1a56b0a14
+direct_callers=1
+  caller=submitCommandBuffers:count: entry=1a56b09a0
+direct_callees=14
+  callee=cmdBufArgsSize entry=1a56f96a0
+  callee=_bzero entry=1a56d7a9c
+  callee=fillCommandBufferArgs:commandQueue: entry=1a56f9fe0
+  callee=isProfilingEnabled entry=1a56fac80
+  callee=kernelSubmitTime entry=1a56fad60
+  callee=commandQueue entry=1a56f97a0
+  callee=backgroundTrackingPID entry=1a56f94a0
+  callee=device entry=1a56f9ba0
+  callee=globalTraceObjectID entry=1a56fa280
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+  callee=_IOGPUCommandQueueSubmitCommandBuffers entry=1a56c8090
+  callee=_dispatch_async entry=1a56d7acc
+  callee=-[IOGPUMetalCommandQueue__submitCommandBuffers:count:].cold.1 entry=1a56d3db4
+  callee=___stack_chk_fail entry=1a56d79fc
+
+/* Function Stack Size: 0x20 bytes */
+
+void IOGPUMetalCommandQueue::_submitCommandBuffers_count_
+               (ID param_1,SEL param_2,ID *param_3,unsigned_long_long param_4)
+
+{
+  undefined1 *puVar1;
+  undefined4 uVar2;
+  unsigned_long_long uVar3;
+  undefined8 uVar4;
+  undefined8 uVar5;
+  int iVar6;
+  ID IVar7;
+  ID IVar8;
+  ID IVar9;
+  size_t __n;
+  undefined4 uVar10;
+  long extraout_x8;
+  ulong uVar11;
+  ID IVar12;
+  undefined8 *puVar13;
+  undefined1 auStack_c0 [8];
+  undefined1 *local_b8;
+  undefined8 local_b0;
+  undefined8 local_a8;
+  code *local_a0;
+  undefined *puStack_98;
+  undefined8 local_90;
+  undefined8 uStack_88;
+  undefined4 local_80;
+  undefined4 local_7c;
+  long local_78;
+  
+  local_78 = *DAT_1e598ebe0;
+  IVar7 = objc_stub::cmdBufArgsSize(*(ID *)(param_1 + (long)_device));
+  if (param_4 >> 0x20 == 0) {
+    local_7c = 0;
+    uVar11 = IVar7 & 0xffffffff;
+    (*DAT_1edd55588)(param_4 * uVar11 + 0xf & 0xfffffffffffffff0);
+    local_b8 = auStack_c0 + -extraout_x8;
+    _bzero(local_b8,__n);
+    puVar1 = local_b8;
+    for (uVar3 = param_4; uVar3 != 0; uVar3 = uVar3 - 1) {
+      IVar12 = *param_3;
+      objc_stub::fillCommandBufferArgs_commandQueue_(IVar12,puVar1,param_1);
+      IVar7 = objc_stub::isProfilingEnabled(IVar12);
+      if ((int)IVar7 != 0) {
+        objc_stub::kernelSubmitTime(IVar12);
+      }
+      if (*___globalGPUCommPage != 0) {
+        IVar7 = objc_stub::commandQueue(IVar12);
+        IVar7 = objc_stub::backgroundTrackingPID(IVar7);
+        IVar8 = objc_stub::device(IVar12);
+        IVar8 = objc_stub::globalTraceObjectID(IVar8);
+        IVar9 = objc_stub::commandQueue(IVar12);
+        IVar9 = objc_stub::globalTraceObjectID(IVar9);
+        IVar12 = objc_stub::globalTraceObjectID(IVar12);
+        _IOGPUDeviceTraceEvent(0,8,3,(long)(int)IVar7,IVar8,IVar9,IVar12);
+      }
+      puVar1 = puVar1 + uVar11;
+      param_3 = param_3 + 1;
+    }
+    iVar6 = _IOGPUCommandQueueSubmitCommandBuffers
+                      (*(undefined8 *)(param_1 + (long)_commandQueue),0,param_4,local_b8,uVar11,
+                       &local_7c);
+    uVar5 = DAT_1e598ebc0;
+    uVar4 = DAT_1a56e3548;
+    if (iVar6 != 0) {
+      uVar10 = 0xf;
+      if (iVar6 != 0x10000003) {
+        uVar10 = 1;
+      }
+      uVar2 = 7;
+      if (iVar6 != -0x1ffffd1e) {
+        uVar2 = uVar10;
+      }
+      if (param_4 != 0) {
+        iVar6 = *DAT_1e59242b8;
+        puVar13 = (undefined8 *)(local_b8 + 0x10);
+        do {
+          local_b0 = uVar5;
+          local_a8 = uVar4;
+          local_a0 = ___54__IOGPUMetalCommandQueue__submitCommandBuffers_count___block_invoke;
+          puStack_98 = &___block_descriptor_52_e8_32b40b_e5_v8__0l;
+          uStack_88 = puVar13[1];
+          local_90 = *puVar13;
+          local_80 = uVar2;
+          _dispatch_async(*(undefined8 *)(param_1 + (long)iVar6),&local_b0);
+          puVar13 = (undefined8 *)((long)puVar13 + uVar11);
+          param_4 = param_4 - 1;
+        } while (param_4 != 0);
+      }
+    }
+    if (*DAT_1e598ebe0 == local_78) {
+      return;
+    }
+  }
+  else {
+    __IOGPUMetalCommandQueue__submitCommandBuffers_count___cold_1();
+  }
+                    /* WARNING: Subroutine does not return */
+  ___stack_chk_fail();
+}
+
+
+
+===== metal_command_buffer_alloc_resource offset=0x1a56ae140 =====
+symbol=allocCommandBufferResourceAtIndex:
+entry=1a56ae140
+direct_callers=0
+direct_callees=1
+  callee=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex entry=1a56bc974
+
+/* Function Stack Size: 0x14 bytes */
+
+void IOGPUMetalCommandBuffer::allocCommandBufferResourceAtIndex_
+               (ID param_1,SEL param_2,unsigned_int param_3)
+
+{
+  _IOGPUMetalCommandBufferStorageAllocResourceAtIndex
+            (*(undefined8 *)(param_1 + (long)_storage),param_3);
+  return;
+}
+
+
+
+===== metal_command_buffer_begin_segment offset=0x1a56ae314 =====
+symbol=beginSegment:
+entry=1a56ae314
+direct_callers=0
+direct_callees=1
+  callee=_IOGPUMetalCommandBufferStorageBeginSegment entry=1a56bcfe8
+
+/* Function Stack Size: 0x18 bytes */
+
+void IOGPUMetalCommandBuffer::beginSegment_(ID param_1,SEL param_2,void *param_3)
+
+{
+  _IOGPUMetalCommandBufferStorageBeginSegment(*(undefined8 *)(param_1 + (long)_storage),param_3);
+  return;
+}
+
+
+
+===== metal_command_buffer_end_segment offset=0x1a56ae328 =====
+symbol=endCurrentSegment
+entry=1a56ae328
+direct_callers=0
+direct_callees=1
+  callee=_IOGPUMetalCommandBufferStorageEndSegment entry=1a56bd088
+
+/* Function Stack Size: 0x10 bytes */
+
+void IOGPUMetalCommandBuffer::endCurrentSegment(ID param_1,SEL param_2)
+
+{
+  _IOGPUMetalCommandBufferStorageEndSegment(*(undefined8 *)(param_1 + (long)_storage));
+  return;
+}
+
+
+
+===== metal4_command_buffer_alloc_resource offset=0x1a56d0ed0 =====
+symbol=allocCommandBufferResourceAtIndex:
+entry=1a56d0ed0
+direct_callers=0
+direct_callees=1
+  callee=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex entry=1a56bc974
+
+/* Function Stack Size: 0x14 bytes */
+
+void IOGPUMetal4CommandBuffer::allocCommandBufferResourceAtIndex_
+               (ID param_1,SEL param_2,unsigned_int param_3)
+
+{
+  _IOGPUMetalCommandBufferStorageAllocResourceAtIndex
+            (*(undefined8 *)(param_1 + (long)_storage),param_3);
+  return;
+}
+
+
+
+===== metal4_command_buffer_begin_segment offset=0x1a56d0ee4 =====
+symbol=beginSegment:
+entry=1a56d0ee4
+direct_callers=0
+direct_callees=2
+  callee=_IOGPUMetalCommandBufferStorageBeginSegment entry=1a56bcfe8
+  callee=-[IOGPUMetal4CommandBuffer_beginSegment:].cold.1 entry=1a56d6d08
+
+/* WARNING: Removing unreachable block (ram,0x0001a56d0f9c) */
+/* WARNING: Removing unreachable block (ram,0x0001a56d0f58) */
+/* Function Stack Size: 0x18 bytes */
+
+void IOGPUMetal4CommandBuffer::beginSegment_(ID param_1,SEL param_2,void *param_3)
+
+{
+  code *pcVar1;
+  long lVar2;
+  ulong unaff_x30;
+  
+  if ((*(long *)(param_1 + (long)*DAT_1e59241c8) != 0) && (*(long *)(param_1 + (long)_storage) != 0)
+     ) {
+    if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+      pcVar1 = (code *)SoftwareBreakpoint(0xc471,0x1a56d0f18);
+      (*pcVar1)();
+    }
+    _IOGPUMetalCommandBufferStorageBeginSegment(*(long *)(param_1 + (long)_storage),param_3);
+    return;
+  }
+  lVar2 = __IOGPUMetal4CommandBuffer_beginSegment___cold_1();
+  if ((*(long *)(lVar2 + *DAT_1e59241c8) != 0) && (*(long *)(lVar2 + _storage) != 0)) {
+    _IOGPUMetalCommandBufferStorageEndSegment();
+    return;
+  }
+  lVar2 = __IOGPUMetal4CommandBuffer_endCurrentSegment__cold_1();
+  if ((*(long *)(lVar2 + *DAT_1e59241c8) != 0) && (*(long *)(lVar2 + _storage) != 0)) {
+    _IOGPUMetalCommandBufferStorageGrowSegmentList();
+    return;
+  }
+  __IOGPUMetal4CommandBuffer_growSegmentList__cold_1();
+  return;
+}
+
+
+
+===== metal4_command_buffer_end_segment offset=0x1a56d0f2c =====
+symbol=endCurrentSegment
+entry=1a56d0f2c
+direct_callers=0
+direct_callees=2
+  callee=_IOGPUMetalCommandBufferStorageEndSegment entry=1a56bd088
+  callee=-[IOGPUMetal4CommandBuffer_endCurrentSegment].cold.1 entry=1a56d6d30
+
+/* WARNING: Removing unreachable block (ram,0x0001a56d0f9c) */
+/* Function Stack Size: 0x10 bytes */
+
+void IOGPUMetal4CommandBuffer::endCurrentSegment(ID param_1,SEL param_2)
+
+{
+  code *pcVar1;
+  long lVar2;
+  ulong unaff_x30;
+  
+  if ((*(long *)(param_1 + (long)*DAT_1e59241c8) != 0) && (*(long *)(param_1 + (long)_storage) != 0)
+     ) {
+    if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) == 0) {
+      _IOGPUMetalCommandBufferStorageEndSegment();
+      return;
+    }
+                    /* WARNING: Does not return */
+    pcVar1 = (code *)SoftwareBreakpoint(0xc471,0x1a56d0f5c);
+    (*pcVar1)();
+  }
+  lVar2 = __IOGPUMetal4CommandBuffer_endCurrentSegment__cold_1();
+  if ((*(long *)(lVar2 + *DAT_1e59241c8) != 0) && (*(long *)(lVar2 + _storage) != 0)) {
+    _IOGPUMetalCommandBufferStorageGrowSegmentList();
+    return;
+  }
+  __IOGPUMetal4CommandBuffer_growSegmentList__cold_1();
+  return;
+}
+
+
+
+===== metal4_command_buffer_commit_fill_arguments offset=0x1a56d20a4 =====
+symbol=commitFillArgs:count:args:argsSize:commitFeedback:
+entry=1a56d20a4
+direct_callers=1
+  caller=_commit:count:commitFeedback: entry=1a56d244c
+direct_callees=9
+  callee=commandAllocator entry=1a56f96c0
+  callee=getGeneration entry=1a56fa180
+  callee=commandBufferStorage entry=1a56f9780
+  callee=_IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer entry=1a56bde88
+  callee=__Block_copy entry=1a56d786c
+  callee=fillCommandBufferArgs: entry=1a56f9fc0
+  callee=-[IOGPUMetal4CommandQueue_commitFillArgs:count:args:argsSize:commitFeedback:].cold.1 entry=1a56d70bc
+  callee=_objc_alloc entry=1a56d7dcc
+  callee=initWithIOGPUError:MTL4QueueError: entry=1a56fa960
+
+/* WARNING: Removing unreachable block (ram,0x0001a56d22cc) */
+/* Function Stack Size: 0x34 bytes */
+
+void IOGPUMetal4CommandQueue::commitFillArgs_count_args_argsSize_commitFeedback_
+               (ID param_1,SEL param_2,ID *param_3,unsigned_long_long param_4,
+               unsigned_long_long param_5,unsigned_int param_6,ID param_7)
+
+{
+  undefined8 uVar1;
+  ID IVar2;
+  ID IVar3;
+  ID IVar4;
+  ID IVar5;
+  long lVar6;
+  undefined8 uVar7;
+  unsigned_long_long uVar8;
+  ID *pIVar9;
+  ID self;
+  undefined1 auVar10 [16];
+  undefined8 local_f8;
+  undefined8 local_f0;
+  code *local_e8;
+  undefined *puStack_e0;
+  ID local_d8;
+  ID IStack_d0;
+  ID local_c8;
+  ID IStack_c0;
+  ID local_b8;
+  undefined8 uStack_b0;
+  undefined4 local_a8;
+  undefined1 local_a4;
+  undefined8 local_a0;
+  undefined8 local_98;
+  undefined8 local_90;
+  undefined *puStack_88;
+  ID local_80;
+  
+  uVar1 = DAT_1a56e3548;
+  if (param_4 != 0) {
+    uVar7 = *(undefined8 *)(param_1 + (long)_lastSubmissionID);
+    uVar8 = param_4;
+    pIVar9 = param_3;
+    do {
+      self = *pIVar9;
+      IVar2 = objc_stub::commandAllocator(self);
+      IVar3 = objc_stub::getGeneration(IVar2);
+      IVar4 = objc_stub::commandBufferStorage(self);
+      if (IVar2 == 0 || IVar4 == 0) {
+        auVar10 = __IOGPUMetal4CommandQueue_commitFillArgs_count_args_argsSize_commitFeedback___cold_1
+                            ();
+        if ((int)param_4 != 0) {
+          IVar2 = _objc_alloc(DAT_1e591d9f0);
+          objc_stub::initWithIOGPUError_MTL4QueueError_(IVar2,param_4 & 0xffffffff,1);
+        }
+        lVar6 = *(long *)(*(long *)(auVar10._0_8_ + 0x20) + (long)_scheduledHandler);
+                    /* WARNING: Could not recover jumptable at 0x0001a56d22d0. Too many branches */
+                    /* WARNING: Treating indirect jump as call */
+        (**(code **)(lVar6 + 0x10))(lVar6,auVar10._8_8_,param_3);
+        return;
+      }
+      _IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer();
+      if (*(long *)(param_1 + (long)_scheduledHandler) == 0) {
+        IVar5 = 0;
+      }
+      else {
+        local_a0 = DAT_1e598ebc0;
+        local_98 = uVar1;
+        local_90 = 0x1a56d2254;
+        puStack_88 = &___block_descriptor_40_e8_32o_e17_v36__0Q8Q16I24Q28l;
+        local_80 = param_1;
+        IVar5 = __Block_copy(&local_a0);
+      }
+      *(ID *)(param_5 + 0x10) = IVar5;
+      local_f8 = DAT_1e598ebc0;
+      local_f0 = uVar1;
+      local_e8 = 
+      ___77__IOGPUMetal4CommandQueue_commitFillArgs_count_args_argsSize_commitFeedback___block_invoke_10
+      ;
+      puStack_e0 = &___block_descriptor_85_e8_32o40o48o56o_e17_v36__0Q8Q16I24Q28l;
+      local_a8 = (undefined4)IVar3;
+      local_d8 = param_1;
+      IStack_d0 = self;
+      local_c8 = IVar2;
+      IStack_c0 = param_7;
+      local_b8 = IVar4;
+      uStack_b0 = uVar7;
+      local_a4 = uVar8 == 1;
+      IVar2 = __Block_copy(&local_f8);
+      *(ID *)(param_5 + 0x18) = IVar2;
+      param_3 = (ID *)param_5;
+      objc_stub::fillCommandBufferArgs_(self);
+      param_5 = param_5 + param_6;
+      uVar8 = uVar8 - 1;
+      pIVar9 = pIVar9 + 1;
+    } while (uVar8 != 0);
+  }
+  return;
+}
+
+
+
+===== metal4_command_queue_submit offset=0x1a56d2570 =====
+symbol=submitCommandBuffers
+entry=1a56d2570
+direct_callers=1
+  caller=_commit:count:commitFeedback: entry=1a56d244c
+direct_callees=9
+  callee=backgroundTrackingPID entry=1a56f94a0
+  callee=device entry=1a56f9ba0
+  callee=globalTraceObjectID entry=1a56fa280
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+  callee=_IOGPUCommandQueueSubmitCommandBuffers entry=1a56c8090
+  callee=_mach_absolute_time entry=1a56d7d1c
+  callee=_dispatch_async entry=1a56d7acc
+  callee=_objc_release entry=1a56d7e9c
+  callee=_free entry=1a56d7cac
+
+/* WARNING: Function: _objc_release replaced with injection: _objc_release_fixup */
+/* submitCommandBuffers(void*) */
+
+void submitCommandBuffers(void *param_1)
+
+{
+  long lVar1;
+  uint uVar2;
+  int iVar3;
+  uint uVar4;
+  bool bVar5;
+  undefined8 uVar6;
+  int iVar7;
+  ID IVar8;
+  ID IVar9;
+  ID IVar10;
+  undefined8 uVar11;
+  ID self;
+  long lVar12;
+  ulong uVar13;
+  undefined4 uVar14;
+  uint uVar15;
+  undefined8 uVar16;
+  ulong uVar17;
+  undefined1 auVar18 [16];
+  undefined8 local_a8;
+  undefined8 local_a0;
+  code *local_98;
+  undefined *puStack_90;
+  undefined8 local_88;
+  undefined8 uStack_80;
+  undefined4 local_78;
+  
+  uVar6 = DAT_1a56e3548;
+  self = *(ID *)((long)param_1 + 8);
+  uVar2 = *(uint *)((long)param_1 + 0x14);
+  if (uVar2 != 0) {
+    uVar15 = 0;
+    lVar12 = *(long *)param_1;
+    iVar3 = *(int *)((long)param_1 + 0x10);
+    do {
+      uVar4 = uVar2 - uVar15;
+      if (0x3f < uVar4) {
+        uVar4 = 0x40;
+      }
+      if ((*___globalGPUCommPage != 0) && (*___globalGPUCommPage != 0)) {
+        IVar8 = objc_stub::backgroundTrackingPID(self);
+        IVar9 = objc_stub::device(self);
+        IVar9 = objc_stub::globalTraceObjectID(IVar9);
+        IVar10 = objc_stub::globalTraceObjectID(self);
+        _IOGPUDeviceTraceEvent
+                  (0,8,0x29,(long)(int)IVar8,IVar9,IVar10,*(undefined8 *)((long)param_1 + 0x18));
+      }
+      lVar1 = lVar12 + (ulong)(uVar15 * iVar3);
+      iVar7 = _IOGPUCommandQueueSubmitCommandBuffers
+                        (*(undefined8 *)
+                          (*(long *)((long)param_1 + 8) +
+                          (long)IOGPUMetal4CommandQueue::_commandQueue),0,(ulong)uVar4,lVar1,iVar3,0
+                        );
+      if (iVar7 < 0) {
+        if (iVar7 == -0x1ffffd3e) {
+          uVar14 = 10;
+        }
+        else {
+          if (iVar7 != -0x1ffffd1e) {
+LAB_1a56d26d4:
+            bVar5 = true;
+            uVar14 = 1;
+            goto LAB_1a56d26f0;
+          }
+          uVar14 = 7;
+        }
+LAB_1a56d26e4:
+        bVar5 = true;
+      }
+      else {
+        if (iVar7 != 0) {
+          if (iVar7 != 0x10000003) goto LAB_1a56d26d4;
+          uVar14 = 0xf;
+          goto LAB_1a56d26e4;
+        }
+        bVar5 = false;
+        uVar14 = 0;
+      }
+LAB_1a56d26f0:
+      if ((*___globalGPUCommPage != 0) && (*___globalGPUCommPage != 0)) {
+        IVar8 = objc_stub::globalTraceObjectID(self);
+        uVar16 = *(undefined8 *)((long)param_1 + 0x18);
+        uVar11 = _mach_absolute_time();
+        _IOGPUDeviceTraceEvent(0,8,0x2a,IVar8,uVar16,uVar11,uVar14);
+      }
+      uVar11 = DAT_1e598ebc0;
+      if (bVar5) {
+        uVar13 = 0;
+        uVar17 = 0;
+        do {
+          local_a8 = uVar11;
+          local_a0 = uVar6;
+          auVar18 = *(undefined1 (*) [16])(lVar1 + uVar13 + 0x10);
+          local_98 = ____ZL20submitCommandBuffersPv_block_invoke;
+          puStack_90 = &___block_descriptor_52_e8_32b40b_e5_v8__0l;
+          auVar18 = NEON_ext(auVar18,auVar18,8,1);
+          uStack_80 = auVar18._8_8_;
+          local_88 = auVar18._0_8_;
+          local_78 = uVar14;
+          _dispatch_async(*(undefined8 *)
+                           (*(long *)((long)param_1 + 8) +
+                           (long)IOGPUMetal4CommandQueue::_completionQueue),&local_a8);
+          uVar17 = uVar17 + 1;
+          uVar13 = (ulong)(uint)((int)uVar13 + iVar3);
+        } while (uVar17 < uVar4);
+      }
+      uVar15 = uVar15 + 0x40;
+    } while (uVar15 < uVar2);
+  }
+  _free(param_1);
+  return;
+}
+
+
+
+===== storage_grow_segment_list offset=0x1a56bc13c =====
+symbol=_IOGPUMetalCommandBufferStorageGrowSegmentList
+entry=1a56bc13c
+direct_callers=5
+  caller=_IOGPUMetalCommandBufferStorageBeginKernelCommands entry=1a56bcb74
+  caller=_IOGPUMetalCommandBufferStorageBeginSegment entry=1a56bcfe8
+  caller=growSegmentList entry=1a56d0f70
+  caller=growSegmentList entry=1a56ae304
+  caller=_IOGPUMetalCommandBufferStorageCreateExt entry=1a56bc00c
+direct_callees=10
+  callee=setShmemSize: entry=1a56fbd20
+  callee=_IOGPUMetalDeviceShmemPoolCreateShmem entry=1a56b6b20
+  callee=_memcpy entry=1a56d7dac
+  callee=_IOGPUMetalDeviceShmemRelease entry=1a56b67e4
+  callee=_IOGPUResourceListReset entry=1a56cab00
+  callee=_os_log_type_enabled entry=1a56d7edc
+  callee=_IOGPUMetalCommandBufferStorageGrowSegmentList.cold.2 entry=1a56d4b9c
+  callee=_abort entry=1a56d7a7c
+  callee=_IOGPUMetalCommandBufferStorageGrowSegmentList.cold.1 entry=1a56d4b18
+  callee=_MTLReleaseAssertionFailure entry=1a56d778c
+
+void _IOGPUMetalCommandBufferStorageGrowSegmentList(long param_1)
+
+{
+  uint uVar1;
+  uint uVar2;
+  code *pcVar3;
+  int iVar4;
+  long lVar5;
+  long lVar6;
+  long lVar7;
+  long lVar8;
+  ulong unaff_x30;
+  
+  lVar8 = *(long *)(param_1 + 0x60);
+  uVar1 = *(uint *)(lVar8 + IOGPUMetalDeviceShmem::_shmemSize);
+  uVar2 = uVar1 << 1;
+  if (0x1fffff < uVar1) {
+    uVar2 = uVar1 + 0x100000;
+  }
+  objc_stub::setShmemSize_(*(ID *)(lVar8 + IOGPUMetalDeviceShmem::_priv),(ulong)uVar2);
+  lVar8 = _IOGPUMetalDeviceShmemPoolCreateShmem
+                    (*(undefined8 *)(lVar8 + IOGPUMetalDeviceShmem::_priv));
+  if (lVar8 == 0) {
+    lVar8 = *(long *)(param_1 + 0x78);
+    iVar4 = _os_log_type_enabled(DAT_1e598f2d0,0x11);
+    if (lVar8 == 0) {
+      if (iVar4 != 0) {
+        _IOGPUMetalCommandBufferStorageGrowSegmentList_cold_2();
+      }
+    }
+    else if (iVar4 != 0) {
+      _IOGPUMetalCommandBufferStorageGrowSegmentList_cold_1(lVar8);
+                    /* WARNING: Subroutine does not return */
+      _abort();
+    }
+                    /* WARNING: Subroutine does not return */
+    _abort();
+  }
+  _memcpy(*(void **)(lVar8 + IOGPUMetalDeviceShmem::_virtualAddress),*(void **)(param_1 + 0x68),
+          (ulong)*(uint *)(*(long *)(param_1 + 0x60) + (long)IOGPUMetalDeviceShmem::_shmemSize));
+  _IOGPUMetalDeviceShmemRelease(*(undefined8 *)(param_1 + 0x60));
+  *(long *)(param_1 + 0x60) = lVar8;
+  if (*(int *)(param_1 + 0x344) == 0) {
+    if (*(int *)(param_1 + 0x340) != 0) {
+      if (*(int *)(param_1 + 0x340) == 1) {
+        lVar5 = *(long *)(param_1 + 0x68);
+        lVar7 = *(long *)(lVar8 + IOGPUMetalDeviceShmem::_virtualAddress);
+        uVar2 = *(uint *)(lVar8 + IOGPUMetalDeviceShmem::_shmemSize);
+        *(long *)(param_1 + 0x68) = lVar7;
+        *(ulong *)(param_1 + 0x70) = lVar7 + (ulong)uVar2;
+        lVar7 = lVar7 + (*(long *)(param_1 + 0x330) - lVar5);
+        *(long *)(param_1 + 0x330) = lVar7;
+        *(long *)(param_1 + 0x328) = lVar7;
+        return;
+      }
+                    /* WARNING: Subroutine does not return */
+      _MTLReleaseAssertionFailure("_mtlIOGPUCommandBufferStorageRebaseShmemHeader",0x26a,"false",0);
+    }
+    lVar5 = *(long *)(param_1 + 0x68);
+    lVar7 = *(long *)(lVar8 + IOGPUMetalDeviceShmem::_virtualAddress);
+    uVar2 = *(uint *)(lVar8 + IOGPUMetalDeviceShmem::_shmemSize);
+    *(long *)(param_1 + 0x68) = lVar7;
+    *(ulong *)(param_1 + 0x70) = lVar7 + (ulong)uVar2;
+    lVar8 = lVar7 + (*(long *)(param_1 + 0x78) - lVar5);
+    *(long *)(param_1 + 0x328) = lVar8;
+    lVar5 = *(long *)(param_1 + 0x80) - lVar5;
+    lVar7 = lVar7 + lVar5;
+    *(long *)(param_1 + 0x78) = lVar8;
+    *(long *)(param_1 + 0x80) = lVar7;
+    lVar7 = lVar7 + 0x20;
+    *(long *)(param_1 + 0x88) = lVar7;
+    lVar5 = (ulong)uVar2 - lVar5;
+  }
+  else {
+    lVar5 = *(long *)(param_1 + 0x68);
+    lVar6 = *(long *)(lVar8 + IOGPUMetalDeviceShmem::_virtualAddress);
+    uVar2 = *(uint *)(lVar8 + IOGPUMetalDeviceShmem::_shmemSize);
+    *(long *)(param_1 + 0x68) = lVar6;
+    *(ulong *)(param_1 + 0x70) = lVar6 + (ulong)uVar2;
+    lVar5 = *(long *)(param_1 + 0x80) - lVar5;
+    lVar7 = lVar6 + lVar5;
+    *(long *)(param_1 + 0x78) = lVar6;
+    *(long *)(param_1 + 0x80) = lVar7;
+    lVar7 = lVar7 + 0x20;
+    *(long *)(param_1 + 0x88) = lVar7;
+    lVar5 = (ulong)uVar2 - lVar5;
+  }
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar3 = (code *)SoftwareBreakpoint(0xc471,0x1a56bc2cc);
+    (*pcVar3)();
+  }
+  _IOGPUResourceListReset(param_1 + 0x90,lVar7,lVar5 + -0x20,0);
+  return;
+}
+
+
+
+===== storage_get_segment_list_pointers offset=0x1a56bcf80 =====
+symbol=_IOGPUMetalCommandBufferStorageGetSegmentListPointers
+entry=1a56bcf80
+direct_callers=2
+  caller=getSegmentListPointerStart:current:end: entry=1a56d0e40
+  caller=getSegmentListPointerStart:current:end: entry=1a56ae2bc
+direct_callees=1
+  callee=_mtlIOGPUCommandBufferStorageBeginSegmentList entry=1a56bcee4
+
+void _IOGPUMetalCommandBufferStorageGetSegmentListPointers
+               (IOGPUMetalCommandBufferStorage *param_1,undefined8 *param_2,undefined8 *param_3,
+               undefined8 *param_4)
+
+{
+  if (param_1->field11_0x78 == (IOGPUSegmentListHeader *)0x0) {
+    _mtlIOGPUCommandBufferStorageBeginSegmentList(param_1);
+  }
+  if (param_2 != (undefined8 *)0x0) {
+    *param_2 = param_1->field11_0x78;
+  }
+  if (param_3 != (undefined8 *)0x0) {
+    *param_3 = param_1->field12_0x80;
+  }
+  if (param_4 != (undefined8 *)0x0) {
+    *param_4 = param_1->field10_0x70;
+  }
+  return;
+}
+
+
+
+===== metal4_storage_finalize_command_buffer offset=0x1a56bde88 =====
+symbol=_IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer
+entry=1a56bde88
+direct_callers=1
+  caller=commitFillArgs:count:args:argsSize:commitFeedback: entry=1a56d20a4
+direct_callees=1
+  callee=_mtlIOGPUCommandBufferStorageBeginSegmentList entry=1a56bcee4
+
+void _IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer(IOGPUMetalCommandBufferStorage *param_1)
+
+{
+  uint uVar1;
+  IOGPUSegmentResourceListHeader *pIVar2;
+  long lVar3;
+  IOGPUSegmentKernelCommmandListHeader *pIVar4;
+  
+  pIVar4 = param_1->field26_0x328;
+  if (param_1->field31_0x340 == 1) {
+    lVar3 = *(long *)&param_1->field27_0x330;
+    uVar1 = param_1->field29_0x338 + 1;
+    *(uint *)(lVar3 + 8) = uVar1;
+    param_1->field26_0x328 =
+         (IOGPUSegmentKernelCommmandListHeader *)(lVar3 + (ulong)uVar1 * 8 + 0x10);
+    param_1->field31_0x340 = 0xffffffff;
+    param_1->field27_0x330 = 0;
+    param_1->field28_0x334 = 0;
+  }
+  else {
+    if (param_1->field31_0x340 != 0) {
+      if (pIVar4 != (IOGPUSegmentKernelCommmandListHeader *)param_1->field9_0x68)
+      goto LAB_1a56bdf1c;
+      _mtlIOGPUCommandBufferStorageBeginSegmentList(param_1);
+    }
+    pIVar2 = param_1->field12_0x80;
+    *(int *)(param_1->field11_0x78 + 0xc) = (int)pIVar2 - (int)param_1->field11_0x78;
+    param_1->field26_0x328 = (IOGPUSegmentKernelCommmandListHeader *)pIVar2;
+    param_1->field31_0x340 = 0xffffffff;
+    param_1->field11_0x78 = (IOGPUSegmentListHeader *)0x0;
+    param_1->field13_0x88 = (IOGPUSegmentResourceDescriptorGroup *)0x0;
+    param_1->field12_0x80 = (IOGPUSegmentResourceListHeader *)0x0;
+    param_1->field35_0x358 = 0;
+    *(undefined8 *)((long)&param_1->field33_0x34c + 4) = 0;
+    *(undefined4 *)&param_1->field36_0x360 = 0;
+  }
+LAB_1a56bdf1c:
+  *(uint *)(pIVar4 + 0xc) = *(uint *)(pIVar4 + 0xc) | 0x80000000;
+  return;
+}
+
+
+
+===== name_fragment=initWithDevice:pointer:length: =====
+matches=11
+===== name_match=initWithDevice:pointer:length: =====
+symbol=initWithDevice:pointer:length:options:sysMemSize:vidMemSize:args:argsSize:deallocator:
+entry=1a56acae8
+direct_callers=0
+direct_callees=2
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56fa840
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+
+/* Function Stack Size: 0x54 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_options_sysMemSize_vidMemSize_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_long_long param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             IOGPUNewResourceArgs *param_9,unsigned_int param_10,ID param_11,undefined4 param_12)
+
+{
+  ID IVar1;
+  undefined4 in_stack_ffffffffffffffe8;
+  
+  IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+                    (param_1,param_3,param_4,param_5,1,param_6,param_7,0,0,0,0,param_9,param_10,
+                     param_11,in_stack_ffffffffffffffe8);
+  return IVar1;
+}
+
+
+
+===== name_match=initWithDevice:pointer:length: =====
+symbol=initWithDevice:pointer:length:options:sysMemSize:gpuAddress:args:argsSize:deallocator:
+entry=1a56acb34
+direct_callers=0
+direct_callees=2
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56fa840
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+
+/* Function Stack Size: 0x54 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_options_sysMemSize_gpuAddress_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_long_long param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             IOGPUNewResourceArgs *param_9,unsigned_int param_10,ID param_11,undefined4 param_12)
+
+{
+  ID IVar1;
+  undefined4 in_stack_ffffffffffffffe8;
+  
+  IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+                    (param_1,param_3,param_4,param_5,1,param_6,param_7,param_8,0,0,0,param_9,
+                     param_10,param_11,in_stack_ffffffffffffffe8);
+  return IVar1;
+}
+
+
+
+===== name_match=initWithDevice:pointer:length: =====
+symbol=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:args:argsSize:deallocator:
+entry=1a56acb84
+direct_callers=0
+direct_callees=2
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56fa840
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+
+/* Function Stack Size: 0x58 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_int param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             unsigned_long_long param_9,IOGPUNewResourceArgs *param_10,unsigned_int param_11,
+             ID param_12,undefined4 param_13)
+
+{
+  ID IVar1;
+  undefined4 in_stack_ffffffffffffffe8;
+  
+  IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+                    (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,0,0,0,param_10,
+                     param_11,param_12,in_stack_ffffffffffffffe8);
+  return IVar1;
+}
+
+
+
+===== name_match=initWithDevice:pointer:length: =====
+symbol=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:args:argsSize:deallocator:
+entry=1a56acbc8
+direct_callers=0
+direct_callees=2
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56fa840
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+
+/* Function Stack Size: 0x60 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_int param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             unsigned_long_long param_9,unsigned_long_long param_10,IOGPUNewResourceArgs *param_11,
+             unsigned_int param_12,ID param_13,undefined4 param_14)
+
+{
+  ID IVar1;
+  undefined4 in_stack_ffffffffffffffe8;
+  
+  IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+                    (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,param_10,0,0,param_11
+                     ,param_12,param_13,in_stack_ffffffffffffffe8);
+  return IVar1;
+}
+
+
+
+===== name_match=initWithDevice:pointer:length: =====
+symbol=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:args:argsSize:deallocator:
+entry=1a56acc10
+direct_callers=0
+direct_callees=2
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56fa840
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+
+/* Function Stack Size: 0x68 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_int param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             unsigned_long_long param_9,unsigned_long_long param_10,long_long param_11,
+             IOGPUNewResourceArgs *param_12,unsigned_int param_13,ID param_14,undefined4 param_15)
+
+{
+  ID IVar1;
+  undefined4 in_stack_ffffffffffffffe8;
+  
+  IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+                    (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,param_10,param_11,0,
+                     param_12,param_13,param_14,in_stack_ffffffffffffffe8);
+  return IVar1;
+}
+
+
+
+===== name_match=initWithDevice:pointer:length: =====
+symbol=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:
+entry=1a56acc58
+direct_callers=5
+  caller=initWithDevice:pointer:length:options:sysMemSize:vidMemSize:args:argsSize:deallocator: entry=1a56acae8
+  caller=initWithDevice:pointer:length:options:sysMemSize:gpuAddress:args:argsSize:deallocator: entry=1a56acb34
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:args:argsSize:deallocator: entry=1a56acb84
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:args:argsSize:deallocator: entry=1a56acbc8
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:args:argsSize:deallocator: entry=1a56acc10
+direct_callees=13
+  callee=_objc_release entry=1a56d7e9c
+  callee=sparseTileSizeInBytesForSparsePageSize: entry=1a56fbf40
+  callee=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.4 entry=1a56d3910
+  callee=_MTLReportFailure entry=1a56d779c
+  callee=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.1 entry=1a56d3874
+  callee=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.3 entry=1a56d38dc
+  callee=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.2 entry=1a56d38a8
+  callee=initWithDevice:options:args:argsSize: entry=1a56fa7e0
+  callee=initWithDevice:options:args:argsSize: entry=1a56c1714
+  callee=__Block_copy entry=1a56d786c
+  callee=deviceRef entry=1a56f9bc0
+  callee=registryID entry=1a56fb5c0
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+
+/* WARNING: Function: _objc_release replaced with injection: _objc_release_fixup */
+/* Function Stack Size: 0x70 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_int param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             unsigned_long_long param_9,unsigned_long_long param_10,long_long param_11,
+             unsigned_long_long param_12,IOGPUNewResourceArgs *param_13,unsigned_int param_14,
+             ID param_15,undefined4 param_16)
+
+{
+  uint uVar1;
+  ID IVar2;
+  ID IVar3;
+  ID IVar4;
+  SEL extraout_x1;
+  undefined8 uVar5;
+  cfstringStruct *pcVar6;
+  unsigned_int uVar7;
+  ulong uVar8;
+  ulong uVar9;
+  long lVar10;
+  ulong uVar11;
+  undefined4 uVar12;
+  
+  (param_13->field0_0x0).field16_0x38.field1.field4_0x10[1] = 0;
+  (param_13->field0_0x0).field16_0x38.field0.field0_0x0 = 0;
+  (param_13->field0_0x0).field14_0x30 = 0;
+  (param_13->field0_0x0).field15_0x34 = 0;
+  (param_13->field0_0x0).field16_0x38.field0.field2_0x10 = 0;
+  (param_13->field0_0x0).field16_0x38.field0.field1_0x8 = 0;
+  (param_13->field0_0x0).field11_0x18 = 0;
+  (param_13->field0_0x0).field6_0x10 = '\0';
+  (param_13->field0_0x0).field7_0x11 = '\0';
+  (param_13->field0_0x0).field8_0x12 = '\0';
+  (param_13->field0_0x0).field9_0x13 = '\0';
+  (param_13->field0_0x0).field10_0x14 = 0;
+  (param_13->field0_0x0).field13_0x28 = 0;
+  (param_13->field0_0x0).field12_0x20 = 0;
+  (param_13->field0_0x0).field2_0x8 = 0;
+  (param_13->field0_0x0).field3_0xa = 0;
+  (param_13->field0_0x0).field4_0xc = 0;
+  (param_13->field0_0x0).field5_0xe = 0;
+  (param_13->field0_0x0).field0_0x0 = 0;
+  (param_13->field0_0x0).field1_0x4 = 0;
+  if (param_4 != (void *)0x0) {
+    uVar1 = (uint)param_7 & 0xf0;
+    if (uVar1 == 0x20) goto LAB_1a56acd54;
+    if (uVar1 == 0x30) {
+      pcVar6 = &cf_storageModeMemorylessincompatiblewith___WithBytesvariantofnewBuffer;
+      uVar5 = 0xb7;
+      goto LAB_1a56acd88;
+    }
+  }
+  while( true ) {
+    if (param_8 < param_5) {
+      return 0;
+    }
+    uVar11 = param_7 & 0xf;
+    if (1 < uVar11) {
+      __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_1
+                (uVar11,param_2);
+    }
+    if (param_4 != (void *)0x0) {
+      uVar11 = 0;
+    }
+    uVar8 = param_7 >> 4 & 0xf;
+    if (2 < uVar8) {
+      __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_2
+                (uVar8);
+    }
+    if (param_11 == 0) break;
+    if (uVar8 != 2) {
+      __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_3
+                (uVar8);
+    }
+    IVar2 = objc_stub::sparseTileSizeInBytesForSparsePageSize_(param_3,param_11);
+    (param_13->field0_0x0).field0_0x0 = 0x40;
+    (param_13->field0_0x0).field16_0x38.field4.field3_0x18 = (unsigned_int)IVar2;
+    uVar9 = (param_5 + (IVar2 & 0xffffffff)) - 1 & -(IVar2 & 0xffffffff);
+    (param_13->field0_0x0).field16_0x38.field0.field0_0x0 = uVar9;
+    param_8 = param_12;
+    if (param_5 <= uVar9) goto LAB_1a56acdcc;
+    __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_4
+              ();
+LAB_1a56acd54:
+    pcVar6 = &cf_storageModePrivateincompatiblewith___WithBytesvariantofnewBuffer;
+    uVar5 = 0xb5;
+LAB_1a56acd88:
+    _MTLReportFailure(0,
+                      "-[IOGPUMetalBuffer initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:]"
+                      ,uVar5,pcVar6);
+    param_2 = extraout_x1;
+  }
+  uVar7 = 0;
+  if (param_4 != (void *)0x0) {
+    uVar7 = 0x80;
+  }
+  (param_13->field0_0x0).field0_0x0 = uVar7;
+  (param_13->field0_0x0).field16_0x38.field0.field0_0x0 = (unsigned_long_long)param_4;
+  (param_13->field0_0x0).field16_0x38.field0.field1_0x8 = (unsigned_long_long)param_4;
+LAB_1a56acdcc:
+  (param_13->field0_0x0).field16_0x38.field0.field2_0x10 = param_8;
+  uVar7 = 0x400;
+  if (uVar11 != 1) {
+    uVar7 = 0;
+  }
+  (param_13->field0_0x0).field1_0x4 = uVar7;
+  (param_13->field0_0x0).field2_0x8 = 1;
+  (param_13->field0_0x0).field3_0xa = 1;
+  (param_13->field0_0x0).field4_0xc = 1;
+  uVar12 = (undefined4)DAT_1a56e3510;
+  (param_13->field0_0x0).field6_0x10 = (char)uVar12;
+  (param_13->field0_0x0).field7_0x11 = (char)((uint)uVar12 >> 8);
+  (param_13->field0_0x0).field8_0x12 = (char)((uint)uVar12 >> 0x10);
+  (param_13->field0_0x0).field9_0x13 = (char)((uint)uVar12 >> 0x18);
+  (param_13->field0_0x0).field10_0x14 = 0;
+  (param_13->field0_0x0).field14_0x30 = param_6;
+  if (param_9 != 0) {
+    (param_13->field0_0x0).field12_0x20 = param_9;
+    (param_13->field0_0x0).field13_0x28 = param_5;
+  }
+  (param_13->field0_0x0).field15_0x34 = (unsigned_int)(param_10 >> 0x20);
+  if (((uint)param_7 >> 0x10 & 1) == 0) {
+    (param_13->field0_0x0).field10_0x14 = 0x40;
+  }
+  IVar2 = IOGPUMetalResource::initWithDevice_options_args_argsSize_
+                    (param_1,param_3,param_7,param_13,param_14);
+  if (IVar2 == 0) {
+    return 0;
+  }
+  *(unsigned_long_long *)(IVar2 + (long)_length) = param_5;
+  if (param_15 != 0) {
+    *(void **)(IVar2 + (long)_pointer) = param_4;
+    uVar5 = __Block_copy();
+    *(undefined8 *)(IVar2 + (long)_deallocator) = uVar5;
+  }
+  lVar10 = (long)_placementSparsePageSize;
+  *(long_long *)(IVar2 + lVar10) = param_11;
+  if (*___globalGPUCommPage == 0) {
+    return IVar2;
+  }
+  IVar3 = objc_stub::deviceRef(param_3);
+  uVar5 = *(undefined8 *)(IVar2 + (long)IOGPUMetalResource::_res + 0x60);
+  uVar9 = 0;
+  if (*(long *)(IVar2 + lVar10) != 0) {
+    uVar9 = 0x10000000000000;
+  }
+  IVar4 = objc_stub::registryID(param_3);
+  _IOGPUDeviceTraceEvent
+            (IVar3,8,0x10,uVar5,param_5,uVar9 | uVar11 << 0x30 | uVar8 << 0x20 | IVar4 & 0xffffffff,
+             0);
+  return IVar2;
+}
+
+
+
+===== name_match=initWithDevice:pointer:length: =====
+symbol=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.1
+entry=1a56d3874
+direct_callers=1
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_0 entry=1a56add78
+  callee=_MTLReportFailure entry=1a56d779c
+
+void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_1
+               (void)
+
+{
+  undefined8 extraout_x1;
+  
+  _OUTLINED_FUNCTION_0();
+  _MTLReportFailure(0,extraout_x1,0xd1,&cf_InvalidcacheMode_u);
+  return;
+}
+
+
+
+===== name_match=initWithDevice:pointer:length: =====
+symbol=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.2
+entry=1a56d38a8
+direct_callers=1
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_0 entry=1a56add78
+  callee=_MTLReportFailure entry=1a56d779c
+
+void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_2
+               (void)
+
+{
+  undefined8 extraout_x1;
+  
+  _OUTLINED_FUNCTION_0();
+  _MTLReportFailure(0,extraout_x1,0xdb,&cf_InvalidstorageMode_u);
+  return;
+}
+
+
+
+===== name_match=initWithDevice:pointer:length: =====
+symbol=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.3
+entry=1a56d38dc
+direct_callers=1
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_0 entry=1a56add78
+  callee=_MTLReportFailure entry=1a56d779c
+
+void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_3
+               (void)
+
+{
+  undefined8 extraout_x1;
+  
+  _OUTLINED_FUNCTION_0();
+  _MTLReportFailure(0,extraout_x1,0xe0,&cf_InvalidStorageMode_uforPlacementSparseBuffer);
+  return;
+}
+
+
+
+===== name_match=initWithDevice:pointer:length: =====
+symbol=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.4
+entry=1a56d3910
+direct_callers=1
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+direct_callees=1
+  callee=___assert_rtn entry=1a56d797c
+
+void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_4
+               (void)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn("-[IOGPUMetalBuffer initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:]"
+                ,"IOGPUMetalBuffer.m",0xe7,"args->comm.opt.virtualResource.virtual_bytes >= length")
+  ;
+}
+
+
+
+===== name_match=initWithDevice:pointer:length: =====
+symbol=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:
+entry=1a56fa840
+direct_callers=5
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:args:argsSize:deallocator: entry=1a56acc10
+  caller=initWithDevice:pointer:length:options:sysMemSize:gpuAddress:args:argsSize:deallocator: entry=1a56acb34
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:args:argsSize:deallocator: entry=1a56acbc8
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:args:argsSize:deallocator: entry=1a56acb84
+  caller=initWithDevice:pointer:length:options:sysMemSize:vidMemSize:args:argsSize:deallocator: entry=1a56acae8
+direct_callees=1
+  callee=_objc_msgSend entry=180095800
+
+ID __objc_msgSend_stub
+objc_stub::
+initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+          (ID self,...)
+
+{
+  ID IVar1;
+  
+  IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)
+                    (self,PTR_s_initWithDevice_pointer_length_al_1e6b16ea0);
+  return IVar1;
+}
+
+
+
+===== name_fragment=initWithDevice:addressRanges: =====
+matches=1
+===== name_match=initWithDevice:addressRanges: =====
+symbol=initWithDevice:addressRanges:addressRangeCount:length:options:gpuAddress:args:argsSize:
+entry=1a56ad404
+direct_callers=0
+direct_callees=5
+  callee=_objc_msgSendSuper2 entry=1a56d7e4c
+  callee=initWithDevice:options:args:argsSize: entry=1a56c1714
+  callee=deviceRef entry=1a56f9bc0
+  callee=registryID entry=1a56fb5c0
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+
+/* Function Stack Size: 0x4c bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_addressRanges_addressRangeCount_length_options_gpuAddress_args_argsSize_
+             (ID param_1,SEL param_2,ID param_3,IOGPUAddressRange *param_4,
+             unsigned_long_long param_5,unsigned_long_long param_6,unsigned_long_long param_7,
+             unsigned_long_long param_8,IOGPUNewResourceArgs *param_9,unsigned_int param_10)
+
+{
+  ID IVar1;
+  ID IVar2;
+  ID IVar3;
+  undefined8 uVar4;
+  long lVar5;
+  undefined8 uVar6;
+  undefined4 uVar7;
+  ID local_50;
+  undefined *puStack_48;
+  
+  (param_9->field0_0x0).field2_0x8 = 0;
+  (param_9->field0_0x0).field3_0xa = 0;
+  (param_9->field0_0x0).field4_0xc = 0;
+  (param_9->field0_0x0).field5_0xe = 0;
+  (param_9->field0_0x0).field0_0x0 = 0;
+  (param_9->field0_0x0).field1_0x4 = 0;
+  (param_9->field0_0x0).field11_0x18 = 0;
+  (param_9->field0_0x0).field6_0x10 = '\0';
+  (param_9->field0_0x0).field7_0x11 = '\0';
+  (param_9->field0_0x0).field8_0x12 = '\0';
+  (param_9->field0_0x0).field9_0x13 = '\0';
+  (param_9->field0_0x0).field10_0x14 = 0;
+  (param_9->field0_0x0).field16_0x38.field0.field0_0x0 = 0;
+  (param_9->field0_0x0).field14_0x30 = 0;
+  (param_9->field0_0x0).field15_0x34 = 0;
+  (param_9->field0_0x0).field16_0x38.field0.field2_0x10 = 0;
+  (param_9->field0_0x0).field16_0x38.field0.field1_0x8 = 0;
+  (param_9->field0_0x0).field16_0x38.field1.field4_0x10[1] = 0;
+  (param_9->field0_0x0).field13_0x28 = 0;
+  (param_9->field0_0x0).field12_0x20 = 0;
+  uVar7 = DAT_1a56e3520._4_4_;
+  (param_9->field0_0x0).field0_0x0 = (undefined4)DAT_1a56e3520;
+  (param_9->field0_0x0).field1_0x4 = uVar7;
+  (param_9->field0_0x0).field2_0x8 = 1;
+  (param_9->field0_0x0).field3_0xa = 1;
+  (param_9->field0_0x0).field4_0xc = 1;
+  uVar7 = (undefined4)DAT_1a56e3510;
+  (param_9->field0_0x0).field6_0x10 = (char)uVar7;
+  (param_9->field0_0x0).field7_0x11 = (char)((uint)uVar7 >> 8);
+  (param_9->field0_0x0).field8_0x12 = (char)((uint)uVar7 >> 0x10);
+  (param_9->field0_0x0).field9_0x13 = (char)((uint)uVar7 >> 0x18);
+  (param_9->field0_0x0).field16_0x38.field0.field0_0x0 = (unsigned_long_long)param_4;
+  (param_9->field0_0x0).field16_0x38.field0.field1_0x8 = param_5;
+  (param_9->field0_0x0).field10_0x14 = (param_9->field0_0x0).field10_0x14 | 0x200000;
+  puStack_48 = PTR_IOGPUMetalBuffer_1e6b19220;
+  local_50 = param_1;
+  IVar1 = IOGPUMetalResource::initWithDevice_options_args_argsSize_
+                    ((ID)&local_50,"initWithDevice:options:args:argsSize:",param_3,param_7,param_9,
+                     param_10);
+  if (IVar1 != 0) {
+    lVar5 = (long)_length;
+    *(unsigned_long_long *)(IVar1 + lVar5) = param_6;
+    if (*___globalGPUCommPage != 0) {
+      IVar2 = objc_stub::deviceRef(param_3);
+      uVar4 = *(undefined8 *)(IVar1 + (long)IOGPUMetalResource::_res + 0x60);
+      uVar6 = *(undefined8 *)(IVar1 + lVar5);
+      IVar3 = objc_stub::registryID(param_3);
+      _IOGPUDeviceTraceEvent(IVar2,8,0x10,uVar4,uVar6,IVar3 & 0xffffffff,0);
+    }
+  }
+  return IVar1;
+}
+
+
+
+===== name_fragment=IOGPUMetalCommandBufferStoragePoolCreateStorage =====
+matches=1
+===== name_match=IOGPUMetalCommandBufferStoragePoolCreateStorage =====
+symbol=_IOGPUMetalCommandBufferStoragePoolCreateStorage
+entry=1a56bd2a0
+direct_callers=3
+  caller=initWithQueue:retainedReferences:synchronousDebugMode: entry=1a56add88
+  caller=commitAndReset entry=1a56ae488
+  caller=getCommandBufferStorage:retainReferences: entry=1a56d031c
+direct_callees=7
+  callee=_os_unfair_lock_lock entry=1a56d7efc
+  callee=_os_unfair_lock_unlock entry=1a56d7f0c
+  callee=_IOGPUMetalCommandBufferStorageCreateExt entry=1a56bc00c
+  callee=_MTLResourceListPoolCreateResourceList entry=1a56d77bc
+  callee=_MTLResourceListRelease entry=1a56d77cc
+  callee=_iogpuMetalCommandBufferStorageSetupShmems entry=1a56bc320
+  callee=_iogpuMetalCommandBufferStorageFree entry=1a56bc45c
+
+IOGPUMetalCommandBufferStorage *
+_IOGPUMetalCommandBufferStoragePoolCreateStorage
+          (IOGPUMetalCommandBufferStoragePool *param_1,IOGPUSegmentListShmemHeader *param_2,
+          undefined8 param_3)
+
+{
+  IOGPUMetalCommandBufferStorage_conflict *pIVar1;
+  IOGPUMetalCommandBufferStorage_conflict **ppIVar2;
+  long lVar3;
+  undefined8 uVar4;
+  ulong uVar5;
+  IOGPUMetalCommandBufferStorage *pIVar6;
+  
+  _os_unfair_lock_lock(param_1 + 0x10);
+  pIVar6 = *(IOGPUMetalCommandBufferStorage **)param_1;
+  if (pIVar6 == (IOGPUMetalCommandBufferStorage *)0x0) {
+    _os_unfair_lock_unlock(param_1 + 0x10);
+    pIVar6 = (IOGPUMetalCommandBufferStorage *)
+             _IOGPUMetalCommandBufferStorageCreateExt
+                       (*(undefined8 *)(param_1 + 0x20),*(undefined8 *)(param_1 + 0x28),param_2,
+                        param_3);
+    if (pIVar6 == (IOGPUMetalCommandBufferStorage *)0x0) {
+      return (IOGPUMetalCommandBufferStorage *)0x0;
+    }
+    goto LAB_1a56bd368;
+  }
+  pIVar1 = (pIVar6->field2_0x10).field0_0x0;
+  ppIVar2 = (pIVar6->field2_0x10).field1_0x8;
+  if (pIVar1 == (IOGPUMetalCommandBufferStorage_conflict *)0x0) {
+    *(IOGPUMetalCommandBufferStorage_conflict ***)(param_1 + 8) = ppIVar2;
+  }
+  else {
+    *(IOGPUMetalCommandBufferStorage_conflict ***)(pIVar1 + 0x18) = ppIVar2;
+  }
+  *ppIVar2 = pIVar1;
+  *(int *)(param_1 + 0x14) = *(int *)(param_1 + 0x14) + -1;
+  (pIVar6->field2_0x10).field0_0x0 = (IOGPUMetalCommandBufferStorage_conflict *)0x0;
+  (pIVar6->field2_0x10).field1_0x8 = (IOGPUMetalCommandBufferStorage_conflict **)0x0;
+  _os_unfair_lock_unlock(param_1 + 0x10);
+  pIVar6->field25_0x320 = param_2;
+  lVar3 = *(long *)((long)&pIVar6->field15_0x2d4 + 4);
+  if ((int)param_3 == 0) {
+    if (lVar3 != 0) {
+      _MTLResourceListRelease();
+      uVar4 = 0;
+      goto LAB_1a56bd354;
+    }
+  }
+  else if (lVar3 == 0) {
+    uVar4 = _MTLResourceListPoolCreateResourceList
+                      (*(undefined8 *)(*(long *)(param_1 + 0x28) + 0x28));
+LAB_1a56bd354:
+    *(undefined8 *)((long)&pIVar6->field15_0x2d4 + 4) = uVar4;
+  }
+  uVar5 = _iogpuMetalCommandBufferStorageSetupShmems
+                    (pIVar6,*(IOGPUMetalCommandBufferStorageCreateParams **)(param_1 + 0x28));
+  if ((uVar5 & 1) == 0) {
+    _iogpuMetalCommandBufferStorageFree(pIVar6);
+    return (IOGPUMetalCommandBufferStorage *)0x0;
+  }
+LAB_1a56bd368:
+  pIVar6->field1_0x8 = param_1;
+  *(undefined1 *)((long)&pIVar6[1].field1_0x8 + 4) = 0;
+  return pIVar6;
+}
+
+
+
+===== name_fragment=IOGPUMetalCommandBufferStorageCreateExt =====
+matches=1
+===== name_match=IOGPUMetalCommandBufferStorageCreateExt =====
+symbol=_IOGPUMetalCommandBufferStorageCreateExt
+entry=1a56bc00c
+direct_callers=1
+  caller=_IOGPUMetalCommandBufferStoragePoolCreateStorage entry=1a56bd2a0
+direct_callees=5
+  callee=_malloc_type_calloc entry=1a56d7d6c
+  callee=_IOGPUResourceListInit entry=1a56ca760
+  callee=_MTLResourceListPoolCreateResourceList entry=1a56d77bc
+  callee=_iogpuMetalCommandBufferStorageSetupShmems entry=1a56bc320
+  callee=_iogpuMetalCommandBufferStorageFree entry=1a56bc45c
+
+IOGPUMetalCommandBufferStorage *
+_IOGPUMetalCommandBufferStorageCreateExt
+          (ID param_1,IOGPUMetalCommandBufferStorageCreateParams *param_2,
+          IOGPUSegmentListShmemHeader *param_3,int param_4)
+
+{
+  uint uVar1;
+  IOGPUMetalCommandBufferStorage *pIVar2;
+  undefined8 uVar3;
+  ulong uVar4;
+  undefined4 uVar5;
+  
+  pIVar2 = (IOGPUMetalCommandBufferStorage *)_malloc_type_calloc(0x3a0,1,0x10b0040d0c5b398);
+  pIVar2->field0_0x0 = param_1;
+  pIVar2->field25_0x320 = param_3;
+  _IOGPUResourceListInit
+            (&pIVar2->field14_0x90,0,0,
+             *(undefined8 *)(param_1 + (long)IOGPUMetalDevice::_segmentByteThreshold),
+             *(undefined4 *)(param_1 + (long)IOGPUMetalDevice::_accelID),
+             _IOGPUMetalCommandBufferStorageGrowSegmentList,pIVar2);
+  uVar1 = *(uint *)(param_2 + 0x20);
+  if (uVar1 == 0) {
+    uVar3 = 0;
+    uVar5 = 0;
+  }
+  else {
+    *(undefined8 *)((long)&pIVar2->field22_0x30c + 4) = *(undefined8 *)(param_2 + 0x18);
+    uVar3 = _malloc_type_calloc(1,(ulong)uVar1 << 6,0x10b0040cde4edb6);
+    uVar5 = *(undefined4 *)(param_2 + 0x20);
+  }
+  *(undefined8 *)((long)&pIVar2->field20_0x2fc + 4) = uVar3;
+  *(undefined4 *)&pIVar2->field24_0x318 = uVar5;
+  uVar3 = 0;
+  if (*(long *)(param_2 + 0x30) != 0) {
+    uVar3 = _MTLResourceListPoolCreateResourceList();
+  }
+  *(undefined8 *)((long)&pIVar2->field16_0x2dc + 4) = uVar3;
+  if (param_4 == 0) {
+    uVar3 = 0;
+  }
+  else {
+    uVar3 = _MTLResourceListPoolCreateResourceList(*(undefined8 *)(param_2 + 0x28));
+  }
+  *(undefined8 *)((long)&pIVar2->field15_0x2d4 + 4) = uVar3;
+  uVar4 = _iogpuMetalCommandBufferStorageSetupShmems(pIVar2,param_2);
+  if ((uVar4 & 1) == 0) {
+    _iogpuMetalCommandBufferStorageFree(pIVar2);
+    pIVar2 = (IOGPUMetalCommandBufferStorage *)0x0;
+  }
+  return pIVar2;
+}
+
+
+
+===== name_fragment=_iogpuMetalCommandBufferStorageSetupShmems =====
+matches=1
+===== name_match=_iogpuMetalCommandBufferStorageSetupShmems =====
+symbol=_iogpuMetalCommandBufferStorageSetupShmems
+entry=1a56bc320
+direct_callers=2
+  caller=_IOGPUMetalCommandBufferStoragePoolCreateStorage entry=1a56bd2a0
+  caller=_IOGPUMetalCommandBufferStorageCreateExt entry=1a56bc00c
+direct_callees=4
+  callee=_IOGPUMetalDeviceShmemPoolCreateShmem entry=1a56b6b20
+  callee=_bzero entry=1a56d7a9c
+  callee=_IOGPUMetalCommandBufferStorageBeginKernelCommands entry=1a56bcb74
+  callee=_IOGPUMetalDeviceShmemRelease entry=1a56b67e4
+
+/* _iogpuMetalCommandBufferStorageSetupShmems(IOGPUMetalCommandBufferStorage*,
+   IOGPUMetalCommandBufferStorageCreateParams*) */
+
+undefined8
+_iogpuMetalCommandBufferStorageSetupShmems
+          (IOGPUMetalCommandBufferStorage *param_1,
+          IOGPUMetalCommandBufferStorageCreateParams *param_2)
+
+{
+  uint uVar1;
+  ID IVar2;
+  undefined8 uVar3;
+  IOGPUSegmentKernelCommmandListHeader *pIVar4;
+  long lVar5;
+  char *pcVar6;
+  
+  IVar2 = _IOGPUMetalDeviceShmemPoolCreateShmem(*(undefined8 *)param_2);
+  uVar3 = 0;
+  if (IVar2 != 0) {
+    pIVar4 = *(IOGPUSegmentKernelCommmandListHeader **)
+              (IVar2 + (long)IOGPUMetalDeviceShmem::_virtualAddress);
+    uVar1 = *(uint *)(IVar2 + (long)IOGPUMetalDeviceShmem::_shmemSize);
+    param_1->field8_0x60 = IVar2;
+    param_1->field9_0x68 = (char *)pIVar4;
+    param_1->field26_0x328 = pIVar4;
+    param_1->field31_0x340 = 0xffffffff;
+    *(undefined4 *)((long)&param_1->field32_0x344 + 4) = 0;
+    param_1->field27_0x330 = 0;
+    param_1->field28_0x334 = 0;
+    param_1->field12_0x80 = (IOGPUSegmentResourceListHeader *)0x0;
+    param_1->field13_0x88 = (IOGPUSegmentResourceDescriptorGroup *)0x0;
+    param_1->field10_0x70 = (char *)(pIVar4 + uVar1);
+    param_1->field11_0x78 = (IOGPUSegmentListHeader *)0x0;
+    IVar2 = _IOGPUMetalDeviceShmemPoolCreateShmem(*(undefined8 *)(param_2 + 8));
+    if (IVar2 == 0) {
+      _IOGPUMetalDeviceShmemRelease(param_1->field8_0x60);
+      uVar3 = 0;
+      param_1->field8_0x60 = 0;
+    }
+    else {
+      lVar5 = (long)IOGPUMetalDeviceShmem::_virtualAddress;
+      pcVar6 = *(char **)(IVar2 + lVar5);
+      param_1->field3_0x20 = IVar2;
+      param_1->field4_0x28 = pcVar6;
+      param_1->field6_0x38 = pcVar6 + *(uint *)(IVar2 + (long)IOGPUMetalDeviceShmem::_shmemSize);
+      pcVar6 = *(char **)(IVar2 + lVar5);
+      param_1->field5_0x30 = pcVar6;
+      lVar5 = tpidrro_el0;
+      (param_1->field7_0x40).field1_0x8 = (char *)0x0;
+      (param_1->field7_0x40).field0_0x0 = 0;
+      (param_1->field7_0x40).field3_0x18 = (char *)0x0;
+      (param_1->field7_0x40).field2_0x10 = (char *)0x0;
+      if (*(long *)(lVar5 + 0x120) == 0x2bad) {
+        param_1->field39_0x378[1] = 0;
+      }
+      else {
+        *(undefined8 *)pcVar6 = DAT_1a56e3650;
+        _bzero(pcVar6 + 8,0xa4);
+        param_1->field39_0x378[1] = (ID)(pcVar6 + 8);
+        param_1->field5_0x30 = pcVar6 + 0xac;
+        _IOGPUMetalCommandBufferStorageBeginKernelCommands(param_1,pcVar6);
+        param_1->field30_0x33c = param_1->field29_0x338 + 1;
+        *(int *)(*(long *)&param_1->field27_0x330 + (ulong)param_1->field29_0x338 * 8 + 0x14) =
+             (int)(pcVar6 + 0xac) - *(int *)&param_1->field4_0x28;
+      }
+      uVar3 = 1;
+    }
+  }
+  return uVar3;
+}
+
+
+
+===== name_fragment=IOGPUMetalCommandBufferStorageFinalizeShmemHeader =====
+matches=1
+===== name_match=IOGPUMetalCommandBufferStorageFinalizeShmemHeader =====
+symbol=_IOGPUMetalCommandBufferStorageFinalizeShmemHeader
+entry=1a56bccec
+direct_callers=2
+  caller=commitAndReset entry=1a56ae488
+  caller=commit entry=1a56ae394
+direct_callees=4
+  callee=count entry=1a56f9a20
+  callee=enumerateObjectsUsingBlock: entry=1a56f9ec0
+  callee=__Block_object_dispose entry=1a56d788c
+  callee=_mtlIOGPUCommandBufferStorageBeginSegmentList entry=1a56bcee4
+
+void _IOGPUMetalCommandBufferStorageFinalizeShmemHeader(IOGPUMetalCommandBufferStorage *param_1)
+
+{
+  uint uVar1;
+  IOGPUSegmentResourceListHeader *pIVar2;
+  undefined8 uVar3;
+  undefined8 uVar4;
+  bool bVar5;
+  ID IVar6;
+  bool bVar7;
+  IOGPUSegmentKernelCommmandListHeader *pIVar8;
+  long lVar9;
+  undefined8 local_b8;
+  undefined8 local_b0;
+  undefined1 *local_a8;
+  undefined *puStack_a0;
+  undefined8 *local_98;
+  undefined8 local_90;
+  undefined8 *puStack_88;
+  undefined8 local_80;
+  ID local_78;
+  
+  uVar4 = DAT_1a56e3558;
+  uVar3 = DAT_1a56e3548;
+  pIVar8 = param_1->field26_0x328;
+  if (param_1->field39_0x378[1] != 0) {
+    lVar9 = 0;
+    bVar5 = true;
+    do {
+      bVar7 = bVar5;
+      if ((param_1->field39_0x378[lVar9 + 2] != 0) &&
+         (IVar6 = objc_stub::count(param_1->field39_0x378[lVar9 + 2]), IVar6 != 0)) {
+        local_90 = 0;
+        local_80 = uVar4;
+        local_78 = param_1->field39_0x378[1];
+        local_b8 = DAT_1e598ebc0;
+        local_b0 = uVar3;
+        local_a8 = &___IOGPUMetalCommandBufferStorageFinalizeShmemHeader_block_invoke;
+        puStack_a0 = &___block_descriptor_40_e8_32r_e36_v24__0__IOGPUMetalResidencySet_8_B16l;
+        local_98 = &local_90;
+        puStack_88 = &local_90;
+        objc_stub::enumerateObjectsUsingBlock_(param_1->field39_0x378[lVar9 + 2],&local_b8);
+        __Block_object_dispose(&local_90,8);
+      }
+      lVar9 = 1;
+      bVar5 = false;
+    } while (bVar7);
+  }
+  if (param_1->field31_0x340 == 1) {
+    lVar9 = *(long *)&param_1->field27_0x330;
+    uVar1 = param_1->field29_0x338 + 1;
+    *(uint *)(lVar9 + 8) = uVar1;
+    param_1->field26_0x328 =
+         (IOGPUSegmentKernelCommmandListHeader *)(lVar9 + (ulong)uVar1 * 8 + 0x10);
+    param_1->field31_0x340 = 0xffffffff;
+    param_1->field27_0x330 = 0;
+    param_1->field28_0x334 = 0;
+  }
+  else {
+    if (param_1->field31_0x340 != 0) {
+      if (param_1->field26_0x328 != (IOGPUSegmentKernelCommmandListHeader *)param_1->field9_0x68)
+      goto LAB_1a56bce4c;
+      _mtlIOGPUCommandBufferStorageBeginSegmentList(param_1);
+    }
+    pIVar2 = param_1->field12_0x80;
+    *(int *)(param_1->field11_0x78 + 0xc) = (int)pIVar2 - (int)param_1->field11_0x78;
+    param_1->field26_0x328 = (IOGPUSegmentKernelCommmandListHeader *)pIVar2;
+    param_1->field31_0x340 = 0xffffffff;
+    param_1->field11_0x78 = (IOGPUSegmentListHeader *)0x0;
+    param_1->field13_0x88 = (IOGPUSegmentResourceDescriptorGroup *)0x0;
+    param_1->field12_0x80 = (IOGPUSegmentResourceListHeader *)0x0;
+    param_1->field35_0x358 = 0;
+    *(undefined8 *)((long)&param_1->field33_0x34c + 4) = 0;
+    *(undefined4 *)&param_1->field36_0x360 = 0;
+  }
+LAB_1a56bce4c:
+  *(uint *)(pIVar8 + 0xc) = *(uint *)(pIVar8 + 0xc) | 0x80000000;
+  return;
+}
+
+
+
+===== name_fragment=IOGPUMetalCommandBufferStorageBeginKernelCommands =====
+matches=1
+===== name_match=IOGPUMetalCommandBufferStorageBeginKernelCommands =====
+symbol=_IOGPUMetalCommandBufferStorageBeginKernelCommands
+entry=1a56bcb74
+direct_callers=19
+  caller=_iogpuMetalCommandBufferStorageSetupShmems entry=1a56bc320
+  caller=encodeWaitForEvent:value: entry=1a56aed34
+  caller=encodeSignalEventScheduled:value: entry=1a56aec4c
+  caller=encodeConditionalAbortEvent: entry=1a56aef10
+  caller=encodeWaitForEvent:value:timeout: entry=1a56aee20
+  caller=setResponsibleTaskIDs:count: entry=1a56af940
+  caller=_debugBytes:length:output_type: entry=1a56ae90c
+  caller=encodeSubmitSleepMS: entry=1a56ae9f8
+  caller=copyBufferMappingsFromBuffer:toBuffer:operations:count: entry=1a56d18c4
+  caller=encodeSignalEvent:value:agentMask: entry=1a56aeb5c
+  caller=encodeSignalEvent:value: entry=1a56aea74
+  caller=encodePostMappingWaitEvent:postMappingValue:timeout: entry=1a56d1a10
+  caller=encodeSignalEvent:value: entry=1a56d1554
+  caller=encodeWaitForEvent:value: entry=1a56d15e4
+  caller=updateBufferMappings:heap:operations:count: entry=1a56d1710
+  caller=encodeWaitForEvent:value:timeout: entry=1a56d1678
+  caller=setSegmentListLockedPeerIndex: entry=1a56af000
+  caller=setProtectionOptions: entry=1a56af094
+  caller=_encodePurgedResources entry=1a56af250
+direct_callees=2
+  callee=_MTLReleaseAssertionFailure entry=1a56d778c
+  callee=_IOGPUMetalCommandBufferStorageGrowSegmentList entry=1a56bc13c
+
+void _IOGPUMetalCommandBufferStorageBeginKernelCommands(long param_1,int param_2)
+
+{
+  int iVar1;
+  undefined8 uVar2;
+  char *pcVar3;
+  undefined8 *puVar4;
+  uint uVar5;
+  
+  puVar4 = *(undefined8 **)(param_1 + 0x330);
+  if (puVar4 == (undefined8 *)0x0) {
+    iVar1 = *(int *)(param_1 + 0x340);
+    if (iVar1 == -1) {
+      puVar4 = *(undefined8 **)(param_1 + 0x328);
+    }
+    else {
+      if (iVar1 != 0) {
+        if (iVar1 == 1) {
+          pcVar3 = 
+          "storage->currentShmemHeaderType != eIOGPUSegmentListShmemHeaderTypeKernelCommandList";
+          uVar2 = 0x2b6;
+        }
+        else {
+          pcVar3 = "false";
+          uVar2 = 0x2c1;
+        }
+                    /* WARNING: Subroutine does not return */
+        _MTLReleaseAssertionFailure
+                  ("_mtlIOGPUCommandBufferStorageBeginKernelCommandList",uVar2,pcVar3,0);
+      }
+      puVar4 = *(undefined8 **)(param_1 + 0x80);
+      *(int *)(*(long *)(param_1 + 0x78) + 0xc) = (int)puVar4 - (int)*(long *)(param_1 + 0x78);
+      *(undefined8 **)(param_1 + 0x328) = puVar4;
+      *(undefined8 *)(param_1 + 0x78) = 0;
+      *(undefined8 *)(param_1 + 0x88) = 0;
+      *(undefined8 *)(param_1 + 0x80) = 0;
+      *(undefined8 *)(param_1 + 0x358) = 0;
+      *(undefined8 *)(param_1 + 0x350) = 0;
+      *(undefined4 *)(param_1 + 0x360) = 0;
+    }
+    *(undefined8 **)(param_1 + 0x330) = puVar4;
+    *(undefined4 *)(param_1 + 0x340) = 1;
+    *(undefined8 *)(param_1 + 0x338) = 0;
+    if (*(undefined8 **)(param_1 + 0x70) <= puVar4 + 6) {
+      _IOGPUMetalCommandBufferStorageGrowSegmentList(param_1);
+      puVar4 = *(undefined8 **)(param_1 + 0x330);
+    }
+    *puVar4 = *(undefined8 *)(param_1 + 800);
+    puVar4[1] = DAT_1a56e3658;
+    param_2 = param_2 - *(int *)(param_1 + 0x28);
+    *(int *)(puVar4 + 2) = param_2;
+  }
+  else {
+    param_2 = param_2 - *(int *)(param_1 + 0x28);
+  }
+  uVar5 = *(uint *)(param_1 + 0x338);
+  if (*(int *)(param_1 + 0x33c) != 0) {
+    if (*(int *)((long)puVar4 + (ulong)(*(int *)(param_1 + 0x33c) - 1) * 8 + 0x14) == param_2) {
+      return;
+    }
+    uVar5 = uVar5 + 1;
+  }
+  if (*(undefined8 **)(param_1 + 0x70) <= puVar4 + (ulong)(uVar5 + 1) + 2) {
+    _IOGPUMetalCommandBufferStorageGrowSegmentList(param_1);
+    puVar4 = *(undefined8 **)(param_1 + 0x330);
+  }
+  *(int *)(puVar4 + (ulong)uVar5 + 2) = param_2;
+  *(uint *)(param_1 + 0x338) = uVar5;
+  return;
+}
+
+
+
+===== name_fragment=IOGPUMetalCommandBufferStorageBeginSegment =====
+matches=1
+===== name_match=IOGPUMetalCommandBufferStorageBeginSegment =====
+symbol=_IOGPUMetalCommandBufferStorageBeginSegment
+entry=1a56bcfe8
+direct_callers=3
+  caller=kernelCommandCollectTimeStamp entry=1a56ae5c8
+  caller=beginSegment: entry=1a56d0ee4
+  caller=beginSegment: entry=1a56ae314
+direct_callees=3
+  callee=_mtlIOGPUCommandBufferStorageBeginSegmentList entry=1a56bcee4
+  callee=_IOGPUMetalCommandBufferStorageGrowSegmentList entry=1a56bc13c
+  callee=_IOGPUResourceListReset entry=1a56cab00
+
+void _IOGPUMetalCommandBufferStorageBeginSegment
+               (IOGPUMetalCommandBufferStorage *param_1,int param_2)
+
+{
+  IOGPUSegmentResourceDescriptorGroup *pIVar1;
+  IOGPUSegmentResourceDescriptorGroup *pIVar2;
+  IOGPUSegmentResourceListHeader *pIVar3;
+  char *pcVar4;
+  
+  pcVar4 = param_1->field4_0x28;
+  if (param_1->field11_0x78 == (IOGPUSegmentListHeader *)0x0) {
+    _mtlIOGPUCommandBufferStorageBeginSegmentList(param_1);
+  }
+  pIVar1 = param_1->field13_0x88;
+  pIVar2 = (IOGPUSegmentResourceDescriptorGroup *)param_1->field10_0x70;
+  if (pIVar2 <= pIVar1 + 0x800) {
+    _IOGPUMetalCommandBufferStorageGrowSegmentList(param_1);
+    pIVar2 = (IOGPUSegmentResourceDescriptorGroup *)param_1->field10_0x70;
+    pIVar1 = param_1->field13_0x88;
+  }
+  pIVar3 = param_1->field12_0x80;
+  *(undefined4 *)(pIVar3 + 0x18) = 0;
+  *(undefined4 *)(pIVar3 + 0xc) = 0;
+  *(undefined4 *)(pIVar3 + 0x10) = 0;
+  *(int *)(pIVar3 + 8) = param_2 - (int)pcVar4;
+  param_1->field35_0x358 = 0;
+  *(undefined8 *)((long)&param_1->field33_0x34c + 4) = 0;
+  _IOGPUResourceListReset(&param_1->field14_0x90,pIVar3 + 0x20,(long)pIVar2 - (long)pIVar1,1);
+  *(undefined8 *)param_1->field12_0x80 = *(undefined8 *)((long)&param_1->field21_0x304 + 4);
+  return;
+}
+
+
+
+===== name_fragment=IOGPUMetalCommandBufferStorageEndSegment =====
+matches=1
+===== name_match=IOGPUMetalCommandBufferStorageEndSegment =====
+symbol=_IOGPUMetalCommandBufferStorageEndSegment
+entry=1a56bd088
+direct_callers=3
+  caller=endCurrentSegment entry=1a56d0f2c
+  caller=kernelCommandCollectTimeStamp entry=1a56ae5c8
+  caller=endCurrentSegment entry=1a56ae328
+direct_callees=0
+
+void _IOGPUMetalCommandBufferStorageEndSegment(long param_1)
+
+{
+  undefined4 uVar1;
+  uint uVar2;
+  int iVar3;
+  int iVar4;
+  long lVar5;
+  long lVar6;
+  
+  uVar1 = *(undefined4 *)(param_1 + 0x2ac);
+  uVar2 = *(uint *)(param_1 + 0x2b0);
+  iVar3 = *(int *)(param_1 + 0x30);
+  iVar4 = *(int *)(param_1 + 0x28);
+  *(int *)(*(long *)(param_1 + 0x78) + 8) = *(int *)(*(long *)(param_1 + 0x78) + 8) + 1;
+  *(int *)(param_1 + 0x348) = *(int *)(param_1 + 0x348) + 1;
+  lVar5 = *(long *)(param_1 + 0x88);
+  lVar6 = *(long *)(param_1 + 0x80);
+  *(undefined8 *)(param_1 + 0x358) = *(undefined8 *)(param_1 + 0x88);
+  *(long *)(param_1 + 0x350) = lVar6;
+  *(undefined4 *)(lVar6 + 0x18) = uVar1;
+  *(uint *)(lVar6 + 0x1c) = uVar2;
+  *(int *)(lVar6 + 0xc) = iVar3 - iVar4;
+  lVar5 = lVar5 + (ulong)uVar2 * 0x40;
+  *(long *)(param_1 + 0x80) = lVar5;
+  *(long *)(param_1 + 0x88) = lVar5 + 0x20;
+  return;
+}
+
+
+
+===== name_fragment=IOGPUMetalCommandBufferStorageAllocResourceAtIndex =====
+matches=4
+===== name_match=IOGPUMetalCommandBufferStorageAllocResourceAtIndex =====
+symbol=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex
+entry=1a56bc974
+direct_callers=2
+  caller=allocCommandBufferResourceAtIndex: entry=1a56d0ed0
+  caller=allocCommandBufferResourceAtIndex: entry=1a56ae140
+direct_callees=13
+  callee=_malloc_type_realloc entry=1a56d7d9c
+  callee=_IOGPUMetalResourcePoolCreatePooledResource entry=1a56c2c2c
+  callee=deviceRef entry=1a56f9bc0
+  callee=allocatedSize entry=1a56f93c0
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+  callee=_MTLValidationEnabled entry=1a56d784c
+  callee=stringWithFormat: entry=1a56fc060
+  callee=setLabel: entry=1a56fbba0
+  callee=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex.cold.1 entry=1a56d4df8
+  callee=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex.cold.3 entry=1a56d4e8c
+  callee=_os_log_type_enabled entry=1a56d7edc
+  callee=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex.cold.2 entry=1a56d4e24
+  callee=_abort entry=1a56d7a7c
+
+void _IOGPUMetalCommandBufferStorageAllocResourceAtIndex(ID *param_1,ulong param_2)
+
+{
+  undefined8 *puVar1;
+  int iVar2;
+  long lVar3;
+  ID IVar4;
+  ID IVar5;
+  ID IVar6;
+  ulong uVar7;
+  ulong unaff_x19;
+  long lVar8;
+  undefined8 uVar9;
+  undefined8 uVar10;
+  byte local_51;
+  
+  if ((uint)param_2 < (uint)param_1[99]) {
+    lVar3 = *(long *)(param_1[0x62] + (param_2 & 0xffffffff) * 8);
+    unaff_x19 = param_2;
+    if (lVar3 != 0) {
+      param_2 = param_2 & 0xffffffff;
+      puVar1 = (undefined8 *)(param_1[0x60] + param_2 * 0x40);
+      lVar8 = puVar1[4];
+      if (lVar8 != 0) {
+        IVar6 = param_1[0x5d];
+        uVar7 = param_1[0x5e];
+        if (IVar6 < uVar7) {
+          IVar4 = param_1[0x5f];
+        }
+        else {
+          IVar6 = 0x20;
+          if (uVar7 != 0) {
+            IVar6 = uVar7 << 1;
+          }
+          param_1[0x5e] = IVar6;
+          IVar4 = _malloc_type_realloc(param_1[0x5f],IVar6 << 3,0x80040b8603338);
+          param_1[0x5f] = IVar4;
+          IVar6 = param_1[0x5d];
+        }
+        param_1[0x5d] = IVar6 + 1;
+        *(long *)(IVar4 + IVar6 * 8) = lVar8;
+        lVar3 = *(long *)(param_1[0x62] + param_2 * 8);
+      }
+      local_51 = 1;
+      IVar6 = _IOGPUMetalResourcePoolCreatePooledResource(lVar3,&local_51);
+      if (IVar6 != 0) {
+        if (*___globalGPUCommPage != 0) {
+          IVar4 = objc_stub::deviceRef(*param_1);
+          uVar9 = *(undefined8 *)(IVar6 + (long)IOGPUMetalResource::_res + 0x60);
+          IVar5 = objc_stub::allocatedSize(IVar6);
+          _IOGPUDeviceTraceEvent
+                    (IVar4,8,0x2d,uVar9,IVar5,
+                     *(undefined8 *)(IVar6 + (long)IOGPUMetalResource::_res + 0x48),
+                     param_2 | (ulong)local_51 << 0x1f);
+        }
+        iVar2 = _MTLValidationEnabled();
+        if (iVar2 != 0) {
+          IVar4 = objc_stub::stringWithFormat_(DAT_1e591ddc0,&cf_IOGPUMetalResourcePool_dbclass__d_)
+          ;
+          objc_stub::setLabel_(IVar6,IVar4);
+        }
+        puVar1[4] = IVar6;
+        lVar3 = *(long *)(IVar6 + (long)IOGPUMetalResource::_res + 0x80);
+        puVar1[1] = lVar3;
+        puVar1[3] = lVar3;
+        puVar1[2] = (*(ulong *)(IVar6 + (long)IOGPUMetalResource::_res + 0x28) & 0xffffffffffffff) +
+                    lVar3;
+        *puVar1 = *(undefined8 *)(IVar6 + (long)IOGPUMetalResource::_res + 0x48);
+        lVar3 = IVar6 + (long)IOGPUMetalResource::_res;
+        uVar10 = *(undefined8 *)(lVar3 + 0x28);
+        uVar9 = *(undefined8 *)(lVar3 + 0x20);
+        puVar1[7] = *(undefined8 *)(lVar3 + 0x30);
+        puVar1[6] = uVar10;
+        puVar1[5] = uVar9;
+        return;
+      }
+      goto LAB_1a56bcb54;
+    }
+  }
+  else {
+    _IOGPUMetalCommandBufferStorageAllocResourceAtIndex_cold_1();
+  }
+  _IOGPUMetalCommandBufferStorageAllocResourceAtIndex_cold_3();
+LAB_1a56bcb54:
+  iVar2 = _os_log_type_enabled(DAT_1e598f2d0,0x11);
+  if (iVar2 != 0) {
+    _IOGPUMetalCommandBufferStorageAllocResourceAtIndex_cold_2(unaff_x19);
+  }
+                    /* WARNING: Subroutine does not return */
+  _abort();
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageAllocResourceAtIndex =====
+symbol=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex.cold.1
+entry=1a56d4df8
+direct_callers=1
+  caller=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex entry=1a56bc974
+direct_callees=1
+  callee=___assert_rtn entry=1a56d797c
+
+void _IOGPUMetalCommandBufferStorageAllocResourceAtIndex_cold_1(void)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn("IOGPUMetalCommandBufferStorageAllocResourceAtIndex",
+                "IOGPUMetalCommandBufferStorage.mm",0x198,
+                "dbclass < storage->commandBufferResourceCount");
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageAllocResourceAtIndex =====
+symbol=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex.cold.2
+entry=1a56d4e24
+direct_callers=1
+  caller=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex entry=1a56bc974
+direct_callees=6
+  callee=_OUTLINED_FUNCTION_1 entry=1a56be9c4
+  callee=_OUTLINED_FUNCTION_1 entry=1a56b1574
+  callee=_OUTLINED_FUNCTION_4 entry=1a56be9d8
+  callee=__os_log_fault_impl entry=1a56d7a5c
+  callee=_OUTLINED_FUNCTION_0 entry=1a56be9ac
+  callee=___stack_chk_fail entry=1a56d79fc
+
+void _IOGPUMetalCommandBufferStorageAllocResourceAtIndex_cold_2(void)
+
+{
+  undefined1 in_ZR;
+  
+  _OUTLINED_FUNCTION_1();
+  _OUTLINED_FUNCTION_1();
+  _OUTLINED_FUNCTION_4();
+  __os_log_fault_impl();
+  _OUTLINED_FUNCTION_0();
+  if ((bool)in_ZR) {
+    return;
+  }
+                    /* WARNING: Subroutine does not return */
+  ___stack_chk_fail();
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageAllocResourceAtIndex =====
+symbol=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex.cold.3
+entry=1a56d4e8c
+direct_callers=1
+  caller=_IOGPUMetalCommandBufferStorageAllocResourceAtIndex entry=1a56bc974
+direct_callees=1
+  callee=___assert_rtn entry=1a56d797c
+
+void _IOGPUMetalCommandBufferStorageAllocResourceAtIndex_cold_3(void)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn("IOGPUMetalCommandBufferStorageAllocResourceAtIndex",
+                "IOGPUMetalCommandBufferStorage.mm",0x199,"storage->hwResourcePools[dbclass]");
+}
+
+
+
+===== name_fragment=IOGPUMetalCommandBufferStorageFinalizeResidencySetList =====
+matches=7
+===== name_match=IOGPUMetalCommandBufferStorageFinalizeResidencySetList =====
+symbol=_IOGPUMetalCommandBufferStorageFinalizeResidencySetList
+entry=1a56bdc74
+direct_callers=1
+  caller=FUN_1a56bdc78 entry=1a56bdc78
+direct_callees=0
+
+void _IOGPUMetalCommandBufferStorageFinalizeResidencySetList(long param_1,long param_2)
+
+{
+  bool bVar1;
+  int *piVar2;
+  ulong uVar3;
+  ulong uVar4;
+  int iVar5;
+  long lVar6;
+  long *plVar7;
+  bool bVar8;
+  int *piVar9;
+  
+  if (param_1 == 0) {
+    _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_6();
+LAB_1a56bdd14:
+    _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_5();
+LAB_1a56bdd18:
+    _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_4();
+LAB_1a56bdd1c:
+    _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_3();
+  }
+  else {
+    piVar2 = *(int **)(param_1 + 0x380);
+    if (piVar2 == (int *)0x0) goto LAB_1a56bdd14;
+    if (param_2 == 0) goto LAB_1a56bdd18;
+    uVar3 = *(ulong *)(param_2 + 0x18);
+    if (0x20 < uVar3) goto LAB_1a56bdd1c;
+    uVar4 = *(ulong *)(param_2 + 0x40);
+    if (uVar4 < 9) {
+      lVar6 = 0;
+      iVar5 = 0;
+      bVar1 = true;
+      do {
+        bVar8 = bVar1;
+        plVar7 = *(long **)(param_2 + lVar6 * 0x28 + 0x10);
+        if (plVar7 != (long *)0x0) {
+          piVar9 = piVar2 + (long)iVar5 + 1;
+          do {
+            *piVar9 = (int)plVar7[2];
+            plVar7 = (long *)*plVar7;
+            iVar5 = iVar5 + 1;
+            piVar9 = piVar9 + 1;
+          } while (plVar7 != (long *)0x0);
+        }
+        lVar6 = 1;
+        bVar1 = false;
+      } while (bVar8);
+      if (uVar4 + uVar3 == (long)iVar5) {
+        *piVar2 = iVar5;
+        *(undefined1 *)(param_1 + 0x398) = 1;
+        return;
+      }
+      goto LAB_1a56bdd24;
+    }
+  }
+  _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_2();
+LAB_1a56bdd24:
+                    /* WARNING: Subroutine does not return */
+  _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_1();
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageFinalizeResidencySetList =====
+symbol=_IOGPUMetalCommandBufferStorageFinalizeResidencySetList.cold.1
+entry=1a56d52ec
+direct_callers=1
+  caller=FUN_1a56bdc78 entry=1a56bdc78
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_5 entry=1a56be9f8
+  callee=___assert_rtn entry=1a56d797c
+
+void _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_1(void)
+
+{
+  undefined1 auVar1 [16];
+  
+  auVar1 = _OUTLINED_FUNCTION_5();
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn(auVar1._0_8_,auVar1._8_8_,0x594,
+                "index == list->resourceGroup[0].size() + list->resourceGroup[1].size()");
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageFinalizeResidencySetList =====
+symbol=_IOGPUMetalCommandBufferStorageFinalizeResidencySetList.cold.2
+entry=1a56d5314
+direct_callers=1
+  caller=FUN_1a56bdc78 entry=1a56bdc78
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_5 entry=1a56be9f8
+  callee=___assert_rtn entry=1a56d797c
+
+void _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_2(void)
+
+{
+  undefined1 auVar1 [16];
+  
+  auVar1 = _OUTLINED_FUNCTION_5();
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn(auVar1._0_8_,auVar1._8_8_,0x587,"list->resourceGroup[1].size() <= limit[1]");
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageFinalizeResidencySetList =====
+symbol=_IOGPUMetalCommandBufferStorageFinalizeResidencySetList.cold.3
+entry=1a56d533c
+direct_callers=1
+  caller=FUN_1a56bdc78 entry=1a56bdc78
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_5 entry=1a56be9f8
+  callee=___assert_rtn entry=1a56d797c
+
+void _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_3(void)
+
+{
+  undefined1 auVar1 [16];
+  
+  auVar1 = _OUTLINED_FUNCTION_5();
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn(auVar1._0_8_,auVar1._8_8_,0x586,"list->resourceGroup[0].size() <= limit[0]");
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageFinalizeResidencySetList =====
+symbol=_IOGPUMetalCommandBufferStorageFinalizeResidencySetList.cold.4
+entry=1a56d5364
+direct_callers=1
+  caller=FUN_1a56bdc78 entry=1a56bdc78
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_5 entry=1a56be9f8
+  callee=___assert_rtn entry=1a56d797c
+
+void _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_4(void)
+
+{
+  undefined1 auVar1 [16];
+  
+  auVar1 = _OUTLINED_FUNCTION_5();
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn(auVar1._0_8_,auVar1._8_8_,0x585,"list");
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageFinalizeResidencySetList =====
+symbol=_IOGPUMetalCommandBufferStorageFinalizeResidencySetList.cold.5
+entry=1a56d538c
+direct_callers=1
+  caller=FUN_1a56bdc78 entry=1a56bdc78
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_5 entry=1a56be9f8
+  callee=___assert_rtn entry=1a56d797c
+
+void _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_5(void)
+
+{
+  undefined1 auVar1 [16];
+  
+  auVar1 = _OUTLINED_FUNCTION_5();
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn(auVar1._0_8_,auVar1._8_8_,0x584,"dest->resourceGroupArgs");
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageFinalizeResidencySetList =====
+symbol=_IOGPUMetalCommandBufferStorageFinalizeResidencySetList.cold.6
+entry=1a56d53b4
+direct_callers=1
+  caller=FUN_1a56bdc78 entry=1a56bdc78
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_5 entry=1a56be9f8
+  callee=___assert_rtn entry=1a56d797c
+
+void _IOGPUMetalCommandBufferStorageFinalizeResidencySetList_cold_6(void)
+
+{
+  undefined1 auVar1 [16];
+  
+  auVar1 = _OUTLINED_FUNCTION_5();
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn(auVar1._0_8_,auVar1._8_8_,0x583,"dest");
+}
+
+
+
+===== name_fragment=IOGPUMetalCommandBufferStorageGetSegmentListPointers =====
+matches=1
+===== name_match=IOGPUMetalCommandBufferStorageGetSegmentListPointers =====
+symbol=_IOGPUMetalCommandBufferStorageGetSegmentListPointers
+entry=1a56bcf80
+direct_callers=2
+  caller=getSegmentListPointerStart:current:end: entry=1a56d0e40
+  caller=getSegmentListPointerStart:current:end: entry=1a56ae2bc
+direct_callees=1
+  callee=_mtlIOGPUCommandBufferStorageBeginSegmentList entry=1a56bcee4
+
+void _IOGPUMetalCommandBufferStorageGetSegmentListPointers
+               (IOGPUMetalCommandBufferStorage *param_1,undefined8 *param_2,undefined8 *param_3,
+               undefined8 *param_4)
+
+{
+  if (param_1->field11_0x78 == (IOGPUSegmentListHeader *)0x0) {
+    _mtlIOGPUCommandBufferStorageBeginSegmentList(param_1);
+  }
+  if (param_2 != (undefined8 *)0x0) {
+    *param_2 = param_1->field11_0x78;
+  }
+  if (param_3 != (undefined8 *)0x0) {
+    *param_3 = param_1->field12_0x80;
+  }
+  if (param_4 != (undefined8 *)0x0) {
+    *param_4 = param_1->field10_0x70;
+  }
+  return;
+}
+
+
+
+===== name_fragment=IOGPUMetalCommandBufferStorageGrowSegmentList =====
+matches=3
+===== name_match=IOGPUMetalCommandBufferStorageGrowSegmentList =====
+symbol=_IOGPUMetalCommandBufferStorageGrowSegmentList
+entry=1a56bc13c
+direct_callers=5
+  caller=_IOGPUMetalCommandBufferStorageBeginKernelCommands entry=1a56bcb74
+  caller=_IOGPUMetalCommandBufferStorageBeginSegment entry=1a56bcfe8
+  caller=growSegmentList entry=1a56d0f70
+  caller=growSegmentList entry=1a56ae304
+  caller=_IOGPUMetalCommandBufferStorageCreateExt entry=1a56bc00c
+direct_callees=10
+  callee=setShmemSize: entry=1a56fbd20
+  callee=_IOGPUMetalDeviceShmemPoolCreateShmem entry=1a56b6b20
+  callee=_memcpy entry=1a56d7dac
+  callee=_IOGPUMetalDeviceShmemRelease entry=1a56b67e4
+  callee=_IOGPUResourceListReset entry=1a56cab00
+  callee=_os_log_type_enabled entry=1a56d7edc
+  callee=_IOGPUMetalCommandBufferStorageGrowSegmentList.cold.2 entry=1a56d4b9c
+  callee=_abort entry=1a56d7a7c
+  callee=_IOGPUMetalCommandBufferStorageGrowSegmentList.cold.1 entry=1a56d4b18
+  callee=_MTLReleaseAssertionFailure entry=1a56d778c
+
+void _IOGPUMetalCommandBufferStorageGrowSegmentList(long param_1)
+
+{
+  uint uVar1;
+  uint uVar2;
+  code *pcVar3;
+  int iVar4;
+  long lVar5;
+  long lVar6;
+  long lVar7;
+  long lVar8;
+  ulong unaff_x30;
+  
+  lVar8 = *(long *)(param_1 + 0x60);
+  uVar1 = *(uint *)(lVar8 + IOGPUMetalDeviceShmem::_shmemSize);
+  uVar2 = uVar1 << 1;
+  if (0x1fffff < uVar1) {
+    uVar2 = uVar1 + 0x100000;
+  }
+  objc_stub::setShmemSize_(*(ID *)(lVar8 + IOGPUMetalDeviceShmem::_priv),(ulong)uVar2);
+  lVar8 = _IOGPUMetalDeviceShmemPoolCreateShmem
+                    (*(undefined8 *)(lVar8 + IOGPUMetalDeviceShmem::_priv));
+  if (lVar8 == 0) {
+    lVar8 = *(long *)(param_1 + 0x78);
+    iVar4 = _os_log_type_enabled(DAT_1e598f2d0,0x11);
+    if (lVar8 == 0) {
+      if (iVar4 != 0) {
+        _IOGPUMetalCommandBufferStorageGrowSegmentList_cold_2();
+      }
+    }
+    else if (iVar4 != 0) {
+      _IOGPUMetalCommandBufferStorageGrowSegmentList_cold_1(lVar8);
+                    /* WARNING: Subroutine does not return */
+      _abort();
+    }
+                    /* WARNING: Subroutine does not return */
+    _abort();
+  }
+  _memcpy(*(void **)(lVar8 + IOGPUMetalDeviceShmem::_virtualAddress),*(void **)(param_1 + 0x68),
+          (ulong)*(uint *)(*(long *)(param_1 + 0x60) + (long)IOGPUMetalDeviceShmem::_shmemSize));
+  _IOGPUMetalDeviceShmemRelease(*(undefined8 *)(param_1 + 0x60));
+  *(long *)(param_1 + 0x60) = lVar8;
+  if (*(int *)(param_1 + 0x344) == 0) {
+    if (*(int *)(param_1 + 0x340) != 0) {
+      if (*(int *)(param_1 + 0x340) == 1) {
+        lVar5 = *(long *)(param_1 + 0x68);
+        lVar7 = *(long *)(lVar8 + IOGPUMetalDeviceShmem::_virtualAddress);
+        uVar2 = *(uint *)(lVar8 + IOGPUMetalDeviceShmem::_shmemSize);
+        *(long *)(param_1 + 0x68) = lVar7;
+        *(ulong *)(param_1 + 0x70) = lVar7 + (ulong)uVar2;
+        lVar7 = lVar7 + (*(long *)(param_1 + 0x330) - lVar5);
+        *(long *)(param_1 + 0x330) = lVar7;
+        *(long *)(param_1 + 0x328) = lVar7;
+        return;
+      }
+                    /* WARNING: Subroutine does not return */
+      _MTLReleaseAssertionFailure("_mtlIOGPUCommandBufferStorageRebaseShmemHeader",0x26a,"false",0);
+    }
+    lVar5 = *(long *)(param_1 + 0x68);
+    lVar7 = *(long *)(lVar8 + IOGPUMetalDeviceShmem::_virtualAddress);
+    uVar2 = *(uint *)(lVar8 + IOGPUMetalDeviceShmem::_shmemSize);
+    *(long *)(param_1 + 0x68) = lVar7;
+    *(ulong *)(param_1 + 0x70) = lVar7 + (ulong)uVar2;
+    lVar8 = lVar7 + (*(long *)(param_1 + 0x78) - lVar5);
+    *(long *)(param_1 + 0x328) = lVar8;
+    lVar5 = *(long *)(param_1 + 0x80) - lVar5;
+    lVar7 = lVar7 + lVar5;
+    *(long *)(param_1 + 0x78) = lVar8;
+    *(long *)(param_1 + 0x80) = lVar7;
+    lVar7 = lVar7 + 0x20;
+    *(long *)(param_1 + 0x88) = lVar7;
+    lVar5 = (ulong)uVar2 - lVar5;
+  }
+  else {
+    lVar5 = *(long *)(param_1 + 0x68);
+    lVar6 = *(long *)(lVar8 + IOGPUMetalDeviceShmem::_virtualAddress);
+    uVar2 = *(uint *)(lVar8 + IOGPUMetalDeviceShmem::_shmemSize);
+    *(long *)(param_1 + 0x68) = lVar6;
+    *(ulong *)(param_1 + 0x70) = lVar6 + (ulong)uVar2;
+    lVar5 = *(long *)(param_1 + 0x80) - lVar5;
+    lVar7 = lVar6 + lVar5;
+    *(long *)(param_1 + 0x78) = lVar6;
+    *(long *)(param_1 + 0x80) = lVar7;
+    lVar7 = lVar7 + 0x20;
+    *(long *)(param_1 + 0x88) = lVar7;
+    lVar5 = (ulong)uVar2 - lVar5;
+  }
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar3 = (code *)SoftwareBreakpoint(0xc471,0x1a56bc2cc);
+    (*pcVar3)();
+  }
+  _IOGPUResourceListReset(param_1 + 0x90,lVar7,lVar5 + -0x20,0);
+  return;
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageGrowSegmentList =====
+symbol=_IOGPUMetalCommandBufferStorageGrowSegmentList.cold.1
+entry=1a56d4b18
+direct_callers=1
+  caller=_IOGPUMetalCommandBufferStorageGrowSegmentList entry=1a56bc13c
+direct_callees=6
+  callee=_OUTLINED_FUNCTION_1 entry=1a56be9c4
+  callee=_OUTLINED_FUNCTION_1 entry=1a56b1574
+  callee=_OUTLINED_FUNCTION_4 entry=1a56be9d8
+  callee=__os_log_fault_impl entry=1a56d7a5c
+  callee=_OUTLINED_FUNCTION_0 entry=1a56be9ac
+  callee=___stack_chk_fail entry=1a56d79fc
+
+void _IOGPUMetalCommandBufferStorageGrowSegmentList_cold_1(void)
+
+{
+  undefined1 in_ZR;
+  
+  _OUTLINED_FUNCTION_1();
+  _OUTLINED_FUNCTION_1();
+  _OUTLINED_FUNCTION_4();
+  __os_log_fault_impl();
+  _OUTLINED_FUNCTION_0();
+  if ((bool)in_ZR) {
+    return;
+  }
+                    /* WARNING: Subroutine does not return */
+  ___stack_chk_fail();
+}
+
+
+
+===== name_match=IOGPUMetalCommandBufferStorageGrowSegmentList =====
+symbol=_IOGPUMetalCommandBufferStorageGrowSegmentList.cold.2
+entry=1a56d4b9c
+direct_callers=1
+  caller=_IOGPUMetalCommandBufferStorageGrowSegmentList entry=1a56bc13c
+direct_callees=6
+  callee=_OUTLINED_FUNCTION_1 entry=1a56be9c4
+  callee=_OUTLINED_FUNCTION_1 entry=1a56b1574
+  callee=_OUTLINED_FUNCTION_4 entry=1a56be9d8
+  callee=__os_log_fault_impl entry=1a56d7a5c
+  callee=_OUTLINED_FUNCTION_0 entry=1a56be9ac
+  callee=___stack_chk_fail entry=1a56d79fc
+
+void _IOGPUMetalCommandBufferStorageGrowSegmentList_cold_2(void)
+
+{
+  undefined1 in_ZR;
+  
+  _OUTLINED_FUNCTION_1();
+  _OUTLINED_FUNCTION_1();
+  _OUTLINED_FUNCTION_4();
+  __os_log_fault_impl();
+  _OUTLINED_FUNCTION_0();
+  if ((bool)in_ZR) {
+    return;
+  }
+                    /* WARNING: Subroutine does not return */
+  ___stack_chk_fail();
+}
+
+
+
+===== name_fragment=IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer =====
+matches=1
+===== name_match=IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer =====
+symbol=_IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer
+entry=1a56bde88
+direct_callers=1
+  caller=commitFillArgs:count:args:argsSize:commitFeedback: entry=1a56d20a4
+direct_callees=1
+  callee=_mtlIOGPUCommandBufferStorageBeginSegmentList entry=1a56bcee4
+
+void _IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer(IOGPUMetalCommandBufferStorage *param_1)
+
+{
+  uint uVar1;
+  IOGPUSegmentResourceListHeader *pIVar2;
+  long lVar3;
+  IOGPUSegmentKernelCommmandListHeader *pIVar4;
+  
+  pIVar4 = param_1->field26_0x328;
+  if (param_1->field31_0x340 == 1) {
+    lVar3 = *(long *)&param_1->field27_0x330;
+    uVar1 = param_1->field29_0x338 + 1;
+    *(uint *)(lVar3 + 8) = uVar1;
+    param_1->field26_0x328 =
+         (IOGPUSegmentKernelCommmandListHeader *)(lVar3 + (ulong)uVar1 * 8 + 0x10);
+    param_1->field31_0x340 = 0xffffffff;
+    param_1->field27_0x330 = 0;
+    param_1->field28_0x334 = 0;
+  }
+  else {
+    if (param_1->field31_0x340 != 0) {
+      if (pIVar4 != (IOGPUSegmentKernelCommmandListHeader *)param_1->field9_0x68)
+      goto LAB_1a56bdf1c;
+      _mtlIOGPUCommandBufferStorageBeginSegmentList(param_1);
+    }
+    pIVar2 = param_1->field12_0x80;
+    *(int *)(param_1->field11_0x78 + 0xc) = (int)pIVar2 - (int)param_1->field11_0x78;
+    param_1->field26_0x328 = (IOGPUSegmentKernelCommmandListHeader *)pIVar2;
+    param_1->field31_0x340 = 0xffffffff;
+    param_1->field11_0x78 = (IOGPUSegmentListHeader *)0x0;
+    param_1->field13_0x88 = (IOGPUSegmentResourceDescriptorGroup *)0x0;
+    param_1->field12_0x80 = (IOGPUSegmentResourceListHeader *)0x0;
+    param_1->field35_0x358 = 0;
+    *(undefined8 *)((long)&param_1->field33_0x34c + 4) = 0;
+    *(undefined4 *)&param_1->field36_0x360 = 0;
+  }
+LAB_1a56bdf1c:
+  *(uint *)(pIVar4 + 0xc) = *(uint *)(pIVar4 + 0xc) | 0x80000000;
+  return;
+}
+
+
+
+===== name_fragment=_mtlIOGPUCommandBufferStorageBeginSegmentList =====
+matches=1
+===== name_match=_mtlIOGPUCommandBufferStorageBeginSegmentList =====
+symbol=_mtlIOGPUCommandBufferStorageBeginSegmentList
+entry=1a56bcee4
+direct_callers=4
+  caller=_IOGPUMetalCommandBufferStorageGetSegmentListPointers entry=1a56bcf80
+  caller=_IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer entry=1a56bde88
+  caller=_IOGPUMetalCommandBufferStorageBeginSegment entry=1a56bcfe8
+  caller=_IOGPUMetalCommandBufferStorageFinalizeShmemHeader entry=1a56bccec
+direct_callees=1
+  callee=_MTLReleaseAssertionFailure entry=1a56d778c
+
+/* _mtlIOGPUCommandBufferStorageBeginSegmentList(IOGPUMetalCommandBufferStorage*) */
+
+void _mtlIOGPUCommandBufferStorageBeginSegmentList(IOGPUMetalCommandBufferStorage *param_1)
+
+{
+  uint uVar1;
+  unsigned_int uVar2;
+  undefined8 uVar3;
+  char *pcVar4;
+  IOGPUSegmentKernelCommmandListHeader *pIVar5;
+  long lVar6;
+  
+  uVar2 = param_1->field31_0x340;
+  if (uVar2 == 0xffffffff) {
+    pIVar5 = param_1->field26_0x328;
+  }
+  else {
+    if (uVar2 != 1) {
+      if (uVar2 == 0) {
+        pcVar4 = "storage->currentShmemHeaderType != eIOGPUSegmentListShmemHeaderTypeSegmentList";
+        uVar3 = 0x2fd;
+      }
+      else {
+        pcVar4 = "false";
+        uVar3 = 0x308;
+      }
+                    /* WARNING: Subroutine does not return */
+      _MTLReleaseAssertionFailure("_mtlIOGPUCommandBufferStorageBeginSegmentList",uVar3,pcVar4,0);
+    }
+    lVar6 = *(long *)&param_1->field27_0x330;
+    uVar1 = param_1->field29_0x338 + 1;
+    *(uint *)(lVar6 + 8) = uVar1;
+    pIVar5 = (IOGPUSegmentKernelCommmandListHeader *)(lVar6 + (ulong)uVar1 * 8 + 0x10);
+    param_1->field26_0x328 = pIVar5;
+    param_1->field27_0x330 = 0;
+    param_1->field28_0x334 = 0;
+  }
+  param_1->field31_0x340 = 0;
+  param_1->field11_0x78 = (IOGPUSegmentListHeader *)pIVar5;
+  *(IOGPUSegmentListShmemHeader **)pIVar5 = param_1->field25_0x320;
+  *(undefined8 *)(pIVar5 + 8) = 0;
+  param_1->field12_0x80 = (IOGPUSegmentResourceListHeader *)(pIVar5 + 0x10);
+  param_1->field13_0x88 = (IOGPUSegmentResourceDescriptorGroup *)(pIVar5 + 0x30);
+  return;
+}
+
+
+
+===== name_fragment=_mtlIOGPUCommandBufferStorageEndSegmentList =====
+matches=0
+===== name_fragment=commitFillArgs:count:args:argsSize:commitFeedback: =====
+matches=4
+===== name_match=commitFillArgs:count:args:argsSize:commitFeedback: =====
+symbol=commitFillArgs:count:args:argsSize:commitFeedback:
+entry=1a56d20a4
+direct_callers=1
+  caller=_commit:count:commitFeedback: entry=1a56d244c
+direct_callees=9
+  callee=commandAllocator entry=1a56f96c0
+  callee=getGeneration entry=1a56fa180
+  callee=commandBufferStorage entry=1a56f9780
+  callee=_IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer entry=1a56bde88
+  callee=__Block_copy entry=1a56d786c
+  callee=fillCommandBufferArgs: entry=1a56f9fc0
+  callee=-[IOGPUMetal4CommandQueue_commitFillArgs:count:args:argsSize:commitFeedback:].cold.1 entry=1a56d70bc
+  callee=_objc_alloc entry=1a56d7dcc
+  callee=initWithIOGPUError:MTL4QueueError: entry=1a56fa960
+
+/* WARNING: Removing unreachable block (ram,0x0001a56d22cc) */
+/* Function Stack Size: 0x34 bytes */
+
+void IOGPUMetal4CommandQueue::commitFillArgs_count_args_argsSize_commitFeedback_
+               (ID param_1,SEL param_2,ID *param_3,unsigned_long_long param_4,
+               unsigned_long_long param_5,unsigned_int param_6,ID param_7)
+
+{
+  undefined8 uVar1;
+  ID IVar2;
+  ID IVar3;
+  ID IVar4;
+  ID IVar5;
+  long lVar6;
+  undefined8 uVar7;
+  unsigned_long_long uVar8;
+  ID *pIVar9;
+  ID self;
+  undefined1 auVar10 [16];
+  undefined8 local_f8;
+  undefined8 local_f0;
+  code *local_e8;
+  undefined *puStack_e0;
+  ID local_d8;
+  ID IStack_d0;
+  ID local_c8;
+  ID IStack_c0;
+  ID local_b8;
+  undefined8 uStack_b0;
+  undefined4 local_a8;
+  undefined1 local_a4;
+  undefined8 local_a0;
+  undefined8 local_98;
+  undefined8 local_90;
+  undefined *puStack_88;
+  ID local_80;
+  
+  uVar1 = DAT_1a56e3548;
+  if (param_4 != 0) {
+    uVar7 = *(undefined8 *)(param_1 + (long)_lastSubmissionID);
+    uVar8 = param_4;
+    pIVar9 = param_3;
+    do {
+      self = *pIVar9;
+      IVar2 = objc_stub::commandAllocator(self);
+      IVar3 = objc_stub::getGeneration(IVar2);
+      IVar4 = objc_stub::commandBufferStorage(self);
+      if (IVar2 == 0 || IVar4 == 0) {
+        auVar10 = __IOGPUMetal4CommandQueue_commitFillArgs_count_args_argsSize_commitFeedback___cold_1
+                            ();
+        if ((int)param_4 != 0) {
+          IVar2 = _objc_alloc(DAT_1e591d9f0);
+          objc_stub::initWithIOGPUError_MTL4QueueError_(IVar2,param_4 & 0xffffffff,1);
+        }
+        lVar6 = *(long *)(*(long *)(auVar10._0_8_ + 0x20) + (long)_scheduledHandler);
+                    /* WARNING: Could not recover jumptable at 0x0001a56d22d0. Too many branches */
+                    /* WARNING: Treating indirect jump as call */
+        (**(code **)(lVar6 + 0x10))(lVar6,auVar10._8_8_,param_3);
+        return;
+      }
+      _IOGPUMetal4CommandBufferStorageFinalizeCommandBuffer();
+      if (*(long *)(param_1 + (long)_scheduledHandler) == 0) {
+        IVar5 = 0;
+      }
+      else {
+        local_a0 = DAT_1e598ebc0;
+        local_98 = uVar1;
+        local_90 = 0x1a56d2254;
+        puStack_88 = &___block_descriptor_40_e8_32o_e17_v36__0Q8Q16I24Q28l;
+        local_80 = param_1;
+        IVar5 = __Block_copy(&local_a0);
+      }
+      *(ID *)(param_5 + 0x10) = IVar5;
+      local_f8 = DAT_1e598ebc0;
+      local_f0 = uVar1;
+      local_e8 = 
+      ___77__IOGPUMetal4CommandQueue_commitFillArgs_count_args_argsSize_commitFeedback___block_invoke_10
+      ;
+      puStack_e0 = &___block_descriptor_85_e8_32o40o48o56o_e17_v36__0Q8Q16I24Q28l;
+      local_a8 = (undefined4)IVar3;
+      local_d8 = param_1;
+      IStack_d0 = self;
+      local_c8 = IVar2;
+      IStack_c0 = param_7;
+      local_b8 = IVar4;
+      uStack_b0 = uVar7;
+      local_a4 = uVar8 == 1;
+      IVar2 = __Block_copy(&local_f8);
+      *(ID *)(param_5 + 0x18) = IVar2;
+      param_3 = (ID *)param_5;
+      objc_stub::fillCommandBufferArgs_(self);
+      param_5 = param_5 + param_6;
+      uVar8 = uVar8 - 1;
+      pIVar9 = pIVar9 + 1;
+    } while (uVar8 != 0);
+  }
+  return;
+}
+
+
+
+===== name_match=commitFillArgs:count:args:argsSize:commitFeedback: =====
+symbol=___77-[IOGPUMetal4CommandQueue_commitFillArgs:count:args:argsSize:commitFeedback:]_block_invoke.10
+entry=1a56d22d4
+direct_callers=1
+  caller=commitFillArgs:count:args:argsSize:commitFeedback: entry=1a56d20a4
+direct_callees=4
+  callee=_objc_alloc entry=1a56d7dcc
+  callee=initWithIOGPUError:MTL4QueueError: entry=1a56fa960
+  callee=commandBufferComplete:commandAllocator:commandAllocatorGeneration:storage:submissionID:startTime:completionTime:kernelError:error:commitFeedback:commitComplete: entry=1a56f9720
+  callee=_objc_release entry=1a56d7e9c
+
+/* WARNING: Function: _objc_release replaced with injection: _objc_release_fixup */
+
+undefined8
+___77__IOGPUMetal4CommandQueue_commitFillArgs_count_args_argsSize_commitFeedback___block_invoke_10
+          (long param_1,undefined8 param_2,undefined8 param_3,uint param_4)
+
+{
+  code *pcVar1;
+  ID IVar2;
+  ulong unaff_x30;
+  
+  if (param_4 == 0) {
+    IVar2 = 0;
+  }
+  else {
+    IVar2 = _objc_alloc(DAT_1e591d9f0);
+    IVar2 = objc_stub::initWithIOGPUError_MTL4QueueError_(IVar2,(ulong)param_4,1);
+  }
+  objc_stub::
+  commandBufferComplete_commandAllocator_commandAllocatorGeneration_storage_submissionID_startTime_completionTime_kernelError_error_commitFeedback_commitComplete_
+            (*(ID *)(param_1 + 0x20),*(undefined8 *)(param_1 + 0x28),*(undefined8 *)(param_1 + 0x30)
+             ,(ulong)*(uint *)(param_1 + 0x50),*(undefined8 *)(param_1 + 0x40),
+             *(undefined8 *)(param_1 + 0x48),param_2,param_3,param_4,IVar2,
+             *(undefined8 *)(param_1 + 0x38),*(undefined1 *)(param_1 + 0x54));
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar1 = (code *)SoftwareBreakpoint(0xc471,0x1a56d237c);
+    (*pcVar1)();
+  }
+  return 0;
+}
+
+
+
+===== name_match=commitFillArgs:count:args:argsSize:commitFeedback: =====
+symbol=-[IOGPUMetal4CommandQueue_commitFillArgs:count:args:argsSize:commitFeedback:].cold.1
+entry=1a56d70bc
+direct_callers=1
+  caller=commitFillArgs:count:args:argsSize:commitFeedback: entry=1a56d20a4
+direct_callees=1
+  callee=___assert_rtn entry=1a56d797c
+
+void __IOGPUMetal4CommandQueue_commitFillArgs_count_args_argsSize_commitFeedback___cold_1(void)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn("-[IOGPUMetal4CommandQueue commitFillArgs:count:args:argsSize:commitFeedback:]",
+                "IOGPUMetal4CommandQueue.mm",0x137,"allocator && storage");
+}
+
+
+
+===== name_match=commitFillArgs:count:args:argsSize:commitFeedback: =====
+symbol=commitFillArgs:count:args:argsSize:commitFeedback:
+entry=1a56f9840
+direct_callers=1
+  caller=_commit:count:commitFeedback: entry=1a56d244c
+direct_callees=1
+  callee=_objc_msgSend entry=180095800
+
+ID __objc_msgSend_stub objc_stub::commitFillArgs_count_args_argsSize_commitFeedback_(ID self,...)
+
+{
+  ID IVar1;
+  
+  IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)
+                    (self,PTR_s_commitFillArgs_count_args_argsSi_1e6b16aa0);
+  return IVar1;
+}
+
+
+
+===== name_fragment=fillCommandBufferArgs:commandQueue: =====
+matches=4
+===== name_match=fillCommandBufferArgs:commandQueue: =====
+symbol=fillCommandBufferArgs:commandQueue:
+entry=1a56af554
+direct_callers=0
+direct_callees=1
+  callee=__Block_copy entry=1a56d786c
+
+/* Function Stack Size: 0x20 bytes */
+
+void IOGPUMetalCommandBuffer::fillCommandBufferArgs_commandQueue_
+               (ID param_1,SEL param_2,IOGPUCommandQueueCommandBufferArgs *param_3,ID param_4)
+
+{
+  undefined8 uVar1;
+  undefined8 uVar2;
+  undefined4 uVar3;
+  long lVar4;
+  long lVar5;
+  unsigned_int uVar6;
+  undefined8 local_98;
+  undefined8 local_90;
+  code *local_88;
+  undefined *puStack_80;
+  ID local_78;
+  ID IStack_70;
+  undefined8 local_68;
+  undefined8 local_60;
+  code *local_58;
+  undefined *puStack_50;
+  ID local_48;
+  
+  lVar4 = *(long *)(param_1 + (long)_storage);
+  param_3->field0_0x0 =
+       *(unsigned_int *)(*(long *)(lVar4 + 0x20) + (long)IOGPUMetalDeviceShmem::_shmemID);
+  lVar5 = (long)IOGPUMetalDeviceShmem::_shmemID;
+  param_3->field1_0x4 = *(unsigned_int *)(*(long *)(lVar4 + 0x60) + lVar5);
+  uVar6 = 0;
+  if (*(long *)(lVar4 + 0x40) != 0) {
+    uVar6 = *(unsigned_int *)(*(long *)(lVar4 + 0x40) + lVar5);
+  }
+  param_3->field2_0x8 = uVar6;
+  uVar3 = 0;
+  if (*(long *)(lVar4 + 0x368) != 0) {
+    uVar3 = *(undefined4 *)(*(long *)(lVar4 + 0x368) + lVar5);
+  }
+  *(undefined4 *)&param_3->field6_0x20 = uVar3;
+  uVar2 = DAT_1a56e3548;
+  local_68 = DAT_1e598ebc0;
+  local_60 = DAT_1a56e3548;
+  local_58 = ___62__IOGPUMetalCommandBuffer_fillCommandBufferArgs_commandQueue___block_invoke;
+  puStack_50 = &___block_descriptor_40_e8_32o_e17_v36__0Q8Q16I24Q28l;
+  local_48 = param_1;
+  uVar1 = __Block_copy(&local_68);
+  *(undefined8 *)((long)&param_3->field3_0xc + 4) = uVar1;
+  *(undefined8 *)(param_1 + (long)_scheduledCallbackBlockPtr) = uVar1;
+  local_98 = DAT_1e598ebc0;
+  local_90 = uVar2;
+  local_88 = ___62__IOGPUMetalCommandBuffer_fillCommandBufferArgs_commandQueue___block_invoke_52;
+  puStack_80 = &___block_descriptor_48_e8_32o40o_e17_v36__0Q8Q16I24Q28l;
+  local_78 = param_1;
+  IStack_70 = param_4;
+  uVar2 = __Block_copy(&local_88,&local_98);
+  *(undefined8 *)((long)&param_3->field4_0x14 + 4) = uVar2;
+  *(undefined8 *)(param_1 + (long)_completedCallbackBlockPtr) = uVar2;
+  return;
+}
+
+
+
+===== name_match=fillCommandBufferArgs:commandQueue: =====
+symbol=___62-[IOGPUMetalCommandBuffer_fillCommandBufferArgs:commandQueue:]_block_invoke
+entry=1a56af6a0
+direct_callers=1
+  caller=fillCommandBufferArgs:commandQueue: entry=1a56af554
+direct_callees=6
+  callee=globalTraceObjectID entry=1a56fa280
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+  callee=_objc_alloc entry=1a56d7dcc
+  callee=initWithIOGPUError:MTL4QueueError: entry=1a56fa960
+  callee=didScheduleWithStartTime:endTime:error: entry=1a56f9ca0
+  callee=_objc_release entry=1a56d7e9c
+
+/* WARNING: Function: _objc_release replaced with injection: _objc_release_fixup */
+
+ID ___62__IOGPUMetalCommandBuffer_fillCommandBufferArgs_commandQueue___block_invoke
+             (long param_1,undefined8 param_2,undefined8 param_3,uint param_4)
+
+{
+  code *pcVar1;
+  ID IVar2;
+  ulong unaff_x30;
+  
+  if (*___globalGPUCommPage != 0) {
+    IVar2 = objc_stub::globalTraceObjectID(*(ID *)(param_1 + 0x20));
+    _IOGPUDeviceTraceEvent(0,8,5,IVar2,param_3,param_4,0);
+  }
+  if (param_4 != 0) {
+    IVar2 = _objc_alloc(DAT_1e591d9f0);
+    IVar2 = objc_stub::initWithIOGPUError_MTL4QueueError_(IVar2,(ulong)param_4,0);
+    objc_stub::didScheduleWithStartTime_endTime_error_
+              (*(ID *)(param_1 + 0x20),param_2,param_3,IVar2);
+    if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+      pcVar1 = (code *)SoftwareBreakpoint(0xc471,0x1a56af754);
+      (*pcVar1)();
+    }
+    return 0;
+  }
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar1 = (code *)SoftwareBreakpoint(0xc471,0x1a56af784);
+    (*pcVar1)();
+  }
+  IVar2 = objc_stub::didScheduleWithStartTime_endTime_error_
+                    (*(ID *)(param_1 + 0x20),param_2,param_3,0);
+  return IVar2;
+}
+
+
+
+===== name_match=fillCommandBufferArgs:commandQueue: =====
+symbol=___62-[IOGPUMetalCommandBuffer_fillCommandBufferArgs:commandQueue:]_block_invoke.52
+entry=1a56af7a4
+direct_callers=1
+  caller=fillCommandBufferArgs:commandQueue: entry=1a56af554
+direct_callees=6
+  callee=globalTraceObjectID entry=1a56fa280
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+  callee=_objc_alloc entry=1a56d7dcc
+  callee=initWithIOGPUError:MTL4QueueError: entry=1a56fa960
+  callee=commandBufferDidComplete:startTime:completionTime:error: entry=1a56f9760
+  callee=_objc_release entry=1a56d7e9c
+
+/* WARNING: Function: _objc_release replaced with injection: _objc_release_fixup */
+
+ID ___62__IOGPUMetalCommandBuffer_fillCommandBufferArgs_commandQueue___block_invoke_52
+             (long param_1,undefined8 param_2,undefined8 param_3,uint param_4,undefined8 param_5)
+
+{
+  code *pcVar1;
+  ID IVar2;
+  ulong unaff_x30;
+  
+  if (*___globalGPUCommPage != 0) {
+    IVar2 = objc_stub::globalTraceObjectID(*(ID *)(param_1 + 0x20));
+    _IOGPUDeviceTraceEvent(0,8,4,IVar2,param_3,param_4,0);
+  }
+  if (param_4 != 0) {
+    IVar2 = _objc_alloc(DAT_1e591d9f0);
+    IVar2 = objc_stub::initWithIOGPUError_MTL4QueueError_(IVar2,(ulong)param_4,0);
+    *(undefined8 *)(*(long *)(param_1 + 0x20) + (long)IOGPUMetalCommandBuffer::_gpuFaultAddress) =
+         param_5;
+    objc_stub::commandBufferDidComplete_startTime_completionTime_error_
+              (*(ID *)(param_1 + 0x28),*(undefined8 *)(param_1 + 0x20),param_2,param_3,IVar2);
+    if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+      pcVar1 = (code *)SoftwareBreakpoint(0xc471,0x1a56af874);
+      (*pcVar1)();
+    }
+    return 0;
+  }
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar1 = (code *)SoftwareBreakpoint(0xc471,0x1a56af8a8);
+    (*pcVar1)();
+  }
+  IVar2 = objc_stub::commandBufferDidComplete_startTime_completionTime_error_
+                    (*(ID *)(param_1 + 0x28),*(undefined8 *)(param_1 + 0x20),param_2,param_3,0);
+  return IVar2;
+}
+
+
+
+===== name_match=fillCommandBufferArgs:commandQueue: =====
+symbol=fillCommandBufferArgs:commandQueue:
+entry=1a56f9fe0
+direct_callers=1
+  caller=_submitCommandBuffers:count: entry=1a56b0a14
+direct_callees=1
+  callee=_objc_msgSend entry=180095800
+
+ID __objc_msgSend_stub objc_stub::fillCommandBufferArgs_commandQueue_(ID self,...)
+
+{
+  ID IVar1;
+  
+  IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)
+                    (self,PTR_s_fillCommandBufferArgs_commandQue_1e6b16c88);
+  return IVar1;
+}
+
+
+
+===== name_fragment=fillCommandBufferArgs_commandQueue =====
+matches=0
+===== name_fragment=commitAndReset =====
+matches=3
+===== name_match=commitAndReset =====
+symbol=commitAndReset
+entry=1a56ae488
+direct_callers=0
+direct_callees=12
+  callee=_dispatch_semaphore_wait entry=1a56d7bfc
+  callee=isProfilingEnabled entry=1a56fac80
+  callee=kernelCommandCollectTimeStamp entry=1a56fad40
+  callee=kernelCommandCollectTimeStamp entry=1a56ae5c8
+  callee=_encodePurgedResources entry=1a56f9140
+  callee=_encodePurgedResources entry=1a56af250
+  callee=_IOGPUMetalCommandBufferStorageFinalizeShmemHeader entry=1a56bccec
+  callee=_objc_msgSendSuper2 entry=1a56d7e4c
+  callee=_IOGPUMetalCommandBufferStoragePoolCreateStorage entry=1a56bd2a0
+  callee=_dispatch_semaphore_signal entry=1a56d7bec
+  callee=-[IOGPUMetalCommandBuffer_commitAndReset].cold.2 entry=1a56d3afc
+  callee=-[IOGPUMetalCommandBuffer_commitAndReset].cold.1 entry=1a56d3ad0
+
+/* Function Stack Size: 0x10 bytes */
+
+void IOGPUMetalCommandBuffer::commitAndReset(ID param_1,SEL param_2)
+
+{
+  long lVar1;
+  ID IVar2;
+  undefined8 uVar3;
+  undefined8 uVar4;
+  long lVar5;
+  objc_super local_60;
+  objc_super local_50;
+  
+  lVar5 = (long)_commitAndResetSem;
+  lVar1 = *(long *)(param_1 + lVar5);
+  if (lVar1 == 0) {
+    __IOGPUMetalCommandBuffer_commitAndReset__cold_2();
+  }
+  else {
+    _dispatch_semaphore_wait(lVar1,0xffffffffffffffff);
+    IVar2 = objc_stub::isProfilingEnabled(param_1);
+    if ((int)IVar2 != 0) {
+      kernelCommandCollectTimeStamp(param_1);
+    }
+    if (*(long *)(param_1 + (long)_purgedResources) != 0) {
+      _encodePurgedResources(param_1);
+    }
+    lVar1 = (long)_storage;
+    _IOGPUMetalCommandBufferStorageFinalizeShmemHeader(*(undefined8 *)(param_1 + lVar1));
+    local_50.super_class = (class_t *)PTR_IOGPUMetalCommandBuffer_1e6b19228;
+    local_50.receiver = param_1;
+    _objc_msgSendSuper2(&local_50,"commitAndReset");
+    if (*(long *)(param_1 + lVar1) == 0) {
+      uVar3 = *(undefined8 *)
+               (*(long *)(param_1 + (long)_device) +
+               (long)IOGPUMetalDevice::_commandBufferStoragePool);
+      uVar4 = *(undefined8 *)(param_1 + (long)*DAT_1e5924248);
+      local_60.super_class = (class_t *)PTR_IOGPUMetalCommandBuffer_1e6b19228;
+      local_60.receiver = param_1;
+      IVar2 = _objc_msgSendSuper2(&local_60,"retainedReferences");
+      uVar3 = _IOGPUMetalCommandBufferStoragePoolCreateStorage(uVar3,uVar4,IVar2);
+      *(undefined8 *)(param_1 + lVar1) = uVar3;
+      _dispatch_semaphore_signal(*(undefined8 *)(param_1 + lVar5));
+      return;
+    }
+  }
+  __IOGPUMetalCommandBuffer_commitAndReset__cold_1();
+  return;
+}
+
+
+
+===== name_match=commitAndReset =====
+symbol=-[IOGPUMetalCommandBuffer_commitAndReset].cold.1
+entry=1a56d3ad0
+direct_callers=1
+  caller=commitAndReset entry=1a56ae488
+direct_callees=1
+  callee=___assert_rtn entry=1a56d797c
+
+void __IOGPUMetalCommandBuffer_commitAndReset__cold_1(void)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn("-[IOGPUMetalCommandBuffer commitAndReset]","IOGPUMetalCommandBuffer.m",0x113,
+                "!_storage");
+}
+
+
+
+===== name_match=commitAndReset =====
+symbol=-[IOGPUMetalCommandBuffer_commitAndReset].cold.2
+entry=1a56d3afc
+direct_callers=1
+  caller=commitAndReset entry=1a56ae488
+direct_callees=1
+  callee=___assert_rtn entry=1a56d797c
+
+void __IOGPUMetalCommandBuffer_commitAndReset__cold_2(void)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn("-[IOGPUMetalCommandBuffer commitAndReset]","IOGPUMetalCommandBuffer.m",0xff,
+                "_commitAndResetSem");
+}
+
+
+
+===== name_fragment=_submitCommandBuffers:count: =====
+matches=4
+===== name_match=_submitCommandBuffers:count: =====
+symbol=_submitCommandBuffers:count:
+entry=1a56b0a14
+direct_callers=1
+  caller=submitCommandBuffers:count: entry=1a56b09a0
+direct_callees=14
+  callee=cmdBufArgsSize entry=1a56f96a0
+  callee=_bzero entry=1a56d7a9c
+  callee=fillCommandBufferArgs:commandQueue: entry=1a56f9fe0
+  callee=isProfilingEnabled entry=1a56fac80
+  callee=kernelSubmitTime entry=1a56fad60
+  callee=commandQueue entry=1a56f97a0
+  callee=backgroundTrackingPID entry=1a56f94a0
+  callee=device entry=1a56f9ba0
+  callee=globalTraceObjectID entry=1a56fa280
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+  callee=_IOGPUCommandQueueSubmitCommandBuffers entry=1a56c8090
+  callee=_dispatch_async entry=1a56d7acc
+  callee=-[IOGPUMetalCommandQueue__submitCommandBuffers:count:].cold.1 entry=1a56d3db4
+  callee=___stack_chk_fail entry=1a56d79fc
+
+/* Function Stack Size: 0x20 bytes */
+
+void IOGPUMetalCommandQueue::_submitCommandBuffers_count_
+               (ID param_1,SEL param_2,ID *param_3,unsigned_long_long param_4)
+
+{
+  undefined1 *puVar1;
+  undefined4 uVar2;
+  unsigned_long_long uVar3;
+  undefined8 uVar4;
+  undefined8 uVar5;
+  int iVar6;
+  ID IVar7;
+  ID IVar8;
+  ID IVar9;
+  size_t __n;
+  undefined4 uVar10;
+  long extraout_x8;
+  ulong uVar11;
+  ID IVar12;
+  undefined8 *puVar13;
+  undefined1 auStack_c0 [8];
+  undefined1 *local_b8;
+  undefined8 local_b0;
+  undefined8 local_a8;
+  code *local_a0;
+  undefined *puStack_98;
+  undefined8 local_90;
+  undefined8 uStack_88;
+  undefined4 local_80;
+  undefined4 local_7c;
+  long local_78;
+  
+  local_78 = *DAT_1e598ebe0;
+  IVar7 = objc_stub::cmdBufArgsSize(*(ID *)(param_1 + (long)_device));
+  if (param_4 >> 0x20 == 0) {
+    local_7c = 0;
+    uVar11 = IVar7 & 0xffffffff;
+    (*DAT_1edd55588)(param_4 * uVar11 + 0xf & 0xfffffffffffffff0);
+    local_b8 = auStack_c0 + -extraout_x8;
+    _bzero(local_b8,__n);
+    puVar1 = local_b8;
+    for (uVar3 = param_4; uVar3 != 0; uVar3 = uVar3 - 1) {
+      IVar12 = *param_3;
+      objc_stub::fillCommandBufferArgs_commandQueue_(IVar12,puVar1,param_1);
+      IVar7 = objc_stub::isProfilingEnabled(IVar12);
+      if ((int)IVar7 != 0) {
+        objc_stub::kernelSubmitTime(IVar12);
+      }
+      if (*___globalGPUCommPage != 0) {
+        IVar7 = objc_stub::commandQueue(IVar12);
+        IVar7 = objc_stub::backgroundTrackingPID(IVar7);
+        IVar8 = objc_stub::device(IVar12);
+        IVar8 = objc_stub::globalTraceObjectID(IVar8);
+        IVar9 = objc_stub::commandQueue(IVar12);
+        IVar9 = objc_stub::globalTraceObjectID(IVar9);
+        IVar12 = objc_stub::globalTraceObjectID(IVar12);
+        _IOGPUDeviceTraceEvent(0,8,3,(long)(int)IVar7,IVar8,IVar9,IVar12);
+      }
+      puVar1 = puVar1 + uVar11;
+      param_3 = param_3 + 1;
+    }
+    iVar6 = _IOGPUCommandQueueSubmitCommandBuffers
+                      (*(undefined8 *)(param_1 + (long)_commandQueue),0,param_4,local_b8,uVar11,
+                       &local_7c);
+    uVar5 = DAT_1e598ebc0;
+    uVar4 = DAT_1a56e3548;
+    if (iVar6 != 0) {
+      uVar10 = 0xf;
+      if (iVar6 != 0x10000003) {
+        uVar10 = 1;
+      }
+      uVar2 = 7;
+      if (iVar6 != -0x1ffffd1e) {
+        uVar2 = uVar10;
+      }
+      if (param_4 != 0) {
+        iVar6 = *DAT_1e59242b8;
+        puVar13 = (undefined8 *)(local_b8 + 0x10);
+        do {
+          local_b0 = uVar5;
+          local_a8 = uVar4;
+          local_a0 = ___54__IOGPUMetalCommandQueue__submitCommandBuffers_count___block_invoke;
+          puStack_98 = &___block_descriptor_52_e8_32b40b_e5_v8__0l;
+          uStack_88 = puVar13[1];
+          local_90 = *puVar13;
+          local_80 = uVar2;
+          _dispatch_async(*(undefined8 *)(param_1 + (long)iVar6),&local_b0);
+          puVar13 = (undefined8 *)((long)puVar13 + uVar11);
+          param_4 = param_4 - 1;
+        } while (param_4 != 0);
+      }
+    }
+    if (*DAT_1e598ebe0 == local_78) {
+      return;
+    }
+  }
+  else {
+    __IOGPUMetalCommandQueue__submitCommandBuffers_count___cold_1();
+  }
+                    /* WARNING: Subroutine does not return */
+  ___stack_chk_fail();
+}
+
+
+
+===== name_match=_submitCommandBuffers:count: =====
+symbol=___54-[IOGPUMetalCommandQueue__submitCommandBuffers:count:]_block_invoke
+entry=1a56b0c74
+direct_callers=1
+  caller=_submitCommandBuffers:count: entry=1a56b0a14
+direct_callees=1
+  callee=__Block_release entry=1a56d789c
+
+void ___54__IOGPUMetalCommandQueue__submitCommandBuffers_count___block_invoke(long param_1)
+
+{
+  code *pcVar1;
+  ulong unaff_x30;
+  
+  (**(code **)(*(long *)(param_1 + 0x20) + 0x10))(*(long *)(param_1 + 0x20),0,0,0,0);
+  (**(code **)(*(long *)(param_1 + 0x28) + 0x10))
+            (*(long *)(param_1 + 0x28),0,0,*(undefined4 *)(param_1 + 0x30),0);
+  __Block_release(*(undefined8 *)(param_1 + 0x20));
+  if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
+                    /* WARNING: Does not return */
+    pcVar1 = (code *)SoftwareBreakpoint(0xc471,0x1a56b0cec);
+    (*pcVar1)();
+  }
+  __Block_release(*(undefined8 *)(param_1 + 0x28));
+  return;
+}
+
+
+
+===== name_match=_submitCommandBuffers:count: =====
+symbol=-[IOGPUMetalCommandQueue__submitCommandBuffers:count:].cold.1
+entry=1a56d3db4
+direct_callers=1
+  caller=_submitCommandBuffers:count: entry=1a56b0a14
+direct_callees=1
+  callee=___assert_rtn entry=1a56d797c
+
+void __IOGPUMetalCommandQueue__submitCommandBuffers_count___cold_1(void)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn("-[IOGPUMetalCommandQueue _submitCommandBuffers:count:]","IOGPUMetalCommandQueue.m",
+                299,"count <= UINT_MAX");
+}
+
+
+
+===== name_match=_submitCommandBuffers:count: =====
+symbol=_submitCommandBuffers:count:
+entry=1a56f9260
+direct_callers=1
+  caller=submitCommandBuffers:count: entry=1a56b09a0
+direct_callees=1
+  callee=_objc_msgSend entry=180095800
+
+ID __objc_msgSend_stub objc_stub::_submitCommandBuffers_count_(ID self,...)
+
+{
+  ID IVar1;
+  
+  IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)(self,PTR_s__submitCommandBuffers_count__1e6b16928);
+  return IVar1;
+}
+
+
+
+===== name_fragment=gpuAddress =====
+matches=17
+===== name_match=gpuAddress =====
+symbol=gpuAddress
+entry=1a56ac288
+direct_callers=0
+direct_callees=1
+  callee=doesNotRecognizeSelector: entry=1a56f9d80
+
+/* Function Stack Size: 0x10 bytes */
+
+unsigned_long_long IOGPUMetalVisibleFunctionTable::gpuAddress(ID param_1,SEL param_2)
+
+{
+  objc_stub::doesNotRecognizeSelector_(param_1,param_2);
+  return 0;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=initWithDevice:pointer:length:options:sysMemSize:gpuAddress:args:argsSize:deallocator:
+entry=1a56acb34
+direct_callers=0
+direct_callees=2
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56fa840
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+
+/* Function Stack Size: 0x54 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_options_sysMemSize_gpuAddress_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_long_long param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             IOGPUNewResourceArgs *param_9,unsigned_int param_10,ID param_11,undefined4 param_12)
+
+{
+  ID IVar1;
+  undefined4 in_stack_ffffffffffffffe8;
+  
+  IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+                    (param_1,param_3,param_4,param_5,1,param_6,param_7,param_8,0,0,0,param_9,
+                     param_10,param_11,in_stack_ffffffffffffffe8);
+  return IVar1;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:args:argsSize:deallocator:
+entry=1a56acb84
+direct_callers=0
+direct_callees=2
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56fa840
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+
+/* Function Stack Size: 0x58 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_int param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             unsigned_long_long param_9,IOGPUNewResourceArgs *param_10,unsigned_int param_11,
+             ID param_12,undefined4 param_13)
+
+{
+  ID IVar1;
+  undefined4 in_stack_ffffffffffffffe8;
+  
+  IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+                    (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,0,0,0,param_10,
+                     param_11,param_12,in_stack_ffffffffffffffe8);
+  return IVar1;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:args:argsSize:deallocator:
+entry=1a56acbc8
+direct_callers=0
+direct_callees=2
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56fa840
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+
+/* Function Stack Size: 0x60 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_int param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             unsigned_long_long param_9,unsigned_long_long param_10,IOGPUNewResourceArgs *param_11,
+             unsigned_int param_12,ID param_13,undefined4 param_14)
+
+{
+  ID IVar1;
+  undefined4 in_stack_ffffffffffffffe8;
+  
+  IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+                    (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,param_10,0,0,param_11
+                     ,param_12,param_13,in_stack_ffffffffffffffe8);
+  return IVar1;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:args:argsSize:deallocator:
+entry=1a56acc10
+direct_callers=0
+direct_callees=2
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56fa840
+  callee=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+
+/* Function Stack Size: 0x68 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_int param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             unsigned_long_long param_9,unsigned_long_long param_10,long_long param_11,
+             IOGPUNewResourceArgs *param_12,unsigned_int param_13,ID param_14,undefined4 param_15)
+
+{
+  ID IVar1;
+  undefined4 in_stack_ffffffffffffffe8;
+  
+  IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+                    (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,param_10,param_11,0,
+                     param_12,param_13,param_14,in_stack_ffffffffffffffe8);
+  return IVar1;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:
+entry=1a56acc58
+direct_callers=5
+  caller=initWithDevice:pointer:length:options:sysMemSize:vidMemSize:args:argsSize:deallocator: entry=1a56acae8
+  caller=initWithDevice:pointer:length:options:sysMemSize:gpuAddress:args:argsSize:deallocator: entry=1a56acb34
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:args:argsSize:deallocator: entry=1a56acb84
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:args:argsSize:deallocator: entry=1a56acbc8
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:args:argsSize:deallocator: entry=1a56acc10
+direct_callees=13
+  callee=_objc_release entry=1a56d7e9c
+  callee=sparseTileSizeInBytesForSparsePageSize: entry=1a56fbf40
+  callee=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.4 entry=1a56d3910
+  callee=_MTLReportFailure entry=1a56d779c
+  callee=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.1 entry=1a56d3874
+  callee=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.3 entry=1a56d38dc
+  callee=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.2 entry=1a56d38a8
+  callee=initWithDevice:options:args:argsSize: entry=1a56fa7e0
+  callee=initWithDevice:options:args:argsSize: entry=1a56c1714
+  callee=__Block_copy entry=1a56d786c
+  callee=deviceRef entry=1a56f9bc0
+  callee=registryID entry=1a56fb5c0
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+
+/* WARNING: Function: _objc_release replaced with injection: _objc_release_fixup */
+/* Function Stack Size: 0x70 bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+             (ID param_1,SEL param_2,ID param_3,void *param_4,unsigned_long_long param_5,
+             unsigned_int param_6,unsigned_long_long param_7,unsigned_long_long param_8,
+             unsigned_long_long param_9,unsigned_long_long param_10,long_long param_11,
+             unsigned_long_long param_12,IOGPUNewResourceArgs *param_13,unsigned_int param_14,
+             ID param_15,undefined4 param_16)
+
+{
+  uint uVar1;
+  ID IVar2;
+  ID IVar3;
+  ID IVar4;
+  SEL extraout_x1;
+  undefined8 uVar5;
+  cfstringStruct *pcVar6;
+  unsigned_int uVar7;
+  ulong uVar8;
+  ulong uVar9;
+  long lVar10;
+  ulong uVar11;
+  undefined4 uVar12;
+  
+  (param_13->field0_0x0).field16_0x38.field1.field4_0x10[1] = 0;
+  (param_13->field0_0x0).field16_0x38.field0.field0_0x0 = 0;
+  (param_13->field0_0x0).field14_0x30 = 0;
+  (param_13->field0_0x0).field15_0x34 = 0;
+  (param_13->field0_0x0).field16_0x38.field0.field2_0x10 = 0;
+  (param_13->field0_0x0).field16_0x38.field0.field1_0x8 = 0;
+  (param_13->field0_0x0).field11_0x18 = 0;
+  (param_13->field0_0x0).field6_0x10 = '\0';
+  (param_13->field0_0x0).field7_0x11 = '\0';
+  (param_13->field0_0x0).field8_0x12 = '\0';
+  (param_13->field0_0x0).field9_0x13 = '\0';
+  (param_13->field0_0x0).field10_0x14 = 0;
+  (param_13->field0_0x0).field13_0x28 = 0;
+  (param_13->field0_0x0).field12_0x20 = 0;
+  (param_13->field0_0x0).field2_0x8 = 0;
+  (param_13->field0_0x0).field3_0xa = 0;
+  (param_13->field0_0x0).field4_0xc = 0;
+  (param_13->field0_0x0).field5_0xe = 0;
+  (param_13->field0_0x0).field0_0x0 = 0;
+  (param_13->field0_0x0).field1_0x4 = 0;
+  if (param_4 != (void *)0x0) {
+    uVar1 = (uint)param_7 & 0xf0;
+    if (uVar1 == 0x20) goto LAB_1a56acd54;
+    if (uVar1 == 0x30) {
+      pcVar6 = &cf_storageModeMemorylessincompatiblewith___WithBytesvariantofnewBuffer;
+      uVar5 = 0xb7;
+      goto LAB_1a56acd88;
+    }
+  }
+  while( true ) {
+    if (param_8 < param_5) {
+      return 0;
+    }
+    uVar11 = param_7 & 0xf;
+    if (1 < uVar11) {
+      __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_1
+                (uVar11,param_2);
+    }
+    if (param_4 != (void *)0x0) {
+      uVar11 = 0;
+    }
+    uVar8 = param_7 >> 4 & 0xf;
+    if (2 < uVar8) {
+      __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_2
+                (uVar8);
+    }
+    if (param_11 == 0) break;
+    if (uVar8 != 2) {
+      __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_3
+                (uVar8);
+    }
+    IVar2 = objc_stub::sparseTileSizeInBytesForSparsePageSize_(param_3,param_11);
+    (param_13->field0_0x0).field0_0x0 = 0x40;
+    (param_13->field0_0x0).field16_0x38.field4.field3_0x18 = (unsigned_int)IVar2;
+    uVar9 = (param_5 + (IVar2 & 0xffffffff)) - 1 & -(IVar2 & 0xffffffff);
+    (param_13->field0_0x0).field16_0x38.field0.field0_0x0 = uVar9;
+    param_8 = param_12;
+    if (param_5 <= uVar9) goto LAB_1a56acdcc;
+    __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_4
+              ();
+LAB_1a56acd54:
+    pcVar6 = &cf_storageModePrivateincompatiblewith___WithBytesvariantofnewBuffer;
+    uVar5 = 0xb5;
+LAB_1a56acd88:
+    _MTLReportFailure(0,
+                      "-[IOGPUMetalBuffer initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:]"
+                      ,uVar5,pcVar6);
+    param_2 = extraout_x1;
+  }
+  uVar7 = 0;
+  if (param_4 != (void *)0x0) {
+    uVar7 = 0x80;
+  }
+  (param_13->field0_0x0).field0_0x0 = uVar7;
+  (param_13->field0_0x0).field16_0x38.field0.field0_0x0 = (unsigned_long_long)param_4;
+  (param_13->field0_0x0).field16_0x38.field0.field1_0x8 = (unsigned_long_long)param_4;
+LAB_1a56acdcc:
+  (param_13->field0_0x0).field16_0x38.field0.field2_0x10 = param_8;
+  uVar7 = 0x400;
+  if (uVar11 != 1) {
+    uVar7 = 0;
+  }
+  (param_13->field0_0x0).field1_0x4 = uVar7;
+  (param_13->field0_0x0).field2_0x8 = 1;
+  (param_13->field0_0x0).field3_0xa = 1;
+  (param_13->field0_0x0).field4_0xc = 1;
+  uVar12 = (undefined4)DAT_1a56e3510;
+  (param_13->field0_0x0).field6_0x10 = (char)uVar12;
+  (param_13->field0_0x0).field7_0x11 = (char)((uint)uVar12 >> 8);
+  (param_13->field0_0x0).field8_0x12 = (char)((uint)uVar12 >> 0x10);
+  (param_13->field0_0x0).field9_0x13 = (char)((uint)uVar12 >> 0x18);
+  (param_13->field0_0x0).field10_0x14 = 0;
+  (param_13->field0_0x0).field14_0x30 = param_6;
+  if (param_9 != 0) {
+    (param_13->field0_0x0).field12_0x20 = param_9;
+    (param_13->field0_0x0).field13_0x28 = param_5;
+  }
+  (param_13->field0_0x0).field15_0x34 = (unsigned_int)(param_10 >> 0x20);
+  if (((uint)param_7 >> 0x10 & 1) == 0) {
+    (param_13->field0_0x0).field10_0x14 = 0x40;
+  }
+  IVar2 = IOGPUMetalResource::initWithDevice_options_args_argsSize_
+                    (param_1,param_3,param_7,param_13,param_14);
+  if (IVar2 == 0) {
+    return 0;
+  }
+  *(unsigned_long_long *)(IVar2 + (long)_length) = param_5;
+  if (param_15 != 0) {
+    *(void **)(IVar2 + (long)_pointer) = param_4;
+    uVar5 = __Block_copy();
+    *(undefined8 *)(IVar2 + (long)_deallocator) = uVar5;
+  }
+  lVar10 = (long)_placementSparsePageSize;
+  *(long_long *)(IVar2 + lVar10) = param_11;
+  if (*___globalGPUCommPage == 0) {
+    return IVar2;
+  }
+  IVar3 = objc_stub::deviceRef(param_3);
+  uVar5 = *(undefined8 *)(IVar2 + (long)IOGPUMetalResource::_res + 0x60);
+  uVar9 = 0;
+  if (*(long *)(IVar2 + lVar10) != 0) {
+    uVar9 = 0x10000000000000;
+  }
+  IVar4 = objc_stub::registryID(param_3);
+  _IOGPUDeviceTraceEvent
+            (IVar3,8,0x10,uVar5,param_5,uVar9 | uVar11 << 0x30 | uVar8 << 0x20 | IVar4 & 0xffffffff,
+             0);
+  return IVar2;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=initWithDevice:iosurface:gpuAddress:args:argsSize:
+entry=1a56ad294
+direct_callers=1
+  caller=initWithDevice:iosurface:args:argsSize: entry=1a56ad284
+direct_callees=8
+  callee=_IOSurfaceGetID entry=1a56d75ec
+  callee=_IOSurfaceGetAllocSize entry=1a56d757c
+  callee=initWithDevice:options:args:argsSize: entry=1a56fa7e0
+  callee=initWithDevice:options:args:argsSize: entry=1a56c1714
+  callee=_CFRetain entry=1a56d730c
+  callee=deviceRef entry=1a56f9bc0
+  callee=registryID entry=1a56fb5c0
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+
+/* Function Stack Size: 0x34 bytes */
+
+ID IOGPUMetalBuffer::initWithDevice_iosurface_gpuAddress_args_argsSize_
+             (ID param_1,SEL param_2,ID param_3,__IOSurface *param_4,unsigned_long_long param_5,
+             IOGPUNewResourceArgs *param_6,unsigned_int param_7)
+
+{
+  unsigned_int uVar1;
+  unsigned_long_long uVar2;
+  ID IVar3;
+  ID IVar4;
+  ID IVar5;
+  undefined8 uVar6;
+  long lVar7;
+  undefined8 uVar8;
+  undefined4 uVar9;
+  
+  (param_6->field0_0x0).field2_0x8 = 0;
+  (param_6->field0_0x0).field3_0xa = 0;
+  (param_6->field0_0x0).field4_0xc = 0;
+  (param_6->field0_0x0).field5_0xe = 0;
+  (param_6->field0_0x0).field0_0x0 = 0;
+  (param_6->field0_0x0).field1_0x4 = 0;
+  (param_6->field0_0x0).field11_0x18 = 0;
+  (param_6->field0_0x0).field6_0x10 = '\0';
+  (param_6->field0_0x0).field7_0x11 = '\0';
+  (param_6->field0_0x0).field8_0x12 = '\0';
+  (param_6->field0_0x0).field9_0x13 = '\0';
+  (param_6->field0_0x0).field10_0x14 = 0;
+  (param_6->field0_0x0).field16_0x38.field1.field4_0x10[1] = 0;
+  (param_6->field0_0x0).field16_0x38.field0.field0_0x0 = 0;
+  (param_6->field0_0x0).field14_0x30 = 0;
+  (param_6->field0_0x0).field15_0x34 = 0;
+  (param_6->field0_0x0).field16_0x38.field0.field2_0x10 = 0;
+  (param_6->field0_0x0).field16_0x38.field0.field1_0x8 = 0;
+  (param_6->field0_0x0).field13_0x28 = 0;
+  (param_6->field0_0x0).field12_0x20 = 0;
+  uVar9 = DAT_1a56e3518._4_4_;
+  (param_6->field0_0x0).field0_0x0 = (undefined4)DAT_1a56e3518;
+  (param_6->field0_0x0).field1_0x4 = uVar9;
+  (param_6->field0_0x0).field2_0x8 = 1;
+  (param_6->field0_0x0).field3_0xa = 1;
+  (param_6->field0_0x0).field4_0xc = 1;
+  uVar9 = (undefined4)DAT_1a56e3510;
+  (param_6->field0_0x0).field6_0x10 = (char)uVar9;
+  (param_6->field0_0x0).field7_0x11 = (char)((uint)uVar9 >> 8);
+  (param_6->field0_0x0).field8_0x12 = (char)((uint)uVar9 >> 0x10);
+  (param_6->field0_0x0).field9_0x13 = (char)((uint)uVar9 >> 0x18);
+  (param_6->field0_0x0).field10_0x14 = 0;
+  uVar1 = _IOSurfaceGetID(param_4);
+  (param_6->field0_0x0).field16_0x38.field1.field0_0x0 = uVar1;
+  (param_6->field0_0x0).field16_0x38.field1.field1_0x4 = 0;
+  (param_6->field0_0x0).field16_0x38.field0.field1_0x8 = 0;
+  uVar2 = _IOSurfaceGetAllocSize(param_4);
+  if (param_5 != 0) {
+    (param_6->field0_0x0).field12_0x20 = param_5;
+    (param_6->field0_0x0).field13_0x28 = uVar2;
+  }
+  IVar3 = IOGPUMetalResource::initWithDevice_options_args_argsSize_
+                    (param_1,param_3,0,param_6,param_7);
+  if (IVar3 != 0) {
+    _CFRetain(param_4);
+    *(__IOSurface **)(IVar3 + (long)_iosurface) = param_4;
+    lVar7 = (long)_length;
+    *(unsigned_long_long *)(IVar3 + lVar7) = uVar2;
+    if (*___globalGPUCommPage != 0) {
+      IVar4 = objc_stub::deviceRef(param_3);
+      uVar6 = *(undefined8 *)(IVar3 + (long)IOGPUMetalResource::_res + 0x60);
+      uVar8 = *(undefined8 *)(IVar3 + lVar7);
+      IVar5 = objc_stub::registryID(param_3);
+      _IOGPUDeviceTraceEvent(IVar4,8,0x10,uVar6,uVar8,IVar5 & 0xffffffff,0);
+    }
+  }
+  return IVar3;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=initWithDevice:addressRanges:addressRangeCount:length:options:gpuAddress:args:argsSize:
+entry=1a56ad404
+direct_callers=0
+direct_callees=5
+  callee=_objc_msgSendSuper2 entry=1a56d7e4c
+  callee=initWithDevice:options:args:argsSize: entry=1a56c1714
+  callee=deviceRef entry=1a56f9bc0
+  callee=registryID entry=1a56fb5c0
+  callee=_IOGPUDeviceTraceEvent entry=1a56c6c44
+
+/* Function Stack Size: 0x4c bytes */
+
+ID IOGPUMetalBuffer::
+   initWithDevice_addressRanges_addressRangeCount_length_options_gpuAddress_args_argsSize_
+             (ID param_1,SEL param_2,ID param_3,IOGPUAddressRange *param_4,
+             unsigned_long_long param_5,unsigned_long_long param_6,unsigned_long_long param_7,
+             unsigned_long_long param_8,IOGPUNewResourceArgs *param_9,unsigned_int param_10)
+
+{
+  ID IVar1;
+  ID IVar2;
+  ID IVar3;
+  undefined8 uVar4;
+  long lVar5;
+  undefined8 uVar6;
+  undefined4 uVar7;
+  ID local_50;
+  undefined *puStack_48;
+  
+  (param_9->field0_0x0).field2_0x8 = 0;
+  (param_9->field0_0x0).field3_0xa = 0;
+  (param_9->field0_0x0).field4_0xc = 0;
+  (param_9->field0_0x0).field5_0xe = 0;
+  (param_9->field0_0x0).field0_0x0 = 0;
+  (param_9->field0_0x0).field1_0x4 = 0;
+  (param_9->field0_0x0).field11_0x18 = 0;
+  (param_9->field0_0x0).field6_0x10 = '\0';
+  (param_9->field0_0x0).field7_0x11 = '\0';
+  (param_9->field0_0x0).field8_0x12 = '\0';
+  (param_9->field0_0x0).field9_0x13 = '\0';
+  (param_9->field0_0x0).field10_0x14 = 0;
+  (param_9->field0_0x0).field16_0x38.field0.field0_0x0 = 0;
+  (param_9->field0_0x0).field14_0x30 = 0;
+  (param_9->field0_0x0).field15_0x34 = 0;
+  (param_9->field0_0x0).field16_0x38.field0.field2_0x10 = 0;
+  (param_9->field0_0x0).field16_0x38.field0.field1_0x8 = 0;
+  (param_9->field0_0x0).field16_0x38.field1.field4_0x10[1] = 0;
+  (param_9->field0_0x0).field13_0x28 = 0;
+  (param_9->field0_0x0).field12_0x20 = 0;
+  uVar7 = DAT_1a56e3520._4_4_;
+  (param_9->field0_0x0).field0_0x0 = (undefined4)DAT_1a56e3520;
+  (param_9->field0_0x0).field1_0x4 = uVar7;
+  (param_9->field0_0x0).field2_0x8 = 1;
+  (param_9->field0_0x0).field3_0xa = 1;
+  (param_9->field0_0x0).field4_0xc = 1;
+  uVar7 = (undefined4)DAT_1a56e3510;
+  (param_9->field0_0x0).field6_0x10 = (char)uVar7;
+  (param_9->field0_0x0).field7_0x11 = (char)((uint)uVar7 >> 8);
+  (param_9->field0_0x0).field8_0x12 = (char)((uint)uVar7 >> 0x10);
+  (param_9->field0_0x0).field9_0x13 = (char)((uint)uVar7 >> 0x18);
+  (param_9->field0_0x0).field16_0x38.field0.field0_0x0 = (unsigned_long_long)param_4;
+  (param_9->field0_0x0).field16_0x38.field0.field1_0x8 = param_5;
+  (param_9->field0_0x0).field10_0x14 = (param_9->field0_0x0).field10_0x14 | 0x200000;
+  puStack_48 = PTR_IOGPUMetalBuffer_1e6b19220;
+  local_50 = param_1;
+  IVar1 = IOGPUMetalResource::initWithDevice_options_args_argsSize_
+                    ((ID)&local_50,"initWithDevice:options:args:argsSize:",param_3,param_7,param_9,
+                     param_10);
+  if (IVar1 != 0) {
+    lVar5 = (long)_length;
+    *(unsigned_long_long *)(IVar1 + lVar5) = param_6;
+    if (*___globalGPUCommPage != 0) {
+      IVar2 = objc_stub::deviceRef(param_3);
+      uVar4 = *(undefined8 *)(IVar1 + (long)IOGPUMetalResource::_res + 0x60);
+      uVar6 = *(undefined8 *)(IVar1 + lVar5);
+      IVar3 = objc_stub::registryID(param_3);
+      _IOGPUDeviceTraceEvent(IVar2,8,0x10,uVar4,uVar6,IVar3 & 0xffffffff,0);
+    }
+  }
+  return IVar1;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=gpuAddress
+entry=1a56bb2fc
+direct_callers=0
+direct_callees=1
+  callee=gpuAddress entry=1a56fa2a0
+
+/* Function Stack Size: 0x10 bytes */
+
+unsigned_long_long IOGPUMetalHeap::gpuAddress(ID param_1,SEL param_2)
+
+{
+  ID IVar1;
+  
+  IVar1 = objc_stub::gpuAddress(*(ID *)(param_1 + (long)_resource));
+  return IVar1;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=gpuAddress
+entry=1a56c1efc
+direct_callers=1
+  caller=copyAnnotations entry=1a56ad694
+direct_callees=0
+
+/* Function Stack Size: 0x10 bytes */
+
+unsigned_long_long IOGPUMetalResource::gpuAddress(ID param_1,SEL param_2)
+
+{
+  return *(unsigned_long_long *)(param_1 + (long)_res + 0x48);
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.1
+entry=1a56d3874
+direct_callers=1
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_0 entry=1a56add78
+  callee=_MTLReportFailure entry=1a56d779c
+
+void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_1
+               (void)
+
+{
+  undefined8 extraout_x1;
+  
+  _OUTLINED_FUNCTION_0();
+  _MTLReportFailure(0,extraout_x1,0xd1,&cf_InvalidcacheMode_u);
+  return;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.2
+entry=1a56d38a8
+direct_callers=1
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_0 entry=1a56add78
+  callee=_MTLReportFailure entry=1a56d779c
+
+void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_2
+               (void)
+
+{
+  undefined8 extraout_x1;
+  
+  _OUTLINED_FUNCTION_0();
+  _MTLReportFailure(0,extraout_x1,0xdb,&cf_InvalidstorageMode_u);
+  return;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.3
+entry=1a56d38dc
+direct_callers=1
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+direct_callees=2
+  callee=_OUTLINED_FUNCTION_0 entry=1a56add78
+  callee=_MTLReportFailure entry=1a56d779c
+
+void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_3
+               (void)
+
+{
+  undefined8 extraout_x1;
+  
+  _OUTLINED_FUNCTION_0();
+  _MTLReportFailure(0,extraout_x1,0xe0,&cf_InvalidStorageMode_uforPlacementSparseBuffer);
+  return;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=-[IOGPUMetalBuffer_initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:].cold.4
+entry=1a56d3910
+direct_callers=1
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator: entry=1a56acc58
+direct_callees=1
+  callee=___assert_rtn entry=1a56d797c
+
+void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator___cold_4
+               (void)
+
+{
+                    /* WARNING: Subroutine does not return */
+  ___assert_rtn("-[IOGPUMetalBuffer initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:]"
+                ,"IOGPUMetalBuffer.m",0xe7,"args->comm.opt.virtualResource.virtual_bytes >= length")
+  ;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=gpuAddress
+entry=1a56fa2a0
+direct_callers=8
+  caller=uniqueIdentifier entry=1a56bbf34
+  caller=_IOGPUMetalSuballocatorAllocate entry=1a56cb334
+  caller=_IOGPUMetalSuballocatorFree entry=1a56cbf10
+  caller=copyAnnotations entry=1a56c5a44
+  caller=copyAnnotations entry=1a56ad694
+  caller=accelerationStructureUniqueIdentifier entry=1a56cfac4
+  caller=uniqueIdentifier entry=1a56cfab4
+  caller=gpuAddress entry=1a56bb2fc
+direct_callees=1
+  callee=_objc_msgSend entry=180095800
+
+ID __objc_msgSend_stub objc_stub::gpuAddress(ID self,...)
+
+{
+  ID IVar1;
+  
+  IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)(self,PTR_s_gpuAddress_1e6b16d38);
+  return IVar1;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=initWithDevice:iosurface:gpuAddress:args:argsSize:
+entry=1a56fa7a0
+direct_callers=1
+  caller=initWithDevice:iosurface:args:argsSize: entry=1a56ad284
+direct_callees=1
+  callee=_objc_msgSend entry=180095800
+
+ID __objc_msgSend_stub objc_stub::initWithDevice_iosurface_gpuAddress_args_argsSize_(ID self,...)
+
+{
+  ID IVar1;
+  
+  IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)
+                    (self,PTR_s_initWithDevice_iosurface_gpuAddr_1e6b16e78);
+  return IVar1;
+}
+
+
+
+===== name_match=gpuAddress =====
+symbol=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:placementSparseResidencyBytes:args:argsSize:deallocator:
+entry=1a56fa840
+direct_callers=5
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:placementSparsePageSize:args:argsSize:deallocator: entry=1a56acc10
+  caller=initWithDevice:pointer:length:options:sysMemSize:gpuAddress:args:argsSize:deallocator: entry=1a56acb34
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:gpuTag:args:argsSize:deallocator: entry=1a56acbc8
+  caller=initWithDevice:pointer:length:alignment:options:sysMemSize:gpuAddress:args:argsSize:deallocator: entry=1a56acb84
+  caller=initWithDevice:pointer:length:options:sysMemSize:vidMemSize:args:argsSize:deallocator: entry=1a56acae8
+direct_callees=1
+  callee=_objc_msgSend entry=180095800
+
+ID __objc_msgSend_stub
+objc_stub::
+initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
+          (ID self,...)
+
+{
+  ID IVar1;
+  
+  IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)
+                    (self,PTR_s_initWithDevice_pointer_length_al_1e6b16ea0);
+  return IVar1;
+}
+
+
+
+===== name_fragment=virtualAddress =====
+matches=3
+===== name_match=virtualAddress =====
+symbol=virtualAddress
+entry=1a56b68b8
+direct_callers=0
+direct_callees=0
+
+/* Function Stack Size: 0x10 bytes */
+
+void * IOGPUMetalDeviceShmem::virtualAddress(ID param_1,SEL param_2)
+
+{
+  return *(void **)(param_1 + 0x88);
+}
+
+
+
+===== name_match=virtualAddress =====
+symbol=virtualAddress
+entry=1a56c1ee8
+direct_callers=0
+direct_callees=0
+
+/* Function Stack Size: 0x10 bytes */
+
+void * IOGPUMetalResource::virtualAddress(ID param_1,SEL param_2)
+
+{
+  return *(void **)(param_1 + (long)_res + 0x80);
+}
+
+
+
+===== name_match=virtualAddress =====
+symbol=virtualAddress
+entry=1a56fc2c0
+direct_callers=2
+  caller=allocBufferSubDataWithLength:options:alignment:heapIndex:bufferIndex:bufferOffset:parentAddress:parentLength: entry=1a56b5454
+  caller=contents entry=1a56ad684
+direct_callees=1
+  callee=_objc_msgSend entry=180095800
+
+ID __objc_msgSend_stub objc_stub::virtualAddress(ID self,...)
+
+{
+  ID IVar1;
+  
+  IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)(self,PTR_s_virtualAddress_1e6b17540);
+  return IVar1;
+}
+
+
+
+===== name_fragment=resourceSize =====
+matches=2
+===== name_match=resourceSize =====
+symbol=resourceSize
+entry=1a56c1f24
+direct_callers=1
+  caller=allocatedSize entry=1a56c2670
+direct_callees=0
+
+/* Function Stack Size: 0x10 bytes */
+
+unsigned_long_long IOGPUMetalResource::resourceSize(ID param_1,SEL param_2)
+
+{
+  return *(ulong *)(param_1 + (long)_res + 0x28) & 0xffffffffffffff;
+}
+
+
+
+===== name_match=resourceSize =====
+symbol=resourceSize
+entry=1a56fb7c0
+direct_callers=2
+  caller=initWithBuffer:descriptor:sysMemOffset:sysMemRowBytes:vidMemSize:vidMemRowBytes:args:argsSize:isStrideTexture: entry=1a56c4e84
+  caller=allocatedSize entry=1a56c2670
+direct_callees=1
+  callee=_objc_msgSend entry=180095800
+
+ID __objc_msgSend_stub objc_stub::resourceSize(ID self,...)
+
+{
+  ID IVar1;
+  
+  IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)(self,PTR_s_resourceSize_1e6b17280);
+  return IVar1;
+}
+
+
+

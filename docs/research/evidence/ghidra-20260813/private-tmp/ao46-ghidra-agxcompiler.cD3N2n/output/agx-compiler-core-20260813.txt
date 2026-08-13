@@ -1,0 +1,2573 @@
+AO46 AGXCompilerCore source-to-compiled-object report
+program=AGXCompilerCore
+image_base=1ac879000
+
+===== get_compiled_object_size =====
+symbol=getCompiledObjectSize entry=1ac889cb4
+direct_callers=0
+all_references=351
+  ref=data from=1ff0e04e7 type=DATA
+  ref=data from=1f12a5f18 type=DATA
+  ref=data from=1f12f8fa8 type=DATA
+  ref=data from=1f12f90d0 type=DATA
+  ref=data from=1f12f91f8 type=DATA
+  ref=data from=1f129e080 type=DATA
+  ref=data from=1f129e668 type=DATA
+  ref=data from=1f129ec70 type=DATA
+  ref=data from=1f129f298 type=DATA
+  ref=data from=1f129f898 type=DATA
+  ref=data from=1f129fcc8 type=DATA
+  ref=data from=1f12a00e0 type=DATA
+  ref=data from=1f12a0348 type=DATA
+  ref=data from=1f12a05a0 type=DATA
+  ref=data from=1f12a0ae0 type=DATA
+  ref=data from=1f12a0fe0 type=DATA
+  ref=data from=1f12a1410 type=DATA
+  ref=data from=1f12a1828 type=DATA
+  ref=data from=1f12a1a90 type=DATA
+  ref=data from=1f12a1ce8 type=DATA
+  ref=data from=1f12a2230 type=DATA
+  ref=data from=1f12a2770 type=DATA
+  ref=data from=1f12a2c70 type=DATA
+  ref=data from=1f12a30a0 type=DATA
+  ref=data from=1f12a34b8 type=DATA
+  ref=data from=1f12a3720 type=DATA
+  ref=data from=1f12a3978 type=DATA
+  ref=data from=1f12a3ec0 type=DATA
+  ref=data from=1f12a4408 type=DATA
+  ref=data from=1f12a4948 type=DATA
+  ref=data from=1f12a4e48 type=DATA
+  ref=data from=1f12a5278 type=DATA
+  ref=data from=1f12a5690 type=DATA
+  ref=data from=1f12a58f8 type=DATA
+  ref=data from=1f12a5b50 type=DATA
+  ref=data from=1f12a63c0 type=DATA
+  ref=data from=1f12a6820 type=DATA
+  ref=data from=1f12a6c50 type=DATA
+  ref=data from=1f12a7068 type=DATA
+  ref=data from=1f12a75f8 type=DATA
+  ref=data from=1f12a7ab8 type=DATA
+  ref=data from=1f12a7ee8 type=DATA
+  ref=data from=1f12a8300 type=DATA
+  ref=data from=1f12a88d0 type=DATA
+  ref=data from=1f12a8b60 type=DATA
+  ref=data from=1f12a8ff0 type=DATA
+  ref=data from=1f12a9420 type=DATA
+  ref=data from=1f12a9838 type=DATA
+  ref=data from=1f12a9aa0 type=DATA
+  ref=data from=1f12aa1c0 type=DATA
+  ref=data from=1f12aa680 type=DATA
+  ref=data from=1f12aaab0 type=DATA
+  ref=data from=1f12aaec8 type=DATA
+  ref=data from=1f12ab4f8 type=DATA
+  ref=data from=1f12aba30 type=DATA
+  ref=data from=1f12abf88 type=DATA
+  ref=data from=1f12ac4d8 type=DATA
+  ref=data from=1f12aca28 type=DATA
+  ref=data from=1f12acf90 type=DATA
+  ref=data from=1f12ad4f8 type=DATA
+  ref=data from=1f12ada60 type=DATA
+  ref=data from=1f12adfc8 type=DATA
+  ref=data from=1f12ae530 type=DATA
+  ref=data from=1f12aea98 type=DATA
+  ref=data from=1f12aefe8 type=DATA
+  ref=data from=1f12af538 type=DATA
+  ref=data from=1f12afa88 type=DATA
+  ref=data from=1f12affd8 type=DATA
+  ref=data from=1f12b0528 type=DATA
+  ref=data from=1f12b0a78 type=DATA
+  ref=data from=1f12b0fc0 type=DATA
+  ref=data from=1f12b1448 type=DATA
+  ref=data from=1f12b1878 type=DATA
+  ref=data from=1f12b1c90 type=DATA
+  ref=data from=1f12b2148 type=DATA
+  ref=data from=1f12b25d0 type=DATA
+  ref=data from=1f12b2a00 type=DATA
+  ref=data from=1f12b2e18 type=DATA
+  ref=data from=1f12b32f8 type=DATA
+  ref=data from=1f12b37b0 type=DATA
+  ref=data from=1f12b3c38 type=DATA
+  ref=data from=1f12b4068 type=DATA
+  ref=data from=1f12b4480 type=DATA
+  ref=data from=1f12b4940 type=DATA
+  ref=data from=1f12b4df8 type=DATA
+  ref=data from=1f12b5280 type=DATA
+  ref=data from=1f12b56b0 type=DATA
+  ref=data from=1f12b5ac8 type=DATA
+  ref=data from=1f12b5f88 type=DATA
+  ref=data from=1f12b6448 type=DATA
+  ref=data from=1f12b6900 type=DATA
+  ref=data from=1f12b6d88 type=DATA
+  ref=data from=1f12b71b8 type=DATA
+  ref=data from=1f12b75d0 type=DATA
+  ref=data from=1f12b7a90 type=DATA
+  ref=data from=1f12b7f48 type=DATA
+  ref=data from=1f12b83d0 type=DATA
+  ref=data from=1f12b8800 type=DATA
+  ref=data from=1f12b8c18 type=DATA
+  ref=data from=1f12b90d8 type=DATA
+  ref=data from=1f12b9590 type=DATA
+  ref=data from=1f12b9a18 type=DATA
+  ref=data from=1f12b9e48 type=DATA
+  ref=data from=1f12ba260 type=DATA
+  ref=data from=1f12ba720 type=DATA
+  ref=data from=1f12babd8 type=DATA
+  ref=data from=1f12bb060 type=DATA
+  ref=data from=1f12bb490 type=DATA
+  ref=data from=1f12bb8a8 type=DATA
+  ref=data from=1f12bbd68 type=DATA
+  ref=data from=1f12bc220 type=DATA
+  ref=data from=1f12bc6a8 type=DATA
+  ref=data from=1f12bcad8 type=DATA
+  ref=data from=1f12bcef0 type=DATA
+  ref=data from=1f12bd3b0 type=DATA
+  ref=data from=1f12bd868 type=DATA
+  ref=data from=1f12bdcf0 type=DATA
+  ref=data from=1f12be120 type=DATA
+  ref=data from=1f12be538 type=DATA
+  ref=data from=1f12be9f8 type=DATA
+  ref=data from=1f12beeb0 type=DATA
+  ref=data from=1f12bf338 type=DATA
+  ref=data from=1f12bf768 type=DATA
+  ref=data from=1f12bfb80 type=DATA
+  ref=data from=1f12c0040 type=DATA
+  ref=data from=1f12c04f8 type=DATA
+  ref=data from=1f12c0980 type=DATA
+  ref=data from=1f12c0db0 type=DATA
+  ref=data from=1f12c11c8 type=DATA
+  ref=data from=1f12c1688 type=DATA
+  ref=data from=1f12c1b48 type=DATA
+  ref=data from=1f12c2000 type=DATA
+  ref=data from=1f12c2488 type=DATA
+  ref=data from=1f12c28b8 type=DATA
+  ref=data from=1f12c2cd0 type=DATA
+  ref=data from=1f12c3190 type=DATA
+  ref=data from=1f12c3650 type=DATA
+  ref=data from=1f12c3b08 type=DATA
+  ref=data from=1f12c3f90 type=DATA
+  ref=data from=1f12c43c0 type=DATA
+  ref=data from=1f12c47d8 type=DATA
+  ref=data from=1f12c4c98 type=DATA
+  ref=data from=1f12c5158 type=DATA
+  ref=data from=1f12c5610 type=DATA
+  ref=data from=1f12c5a98 type=DATA
+  ref=data from=1f12c5ec8 type=DATA
+  ref=data from=1f12c62e0 type=DATA
+  ref=data from=1f12c67a0 type=DATA
+  ref=data from=1f12c6c60 type=DATA
+  ref=data from=1f12c7118 type=DATA
+  ref=data from=1f12c75a0 type=DATA
+  ref=data from=1f12c79d0 type=DATA
+  ref=data from=1f12c7de8 type=DATA
+  ref=data from=1f12c82a8 type=DATA
+  ref=data from=1f12c8768 type=DATA
+  ref=data from=1f12c8c20 type=DATA
+  ref=data from=1f12c90a8 type=DATA
+  ref=data from=1f12c94d8 type=DATA
+  ref=data from=1f12c98f0 type=DATA
+  ref=data from=1f12cb070 type=DATA
+  ref=data from=1f12cb590 type=DATA
+  ref=data from=1f12cbac8 type=DATA
+  ref=data from=1f12cbfe8 type=DATA
+  ref=data from=1f12cc520 type=DATA
+  ref=data from=1f12cca70 type=DATA
+  ref=data from=1f12ccfc0 type=DATA
+  ref=data from=1f12cd510 type=DATA
+  ref=data from=1f12cda60 type=DATA
+  ref=data from=1f12cdf98 type=DATA
+  ref=data from=1f12ce4d0 type=DATA
+  ref=data from=1f12cea20 type=DATA
+  ref=data from=1f12cef70 type=DATA
+  ref=data from=1f12cf4c0 type=DATA
+  ref=data from=1f12cfa10 type=DATA
+  ref=data from=1f12cff60 type=DATA
+  ref=data from=1f12d04b0 type=DATA
+  ref=data from=1f12d0a00 type=DATA
+  ref=data from=1f12d0f50 type=DATA
+  ref=data from=1f12d14a0 type=DATA
+  ref=data from=1f12d19f0 type=DATA
+  ref=data from=1f12d1f38 type=DATA
+  ref=data from=1f12d2368 type=DATA
+  ref=data from=1f12d2780 type=DATA
+  ref=data from=1f12d2c38 type=DATA
+  ref=data from=1f12d3068 type=DATA
+  ref=data from=1f12d3480 type=DATA
+  ref=data from=1f12d3940 type=DATA
+  ref=data from=1f12d3e00 type=DATA
+  ref=data from=1f12d42b8 type=DATA
+  ref=data from=1f12d46e8 type=DATA
+  ref=data from=1f12d4b00 type=DATA
+  ref=data from=1f12d4fc0 type=DATA
+  ref=data from=1f12d5480 type=DATA
+  ref=data from=1f12d5938 type=DATA
+  ref=data from=1f12d5d68 type=DATA
+  ref=data from=1f12d6180 type=DATA
+  ref=data from=1f12d6640 type=DATA
+  ref=data from=1f12d6af8 type=DATA
+  ref=data from=1f12d6f28 type=DATA
+  ref=data from=1f12d7340 type=DATA
+  ref=data from=1f12d7800 type=DATA
+  ref=data from=1f12d7cc0 type=DATA
+  ref=data from=1f12d8178 type=DATA
+  ref=data from=1f12d85a8 type=DATA
+  ref=data from=1f12d89c0 type=DATA
+  ref=data from=1f12d8e80 type=DATA
+  ref=data from=1f12d9340 type=DATA
+  ref=data from=1f12d97f8 type=DATA
+  ref=data from=1f12d9c28 type=DATA
+  ref=data from=1f12da040 type=DATA
+  ref=data from=1f12da500 type=DATA
+  ref=data from=1f12da9c0 type=DATA
+  ref=data from=1f12dae78 type=DATA
+  ref=data from=1f12db2a8 type=DATA
+  ref=data from=1f12db6c0 type=DATA
+  ref=data from=1f12dbb80 type=DATA
+  ref=data from=1f12dc040 type=DATA
+  ref=data from=1f12dc4f8 type=DATA
+  ref=data from=1f12dc928 type=DATA
+  ref=data from=1f12dcd40 type=DATA
+  ref=data from=1f12dd200 type=DATA
+  ref=data from=1f12dd6c0 type=DATA
+  ref=data from=1f12ddb78 type=DATA
+  ref=data from=1f12ddfa8 type=DATA
+  ref=data from=1f12de3c0 type=DATA
+  ref=data from=1f12de880 type=DATA
+  ref=data from=1f12ded40 type=DATA
+  ref=data from=1f12df1f8 type=DATA
+  ref=data from=1f12df628 type=DATA
+  ref=data from=1f12dfa40 type=DATA
+  ref=data from=1f12dff00 type=DATA
+  ref=data from=1f12e03c0 type=DATA
+  ref=data from=1f12e0878 type=DATA
+  ref=data from=1f12e0ca8 type=DATA
+  ref=data from=1f12e10c0 type=DATA
+  ref=data from=1f12e1580 type=DATA
+  ref=data from=1f12e1a40 type=DATA
+  ref=data from=1f12e1ef8 type=DATA
+  ref=data from=1f12e2328 type=DATA
+  ref=data from=1f12e2740 type=DATA
+  ref=data from=1f12e2c00 type=DATA
+  ref=data from=1f12e30c0 type=DATA
+  ref=data from=1f12e3578 type=DATA
+  ref=data from=1f12e39a8 type=DATA
+  ref=data from=1f12e3dc0 type=DATA
+  ref=data from=1f12e4280 type=DATA
+  ref=data from=1f12e4738 type=DATA
+  ref=data from=1f12e4b68 type=DATA
+  ref=data from=1f12e4f80 type=DATA
+  ref=data from=1f12e5440 type=DATA
+  ref=data from=1f12e58f8 type=DATA
+  ref=data from=1f12e5d28 type=DATA
+  ref=data from=1f12e6140 type=DATA
+  ref=data from=1f12e6600 type=DATA
+  ref=data from=1f12e6ac0 type=DATA
+  ref=data from=1f12e6f78 type=DATA
+  ref=data from=1f12e73a8 type=DATA
+  ref=data from=1f12e77c0 type=DATA
+  ref=data from=1f12e7c80 type=DATA
+  ref=data from=1f12e8140 type=DATA
+  ref=data from=1f12e85f8 type=DATA
+  ref=data from=1f12e8a28 type=DATA
+  ref=data from=1f12e8e40 type=DATA
+  ref=data from=1f12e9300 type=DATA
+  ref=data from=1f12e97b8 type=DATA
+  ref=data from=1f12e9be8 type=DATA
+  ref=data from=1f12ea000 type=DATA
+  ref=data from=1f12ea4c0 type=DATA
+  ref=data from=1f12ea980 type=DATA
+  ref=data from=1f12eae38 type=DATA
+  ref=data from=1f12eb268 type=DATA
+  ref=data from=1f12eb680 type=DATA
+  ref=data from=1f12ebb40 type=DATA
+  ref=data from=1f12ec000 type=DATA
+  ref=data from=1f12ec4b8 type=DATA
+  ref=data from=1f12ec8e8 type=DATA
+  ref=data from=1f12ecd00 type=DATA
+  ref=data from=1f12ed390 type=DATA
+  ref=data from=1f12edae0 type=DATA
+  ref=data from=1f12ede60 type=DATA
+  ref=data from=1f12ee478 type=DATA
+  ref=data from=1f12ee890 type=DATA
+  ref=data from=1f12eeb48 type=DATA
+  ref=data from=1f12eedf8 type=DATA
+  ref=data from=1f12ef050 type=DATA
+  ref=data from=1f12effa0 type=DATA
+  ref=data from=1f12f0540 type=DATA
+  ref=data from=1f12f0970 type=DATA
+  ref=data from=1f12f0d88 type=DATA
+  ref=data from=1f12f0ff0 type=DATA
+  ref=data from=1f12f1248 type=DATA
+  ref=data from=1f12f1728 type=DATA
+  ref=data from=1f12f1c10 type=DATA
+  ref=data from=1f12f2040 type=DATA
+  ref=data from=1f12f2458 type=DATA
+  ref=data from=1f12f27a8 type=DATA
+  ref=data from=1f12f2c88 type=DATA
+  ref=data from=1f12f3180 type=DATA
+  ref=data from=1f12f34a0 type=DATA
+  ref=data from=1f12f3738 type=DATA
+  ref=data from=1f12f3988 type=DATA
+  ref=data from=1f12f3db8 type=DATA
+  ref=data from=1f12f41d0 type=DATA
+  ref=data from=1f12f4420 type=DATA
+  ref=data from=1f12f48b0 type=DATA
+  ref=data from=1f12f4ce0 type=DATA
+  ref=data from=1f12f50f8 type=DATA
+  ref=data from=1f12f5348 type=DATA
+  ref=data from=1f12f55b0 type=DATA
+  ref=data from=1f12f6050 type=DATA
+  ref=data from=1f12f64c8 type=DATA
+  ref=data from=1f12f68e0 type=DATA
+  ref=data from=1f12f9488 type=DATA
+  ref=data from=1f12f9740 type=DATA
+  ref=data from=1f12f9a18 type=DATA
+  ref=data from=1f12f9cf0 type=DATA
+  ref=data from=1f12f9fb0 type=DATA
+  ref=data from=1f12fa2b8 type=DATA
+  ref=data from=1f12fa618 type=DATA
+  ref=data from=1f12fa938 type=DATA
+  ref=data from=1f12fabf0 type=DATA
+  ref=data from=1f12faec8 type=DATA
+  ref=data from=1f12fb228 type=DATA
+  ref=data from=1f12fb548 type=DATA
+  ref=data from=1f12fb7f8 type=DATA
+  ref=data from=1f12fba68 type=DATA
+  ref=data from=1f12fbcd0 type=DATA
+  ref=data from=1f12fbf40 type=DATA
+  ref=data from=1f12fc1a8 type=DATA
+  ref=data from=1f12fc410 type=DATA
+  ref=data from=1f12fc678 type=DATA
+  ref=data from=1f12fc930 type=DATA
+  ref=data from=1f12fcb98 type=DATA
+  ref=data from=1f12fce00 type=DATA
+  ref=data from=1f12fd058 type=DATA
+  ref=data from=1f12fd310 type=DATA
+  ref=data from=1f12fd578 type=DATA
+  ref=data from=1f12fd7e0 type=DATA
+  ref=data from=1f12fda38 type=DATA
+  ref=data from=1f12fdca0 type=DATA
+  ref=data from=1f12fdf58 type=DATA
+  ref=data from=1f12fe1c0 type=DATA
+  ref=data from=1f12fe428 type=DATA
+  ref=data from=1f12fe680 type=DATA
+  ref=data from=1f12fe938 type=DATA
+  ref=data from=1f12feba0 type=DATA
+  ref=data from=1f12fee08 type=DATA
+  ref=data from=1f12ff060 type=DATA
+  ref=data from=1f12ff2d0 type=DATA
+  ref=data from=1f12ff538 type=DATA
+  ref=data from=1f12ff660 type=DATA
+direct_callees=0
+
+/* AGCLLVMObject::getCompiledObjectSize() const */
+
+undefined8 __thiscall AGCLLVMObject::getCompiledObjectSize(AGCLLVMObject *this)
+
+{
+  return *(undefined8 *)(*(long *)(this + 0x698) + 0xa0);
+}
+
+
+
+===== get_compiled_object =====
+symbol=getCompiledObject entry=1ac889cc0
+direct_callers=0
+all_references=351
+  ref=data from=1ff0e04e8 type=DATA
+  ref=data from=1f12a5f10 type=DATA
+  ref=data from=1f12f8fa0 type=DATA
+  ref=data from=1f12f90c8 type=DATA
+  ref=data from=1f12f91f0 type=DATA
+  ref=data from=1f129e078 type=DATA
+  ref=data from=1f129e660 type=DATA
+  ref=data from=1f129ec68 type=DATA
+  ref=data from=1f129f290 type=DATA
+  ref=data from=1f129f890 type=DATA
+  ref=data from=1f129fcc0 type=DATA
+  ref=data from=1f12a00d8 type=DATA
+  ref=data from=1f12a0340 type=DATA
+  ref=data from=1f12a0598 type=DATA
+  ref=data from=1f12a0ad8 type=DATA
+  ref=data from=1f12a0fd8 type=DATA
+  ref=data from=1f12a1408 type=DATA
+  ref=data from=1f12a1820 type=DATA
+  ref=data from=1f12a1a88 type=DATA
+  ref=data from=1f12a1ce0 type=DATA
+  ref=data from=1f12a2228 type=DATA
+  ref=data from=1f12a2768 type=DATA
+  ref=data from=1f12a2c68 type=DATA
+  ref=data from=1f12a3098 type=DATA
+  ref=data from=1f12a34b0 type=DATA
+  ref=data from=1f12a3718 type=DATA
+  ref=data from=1f12a3970 type=DATA
+  ref=data from=1f12a3eb8 type=DATA
+  ref=data from=1f12a4400 type=DATA
+  ref=data from=1f12a4940 type=DATA
+  ref=data from=1f12a4e40 type=DATA
+  ref=data from=1f12a5270 type=DATA
+  ref=data from=1f12a5688 type=DATA
+  ref=data from=1f12a58f0 type=DATA
+  ref=data from=1f12a5b48 type=DATA
+  ref=data from=1f12a63b8 type=DATA
+  ref=data from=1f12a6818 type=DATA
+  ref=data from=1f12a6c48 type=DATA
+  ref=data from=1f12a7060 type=DATA
+  ref=data from=1f12a75f0 type=DATA
+  ref=data from=1f12a7ab0 type=DATA
+  ref=data from=1f12a7ee0 type=DATA
+  ref=data from=1f12a82f8 type=DATA
+  ref=data from=1f12a88c8 type=DATA
+  ref=data from=1f12a8b58 type=DATA
+  ref=data from=1f12a8fe8 type=DATA
+  ref=data from=1f12a9418 type=DATA
+  ref=data from=1f12a9830 type=DATA
+  ref=data from=1f12a9a98 type=DATA
+  ref=data from=1f12aa1b8 type=DATA
+  ref=data from=1f12aa678 type=DATA
+  ref=data from=1f12aaaa8 type=DATA
+  ref=data from=1f12aaec0 type=DATA
+  ref=data from=1f12ab4f0 type=DATA
+  ref=data from=1f12aba28 type=DATA
+  ref=data from=1f12abf80 type=DATA
+  ref=data from=1f12ac4d0 type=DATA
+  ref=data from=1f12aca20 type=DATA
+  ref=data from=1f12acf88 type=DATA
+  ref=data from=1f12ad4f0 type=DATA
+  ref=data from=1f12ada58 type=DATA
+  ref=data from=1f12adfc0 type=DATA
+  ref=data from=1f12ae528 type=DATA
+  ref=data from=1f12aea90 type=DATA
+  ref=data from=1f12aefe0 type=DATA
+  ref=data from=1f12af530 type=DATA
+  ref=data from=1f12afa80 type=DATA
+  ref=data from=1f12affd0 type=DATA
+  ref=data from=1f12b0520 type=DATA
+  ref=data from=1f12b0a70 type=DATA
+  ref=data from=1f12b0fb8 type=DATA
+  ref=data from=1f12b1440 type=DATA
+  ref=data from=1f12b1870 type=DATA
+  ref=data from=1f12b1c88 type=DATA
+  ref=data from=1f12b2140 type=DATA
+  ref=data from=1f12b25c8 type=DATA
+  ref=data from=1f12b29f8 type=DATA
+  ref=data from=1f12b2e10 type=DATA
+  ref=data from=1f12b32f0 type=DATA
+  ref=data from=1f12b37a8 type=DATA
+  ref=data from=1f12b3c30 type=DATA
+  ref=data from=1f12b4060 type=DATA
+  ref=data from=1f12b4478 type=DATA
+  ref=data from=1f12b4938 type=DATA
+  ref=data from=1f12b4df0 type=DATA
+  ref=data from=1f12b5278 type=DATA
+  ref=data from=1f12b56a8 type=DATA
+  ref=data from=1f12b5ac0 type=DATA
+  ref=data from=1f12b5f80 type=DATA
+  ref=data from=1f12b6440 type=DATA
+  ref=data from=1f12b68f8 type=DATA
+  ref=data from=1f12b6d80 type=DATA
+  ref=data from=1f12b71b0 type=DATA
+  ref=data from=1f12b75c8 type=DATA
+  ref=data from=1f12b7a88 type=DATA
+  ref=data from=1f12b7f40 type=DATA
+  ref=data from=1f12b83c8 type=DATA
+  ref=data from=1f12b87f8 type=DATA
+  ref=data from=1f12b8c10 type=DATA
+  ref=data from=1f12b90d0 type=DATA
+  ref=data from=1f12b9588 type=DATA
+  ref=data from=1f12b9a10 type=DATA
+  ref=data from=1f12b9e40 type=DATA
+  ref=data from=1f12ba258 type=DATA
+  ref=data from=1f12ba718 type=DATA
+  ref=data from=1f12babd0 type=DATA
+  ref=data from=1f12bb058 type=DATA
+  ref=data from=1f12bb488 type=DATA
+  ref=data from=1f12bb8a0 type=DATA
+  ref=data from=1f12bbd60 type=DATA
+  ref=data from=1f12bc218 type=DATA
+  ref=data from=1f12bc6a0 type=DATA
+  ref=data from=1f12bcad0 type=DATA
+  ref=data from=1f12bcee8 type=DATA
+  ref=data from=1f12bd3a8 type=DATA
+  ref=data from=1f12bd860 type=DATA
+  ref=data from=1f12bdce8 type=DATA
+  ref=data from=1f12be118 type=DATA
+  ref=data from=1f12be530 type=DATA
+  ref=data from=1f12be9f0 type=DATA
+  ref=data from=1f12beea8 type=DATA
+  ref=data from=1f12bf330 type=DATA
+  ref=data from=1f12bf760 type=DATA
+  ref=data from=1f12bfb78 type=DATA
+  ref=data from=1f12c0038 type=DATA
+  ref=data from=1f12c04f0 type=DATA
+  ref=data from=1f12c0978 type=DATA
+  ref=data from=1f12c0da8 type=DATA
+  ref=data from=1f12c11c0 type=DATA
+  ref=data from=1f12c1680 type=DATA
+  ref=data from=1f12c1b40 type=DATA
+  ref=data from=1f12c1ff8 type=DATA
+  ref=data from=1f12c2480 type=DATA
+  ref=data from=1f12c28b0 type=DATA
+  ref=data from=1f12c2cc8 type=DATA
+  ref=data from=1f12c3188 type=DATA
+  ref=data from=1f12c3648 type=DATA
+  ref=data from=1f12c3b00 type=DATA
+  ref=data from=1f12c3f88 type=DATA
+  ref=data from=1f12c43b8 type=DATA
+  ref=data from=1f12c47d0 type=DATA
+  ref=data from=1f12c4c90 type=DATA
+  ref=data from=1f12c5150 type=DATA
+  ref=data from=1f12c5608 type=DATA
+  ref=data from=1f12c5a90 type=DATA
+  ref=data from=1f12c5ec0 type=DATA
+  ref=data from=1f12c62d8 type=DATA
+  ref=data from=1f12c6798 type=DATA
+  ref=data from=1f12c6c58 type=DATA
+  ref=data from=1f12c7110 type=DATA
+  ref=data from=1f12c7598 type=DATA
+  ref=data from=1f12c79c8 type=DATA
+  ref=data from=1f12c7de0 type=DATA
+  ref=data from=1f12c82a0 type=DATA
+  ref=data from=1f12c8760 type=DATA
+  ref=data from=1f12c8c18 type=DATA
+  ref=data from=1f12c90a0 type=DATA
+  ref=data from=1f12c94d0 type=DATA
+  ref=data from=1f12c98e8 type=DATA
+  ref=data from=1f12cb068 type=DATA
+  ref=data from=1f12cb588 type=DATA
+  ref=data from=1f12cbac0 type=DATA
+  ref=data from=1f12cbfe0 type=DATA
+  ref=data from=1f12cc518 type=DATA
+  ref=data from=1f12cca68 type=DATA
+  ref=data from=1f12ccfb8 type=DATA
+  ref=data from=1f12cd508 type=DATA
+  ref=data from=1f12cda58 type=DATA
+  ref=data from=1f12cdf90 type=DATA
+  ref=data from=1f12ce4c8 type=DATA
+  ref=data from=1f12cea18 type=DATA
+  ref=data from=1f12cef68 type=DATA
+  ref=data from=1f12cf4b8 type=DATA
+  ref=data from=1f12cfa08 type=DATA
+  ref=data from=1f12cff58 type=DATA
+  ref=data from=1f12d04a8 type=DATA
+  ref=data from=1f12d09f8 type=DATA
+  ref=data from=1f12d0f48 type=DATA
+  ref=data from=1f12d1498 type=DATA
+  ref=data from=1f12d19e8 type=DATA
+  ref=data from=1f12d1f30 type=DATA
+  ref=data from=1f12d2360 type=DATA
+  ref=data from=1f12d2778 type=DATA
+  ref=data from=1f12d2c30 type=DATA
+  ref=data from=1f12d3060 type=DATA
+  ref=data from=1f12d3478 type=DATA
+  ref=data from=1f12d3938 type=DATA
+  ref=data from=1f12d3df8 type=DATA
+  ref=data from=1f12d42b0 type=DATA
+  ref=data from=1f12d46e0 type=DATA
+  ref=data from=1f12d4af8 type=DATA
+  ref=data from=1f12d4fb8 type=DATA
+  ref=data from=1f12d5478 type=DATA
+  ref=data from=1f12d5930 type=DATA
+  ref=data from=1f12d5d60 type=DATA
+  ref=data from=1f12d6178 type=DATA
+  ref=data from=1f12d6638 type=DATA
+  ref=data from=1f12d6af0 type=DATA
+  ref=data from=1f12d6f20 type=DATA
+  ref=data from=1f12d7338 type=DATA
+  ref=data from=1f12d77f8 type=DATA
+  ref=data from=1f12d7cb8 type=DATA
+  ref=data from=1f12d8170 type=DATA
+  ref=data from=1f12d85a0 type=DATA
+  ref=data from=1f12d89b8 type=DATA
+  ref=data from=1f12d8e78 type=DATA
+  ref=data from=1f12d9338 type=DATA
+  ref=data from=1f12d97f0 type=DATA
+  ref=data from=1f12d9c20 type=DATA
+  ref=data from=1f12da038 type=DATA
+  ref=data from=1f12da4f8 type=DATA
+  ref=data from=1f12da9b8 type=DATA
+  ref=data from=1f12dae70 type=DATA
+  ref=data from=1f12db2a0 type=DATA
+  ref=data from=1f12db6b8 type=DATA
+  ref=data from=1f12dbb78 type=DATA
+  ref=data from=1f12dc038 type=DATA
+  ref=data from=1f12dc4f0 type=DATA
+  ref=data from=1f12dc920 type=DATA
+  ref=data from=1f12dcd38 type=DATA
+  ref=data from=1f12dd1f8 type=DATA
+  ref=data from=1f12dd6b8 type=DATA
+  ref=data from=1f12ddb70 type=DATA
+  ref=data from=1f12ddfa0 type=DATA
+  ref=data from=1f12de3b8 type=DATA
+  ref=data from=1f12de878 type=DATA
+  ref=data from=1f12ded38 type=DATA
+  ref=data from=1f12df1f0 type=DATA
+  ref=data from=1f12df620 type=DATA
+  ref=data from=1f12dfa38 type=DATA
+  ref=data from=1f12dfef8 type=DATA
+  ref=data from=1f12e03b8 type=DATA
+  ref=data from=1f12e0870 type=DATA
+  ref=data from=1f12e0ca0 type=DATA
+  ref=data from=1f12e10b8 type=DATA
+  ref=data from=1f12e1578 type=DATA
+  ref=data from=1f12e1a38 type=DATA
+  ref=data from=1f12e1ef0 type=DATA
+  ref=data from=1f12e2320 type=DATA
+  ref=data from=1f12e2738 type=DATA
+  ref=data from=1f12e2bf8 type=DATA
+  ref=data from=1f12e30b8 type=DATA
+  ref=data from=1f12e3570 type=DATA
+  ref=data from=1f12e39a0 type=DATA
+  ref=data from=1f12e3db8 type=DATA
+  ref=data from=1f12e4278 type=DATA
+  ref=data from=1f12e4730 type=DATA
+  ref=data from=1f12e4b60 type=DATA
+  ref=data from=1f12e4f78 type=DATA
+  ref=data from=1f12e5438 type=DATA
+  ref=data from=1f12e58f0 type=DATA
+  ref=data from=1f12e5d20 type=DATA
+  ref=data from=1f12e6138 type=DATA
+  ref=data from=1f12e65f8 type=DATA
+  ref=data from=1f12e6ab8 type=DATA
+  ref=data from=1f12e6f70 type=DATA
+  ref=data from=1f12e73a0 type=DATA
+  ref=data from=1f12e77b8 type=DATA
+  ref=data from=1f12e7c78 type=DATA
+  ref=data from=1f12e8138 type=DATA
+  ref=data from=1f12e85f0 type=DATA
+  ref=data from=1f12e8a20 type=DATA
+  ref=data from=1f12e8e38 type=DATA
+  ref=data from=1f12e92f8 type=DATA
+  ref=data from=1f12e97b0 type=DATA
+  ref=data from=1f12e9be0 type=DATA
+  ref=data from=1f12e9ff8 type=DATA
+  ref=data from=1f12ea4b8 type=DATA
+  ref=data from=1f12ea978 type=DATA
+  ref=data from=1f12eae30 type=DATA
+  ref=data from=1f12eb260 type=DATA
+  ref=data from=1f12eb678 type=DATA
+  ref=data from=1f12ebb38 type=DATA
+  ref=data from=1f12ebff8 type=DATA
+  ref=data from=1f12ec4b0 type=DATA
+  ref=data from=1f12ec8e0 type=DATA
+  ref=data from=1f12eccf8 type=DATA
+  ref=data from=1f12ed388 type=DATA
+  ref=data from=1f12edad8 type=DATA
+  ref=data from=1f12ede58 type=DATA
+  ref=data from=1f12ee470 type=DATA
+  ref=data from=1f12ee888 type=DATA
+  ref=data from=1f12eeb40 type=DATA
+  ref=data from=1f12eedf0 type=DATA
+  ref=data from=1f12ef048 type=DATA
+  ref=data from=1f12eff98 type=DATA
+  ref=data from=1f12f0538 type=DATA
+  ref=data from=1f12f0968 type=DATA
+  ref=data from=1f12f0d80 type=DATA
+  ref=data from=1f12f0fe8 type=DATA
+  ref=data from=1f12f1240 type=DATA
+  ref=data from=1f12f1720 type=DATA
+  ref=data from=1f12f1c08 type=DATA
+  ref=data from=1f12f2038 type=DATA
+  ref=data from=1f12f2450 type=DATA
+  ref=data from=1f12f27a0 type=DATA
+  ref=data from=1f12f2c80 type=DATA
+  ref=data from=1f12f3178 type=DATA
+  ref=data from=1f12f3498 type=DATA
+  ref=data from=1f12f3730 type=DATA
+  ref=data from=1f12f3980 type=DATA
+  ref=data from=1f12f3db0 type=DATA
+  ref=data from=1f12f41c8 type=DATA
+  ref=data from=1f12f4418 type=DATA
+  ref=data from=1f12f48a8 type=DATA
+  ref=data from=1f12f4cd8 type=DATA
+  ref=data from=1f12f50f0 type=DATA
+  ref=data from=1f12f5340 type=DATA
+  ref=data from=1f12f55a8 type=DATA
+  ref=data from=1f12f6048 type=DATA
+  ref=data from=1f12f64c0 type=DATA
+  ref=data from=1f12f68d8 type=DATA
+  ref=data from=1f12f9480 type=DATA
+  ref=data from=1f12f9738 type=DATA
+  ref=data from=1f12f9a10 type=DATA
+  ref=data from=1f12f9ce8 type=DATA
+  ref=data from=1f12f9fa8 type=DATA
+  ref=data from=1f12fa2b0 type=DATA
+  ref=data from=1f12fa610 type=DATA
+  ref=data from=1f12fa930 type=DATA
+  ref=data from=1f12fabe8 type=DATA
+  ref=data from=1f12faec0 type=DATA
+  ref=data from=1f12fb220 type=DATA
+  ref=data from=1f12fb540 type=DATA
+  ref=data from=1f12fb7f0 type=DATA
+  ref=data from=1f12fba60 type=DATA
+  ref=data from=1f12fbcc8 type=DATA
+  ref=data from=1f12fbf38 type=DATA
+  ref=data from=1f12fc1a0 type=DATA
+  ref=data from=1f12fc408 type=DATA
+  ref=data from=1f12fc670 type=DATA
+  ref=data from=1f12fc928 type=DATA
+  ref=data from=1f12fcb90 type=DATA
+  ref=data from=1f12fcdf8 type=DATA
+  ref=data from=1f12fd050 type=DATA
+  ref=data from=1f12fd308 type=DATA
+  ref=data from=1f12fd570 type=DATA
+  ref=data from=1f12fd7d8 type=DATA
+  ref=data from=1f12fda30 type=DATA
+  ref=data from=1f12fdc98 type=DATA
+  ref=data from=1f12fdf50 type=DATA
+  ref=data from=1f12fe1b8 type=DATA
+  ref=data from=1f12fe420 type=DATA
+  ref=data from=1f12fe678 type=DATA
+  ref=data from=1f12fe930 type=DATA
+  ref=data from=1f12feb98 type=DATA
+  ref=data from=1f12fee00 type=DATA
+  ref=data from=1f12ff058 type=DATA
+  ref=data from=1f12ff2c8 type=DATA
+  ref=data from=1f12ff530 type=DATA
+  ref=data from=1f12ff658 type=DATA
+direct_callees=0
+
+/* AGCLLVMObject::getCompiledObject() const */
+
+undefined8 __thiscall AGCLLVMObject::getCompiledObject(AGCLLVMObject *this)
+
+{
+  return *(undefined8 *)(*(long *)(this + 0x698) + 0x98);
+}
+
+
+
+===== program_object_build_backend_request =====
+symbol=buildBackendRequest entry=1ac8901b8
+direct_callers=0
+all_references=296
+  ref=data from=1ff0e053e type=DATA
+  ref=data from=1f12a5ed0 type=DATA
+  ref=data from=1f12f8f60 type=DATA
+  ref=data from=1f12f9088 type=DATA
+  ref=data from=1f12f91b0 type=DATA
+  ref=data from=1f129e038 type=DATA
+  ref=data from=1f129e620 type=DATA
+  ref=data from=1f129ec28 type=DATA
+  ref=data from=1f129f250 type=DATA
+  ref=data from=1f129f850 type=DATA
+  ref=data from=1f129fc80 type=DATA
+  ref=data from=1f12a0098 type=DATA
+  ref=data from=1f12a0300 type=DATA
+  ref=data from=1f12a0558 type=DATA
+  ref=data from=1f12a0a98 type=DATA
+  ref=data from=1f12a0f98 type=DATA
+  ref=data from=1f12a13c8 type=DATA
+  ref=data from=1f12a17e0 type=DATA
+  ref=data from=1f12a1a48 type=DATA
+  ref=data from=1f12a1ca0 type=DATA
+  ref=data from=1f12a21e8 type=DATA
+  ref=data from=1f12a2728 type=DATA
+  ref=data from=1f12a2c28 type=DATA
+  ref=data from=1f12a3058 type=DATA
+  ref=data from=1f12a3470 type=DATA
+  ref=data from=1f12a36d8 type=DATA
+  ref=data from=1f12a3930 type=DATA
+  ref=data from=1f12a3e78 type=DATA
+  ref=data from=1f12a43c0 type=DATA
+  ref=data from=1f12a4900 type=DATA
+  ref=data from=1f12a4e00 type=DATA
+  ref=data from=1f12a5230 type=DATA
+  ref=data from=1f12a5648 type=DATA
+  ref=data from=1f12a58b0 type=DATA
+  ref=data from=1f12a5b08 type=DATA
+  ref=data from=1f12a6378 type=DATA
+  ref=data from=1f12a67d8 type=DATA
+  ref=data from=1f12a6c08 type=DATA
+  ref=data from=1f12a7020 type=DATA
+  ref=data from=1f12a75b0 type=DATA
+  ref=data from=1f12a7a70 type=DATA
+  ref=data from=1f12a7ea0 type=DATA
+  ref=data from=1f12a82b8 type=DATA
+  ref=data from=1f12a8888 type=DATA
+  ref=data from=1f12a8b18 type=DATA
+  ref=data from=1f12a8fa8 type=DATA
+  ref=data from=1f12a93d8 type=DATA
+  ref=data from=1f12a97f0 type=DATA
+  ref=data from=1f12a9a58 type=DATA
+  ref=data from=1f12aa178 type=DATA
+  ref=data from=1f12aa638 type=DATA
+  ref=data from=1f12aaa68 type=DATA
+  ref=data from=1f12aae80 type=DATA
+  ref=data from=1f12b1400 type=DATA
+  ref=data from=1f12b1830 type=DATA
+  ref=data from=1f12b1c48 type=DATA
+  ref=data from=1f12b2588 type=DATA
+  ref=data from=1f12b29b8 type=DATA
+  ref=data from=1f12b2dd0 type=DATA
+  ref=data from=1f12b3bf0 type=DATA
+  ref=data from=1f12b4020 type=DATA
+  ref=data from=1f12b4438 type=DATA
+  ref=data from=1f12b5238 type=DATA
+  ref=data from=1f12b5668 type=DATA
+  ref=data from=1f12b5a80 type=DATA
+  ref=data from=1f12b6d40 type=DATA
+  ref=data from=1f12b7170 type=DATA
+  ref=data from=1f12b7588 type=DATA
+  ref=data from=1f12b8388 type=DATA
+  ref=data from=1f12b87b8 type=DATA
+  ref=data from=1f12b8bd0 type=DATA
+  ref=data from=1f12b99d0 type=DATA
+  ref=data from=1f12b9e00 type=DATA
+  ref=data from=1f12ba218 type=DATA
+  ref=data from=1f12bb018 type=DATA
+  ref=data from=1f12bb448 type=DATA
+  ref=data from=1f12bb860 type=DATA
+  ref=data from=1f12bc660 type=DATA
+  ref=data from=1f12bca90 type=DATA
+  ref=data from=1f12bcea8 type=DATA
+  ref=data from=1f12bdca8 type=DATA
+  ref=data from=1f12be0d8 type=DATA
+  ref=data from=1f12be4f0 type=DATA
+  ref=data from=1f12bf2f0 type=DATA
+  ref=data from=1f12bf720 type=DATA
+  ref=data from=1f12bfb38 type=DATA
+  ref=data from=1f12c0938 type=DATA
+  ref=data from=1f12c0d68 type=DATA
+  ref=data from=1f12c1180 type=DATA
+  ref=data from=1f12c2440 type=DATA
+  ref=data from=1f12c2870 type=DATA
+  ref=data from=1f12c2c88 type=DATA
+  ref=data from=1f12c3f48 type=DATA
+  ref=data from=1f12c4378 type=DATA
+  ref=data from=1f12c4790 type=DATA
+  ref=data from=1f12c5a50 type=DATA
+  ref=data from=1f12c5e80 type=DATA
+  ref=data from=1f12c6298 type=DATA
+  ref=data from=1f12c7558 type=DATA
+  ref=data from=1f12c7988 type=DATA
+  ref=data from=1f12c7da0 type=DATA
+  ref=data from=1f12c9060 type=DATA
+  ref=data from=1f12c9490 type=DATA
+  ref=data from=1f12c98a8 type=DATA
+  ref=data from=1f12cb028 type=DATA
+  ref=data from=1f12cb548 type=DATA
+  ref=data from=1f12cba80 type=DATA
+  ref=data from=1f12cbfa0 type=DATA
+  ref=data from=1f12cc4d8 type=DATA
+  ref=data from=1f12cca28 type=DATA
+  ref=data from=1f12ccf78 type=DATA
+  ref=data from=1f12cd4c8 type=DATA
+  ref=data from=1f12cda18 type=DATA
+  ref=data from=1f12cdf50 type=DATA
+  ref=data from=1f12ce488 type=DATA
+  ref=data from=1f12ce9d8 type=DATA
+  ref=data from=1f12cef28 type=DATA
+  ref=data from=1f12cf478 type=DATA
+  ref=data from=1f12cf9c8 type=DATA
+  ref=data from=1f12cff18 type=DATA
+  ref=data from=1f12d0468 type=DATA
+  ref=data from=1f12d09b8 type=DATA
+  ref=data from=1f12d0f08 type=DATA
+  ref=data from=1f12d1458 type=DATA
+  ref=data from=1f12d19a8 type=DATA
+  ref=data from=1f12d1ef0 type=DATA
+  ref=data from=1f12d2320 type=DATA
+  ref=data from=1f12d2738 type=DATA
+  ref=data from=1f12d2bf0 type=DATA
+  ref=data from=1f12d3020 type=DATA
+  ref=data from=1f12d3438 type=DATA
+  ref=data from=1f12d38f8 type=DATA
+  ref=data from=1f12d3db8 type=DATA
+  ref=data from=1f12d4270 type=DATA
+  ref=data from=1f12d46a0 type=DATA
+  ref=data from=1f12d4ab8 type=DATA
+  ref=data from=1f12d4f78 type=DATA
+  ref=data from=1f12d5438 type=DATA
+  ref=data from=1f12d58f0 type=DATA
+  ref=data from=1f12d5d20 type=DATA
+  ref=data from=1f12d6138 type=DATA
+  ref=data from=1f12d65f8 type=DATA
+  ref=data from=1f12d6ab0 type=DATA
+  ref=data from=1f12d6ee0 type=DATA
+  ref=data from=1f12d72f8 type=DATA
+  ref=data from=1f12d77b8 type=DATA
+  ref=data from=1f12d7c78 type=DATA
+  ref=data from=1f12d8130 type=DATA
+  ref=data from=1f12d8560 type=DATA
+  ref=data from=1f12d8978 type=DATA
+  ref=data from=1f12d8e38 type=DATA
+  ref=data from=1f12d92f8 type=DATA
+  ref=data from=1f12d97b0 type=DATA
+  ref=data from=1f12d9be0 type=DATA
+  ref=data from=1f12d9ff8 type=DATA
+  ref=data from=1f12da4b8 type=DATA
+  ref=data from=1f12da978 type=DATA
+  ref=data from=1f12dae30 type=DATA
+  ref=data from=1f12db260 type=DATA
+  ref=data from=1f12db678 type=DATA
+  ref=data from=1f12dbb38 type=DATA
+  ref=data from=1f12dbff8 type=DATA
+  ref=data from=1f12dc4b0 type=DATA
+  ref=data from=1f12dc8e0 type=DATA
+  ref=data from=1f12dccf8 type=DATA
+  ref=data from=1f12dd1b8 type=DATA
+  ref=data from=1f12dd678 type=DATA
+  ref=data from=1f12ddb30 type=DATA
+  ref=data from=1f12ddf60 type=DATA
+  ref=data from=1f12de378 type=DATA
+  ref=data from=1f12de838 type=DATA
+  ref=data from=1f12decf8 type=DATA
+  ref=data from=1f12df1b0 type=DATA
+  ref=data from=1f12df5e0 type=DATA
+  ref=data from=1f12df9f8 type=DATA
+  ref=data from=1f12dfeb8 type=DATA
+  ref=data from=1f12e0378 type=DATA
+  ref=data from=1f12e0830 type=DATA
+  ref=data from=1f12e0c60 type=DATA
+  ref=data from=1f12e1078 type=DATA
+  ref=data from=1f12e1538 type=DATA
+  ref=data from=1f12e19f8 type=DATA
+  ref=data from=1f12e1eb0 type=DATA
+  ref=data from=1f12e22e0 type=DATA
+  ref=data from=1f12e26f8 type=DATA
+  ref=data from=1f12e2bb8 type=DATA
+  ref=data from=1f12e3078 type=DATA
+  ref=data from=1f12e3530 type=DATA
+  ref=data from=1f12e3960 type=DATA
+  ref=data from=1f12e3d78 type=DATA
+  ref=data from=1f12e4238 type=DATA
+  ref=data from=1f12e46f0 type=DATA
+  ref=data from=1f12e4b20 type=DATA
+  ref=data from=1f12e4f38 type=DATA
+  ref=data from=1f12e53f8 type=DATA
+  ref=data from=1f12e58b0 type=DATA
+  ref=data from=1f12e5ce0 type=DATA
+  ref=data from=1f12e60f8 type=DATA
+  ref=data from=1f12e65b8 type=DATA
+  ref=data from=1f12e6a78 type=DATA
+  ref=data from=1f12e6f30 type=DATA
+  ref=data from=1f12e7360 type=DATA
+  ref=data from=1f12e7778 type=DATA
+  ref=data from=1f12e7c38 type=DATA
+  ref=data from=1f12e80f8 type=DATA
+  ref=data from=1f12e85b0 type=DATA
+  ref=data from=1f12e89e0 type=DATA
+  ref=data from=1f12e8df8 type=DATA
+  ref=data from=1f12e92b8 type=DATA
+  ref=data from=1f12e9770 type=DATA
+  ref=data from=1f12e9ba0 type=DATA
+  ref=data from=1f12e9fb8 type=DATA
+  ref=data from=1f12ea478 type=DATA
+  ref=data from=1f12ea938 type=DATA
+  ref=data from=1f12eadf0 type=DATA
+  ref=data from=1f12eb220 type=DATA
+  ref=data from=1f12eb638 type=DATA
+  ref=data from=1f12ebaf8 type=DATA
+  ref=data from=1f12ebfb8 type=DATA
+  ref=data from=1f12ec470 type=DATA
+  ref=data from=1f12ec8a0 type=DATA
+  ref=data from=1f12eccb8 type=DATA
+  ref=data from=1f12ed348 type=DATA
+  ref=data from=1f12eda98 type=DATA
+  ref=data from=1f12ede18 type=DATA
+  ref=data from=1f12ee430 type=DATA
+  ref=data from=1f12ee848 type=DATA
+  ref=data from=1f12eeb00 type=DATA
+  ref=data from=1f12eedb0 type=DATA
+  ref=data from=1f12ef008 type=DATA
+  ref=data from=1f12eff58 type=DATA
+  ref=data from=1f12f04f8 type=DATA
+  ref=data from=1f12f0928 type=DATA
+  ref=data from=1f12f0d40 type=DATA
+  ref=data from=1f12f0fa8 type=DATA
+  ref=data from=1f12f1200 type=DATA
+  ref=data from=1f12f16e0 type=DATA
+  ref=data from=1f12f1bc8 type=DATA
+  ref=data from=1f12f1ff8 type=DATA
+  ref=data from=1f12f2410 type=DATA
+  ref=data from=1f12f2760 type=DATA
+  ref=data from=1f12f2c40 type=DATA
+  ref=data from=1f12f3138 type=DATA
+  ref=data from=1f12f3458 type=DATA
+  ref=data from=1f12f36f0 type=DATA
+  ref=data from=1f12f3940 type=DATA
+  ref=data from=1f12f3d70 type=DATA
+  ref=data from=1f12f4188 type=DATA
+  ref=data from=1f12f43d8 type=DATA
+  ref=data from=1f12f4868 type=DATA
+  ref=data from=1f12f4c98 type=DATA
+  ref=data from=1f12f50b0 type=DATA
+  ref=data from=1f12f5300 type=DATA
+  ref=data from=1f12f5568 type=DATA
+  ref=data from=1f12f6008 type=DATA
+  ref=data from=1f12f6480 type=DATA
+  ref=data from=1f12f6898 type=DATA
+  ref=data from=1f12f9440 type=DATA
+  ref=data from=1f12f96f8 type=DATA
+  ref=data from=1f12f99d0 type=DATA
+  ref=data from=1f12f9ca8 type=DATA
+  ref=data from=1f12f9f68 type=DATA
+  ref=data from=1f12fa270 type=DATA
+  ref=data from=1f12fa5d0 type=DATA
+  ref=data from=1f12fa8f0 type=DATA
+  ref=data from=1f12faba8 type=DATA
+  ref=data from=1f12fae80 type=DATA
+  ref=data from=1f12fb1e0 type=DATA
+  ref=data from=1f12fb500 type=DATA
+  ref=data from=1f12fb7b0 type=DATA
+  ref=data from=1f12fba20 type=DATA
+  ref=data from=1f12fbc88 type=DATA
+  ref=data from=1f12fbef8 type=DATA
+  ref=data from=1f12fc160 type=DATA
+  ref=data from=1f12fc3c8 type=DATA
+  ref=data from=1f12fc630 type=DATA
+  ref=data from=1f12fc8e8 type=DATA
+  ref=data from=1f12fcb50 type=DATA
+  ref=data from=1f12fcdb8 type=DATA
+  ref=data from=1f12fd010 type=DATA
+  ref=data from=1f12fd2c8 type=DATA
+  ref=data from=1f12fd530 type=DATA
+  ref=data from=1f12fd798 type=DATA
+  ref=data from=1f12fd9f0 type=DATA
+  ref=data from=1f12fdc58 type=DATA
+  ref=data from=1f12fdf10 type=DATA
+  ref=data from=1f12fe178 type=DATA
+  ref=data from=1f12fe3e0 type=DATA
+  ref=data from=1f12fe638 type=DATA
+  ref=data from=1f12fe8f0 type=DATA
+  ref=data from=1f12feb58 type=DATA
+  ref=data from=1f12fedc0 type=DATA
+  ref=data from=1f12ff018 type=DATA
+  ref=data from=1f12ff288 type=DATA
+  ref=data from=1f12ff4f0 type=DATA
+  ref=data from=1f12ff618 type=DATA
+direct_callees=0
+
+/* AGCLLVMObject::buildBackendRequest(llvm::AGX::CompileRequest&) */
+
+void AGCLLVMObject::buildBackendRequest(CompileRequest *param_1)
+
+{
+  return;
+}
+
+
+
+===== compute_programs_construct_reply =====
+symbol=constructReply entry=1ac9b74e0
+direct_callers=0
+all_references=2
+  ref=data from=1ff0e1b44 type=DATA
+  ref=data from=1f12f8f98 type=DATA
+direct_callees=7
+  callee=deserialize entry=1ac88a970
+  callee=validateBackendReply entry=1ac9ebc30
+  callee=constructFlatReply entry=1ac9eb42c
+  callee=EndTable entry=1ac88b924
+  callee=AddOffset<flatbuffers::Vector<flatbuffers::Offset<AGCCodeTranslator::ComputeVIInput>>> entry=1ac88bb04
+  callee=Finish entry=1ac88bc3c
+  callee=dumpTranslatorMetadata<AGCCodeTranslator::CompileReplyBinarySchema> entry=1ac88bcac
+
+/* AGCLLVMComputePrograms::constructReply() */
+
+undefined8 __thiscall AGCLLVMComputePrograms::constructReply(AGCLLVMComputePrograms *this)
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  undefined4 uVar4;
+  undefined8 uVar5;
+  char *pcVar6;
+  undefined1 uVar7;
+  ulong uVar8;
+  undefined1 auVar9 [12];
+  
+  uVar8 = *(ulong *)(*(long *)(this + 0x698) + 0xa0);
+  uVar5 = AGCDeserializedReply::deserialize
+                    ((AGCDeserializedReply *)(this + 0x8f0),
+                     *(void **)(*(long *)(this + 0x698) + 0x98),uVar8);
+  uVar7 = (undefined1)uVar8;
+  if ((int)uVar5 != 0) {
+    AGCLLVMObject::validateBackendReply((AGCLLVMObject *)this);
+    auVar9 = AGCLLVMObject::constructFlatReply((AGCLLVMObject *)this);
+    uVar4 = flatbuffers::FlatBufferBuilder::EndTable(auVar9._0_8_,auVar9._8_4_);
+    this[0x1106] = (AGCLLVMComputePrograms)0x1;
+    iVar1 = *(int *)(this + 0x10e0);
+    iVar2 = *(int *)(this + 0x10f0);
+    iVar3 = *(int *)(this + 0x10e8);
+    flatbuffers::FlatBufferBuilder::
+    AddOffset<flatbuffers::Vector<flatbuffers::Offset<AGCCodeTranslator::ComputeVIInput>>>
+              (this + 0x10c0,uVar4);
+    pcVar6 = (char *)flatbuffers::FlatBufferBuilder::EndTable
+                               ((FlatBufferBuilder *)(this + 0x10c0),(iVar1 - iVar2) + iVar3);
+    flatbuffers::FlatBufferBuilder::Finish((int)this + 0x10c0,pcVar6,(bool)uVar7);
+    AGCLLVMObject::dumpTranslatorMetadata<AGCCodeTranslator::CompileReplyBinarySchema>
+              ((AGCLLVMObject *)this,(FlatBufferBuilder *)(this + 0x10c0));
+  }
+  return uVar5;
+}
+
+
+
+===== compute_programs_prepare_module_and_compile =====
+symbol=compile entry=1ac9b78f8
+direct_callers=0
+all_references=2
+  ref=data from=1ff0e1b4a type=DATA
+  ref=data from=1f12f8f08 type=DATA
+direct_callees=7
+  callee=getGlobalVariable entry=1acaa73ec
+  callee=setSection entry=1acaa5d1c
+  callee=buildGlobalMetadata entry=1ac9b6b64
+  callee=push_back entry=1ac881e7c
+  callee=getNamedMetadata entry=1acaa73dc
+  callee=compile entry=1ac9e9560
+  callee=isDeclaration entry=1acaa6fac
+
+/* AGCLLVMComputePrograms::compile() */
+
+undefined8 __thiscall AGCLLVMComputePrograms::compile(AGCLLVMComputePrograms *this)
+
+{
+  int iVar1;
+  GlobalVariable *pGVar2;
+  AllocaInst *pAVar3;
+  long lVar4;
+  undefined8 uVar5;
+  ulong uVar6;
+  SmallVectorTemplateBase<llvm::AllocaInst*,true> *pSVar7;
+  long lVar8;
+  char *local_58 [4];
+  undefined2 local_38;
+  
+  if (*(int *)(this + 0x1430) == 0x27) {
+    pGVar2 = (GlobalVariable *)
+             llvm::Module::getGlobalVariable(*(undefined8 *)(this + 0x858),"shared_mem",10,1);
+    if (pGVar2 != (GlobalVariable *)0x0) {
+      llvm::GlobalObject::setSection(pGVar2,"buffer_bindings",0xf);
+      pSVar7 = *(SmallVectorTemplateBase<llvm::AllocaInst*,true> **)(this + 0x860);
+      pAVar3 = (AllocaInst *)
+               AGCLLVMBuilder::buildGlobalMetadata((AGCLLVMBuilder *)(this + 0x6a8),pGVar2,5,0);
+      llvm::SmallVectorTemplateBase<llvm::AllocaInst*,true>::push_back(pSVar7,pAVar3);
+    }
+    pGVar2 = (GlobalVariable *)
+             llvm::Module::getGlobalVariable(*(undefined8 *)(this + 0x858),"image_words",0xb,1);
+    if (pGVar2 != (GlobalVariable *)0x0) {
+      pSVar7 = *(SmallVectorTemplateBase<llvm::AllocaInst*,true> **)(this + 0x860);
+      pAVar3 = (AllocaInst *)
+               AGCLLVMBuilder::buildGlobalMetadata((AGCLLVMBuilder *)(this + 0x6a8),pGVar2,0,0);
+      llvm::SmallVectorTemplateBase<llvm::AllocaInst*,true>::push_back(pSVar7,pAVar3);
+    }
+    pGVar2 = (GlobalVariable *)
+             llvm::Module::getGlobalVariable(*(undefined8 *)(this + 0x858),"sampler_words",0xd,1);
+    if (pGVar2 != (GlobalVariable *)0x0) {
+      pSVar7 = *(SmallVectorTemplateBase<llvm::AllocaInst*,true> **)(this + 0x860);
+      pAVar3 = (AllocaInst *)
+               AGCLLVMBuilder::buildGlobalMetadata((AGCLLVMBuilder *)(this + 0x6a8),pGVar2,1,0);
+      llvm::SmallVectorTemplateBase<llvm::AllocaInst*,true>::push_back(pSVar7,pAVar3);
+    }
+  }
+  local_58[0] = "agx.compute_driver_bindings";
+  local_38 = 0x103;
+  lVar4 = llvm::Module::getNamedMetadata(*(Twine **)(this + 0x858));
+  if (lVar4 == 0) {
+    lVar4 = *(long *)(this + 0x858);
+    for (lVar8 = *(long *)(lVar4 + 0x20); lVar8 != lVar4 + 0x18; lVar8 = *(long *)(lVar8 + 8)) {
+      uVar6 = llvm::GlobalValue::isDeclaration();
+      if ((uVar6 & 1) == 0) {
+        (**(code **)(*(long *)this + 0xc0))(this,lVar8 + -0x38);
+        break;
+      }
+    }
+  }
+  local_58[0] = (char *)0x10000;
+  iVar1 = AGCLLVMCtx::compile(*(AGCLLVMCtx **)(this + 0x698),this,*(undefined8 *)(this + 0x858),
+                              0x1010101,3,local_58,0);
+  uVar5 = 0;
+  if (iVar1 != 0) {
+    uVar5 = (**(code **)(*(long *)this + 0xa0))(this);
+  }
+  return uVar5;
+}
+
+
+
+===== program_object_validate_compiler_reply =====
+symbol=validateBackendReply entry=1ac9ebc30
+direct_callers=31
+  caller=constructReply entry=1ac889ce8
+  caller=constructReply entry=1ac8a4314
+  caller=constructReply entry=1ac8b15b0
+  caller=constructReply entry=1ac8bad7c
+  caller=constructReply entry=1ac8c1254
+  caller=constructReply entry=1ac8c47b4
+  caller=constructReply entry=1ac8c7fc8
+  caller=constructReply entry=1ac8cc4fc
+  caller=constructReply entry=1ac8d37fc
+  caller=constructReply entry=1ac8fc9b0
+  caller=constructReply entry=1ac902d24
+  caller=constructReply entry=1ac9143f8
+  caller=constructReply entry=1ac914c58
+  caller=constructReply entry=1ac915078
+  caller=constructReply entry=1ac928b8c
+  caller=constructReply entry=1ac92beb8
+  caller=constructReply entry=1ac937d94
+  caller=constructReply entry=1ac9386b8
+  caller=constructReply entry=1ac9400b0
+  caller=constructReply entry=1ac940f58
+  caller=constructReply entry=1ac94e03c
+  caller=constructReply entry=1ac9b74e0
+  caller=constructReply entry=1ac9b7b14
+  caller=constructReply entry=1ac9b97bc
+  caller=constructReply entry=1ac9ba5a8
+  caller=constructReply entry=1ac9bb6c4
+  caller=constructReply entry=1ac9bc1a4
+  caller=constructReply entry=1ac9bd084
+  caller=constructReply entry=1ac9bedc4
+  caller=constructReply entry=1ac9bfdc0
+  caller=constructReply entry=1ac9c209c
+all_references=32
+  ref=data from=1ff0e1d6d type=DATA
+  ref=code owner=constructReply entry=1ac889ce8
+  ref=code owner=constructReply entry=1ac8a4314
+  ref=code owner=constructReply entry=1ac8b15b0
+  ref=code owner=constructReply entry=1ac8bad7c
+  ref=code owner=constructReply entry=1ac8c1254
+  ref=code owner=constructReply entry=1ac8c47b4
+  ref=code owner=constructReply entry=1ac8c7fc8
+  ref=code owner=constructReply entry=1ac8cc4fc
+  ref=code owner=constructReply entry=1ac8d37fc
+  ref=code owner=constructReply entry=1ac8fc9b0
+  ref=code owner=constructReply entry=1ac902d24
+  ref=code owner=constructReply entry=1ac9143f8
+  ref=code owner=constructReply entry=1ac914c58
+  ref=code owner=constructReply entry=1ac915078
+  ref=code owner=constructReply entry=1ac928b8c
+  ref=code owner=constructReply entry=1ac92beb8
+  ref=code owner=constructReply entry=1ac937d94
+  ref=code owner=constructReply entry=1ac9386b8
+  ref=code owner=constructReply entry=1ac9400b0
+  ref=code owner=constructReply entry=1ac940f58
+  ref=code owner=constructReply entry=1ac94e03c
+  ref=code owner=constructReply entry=1ac9b74e0
+  ref=code owner=constructReply entry=1ac9b7b14
+  ref=code owner=constructReply entry=1ac9b97bc
+  ref=code owner=constructReply entry=1ac9ba5a8
+  ref=code owner=constructReply entry=1ac9bb6c4
+  ref=code owner=constructReply entry=1ac9bc1a4
+  ref=code owner=constructReply entry=1ac9bd084
+  ref=code owner=constructReply entry=1ac9bedc4
+  ref=code owner=constructReply entry=1ac9bfdc0
+  ref=code owner=constructReply entry=1ac9c209c
+direct_callees=1
+  callee=dumpShaderToFile entry=1ac88bfa4
+
+/* AGCLLVMObject::validateBackendReply() */
+
+void __thiscall AGCLLVMObject::validateBackendReply(AGCLLVMObject *this)
+
+{
+  int iVar1;
+  AGCLLVMObject *pAVar2;
+  undefined4 local_24;
+  
+  local_24 = 0;
+  (**(code **)(*(long *)this + 0xb8))(this,&local_24);
+  iVar1 = AGCLLVMObjectBase::dumpShaderToFile((AGCLLVMObjectBase *)this);
+  if (iVar1 != 0) {
+    if (*(long *)(this + 0x908) == 0) {
+      pAVar2 = this + 0xb38;
+    }
+    else {
+      pAVar2 = this + 0xb38;
+      if (*(long *)(this + 0x910) != 0) {
+        pAVar2 = this + 0x908;
+      }
+    }
+    (**(code **)(**(long **)(this + 0x878) + 0x200))
+              (*(long **)(this + 0x878),*(undefined8 *)pAVar2,*(undefined8 *)(pAVar2 + 8),this);
+  }
+  return;
+}
+
+
+
+===== program_object_package_validated_reply =====
+symbol=constructFlatReply entry=1ac9eb42c
+direct_callers=18
+  caller=constructFlatReply entry=1ac9a4540
+  caller=constructReply entry=1ac8a320c
+  caller=constructReply entry=1ac8c1254
+  caller=constructReply entry=1ac9143f8
+  caller=constructReply entry=1ac915078
+  caller=constructReply entry=1ac937d94
+  caller=constructReply entry=1ac940f58
+  caller=constructReply entry=1ac9b74e0
+  caller=constructReply entry=1ac9b7b14
+  caller=create entry=1ac9b8c00
+  caller=constructReply entry=1ac9b97bc
+  caller=constructReply entry=1ac9ba5a8
+  caller=constructReply entry=1ac9bb6c4
+  caller=constructReply entry=1ac9bc1a4
+  caller=constructReply entry=1ac9bd084
+  caller=constructReply entry=1ac9bedc4
+  caller=constructReply entry=1ac9bfdc0
+  caller=constructReply entry=1ac9c209c
+all_references=19
+  ref=data from=1ff0e1d69 type=DATA
+  ref=code owner=constructFlatReply entry=1ac9a4540
+  ref=code owner=constructReply entry=1ac8a320c
+  ref=code owner=constructReply entry=1ac8c1254
+  ref=code owner=constructReply entry=1ac9143f8
+  ref=code owner=constructReply entry=1ac915078
+  ref=code owner=constructReply entry=1ac937d94
+  ref=code owner=constructReply entry=1ac940f58
+  ref=code owner=constructReply entry=1ac9b74e0
+  ref=code owner=constructReply entry=1ac9b7b14
+  ref=code owner=create entry=1ac9b8c00
+  ref=code owner=constructReply entry=1ac9b97bc
+  ref=code owner=constructReply entry=1ac9ba5a8
+  ref=code owner=constructReply entry=1ac9bb6c4
+  ref=code owner=constructReply entry=1ac9bc1a4
+  ref=code owner=constructReply entry=1ac9bd084
+  ref=code owner=constructReply entry=1ac9bedc4
+  ref=code owner=constructReply entry=1ac9bfdc0
+  ref=code owner=constructReply entry=1ac9c209c
+direct_callees=14
+  callee=_strlen entry=1acaa7d8c
+  callee=CreateString entry=1ac946ae4
+  callee=CreateVector<unsigned_char> entry=1ac94842c
+  callee=operator() entry=1ac9eb1e8
+  callee=CreateVector<unsigned_int> entry=1ac88b5a8
+  callee=operator.delete entry=1acaa79fc
+  callee=extractPhaseOffsets entry=1ac9eaf98
+  callee=AddElement<unsigned_int> entry=1ac88b7d4
+  callee=AddOffset<flatbuffers::Vector<unsigned_int>> entry=1ac88b6f4
+  callee=unordered_map entry=1ac9ebbd0
+  callee=operator()[abi:nqn210106] entry=1ac884580
+  callee=operator()[abi:nqn210106] entry=1ac8849b4
+  callee=AddElement<unsigned_char> entry=1ac88b768
+  callee=~__hash_table entry=1ac9ead7c
+
+/* WARNING: Type propagation algorithm not settling */
+/* AGCLLVMObject::constructFlatReply() */
+
+undefined1  [16] __thiscall AGCLLVMObject::constructFlatReply(AGCLLVMObject *this)
+
+{
+  AGCLLVMObject *pAVar1;
+  long lVar2;
+  uint *******pppppppuVar3;
+  undefined8 *******pppppppuVar4;
+  uchar uVar5;
+  undefined4 uVar6;
+  int iVar7;
+  undefined4 uVar8;
+  undefined4 uVar9;
+  undefined4 uVar10;
+  uint uVar11;
+  char *pcVar12;
+  size_t sVar13;
+  uint *******pppppppuVar14;
+  ulong uVar15;
+  Vector *pVVar16;
+  uint *******pppppppuVar17;
+  long lVar18;
+  AGCLLVMObject *pAVar19;
+  uint *puVar20;
+  int *piVar21;
+  ulong uVar22;
+  undefined8 uVar23;
+  uint *****pppppuVar24;
+  uint *******pppppppuVar25;
+  undefined8 uVar26;
+  undefined8 uVar27;
+  undefined1 auVar28 [16];
+  undefined8 *******local_a8;
+  ulong uStack_a0;
+  byte local_91;
+  uint *******local_90;
+  uint *******local_88;
+  ulong local_80;
+  long local_78;
+  undefined4 local_64;
+  
+  pcVar12 = (char *)(**(code **)(*(long *)this + 0x30))();
+  sVar13 = _strlen(pcVar12);
+  uVar6 = flatbuffers::FlatBufferBuilder::CreateString
+                    ((FlatBufferBuilder *)(this + 0x10c0),pcVar12,sVar13);
+  iVar7 = (**(code **)(*(long *)this + 0x60))(this);
+  local_90 = (uint *******)CONCAT71(local_90._1_7_,(char)iVar7);
+  if (iVar7 == 0) {
+    uVar8 = 0;
+  }
+  else {
+    uVar8 = flatbuffers::FlatBufferBuilder::CreateVector<unsigned_char>
+                      ((FlatBufferBuilder *)(this + 0x10c0),(uchar *)&local_90,1);
+  }
+  local_64 = 0;
+  pAVar1 = this + 0x9d0;
+  lVar18 = *(long *)(this + 0x9d0);
+  if (this[0xd68] == (AGCLLVMObject)0x1) {
+    if (lVar18 == 0) {
+      puVar20 = *(uint **)(this + 0xc00);
+      if ((puVar20 != (uint *)0x0) && (*(long *)(this + 0xc08) != 0)) goto LAB_1ac9eb578;
+LAB_1ac9eb614:
+      uVar11 = 0;
+      puVar20 = *(uint **)(this + 0xd70);
+      if ((puVar20 == (uint *)0x0) || (*(long *)(this + 0xd78) == 0)) goto LAB_1ac9eb8c0;
+      piVar21 = (int *)((long)puVar20 + (ulong)*puVar20);
+      if ((*(ushort *)((long)piVar21 - (long)*piVar21) < 5) ||
+         (uVar22 = (ulong)((ushort *)((long)piVar21 - (long)*piVar21))[2], uVar22 == 0)) {
+        piVar21 = (int *)0x0;
+      }
+      else {
+        puVar20 = (uint *)((long)piVar21 + uVar22);
+        piVar21 = (int *)((long)puVar20 + (ulong)*puVar20);
+      }
+      if ((*(ushort *)((long)piVar21 - (long)*piVar21) < 0x39) ||
+         (((ushort *)((long)piVar21 - (long)*piVar21))[0x1c] == 0)) goto LAB_1ac9eb6cc;
+    }
+    else {
+      lVar18 = 0xc00;
+      pAVar19 = this + 0xc00;
+      if (*(long *)(this + 0x9d8) != 0) {
+        lVar18 = 0x9d0;
+        pAVar19 = pAVar1;
+      }
+      puVar20 = *(uint **)(this + lVar18);
+      if (puVar20 == (uint *)0x0 || *(long *)(pAVar19 + 8) == 0) goto LAB_1ac9eb614;
+LAB_1ac9eb578:
+      piVar21 = (int *)((long)puVar20 + (ulong)*puVar20);
+      if ((*(ushort *)((long)piVar21 - (long)*piVar21) < 5) ||
+         (uVar22 = (ulong)((ushort *)((long)piVar21 - (long)*piVar21))[2], uVar22 == 0)) {
+        piVar21 = (int *)0x0;
+      }
+      else {
+        puVar20 = (uint *)((long)piVar21 + uVar22);
+        piVar21 = (int *)((long)puVar20 + (ulong)*puVar20);
+      }
+      if ((*(ushort *)((long)piVar21 - (long)*piVar21) < 0x39) ||
+         (((ushort *)((long)piVar21 - (long)*piVar21))[0x1c] == 0)) goto LAB_1ac9eb614;
+    }
+    local_90 = (uint *******)0x0;
+    local_88 = (uint *******)0x0;
+    local_80 = 0;
+    extractPhaseOffsetsWithAux(flatbuffers::Vector<flatbuffers::Offset<AGCCodeGenerator::ShaderPhase>>const*,flatbuffers::Vector<flatbuffers::Offset<AGCCodeGenerator::ShaderPhase>>const*,flatbuffers::Offset<flatbuffers::Vector<unsigned_int>>&)
+    ::$_0::operator()((__0 *)&local_90,(Vector *)(this + 0xd98));
+    extractPhaseOffsetsWithAux(flatbuffers::Vector<flatbuffers::Offset<AGCCodeGenerator::ShaderPhase>>const*,flatbuffers::Vector<flatbuffers::Offset<AGCCodeGenerator::ShaderPhase>>const*,flatbuffers::Offset<flatbuffers::Vector<unsigned_int>>&)
+    ::$_0::operator()((__0 *)&local_90,(Vector *)(this + 0xd98));
+    pppppppuVar25 = local_88;
+    pppppppuVar14 = local_90;
+    pppppppuVar3 = (uint *******)
+                   &flatbuffers::
+                    data<unsigned_int,std::allocator<unsigned_int>>(std::vector<unsigned_int,std::allocator<unsigned_int>>const&)
+                    ::t;
+    if ((long)local_88 - (long)local_90 != 0) {
+      pppppppuVar3 = local_90;
+    }
+    local_64 = flatbuffers::FlatBufferBuilder::CreateVector<unsigned_int>
+                         ((FlatBufferBuilder *)(this + 0x10c0),(uint *)pppppppuVar3,
+                          (long)local_88 - (long)local_90 >> 2);
+    if (pppppppuVar14 != (uint *******)0x0) {
+      operator_delete(pppppppuVar14);
+    }
+    uVar11 = (uint)(pppppppuVar25 != pppppppuVar14);
+  }
+  else {
+    if (lVar18 == 0) {
+      uVar11 = 0;
+      puVar20 = *(uint **)(this + 0xc00);
+      if ((puVar20 == (uint *)0x0) || (*(long *)(this + 0xc08) == 0)) goto LAB_1ac9eb8c0;
+LAB_1ac9eb5c0:
+      piVar21 = (int *)((long)puVar20 + (ulong)*puVar20);
+      if ((*(ushort *)((long)piVar21 - (long)*piVar21) < 5) ||
+         (uVar22 = (ulong)((ushort *)((long)piVar21 - (long)*piVar21))[2], uVar22 == 0)) {
+        piVar21 = (int *)0x0;
+      }
+      else {
+        puVar20 = (uint *)((long)piVar21 + uVar22);
+        piVar21 = (int *)((long)puVar20 + (ulong)*puVar20);
+      }
+      if ((0x38 < *(ushort *)((long)piVar21 - (long)*piVar21)) &&
+         (((ushort *)((long)piVar21 - (long)*piVar21))[0x1c] != 0)) {
+        if (lVar18 == 0) {
+          pAVar19 = this + 0xc00;
+        }
+        else {
+          pAVar19 = this + 0xc00;
+          if (*(long *)(this + 0x9d8) != 0) {
+            pAVar19 = pAVar1;
+          }
+        }
+        piVar21 = (int *)0x0;
+        puVar20 = *(uint **)pAVar19;
+        if ((puVar20 != (uint *)0x0) && (*(long *)(pAVar19 + 8) != 0)) {
+          piVar21 = (int *)((long)puVar20 + (ulong)*puVar20);
+        }
+        if ((*(ushort *)((long)piVar21 - (long)*piVar21) < 5) ||
+           (uVar22 = (ulong)((ushort *)((long)piVar21 - (long)*piVar21))[2], uVar22 == 0)) {
+          piVar21 = (int *)0x0;
+        }
+        else {
+          puVar20 = (uint *)((long)piVar21 + uVar22);
+          piVar21 = (int *)((long)puVar20 + (ulong)*puVar20);
+        }
+        if ((*(ushort *)((long)piVar21 - (long)*piVar21) < 0x39) ||
+           (uVar22 = (ulong)((ushort *)((long)piVar21 - (long)*piVar21))[0x1c], uVar22 == 0)) {
+          pVVar16 = (Vector *)0x0;
+        }
+        else {
+          puVar20 = (uint *)((long)piVar21 + uVar22);
+          pVVar16 = (Vector *)((long)puVar20 + (ulong)*puVar20);
+        }
+        uVar11 = extractPhaseOffsets(this,pVVar16,(Offset *)&local_64);
+        goto LAB_1ac9eb8c0;
+      }
+    }
+    else {
+      lVar2 = 0xc00;
+      pAVar19 = this + 0xc00;
+      if (*(long *)(this + 0x9d8) != 0) {
+        lVar2 = 0x9d0;
+        pAVar19 = pAVar1;
+      }
+      puVar20 = *(uint **)(this + lVar2);
+      if (puVar20 != (uint *)0x0 && *(long *)(pAVar19 + 8) != 0) goto LAB_1ac9eb5c0;
+    }
+LAB_1ac9eb6cc:
+    uVar11 = 0;
+  }
+LAB_1ac9eb8c0:
+  (**(code **)(*(long *)this + 0x90))(&local_90,this);
+  pppppppuVar3 = local_88;
+  pppppppuVar14 = local_90;
+  if (-1 < (long)local_80) {
+    pppppppuVar3 = (uint *******)(local_80 >> 0x38);
+    pppppppuVar14 = (uint *******)&local_90;
+  }
+  uVar9 = flatbuffers::FlatBufferBuilder::CreateString
+                    ((FlatBufferBuilder *)(this + 0x10c0),(char *)pppppppuVar14,(ulong)pppppppuVar3)
+  ;
+  if ((long)local_80 < 0) {
+    operator_delete(local_90);
+  }
+  uVar22 = *(ulong *)(this + 0x13f0);
+  pAVar1 = *(AGCLLVMObject **)(this + 0x13e8);
+  if (-1 < (char)this[0x13ff]) {
+    uVar22 = (ulong)(byte)this[0x13ff];
+    pAVar1 = this + 0x13e8;
+  }
+  uVar10 = flatbuffers::FlatBufferBuilder::CreateString
+                     ((FlatBufferBuilder *)(this + 0x10c0),(char *)pAVar1,uVar22);
+  this[0x1106] = (AGCLLVMObject)0x1;
+  uVar26 = *(undefined8 *)(this + 0x10e0);
+  uVar23 = *(undefined8 *)(this + 0x10f0);
+  uVar27 = *(undefined8 *)(this + 0x10e8);
+  flatbuffers::FlatBufferBuilder::AddElement<unsigned_int>
+            ((short)this + 0x10c0,6,*(uint *)(this + 0x13e0));
+  flatbuffers::FlatBufferBuilder::AddOffset<flatbuffers::Vector<unsigned_int>>
+            ((FlatBufferBuilder *)(this + 0x10c0),0x12,uVar9);
+  flatbuffers::FlatBufferBuilder::AddOffset<flatbuffers::Vector<unsigned_int>>
+            ((FlatBufferBuilder *)(this + 0x10c0),0x50,uVar10);
+  flatbuffers::FlatBufferBuilder::AddOffset<flatbuffers::Vector<unsigned_int>>
+            ((FlatBufferBuilder *)(this + 0x10c0),8,uVar6);
+  iVar7 = (**(code **)(*(long *)this + 0x60))(this);
+  if (iVar7 != 0) {
+    flatbuffers::FlatBufferBuilder::AddOffset<flatbuffers::Vector<unsigned_int>>
+              ((FlatBufferBuilder *)(this + 0x10c0),4,uVar8);
+  }
+  if (uVar11 != 0) {
+    flatbuffers::FlatBufferBuilder::AddOffset<flatbuffers::Vector<unsigned_int>>
+              ((FlatBufferBuilder *)(this + 0x10c0),0xe,local_64);
+  }
+  std::
+  unordered_map<std::string,unsigned_int,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::pair<std::string_const,unsigned_int>>>
+  ::unordered_map((unordered_map<std::string,unsigned_int,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::pair<std::string_const,unsigned_int>>>
+                   *)&local_90,(unordered_map *)(this + 0xd98));
+  (**(code **)(*(long *)this + 0x48))(&local_a8,this);
+  pppppppuVar3 = local_88;
+  pppppuVar24 = (uint *****)0x0;
+  if ((local_88 != (uint *******)0x0) && (local_78 != 0)) {
+    pppppppuVar4 = local_a8;
+    if (-1 < (char)local_91) {
+      uStack_a0 = (ulong)local_91;
+      pppppppuVar4 = &local_a8;
+    }
+    pppppppuVar14 =
+         (uint *******)
+         std::__murmur2_or_cityhash<unsigned_long,64ul>::operator()[abi_nqn210106_
+                   (pppppppuVar4,uStack_a0);
+    uVar22 = (long)pppppppuVar3 - 1;
+    if (((ulong)pppppppuVar3 & uVar22) == 0) {
+      pppppppuVar25 = (uint *******)((ulong)pppppppuVar14 & uVar22);
+    }
+    else {
+      pppppppuVar25 = pppppppuVar14;
+      if (pppppppuVar3 <= pppppppuVar14) {
+        uVar15 = 0;
+        if (pppppppuVar3 != (uint *******)0x0) {
+          uVar15 = (ulong)pppppppuVar14 / (ulong)pppppppuVar3;
+        }
+        pppppppuVar25 = (uint *******)((long)pppppppuVar14 - uVar15 * (long)pppppppuVar3);
+      }
+    }
+    if (local_90[(long)pppppppuVar25] == (uint ******)0x0) {
+LAB_1ac9ebacc:
+      pppppuVar24 = (uint *****)0x0;
+    }
+    else {
+      for (pppppuVar24 = *local_90[(long)pppppppuVar25]; pppppuVar24 != (uint *****)0x0;
+          pppppuVar24 = (uint *****)*pppppuVar24) {
+        pppppppuVar17 = (uint *******)pppppuVar24[1];
+        if (pppppppuVar17 == pppppppuVar14) {
+          uVar15 = std::equal_to<std::string>::operator()[abi_nqn210106_
+                             ((string *)(pppppuVar24 + 2),(string *)&local_a8);
+          if ((uVar15 & 1) != 0) break;
+        }
+        else {
+          if (((ulong)pppppppuVar3 & uVar22) == 0) {
+            pppppppuVar17 = (uint *******)((ulong)pppppppuVar17 & uVar22);
+          }
+          else if (pppppppuVar3 <= pppppppuVar17) {
+            uVar15 = 0;
+            if (pppppppuVar3 != (uint *******)0x0) {
+              uVar15 = (ulong)pppppppuVar17 / (ulong)pppppppuVar3;
+            }
+            pppppppuVar17 = (uint *******)((long)pppppppuVar17 - uVar15 * (long)pppppppuVar3);
+          }
+          if (pppppppuVar17 != pppppppuVar25) goto LAB_1ac9ebacc;
+        }
+      }
+    }
+  }
+  if ((char)local_91 < '\0') {
+    operator_delete(local_a8);
+  }
+  if ((pppppuVar24 != (uint *****)0x0) &&
+     (iVar7 = (**(code **)(*(long *)this + 0x50))(this), iVar7 != 8)) {
+    flatbuffers::FlatBufferBuilder::AddElement<unsigned_int>
+              ((short)this + 0x10c0,0x10,*(uint *)(pppppuVar24 + 5));
+    uVar11 = (**(code **)(*(long *)this + 0x50))(this);
+    flatbuffers::FlatBufferBuilder::AddElement<unsigned_char>
+              ((FlatBufferBuilder *)(this + 0x10c0),0x28,
+               uVar11 < 0x1c & (byte)(0x80002c1 >> (ulong)(uVar11 & 0x1f)),'\0');
+  }
+  uVar5 = (**(code **)(*(long *)this + 0x78))(this);
+  flatbuffers::FlatBufferBuilder::AddElement<unsigned_char>
+            ((FlatBufferBuilder *)(this + 0x10c0),0x2a,uVar5,'\0');
+  flatbuffers::FlatBufferBuilder::AddElement<unsigned_char>
+            ((FlatBufferBuilder *)(this + 0x10c0),0x32,(uchar)this[0x8b0],'\0');
+  std::
+  __hash_table<std::string,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::string>>
+  ::~__hash_table((__hash_table<std::string,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::string>>
+                   *)&local_90);
+  auVar28._8_4_ = ((int)uVar26 - (int)uVar23) + (int)uVar27;
+  auVar28._0_8_ = this + 0x10c0;
+  auVar28._12_4_ = 0;
+  return auVar28;
+}
+
+
+
+===== object_array_compile =====
+symbol=compile entry=1ac9e3684
+direct_callers=0
+all_references=5
+  ref=data from=1ff0e1cd1 type=DATA
+  ref=data from=1f130d240 type=DATA
+  ref=data from=1f130d298 type=DATA
+  ref=data from=1f130e390 type=DATA
+  ref=data from=1f130e3e8 type=DATA
+direct_callees=11
+  callee=~__value_func[abi:nqn210106] entry=1ac8818a8
+  callee=__ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1B9nqn210106ILi0EEEPKc entry=1ac87e4f8
+  callee=_memcmp entry=1acaa7c3c
+  callee=operator.new entry=1acaa7a2c
+  callee=__tree_balance_after_insert[abi:nqn210106]<std::__tree_node_base<void*>*> entry=1ac87e8d4
+  callee=operator.delete entry=1acaa79fc
+  callee=_memcpy entry=1acaa7c4c
+  callee=operator= entry=1acaa777c
+  callee=assign entry=1acaa76ec
+  callee=__throw_bad_array_new_length[abi:nqn210106] entry=1acaa4fb4
+  callee=___stack_chk_fail entry=1acaa7a7c
+
+/* WARNING: Heritage AFTER dead removal. Example location: x0 : 0x0001ac9e386c */
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+/* WARNING: Restarted to delay deadcode elimination for space: register */
+/* AGCLLVMObjectArray::compile() */
+
+void __thiscall AGCLLVMObjectArray::compile(AGCLLVMObjectArray *this)
+
+{
+  long *plVar1;
+  undefined8 *puVar2;
+  bool bVar3;
+  undefined8 ****ppppuVar4;
+  long lVar5;
+  int iVar6;
+  ulong uVar7;
+  __tree_node_base *p_Var8;
+  __tree_node_base *p_Var9;
+  void *pvVar10;
+  undefined8 uVar11;
+  size_t sVar12;
+  long lVar13;
+  AGCLLVMObjectArray *pAVar14;
+  undefined8 *puVar15;
+  long lVar16;
+  ulong uVar17;
+  ulong uVar18;
+  size_t sVar19;
+  long *plVar20;
+  void *pvVar21;
+  AGCLLVMObjectArray *pAVar22;
+  long *plVar23;
+  AGCLLVMObjectArray *pAVar24;
+  uint uVar25;
+  undefined8 local_e0;
+  undefined8 uStack_d8;
+  undefined8 uStack_d0;
+  long local_c8;
+  long local_b8;
+  undefined8 uStack_b0;
+  undefined8 ***local_a8;
+  ulong uStack_a0;
+  undefined8 local_98;
+  __value_func<void(AGCDeserializedReply_const&)> a_Stack_90 [24];
+  undefined8 local_78;
+  long local_70;
+  
+  local_70 = *_DAT_1e598ebe0;
+  if (*(uint *)(this + 0x6b0) != 0) {
+    plVar23 = *(long **)(this + 0x6a8);
+    plVar1 = plVar23 + (ulong)*(uint *)(this + 0x6b0) * 4;
+    do {
+      plVar20 = plVar23 + 1;
+      uVar7 = (**(code **)(*(long *)*plVar23 + 0x10))();
+      if ((uVar7 & 1) == 0) {
+        std::string::operator=((string *)(this + 0x678),(string *)(*plVar23 + 0x678));
+LAB_1ac9e39fc:
+        uVar11 = 0;
+        goto LAB_1ac9e3a00;
+      }
+      local_b8 = 0;
+      uStack_b0 = 0;
+      uStack_d8 = 0;
+      local_e0 = 0;
+      local_c8 = 0;
+      uStack_d0 = 0;
+      p_Var8 = (__tree_node_base *)*plVar23;
+      local_78 = 0;
+      (**(code **)(*(long *)p_Var8 + 0x18))(p_Var8,&uStack_b0,&local_b8,&local_e0,a_Stack_90);
+      std::__function::__value_func<void(AGCDeserializedReply_const&)>::~__value_func_abi_nqn210106_
+                (a_Stack_90);
+      uVar11 = uStack_b0;
+      lVar5 = local_b8;
+      if ((int)p_Var8 == 0) {
+        std::string::assign((char *)(this + 0x678));
+        goto LAB_1ac9e39fc;
+      }
+      if (((-1 < *(char *)((long)plVar23 + 0x1f)) ||
+          (plVar20 = (long *)*plVar20, plVar20 != (long *)0x0)) && ((char)*plVar20 != '\0')) {
+        __ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1B9nqn210106ILi0EEEPKc
+                  (&local_a8,plVar20);
+        lVar16 = *(long *)(this + 0x748);
+        lVar13 = *(long *)(this + 0x740);
+        pAVar14 = *(AGCLLVMObjectArray **)(this + 0x780);
+        pAVar22 = this + 0x780;
+        pAVar24 = this + 0x780;
+        if (pAVar14 != (AGCLLVMObjectArray *)0x0) {
+          uVar25 = (uint)(char)local_98._7_1_;
+          ppppuVar4 = (undefined8 ****)local_a8;
+          uVar7 = uStack_a0;
+          if (-1 < (int)uVar25) {
+            ppppuVar4 = &local_a8;
+            uVar7 = (ulong)local_98._7_1_;
+          }
+          do {
+            while( true ) {
+              pAVar24 = pAVar14;
+              uVar18 = *(ulong *)(pAVar24 + 0x28);
+              pAVar14 = *(AGCLLVMObjectArray **)(pAVar24 + 0x20);
+              if (-1 < (char)pAVar24[0x37]) {
+                uVar18 = (ulong)(byte)pAVar24[0x37];
+                pAVar14 = pAVar24 + 0x20;
+              }
+              sVar19 = uVar18;
+              if (uVar7 <= uVar18) {
+                sVar19 = uVar7;
+              }
+              iVar6 = _memcmp(ppppuVar4,pAVar14,sVar19);
+              bVar3 = uVar7 < uVar18;
+              if (iVar6 != 0) {
+                bVar3 = iVar6 < 0;
+              }
+              if (!bVar3) break;
+              pAVar14 = *(AGCLLVMObjectArray **)pAVar24;
+              pAVar22 = pAVar24;
+              if (*(AGCLLVMObjectArray **)pAVar24 == (AGCLLVMObjectArray *)0x0) goto LAB_1ac9e384c;
+            }
+            iVar6 = _memcmp(pAVar14,ppppuVar4,sVar19);
+            bVar3 = uVar18 < uVar7;
+            if (iVar6 != 0) {
+              bVar3 = iVar6 < 0;
+            }
+            if (!bVar3) goto LAB_1ac9e38c4;
+            pAVar14 = *(AGCLLVMObjectArray **)(pAVar24 + 8);
+          } while (*(AGCLLVMObjectArray **)(pAVar24 + 8) != (AGCLLVMObjectArray *)0x0);
+          pAVar22 = pAVar24 + 8;
+        }
+LAB_1ac9e384c:
+        p_Var9 = operator_new(p_Var8,0x1032c004202edf6);
+        *(ulong *)(p_Var9 + 0x28) = uStack_a0;
+        *(undefined8 ****)(p_Var9 + 0x20) = local_a8;
+        *(undefined8 *)(p_Var9 + 0x30) = local_98;
+        local_a8 = (undefined8 ****)0x0;
+        uStack_a0 = 0;
+        local_98 = 0;
+        *(int *)(p_Var9 + 0x38) = (int)((ulong)(lVar16 - lVar13) >> 4);
+        *(undefined8 *)p_Var9 = 0;
+        *(undefined8 *)(p_Var9 + 8) = 0;
+        *(AGCLLVMObjectArray **)(p_Var9 + 0x10) = pAVar24;
+        *(__tree_node_base **)pAVar22 = p_Var9;
+        if (**(long **)(this + 0x778) != 0) {
+          *(long *)(this + 0x778) = **(long **)(this + 0x778);
+        }
+        p_Var8 = *(__tree_node_base **)(this + 0x780);
+        std::__tree_balance_after_insert_abi_nqn210106_<std::__tree_node_base<void*>*>
+                  (p_Var8,p_Var9);
+        *(long *)(this + 0x788) = *(long *)(this + 0x788) + 1;
+        uVar25 = (uint)local_98._7_1_;
+LAB_1ac9e38c4:
+        if ((uVar25 >> 7 & 1) != 0) {
+          operator_delete(local_a8);
+        }
+      }
+      puVar15 = *(undefined8 **)(this + 0x748);
+      if (puVar15 < *(undefined8 **)(this + 0x750)) {
+        *puVar15 = uVar11;
+        puVar15[1] = lVar5;
+        puVar15 = puVar15 + 2;
+      }
+      else {
+        pvVar21 = *(void **)(this + 0x740);
+        sVar19 = (long)puVar15 - (long)pvVar21;
+        lVar13 = (long)sVar19 >> 4;
+        uVar7 = lVar13 + 1;
+        if (uVar7 >> 0x3c != 0) {
+                    /* WARNING: Subroutine does not return */
+          std::__throw_bad_array_new_length_abi_nqn210106_();
+        }
+        uVar17 = (long)*(undefined8 **)(this + 0x750) - (long)pvVar21;
+        uVar18 = (long)uVar17 >> 3;
+        if (uVar18 <= uVar7) {
+          uVar18 = uVar7;
+        }
+        if (0x7fffffffffffffef < uVar17) {
+          uVar18 = 0xfffffffffffffff;
+        }
+        if (uVar18 == 0) {
+          pvVar10 = (void *)0x0;
+          sVar12 = sVar19;
+        }
+        else {
+          if (uVar18 >> 0x3c != 0) {
+                    /* WARNING: Subroutine does not return */
+            std::__throw_bad_array_new_length_abi_nqn210106_();
+          }
+          pvVar10 = operator_new(p_Var8,0x1080c00fc6463cf);
+          pvVar21 = *(void **)(this + 0x740);
+          lVar13 = *(long *)(this + 0x748) - (long)pvVar21 >> 4;
+          sVar12 = *(long *)(this + 0x748) - (long)pvVar21;
+        }
+        puVar2 = (undefined8 *)((long)pvVar10 + sVar19);
+        *puVar2 = uVar11;
+        puVar2[1] = lVar5;
+        puVar15 = puVar2 + 2;
+        _memcpy(puVar2 + lVar13 * -2,pvVar21,sVar12);
+        *(undefined8 **)(this + 0x740) = puVar2 + lVar13 * -2;
+        *(undefined8 **)(this + 0x748) = puVar15;
+        *(void **)(this + 0x750) = (void *)((long)pvVar10 + uVar18 * 0x10);
+        if (pvVar21 != (void *)0x0) {
+          operator_delete(pvVar21);
+        }
+      }
+      *(undefined8 **)(this + 0x748) = puVar15;
+      *(long *)(this + 0x770) = *(long *)(this + 0x770) + lVar5;
+      *(long *)(this + 0x790) = *(long *)(this + 0x790) + local_c8;
+      plVar23 = plVar23 + 4;
+    } while (plVar23 != plVar1);
+  }
+  uVar11 = 1;
+LAB_1ac9e3a00:
+  if (*_DAT_1e598ebe0 == local_70) {
+    return;
+  }
+                    /* WARNING: Subroutine does not return */
+  ___stack_chk_fail(uVar11);
+}
+
+
+
+===== compiler_context_compile =====
+symbol=compile entry=1ac9e9560
+direct_callers=7
+  caller=compile entry=1ac916aa0
+  caller=compile entry=1ac9575ac
+  caller=compile entry=1ac9b78f8
+  caller=compile entry=1ac9b81d4
+  caller=compile entry=1ac9ba154
+  caller=compile entry=1ac9bff34
+  caller=compile entry=1ac9c25f8
+all_references=8
+  ref=data from=1ff0e1d53 type=DATA
+  ref=code owner=compile entry=1ac916aa0
+  ref=code owner=compile entry=1ac9575ac
+  ref=code owner=compile entry=1ac9b78f8
+  ref=code owner=compile entry=1ac9b81d4
+  ref=code owner=compile entry=1ac9ba154
+  ref=code owner=compile entry=1ac9bff34
+  ref=code owner=compile entry=1ac9c25f8
+direct_callees=48
+  callee=getValue entry=1ac87e254
+  callee=_atoi entry=1acaa7b2c
+  callee=__ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1B9nqn210106ILi0EEEPKc entry=1ac87e4f8
+  callee=CompileRequest entry=1acaa67ac
+  callee=operator.delete entry=1acaa79fc
+  callee=addSegments entry=1acaa677c
+  callee=isValidToPrintMessage entry=1ac882558
+  callee=dumpShaderToFile entry=1ac88bfa4
+  callee=flush entry=1acaa781c
+  callee=setLoggingStream entry=1acaa679c
+  callee=initializePlan entry=1ac9e9fd8
+  callee=_os_variant_has_internal_diagnostics entry=1acaa7cfc
+  callee=_xpc_dictionary_create entry=1acaa7ddc
+  callee=_xpc_dictionary_set_uint64 entry=1acaa7dec
+  callee=_xpc_copy entry=1acaa7dcc
+  callee=_analytics_send_event entry=1acaa7b1c
+  callee=_xpc_release entry=1acaa7dfc
+  callee=SetUnbuffered entry=1ac8817e0
+  callee=operator.new entry=1acaa7a2c
+  callee=YAMLRemarkSerializer entry=1acaa6b9c
+  callee=_free entry=1acaa7b9c
+  callee=deallocate_buffer entry=1acaa63bc
+  callee=RemarkStreamer entry=1acaa6b8c
+  callee=setLLVMRemarkStreamer entry=1acaa5b2c
+  callee=operator.delete entry=1acaa7a0c
+  callee=_mach_absolute_time entry=1acaa7bec
+  callee=execute entry=1acaa674c
+  callee=isValid entry=1acaa727c
+  callee=CreateString entry=1ac946ae4
+  callee=AddOffset<flatbuffers::Vector<unsigned_int>> entry=1ac88b6f4
+  callee=AddElement<unsigned_long_long> entry=1ac927a70
+  callee=EndTable entry=1ac88b924
+  callee=_memcpy entry=1acaa7c4c
+  callee=CompileReply entry=1acaa672c
+  callee=getDiagnostics entry=1acaa670c
+  callee=printMessage entry=1ac8824c0
+  callee=getMessage entry=1acaa725c
+  callee=___cxa_guard_acquire entry=1acaa7a4c
+  callee=___cxa_guard_release entry=1acaa7a5c
+  callee=getBinary entry=1acaa671c
+  callee=append<char_const*,void> entry=1ac8963ec
+  callee=~CompileReply entry=1acaa673c
+  callee=~Regex entry=1acaa698c
+  callee=~raw_ostream entry=1acaa5c8c
+  callee=~CompileRequest entry=1acaa67bc
+  callee=_dispatch_once entry=1acaa7b6c
+  callee=___stack_chk_fail entry=1acaa7a7c
+  callee=__throw_bad_array_new_length[abi:nqn210106] entry=1acaa4fb4
+
+/* WARNING: Heritage AFTER dead removal. Example location: x0 : 0x0001ac9e98e8 */
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+/* WARNING: Restarted to delay deadcode elimination for space: register */
+/* AGCLLVMCtx::compile(AGCLLVMObject*, llvm::Module&, AGCFastMathFlags, llvm::AGX::PipelineType,
+   llvm::AGX::CodeGenOptions&, bool) */
+
+undefined4 __thiscall
+AGCLLVMCtx::compile(AGCLLVMCtx *this,AGCLLVMObjectBase *param_1,undefined8 *param_2,byte param_4,
+                   int param_5,byte *param_6,int param_7)
+
+{
+  undefined8 *puVar1;
+  long *plVar2;
+  int iVar3;
+  int iVar4;
+  char cVar5;
+  ulong uVar6;
+  CompileReply *pCVar7;
+  CompileReply *pCVar8;
+  int iVar9;
+  uint uVar10;
+  undefined4 extraout_w0;
+  char *pcVar11;
+  undefined8 uVar12;
+  YAMLRemarkSerializer *pYVar13;
+  YAMLRemarkSerializer *pYVar14;
+  uint64_t uVar15;
+  uint64_t uVar16;
+  void *pvVar17;
+  long *plVar18;
+  char *pcVar19;
+  size_t sVar20;
+  byte bVar21;
+  ulong uVar22;
+  ulong uVar23;
+  undefined8 uVar24;
+  ulonglong uVar25;
+  undefined4 uVar26;
+  long lVar27;
+  undefined8 *puVar28;
+  void *pvVar30;
+  undefined4 *puVar31;
+  size_t sVar32;
+  undefined4 *puVar33;
+  AGCTargetPrinter *pAVar34;
+  AGCLLVMCtx *pAVar35;
+  long local_1b0;
+  long local_1a0;
+  undefined1 local_198;
+  CompileReply aCStack_190 [8];
+  long *local_188;
+  CompileReply local_180;
+  undefined7 uStack_17f;
+  ulong uStack_178;
+  undefined1 local_170;
+  byte local_169;
+  YAMLRemarkSerializer *local_168;
+  long local_160;
+  undefined4 local_158;
+  undefined8 local_150;
+  undefined8 local_148;
+  undefined8 uStack_140;
+  undefined1 local_138;
+  undefined8 local_130;
+  undefined4 local_128;
+  AGCLLVMCtx *local_120;
+  void *local_118 [2];
+  char local_101;
+  CompileRequest aCStack_100 [8];
+  RemarkStreamer local_f8;
+  undefined7 uStack_f7;
+  char local_e8;
+  long *local_e0;
+  void *local_d8;
+  char *local_d0;
+  uint local_c8;
+  char local_c1;
+  char local_c0 [16];
+  undefined8 *local_b0 [2];
+  undefined8 *local_a0;
+  char cStack_99;
+  uint local_98;
+  undefined8 auStack_90 [3];
+  char local_78;
+  long local_70;
+  undefined8 *puVar29;
+  
+  local_70 = *_DAT_1e598ebe0;
+  *(AGCLLVMCtx *)(param_6 + 1) = this[0x7a1];
+  if (*(char *)(*(long *)(this + 0x20) + 0x37) == '\x01') {
+    if (((AGCEnv::isEnabled()::is_internal & 1) == 0) &&
+       (___cxa_guard_acquire(&AGCEnv::isEnabled()::is_internal), (int)this != 0)) {
+      _os_variant_has_internal_diagnostics("com.apple.AGXCompilerCore");
+      AGCEnv::isEnabled()::is_internal = (char)this;
+      ___cxa_guard_release(&AGCEnv::isEnabled()::is_internal);
+    }
+    if ((((AGCEnv::isEnabled()::is_internal != '\x01') ||
+         (pcVar11 = (char *)AGCEnv::getValue("AGC_ENABLE_UNSAFE_MATH"), pcVar11 == (char *)0x0)) ||
+        (*pcVar11 == '0')) || (iVar9 = _atoi(pcVar11), iVar9 == 0)) goto LAB_1ac9e9614;
+  }
+  *param_6 = param_4 & 1;
+LAB_1ac9e9614:
+  uVar26 = *(undefined4 *)(param_1 + 0x13e0);
+  uVar24 = *(undefined8 *)param_6;
+  uVar12 = (**(code **)(*(long *)param_1 + 0x30))(param_1);
+  __ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1B9nqn210106ILi0EEEPKc
+            (local_118,uVar12);
+  llvm::AGX::CompileRequest::CompileRequest
+            (aCStack_100,param_2,uVar24,local_118,uVar26,this + 0x7e8);
+  if (local_101 < '\0') {
+    operator_delete(local_118[0]);
+  }
+  __ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1B9nqn210106ILi0EEEPKc
+            (&local_f8,"__GPU_REMARKS_MD");
+  __ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1B9nqn210106ILi0EEEPKc
+            (&local_e0,"__GPU_LD_MD");
+  __ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1B9nqn210106ILi0EEEPKc
+            (&local_c8,"__GPU_ARCH_LD_MD");
+  __ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1B9nqn210106ILi0EEEPKc
+            (local_b0,"__GPU_STATS_MD");
+  llvm::AGX::CompileRequest::addSegments(aCStack_100,&local_f8,4);
+  lVar27 = 0;
+  do {
+    if ((&cStack_99)[lVar27] < '\0') {
+      operator_delete(*(void **)((long)local_b0 + lVar27));
+    }
+    lVar27 = lVar27 + -0x18;
+  } while (lVar27 != -0x60);
+  (**(code **)(*(long *)param_1 + 0x68))(param_1,aCStack_100);
+  uVar12 = AGCTargetPrinter::isValidToPrintMessage(*(AGCTargetPrinter **)(param_1 + 0x6a0));
+  iVar9 = (int)uVar12;
+  if ((iVar9 != 0) && (AGCLLVMObjectBase::dumpShaderToFile(param_1), iVar9 != 0)) {
+    std::ostream::flush();
+    llvm::AGX::CompileRequest::setLoggingStream((ostream *)aCStack_100);
+  }
+  if (param_5 == 1) {
+    if (param_6[3] == 1) {
+      pAVar35 = this + 0x68;
+    }
+    else {
+      pAVar35 = this + 0x50;
+    }
+    bVar21 = ((byte)this[0x7a2] ^ 1) & 1;
+    uVar24 = 1;
+  }
+  else if (param_5 == 2) {
+    pAVar35 = this + 0x80;
+    bVar21 = ((byte)this[0x7a2] ^ 0xff) & 1;
+    uVar24 = 2;
+  }
+  else {
+    pAVar35 = this + 0x38;
+    uVar24 = 3;
+    bVar21 = 0;
+  }
+  initializePlan(this,pAVar35,uVar24,bVar21,param_1 + 0x678,param_6[3],uVar12);
+  if (*(CompileRequest *)(pAVar35 + 0x10) == (CompileRequest)0x1) {
+    _os_variant_has_internal_diagnostics("com.apple.AGXCompilerCore");
+    if (iVar9 == 0) {
+      local_1b0 = 0;
+    }
+    else {
+      local_1b0 = _xpc_dictionary_create(0,0,0);
+      _xpc_dictionary_set_uint64(local_1b0,"api",*(undefined4 *)(param_1 + 0x1400));
+      uVar10 = (**(code **)(*(long *)param_1 + 0x50))(param_1);
+      if (uVar10 < 0x23) {
+        _xpc_dictionary_set_uint64
+                  (local_1b0,"shader_kind",*(undefined8 *)(&DAT_1acab1a68 + (ulong)uVar10 * 8));
+      }
+      uVar12 = _xpc_copy(local_1b0);
+      _analytics_send_event("com.apple.agx.compilation_started",uVar12);
+      _xpc_release(uVar12);
+    }
+    local_120 = this + 0x130;
+    local_158 = 0;
+    local_138 = 0;
+    local_130 = 0;
+    local_128 = 1;
+    local_148 = 0;
+    uStack_140 = 0;
+    local_150 = 0;
+    local_160 = _DAT_1e5949c68 + 0x10;
+    llvm::raw_ostream::SetUnbuffered((raw_ostream *)&local_160);
+    pYVar13 = operator_new(uVar12,0x10f3c4066da31c6);
+    local_f8 = (RemarkStreamer)0x0;
+    local_78 = '\0';
+    llvm::remarks::YAMLRemarkSerializer::YAMLRemarkSerializer(pYVar13,&local_160,0,&local_f8);
+    pYVar14 = pYVar13;
+    if (local_78 == '\x01') {
+      _free((void *)CONCAT71(uStack_f7,local_f8));
+      if (local_c8 != 0) {
+        lVar27 = (ulong)local_c8 << 3;
+        pcVar11 = local_d0;
+        pcVar19 = local_d0;
+        do {
+          uVar10 = (uint)((ulong)((long)pcVar11 - (long)local_d0) >> 10) & 0x1ffffff;
+          if (0x1d < uVar10) {
+            uVar10 = 0x1e;
+          }
+          pYVar14 = *(YAMLRemarkSerializer **)pcVar19;
+          llvm::deallocate_buffer(pYVar14,0x1000L << ((ulong)uVar10 & 0x3f),8);
+          pcVar11 = pcVar11 + 8;
+          lVar27 = lVar27 + -8;
+          pcVar19 = pcVar19 + 8;
+        } while (lVar27 != 0);
+      }
+      if (local_98 != 0) {
+        puVar1 = local_a0 + (ulong)local_98 * 2;
+        puVar28 = local_a0;
+        do {
+          puVar29 = puVar28 + 2;
+          llvm::deallocate_buffer((void *)*puVar28,puVar28[1],8);
+          puVar28 = puVar29;
+        } while (puVar29 != puVar1);
+      }
+      if (local_a0 != auStack_90) {
+        _free(local_a0);
+      }
+      if (local_d0 != local_c0) {
+        _free(local_d0);
+      }
+    }
+    local_180 = (CompileReply)0x0;
+    local_170 = 0;
+    local_168 = pYVar13;
+    llvm::remarks::RemarkStreamer::RemarkStreamer(&local_f8,&local_168,&local_180);
+    pYVar13 = local_168;
+    local_168 = (YAMLRemarkSerializer *)0x0;
+    if (pYVar13 != (YAMLRemarkSerializer *)0x0) {
+      (**(code **)(*(long *)pYVar13 + 8))();
+    }
+    if (param_7 != 0) {
+      uVar12 = *param_2;
+      local_188 = operator_new(pYVar14,0x20c4093837f09);
+      *local_188 = (long)&local_f8;
+      llvm::LLVMContext::setLLVMRemarkStreamer(uVar12,&local_188);
+      plVar18 = local_188;
+      local_188 = (long *)0x0;
+      if (plVar18 != (long *)0x0) {
+        operator_delete(plVar18,0x20c4093837f09);
+      }
+    }
+    uVar15 = _mach_absolute_time();
+    llvm::AGX::AGXCompilePlan::execute((CompileRequest *)pAVar35);
+    local_198 = 1;
+    llvm::AGX::CompileReply::isValid();
+    uVar16 = _mach_absolute_time();
+    uVar25 = uVar16 - uVar15;
+    if (getTimebaseInfo()::once != -1) {
+      _dispatch_once(&getTimebaseInfo()::once,&__block_literal_global_16968);
+    }
+    uVar6 = 0;
+    if ((ulong)DAT_1eca418d4 != 0) {
+      uVar6 = (uVar25 * getTimebaseInfo()::sTimebaseInfo) / (ulong)DAT_1eca418d4;
+    }
+    *(ulong *)(param_1 + 0x8a8) = uVar6;
+    if (iVar9 != 0) {
+      if ((local_1b0 == 0) &&
+         (local_1b0 = _xpc_dictionary_create(0,0,0), getTimebaseInfo()::once != -1)) {
+        _dispatch_once(&getTimebaseInfo()::once,&__block_literal_global_16968);
+      }
+      uVar6 = 0;
+      if ((ulong)DAT_1eca418d4 != 0) {
+        uVar6 = (uVar25 * getTimebaseInfo()::sTimebaseInfo) / (ulong)DAT_1eca418d4;
+      }
+      _xpc_dictionary_set_uint64(local_1b0,"time_total",uVar6 / 1000);
+      _analytics_send_event("com.apple.agx.compilation_finished",local_1b0);
+    }
+    __ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1B9nqn210106ILi0EEEPKc
+              (&local_180,"backend");
+    pCVar8 = (CompileReply *)CONCAT71(uStack_17f,local_180);
+    pCVar7 = pCVar8;
+    if (-1 < (char)local_169) {
+      uStack_178 = (ulong)local_169;
+      pCVar7 = &local_180;
+    }
+    pvVar17 = (void *)flatbuffers::FlatBufferBuilder::CreateString
+                                ((FlatBufferBuilder *)(param_1 + 0x1180),(char *)pCVar7,uStack_178);
+    param_1[0x11c6] = (AGCLLVMObjectBase)0x1;
+    iVar9 = *(int *)(param_1 + 0x11a0);
+    iVar3 = *(int *)(param_1 + 0x11b0);
+    iVar4 = *(int *)(param_1 + 0x11a8);
+    flatbuffers::FlatBufferBuilder::AddOffset<flatbuffers::Vector<unsigned_int>>
+              ((FlatBufferBuilder *)(param_1 + 0x1180),4,(ulong)pvVar17 & 0xffffffff);
+    flatbuffers::FlatBufferBuilder::AddElement<unsigned_long_long>
+              ((FlatBufferBuilder *)(param_1 + 0x1180),6,uVar25,0);
+    flatbuffers::FlatBufferBuilder::EndTable
+              ((FlatBufferBuilder *)(param_1 + 0x1180),(iVar9 - iVar3) + iVar4);
+    extraout_w0 = SUB84(pvVar17,0);
+    puVar31 = *(undefined4 **)(param_1 + 0x898);
+    if (puVar31 < *(undefined4 **)(param_1 + 0x8a0)) {
+      puVar33 = puVar31 + 1;
+      *puVar31 = extraout_w0;
+    }
+    else {
+      pvVar30 = *(void **)(param_1 + 0x890);
+      sVar32 = (long)puVar31 - (long)pvVar30;
+      lVar27 = (long)sVar32 >> 2;
+      uVar6 = lVar27 + 1;
+      if (uVar6 >> 0x3e != 0) {
+                    /* WARNING: Subroutine does not return */
+        std::__throw_bad_array_new_length_abi_nqn210106_();
+      }
+      uVar22 = (long)*(undefined4 **)(param_1 + 0x8a0) - (long)pvVar30;
+      uVar23 = (long)uVar22 >> 1;
+      if (uVar23 <= uVar6) {
+        uVar23 = uVar6;
+      }
+      if (0x7ffffffffffffffb < uVar22) {
+        uVar23 = 0x3fffffffffffffff;
+      }
+      if (uVar23 == 0) {
+        pvVar17 = (void *)0x0;
+        sVar20 = sVar32;
+      }
+      else {
+        if (uVar23 >> 0x3e != 0) {
+                    /* WARNING: Subroutine does not return */
+          std::__throw_bad_array_new_length_abi_nqn210106_();
+        }
+        pvVar17 = operator_new(pvVar17,0x1000c0052888210);
+        pvVar30 = *(void **)(param_1 + 0x890);
+        lVar27 = *(long *)(param_1 + 0x898) - (long)pvVar30 >> 2;
+        sVar20 = *(long *)(param_1 + 0x898) - (long)pvVar30;
+      }
+      puVar31 = (undefined4 *)((long)pvVar17 + sVar32);
+      puVar33 = puVar31 + 1;
+      *puVar31 = extraout_w0;
+      _memcpy(puVar31 + -lVar27,pvVar30,sVar20);
+      *(undefined4 **)(param_1 + 0x890) = puVar31 + -lVar27;
+      *(undefined4 **)(param_1 + 0x898) = puVar33;
+      *(void **)(param_1 + 0x8a0) = (void *)((long)pvVar17 + uVar23 * 4);
+      if (pvVar30 != (void *)0x0) {
+        operator_delete(pvVar30);
+      }
+    }
+    *(undefined4 **)(param_1 + 0x898) = puVar33;
+    if ((char)local_169 < '\0') {
+      operator_delete(pCVar8);
+    }
+    llvm::AGX::CompileReply::CompileReply(&local_180,aCStack_190);
+    AGCLLVMObjectBase::dumpShaderToFile(param_1);
+    if ((int)pvVar17 != 0) {
+      plVar18 = (long *)llvm::AGX::CompileReply::getDiagnostics();
+      plVar2 = (long *)plVar18[1];
+      for (plVar18 = (long *)*plVar18; plVar18 != plVar2; plVar18 = plVar18 + 1) {
+        lVar27 = *plVar18;
+        iVar9 = *(int *)(lVar27 + 8);
+        if (iVar9 == 3) {
+          pAVar34 = *(AGCTargetPrinter **)(param_1 + 0x6a0);
+          (**(code **)(*(long *)param_1 + 0x30))(param_1);
+          AGCTargetPrinter::printMessage
+                    (pAVar34,"------ Start USC %s shader %u (compiler assembly) -------");
+          lVar27 = *plVar18;
+          iVar9 = *(int *)(lVar27 + 8);
+        }
+        if (iVar9 == 5) {
+          if (((AGCEnv::isEnabled()::is_internal & 1) == 0) &&
+             (___cxa_guard_acquire(&AGCEnv::isEnabled()::is_internal), (int)lVar27 != 0)) {
+            _os_variant_has_internal_diagnostics("com.apple.AGXCompilerCore");
+            AGCEnv::isEnabled()::is_internal = (char)lVar27;
+            ___cxa_guard_release(&AGCEnv::isEnabled()::is_internal);
+          }
+          if ((((AGCEnv::isEnabled()::is_internal == '\x01') &&
+               (pcVar11 = (char *)AGCEnv::getValue("AGC_ENABLE_STATUS_FILE_TIMING"),
+               pcVar11 != (char *)0x0)) && (*pcVar11 != '0')) &&
+             (iVar9 = _atoi(pcVar11), iVar9 != 0)) goto LAB_1ac9e9d88;
+        }
+        else {
+LAB_1ac9e9d88:
+          pAVar34 = *(AGCTargetPrinter **)(param_1 + 0x6a0);
+          llvm::AGX::Diagnostic::getMessage();
+          AGCTargetPrinter::printMessage(pAVar34,"Diag: %s \n");
+        }
+        if (*(int *)(*plVar18 + 8) == 3) {
+          pAVar34 = *(AGCTargetPrinter **)(param_1 + 0x6a0);
+          (**(code **)(*(long *)param_1 + 0x30))(param_1);
+          AGCTargetPrinter::printMessage
+                    (pAVar34,"------ End USC %s shader %u (compiler assembly) -------");
+        }
+      }
+    }
+    pcVar19 = (char *)llvm::AGX::CompileReply::getBinary();
+    cVar5 = pcVar19[0x17];
+    pcVar11 = *(char **)pcVar19;
+    if (-1 < (long)cVar5) {
+      pcVar11 = pcVar19;
+    }
+    lVar27 = *(long *)(pcVar19 + 8);
+    if (-1 < cVar5) {
+      lVar27 = (long)cVar5;
+    }
+    *(undefined8 *)(this + 0xa0) = 0;
+    llvm::SmallVectorImpl<char>::append<char_const*,void>
+              ((SmallVectorImpl<char> *)(this + 0x98),pcVar11,pcVar11 + lVar27);
+    if (param_7 != 0) {
+      local_1a0 = 0;
+      llvm::LLVMContext::setLLVMRemarkStreamer(*param_2,&local_1a0);
+      lVar27 = local_1a0;
+      local_1a0 = 0;
+      if (lVar27 != 0) {
+        operator_delete(lVar27,0x20c4093837f09);
+      }
+    }
+    llvm::AGX::CompileReply::~CompileReply(&local_180);
+    llvm::AGX::CompileReply::~CompileReply(aCStack_190);
+    if (local_c0[0] == '\x01') {
+      if (local_c1 < '\0') {
+        operator_delete(local_d8);
+      }
+      local_c0[0] = '\0';
+    }
+    plVar18 = local_e0;
+    local_e0 = (long *)0x0;
+    if (plVar18 != (long *)0x0) {
+      (**(code **)(*plVar18 + 8))();
+    }
+    if (local_e8 == '\x01') {
+      llvm::Regex::~Regex((Regex *)&local_f8);
+    }
+    llvm::raw_ostream::~raw_ostream((raw_ostream *)&local_160);
+    uVar26 = (int)uVar15;
+    if (local_1b0 != 0) {
+      _xpc_release(local_1b0);
+    }
+  }
+  else {
+    uVar26 = 0;
+  }
+  llvm::AGX::CompileRequest::~CompileRequest(aCStack_100);
+  if (*_DAT_1e598ebe0 != local_70) {
+                    /* WARNING: Subroutine does not return */
+    ___stack_chk_fail();
+  }
+  return uVar26;
+}
+
+
+
+===== compiler_context_initialize_plan =====
+symbol=initializePlan entry=1ac9e9fd8
+direct_callers=1
+  caller=compile entry=1ac9e9560
+all_references=2
+  ref=data from=1ff0e1d54 type=DATA
+  ref=code owner=compile entry=1ac9e9560
+direct_callees=15
+  callee=createCompilePlan entry=1acaa66bc
+  callee=isValid entry=1acaa728c
+  callee=AGXCompilePlan entry=1acaa675c
+  callee=~AGXCompilePlan entry=1acaa676c
+  callee=getLastDiagnostics entry=1acaa66cc
+  callee=stringstream[abi:nqn210106] entry=1ac882f7c
+  callee=__put_character_sequence[abi:nqn210106]<char,std::char_traits<char>> entry=1ac882710
+  callee=operator<< entry=1acaa67fc
+  callee=str entry=1acaa765c
+  callee=append entry=1acaa76dc
+  callee=operator.delete entry=1acaa79fc
+  callee=~locale entry=1acaa796c
+  callee=~iostream entry=1acaa789c
+  callee=~ios entry=1acaa799c
+  callee=operator()[abi:nqn210106] entry=1ac87e5b4
+
+/* WARNING: Removing unreachable block (ram,0x0001ac9ea190) */
+/* WARNING: Removing unreachable block (ram,0x0001ac9ea1dc) */
+/* WARNING: Removing unreachable block (ram,0x0001ac9ea154) */
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+/* AGCLLVMCtx::initializePlan(std::optional<llvm::AGX::AGXCompilePlan>&, llvm::AGX::PipelineType,
+   llvm::AGX::Optimize, std::string&, llvm::AGX::CodeGenOptions&, bool) */
+
+void __thiscall
+AGCLLVMCtx::initializePlan
+          (AGCLLVMCtx *this,AGXCompilePlan *param_1,undefined8 param_3,undefined8 param_4,
+          char *param_5,undefined1 param_6,undefined8 param_7)
+
+{
+  long lVar1;
+  void **ppvVar2;
+  ulong uVar3;
+  ostream *poVar4;
+  void *local_1b0 [2];
+  char local_199;
+  long local_198 [2];
+  long local_188;
+  long local_180;
+  locale alStack_178 [56];
+  void *local_140;
+  char local_129;
+  ios aiStack_118 [152];
+  undefined8 *local_80;
+  undefined8 *puStack_78;
+  undefined1 local_68 [8];
+  AGXCompilePlan aAStack_60 [16];
+  
+  if (((byte)param_1[0x10] & 1) == 0) {
+    llvm::AGX::AGXCompiler::createCompilePlan
+              (local_68,this + 0x30,param_3,param_4,param_7,this[0x7e4],param_6,2);
+    local_68[0] = 1;
+    uVar3 = llvm::AGX::AGXCompilePlan::isValid();
+    if ((uVar3 & 1) == 0) {
+      llvm::AGX::AGXCompiler::getLastDiagnostics();
+      std::stringstream::stringstream_abi_nqn210106_((stringstream *)local_198);
+      std::__put_character_sequence_abi_nqn210106_<char,std::char_traits<char>>
+                ((ostream *)&local_188,"Create Plan failed:\n",0x14);
+      for (; local_80 != puStack_78; local_80 = local_80 + 1) {
+        poVar4 = (ostream *)llvm::AGX::operator<<((ostream *)&local_188,(Diagnostic *)*local_80);
+        std::__put_character_sequence_abi_nqn210106_<char,std::char_traits<char>>(poVar4,"\n",1);
+      }
+      std::stringbuf::str();
+      ppvVar2 = local_1b0[0];
+      if (-1 < local_199) {
+        ppvVar2 = local_1b0;
+      }
+      std::string::append(param_5,(ulong)ppvVar2);
+      if (local_199 < '\0') {
+        operator_delete(local_1b0[0]);
+      }
+      local_198[0] = *_DAT_1e598b888;
+      lVar1 = _DAT_1e598b888[9];
+      *(long *)((long)local_198 + *(long *)(local_198[0] + -0x18)) = _DAT_1e598b888[8];
+      local_180 = _DAT_1e598b900 + 0x10;
+      local_188 = lVar1;
+      if (local_129 < '\0') {
+        operator_delete(local_140);
+      }
+      local_180 = _DAT_1e598b8f0 + 0x10;
+      std::locale::~locale(alStack_178);
+      std::iostream::~iostream((iostream *)local_198);
+      std::ios::~ios(aiStack_118);
+      std::
+      vector<std::unique_ptr<llvm::AGX::Diagnostic,std::default_delete<llvm::AGX::Diagnostic>>,std::allocator<std::unique_ptr<llvm::AGX::Diagnostic,std::default_delete<llvm::AGX::Diagnostic>>>>
+      ::__destroy_vector::operator()[abi_nqn210106_((__destroy_vector *)&local_80);
+    }
+    else {
+      llvm::AGX::AGXCompilePlan::AGXCompilePlan((AGXCompilePlan *)local_198,aAStack_60);
+      if (param_1[0x10] == (AGXCompilePlan)0x1) {
+        llvm::AGX::AGXCompilePlan::~AGXCompilePlan(param_1);
+        param_1[0x10] = (AGXCompilePlan)0x0;
+      }
+      llvm::AGX::AGXCompilePlan::AGXCompilePlan(param_1,(AGXCompilePlan *)local_198);
+      param_1[0x10] = (AGXCompilePlan)0x1;
+      llvm::AGX::AGXCompilePlan::~AGXCompilePlan((AGXCompilePlan *)local_198);
+    }
+    llvm::AGX::AGXCompilePlan::~AGXCompilePlan(aAStack_60);
+  }
+  return;
+}
+
+
+
+===== agx_compile_plan_factory =====
+symbol=createCompilePlan entry=1acaa66bc
+direct_callers=1
+  caller=initializePlan entry=1ac9e9fd8
+all_references=1
+  ref=code owner=initializePlan entry=1ac9e9fd8
+direct_callees=0
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+/* llvm::AGX::AGXCompiler::createCompilePlan(llvm::AGX::PipelineType, llvm::AGX::Optimize,
+   llvm::AGX::Logging, llvm::AGX::GlobalISel, llvm::AGX::RelocModel, llvm::AGX::CodeGenOutput) */
+
+void llvm::AGX::AGXCompiler::createCompilePlan(void)
+
+{
+                    /* WARNING: Could not recover jumptable at 0x0001acaa66c8. Too many branches */
+                    /* WARNING: Treating indirect jump as call */
+  (*_DAT_1edcdb368)();
+  return;
+}
+
+
+
+===== agx_compile_plan_execute =====
+symbol=execute entry=1acaa674c
+direct_callers=1
+  caller=compile entry=1ac9e9560
+all_references=1
+  ref=code owner=compile entry=1ac9e9560
+direct_callees=0
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+/* WARNING: Unknown calling convention -- yet parameter storage is locked */
+/* llvm::AGX::AGXCompilePlan::execute(llvm::AGX::CompileRequest&) */
+
+void llvm::AGX::AGXCompilePlan::execute(CompileRequest *param_1)
+
+{
+                    /* WARNING: Could not recover jumptable at 0x0001acaa6758. Too many branches */
+                    /* WARNING: Treating indirect jump as call */
+  (*_DAT_1edcdb3b0)();
+  return;
+}
+
+
+
