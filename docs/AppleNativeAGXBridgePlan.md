@@ -1,7 +1,12 @@
 # Apple Native AGX Bridge Plan
 
-Status: preferred macOS platform direction. The first bounded bridge bootstrap
-is implemented and tested on the active G16X profile: it retains Apple's
+Status: archived research plan. It records the direct AGX/UABI investigation
+and its evidence gates; it is not the active AO46 runtime backend. See
+[AO46MetalBackendPlan.md](AO46MetalBackendPlan.md) for the active Mesa-to-Metal
+delivery path.
+
+Historical scope: the first bounded bridge bootstrap is implemented and tested
+on the recorded G16X profile: it retains Apple's
 opaque generic device reference and resolves the observed generic C symbols.
 The existing direct-UABI research implementation remains a fail-closed
 fallback. A supported Apple-owned allocation broker now retains public

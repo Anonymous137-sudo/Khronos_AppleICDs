@@ -1,16 +1,21 @@
 # Khronos_AppleICDs
 
-`Khronos_AppleICDs` is a third-party work-in-progress OpenGL 4.6 system-framework and driver project for macOS.
+`Khronos_AppleICDs` is a third-party work-in-progress OpenGL 4.6
+system-framework and driver project for macOS.
 
 Its goal is to provide a modern OpenGL 4.6 core-profile stack through a real system framework, system-space loader pieces, and user-space `libGL*.dylib` bridges, filling in the modern OpenGL path Apple stopped advancing when OpenGL was deprecated on macOS Mojave 10.14 in 2018.
 
-The intended native execution path fully reuses Mesa's OpenGL implementation
-and Mesa's Asahi Gallium driver. AO46 supplies macOS-specific framework,
-CGL/NSOpenGL, drawable, and platform integration; it does not duplicate GL
-semantics or the AGX compiler/driver. GL2MTL is retained only as an isolated
-development target; the framework fails closed while the native macOS Asahi
-winsys is incomplete. See [the native AGX architecture
-plan](docs/AO46AGXNativeArchitecture.md).
+The active direction reuses Mesa's OpenGL core, state tracker, GLSL, SPIR-V,
+NIR, and NIR-to-MSL compiler machinery. AO46 focuses on the Metal execution
+backend and the macOS-specific work Mesa does not provide: framework ABI,
+CGL/NSOpenGL, drawable lifecycle, `libGLICD.dylib`, user-space `libGL*.dylib`
+bridges, compatibility behavior, and staged CTS readiness.
+
+AO46 does not hand-write a second OpenGL semantic engine or a separate
+GLSL-to-Metal compiler. The historical direct AGX/UABI work is retained as
+research, including its raw evidence, but is not the active runtime path or a
+conformance claim. See [the active Mesa Metal backend
+plan](docs/AO46MetalBackendPlan.md).
 
 ## Repository Layout
 
@@ -18,11 +23,15 @@ plan](docs/AO46AGXNativeArchitecture.md).
   Main source tree for `OpenGL_4.6.framework`, the Apple-path `OpenGL.framework` loader, the internal ICD/backend boundary, the user-space `libGL*.dylib` drivers, test coverage, and packaging scripts.
 - `docs/INSTALLATION.md`
   Live-install notes for developer machines, installer behavior, target paths, and update flow.
+- `docs/AO46MetalBackendPlan.md`
+  Governing Mesa-to-Metal backend plan, ownership boundary, and CTS delivery
+  order.
 - `docs/WORKFLOW_PLAN.md`
-  Active engineering workflow plan, including the Mesa/Asahi reuse rule.
-- `docs/AO46AGXNativeArchitecture.md`
-  Governing native backend architecture, upstream reuse boundary, and macOS
-  platform-port delivery order.
+  Active workflow, implementation rules, CTS milestones, and archived direct
+  AGX research dashboard.
+- `docs/research/evidence/`
+  Checksummed direct-AGX research evidence, trace logs, Ghidra reports, and
+  project-owned analysis metadata.
 - `dist/`
   Built `OpenGLKHR_ICD_Installer.pkg` outputs.
 
@@ -43,6 +52,9 @@ OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/build
 OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/stage
 ```
 
+Passing the current smoke suite validates framework and integration scaffolding
+only. It does not establish Metal-backed OpenGL 4.6 support or CTS conformance.
+
 ## Installer
 
 Build the GitHub-bootstrap installer package with:
@@ -62,6 +74,10 @@ The installer clones or updates this repository into:
 ```text
 /usr/local/src/Khronos_AppleICDs
 ```
+
+The installer is a developer-only WIP mechanism. Do not treat a successful
+install as proof of system-wide application compatibility or OpenGL 4.6
+conformance; staged CTS is an explicit project milestone.
 
 Then it builds from source and installs into the live macOS locations:
 

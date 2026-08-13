@@ -1,6 +1,10 @@
 # Apple Opaque Carrier Contract
 
-Status: active, profile-gated reverse-engineering record for the direct AO46
+Status: archived research contract. It describes bounded observations from the
+direct AGX investigation and does not define a callable AO46 runtime ABI. See
+[AO46MetalBackendPlan.md](AO46MetalBackendPlan.md) for the active direction.
+
+Historical scope: profile-gated reverse-engineering record for the direct AO46
 Asahi-to-AGX path. This document describes observed call behavior on the
 active G16X/macOS 26.5.2 profile. It is not an Apple API declaration. Runtime
 code stays fail-closed: the only direct storage transition currently invoked is

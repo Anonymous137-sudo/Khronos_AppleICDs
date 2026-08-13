@@ -5,21 +5,21 @@ This is the source tree for the `OpenGL_4.6(Core Profile)` stack, a third-party 
 The public and system driver layers are `OpenGL.framework`,
 `OpenGL_4.6.framework`, `libGLICD.dylib`, and the user-space bridge dylibs.
 
-AO46 has one production execution path and one archived development target:
+AO46's active backend direction is Mesa-to-Metal:
 
-- `AO46AGXMac` is the planned native path. It reuses upstream Mesa's OpenGL
-  frontend and Asahi Gallium driver stack in full, then replaces only the Linux
-  platform boundary with a macOS implementation.
-- `GL2MTL` is a deprecated development-only target. It is excluded from the
-  default build and is never linked into `OpenGL_4.6.framework`.
+- Mesa supplies OpenGL semantics, state tracking, GLSL, SPIR-V, NIR, and the
+  reusable NIR-to-MSL compiler machinery.
+- AO46 supplies the macOS Metal execution layer, framework ABI, CGL/NSOpenGL,
+  drawable lifecycle, ICD, and user-space bridge integration.
+- `GL2MTL` is archived development material, not the active semantic engine or
+  a framework fallback.
+- `AO46AGXMac` and the direct AGX/UABI work are archived research. Their
+  evidence informs backend decisions but they are not the selected runtime
+  route or a conformance claim.
 
-AO46 does not reimplement OpenGL 4.6 semantics, the GLSL/NIR compiler stack,
-or the Asahi AGX driver. Those are Mesa/Asahi responsibilities. The
-project-side responsibilities are macOS framework ABI, CGL/NSOpenGL
-integration, drawable lifecycle, and eventually the macOS AGX platform adapter.
-
-The governing design is in
-[`docs/AO46AGXNativeArchitecture.md`](../../docs/AO46AGXNativeArchitecture.md).
+AO46 does not reimplement OpenGL 4.6 semantics or a standalone GLSL-to-Metal
+compiler. The governing design is
+[`docs/AO46MetalBackendPlan.md`](../../docs/AO46MetalBackendPlan.md).
 
 ## Layout
 
@@ -28,12 +28,11 @@ The governing design is in
 - `backend/`
   Archived development backend interfaces; not part of the production runtime.
 - `GL2MTL/`
-  Deprecated Metal development code. It is not built or linked by default.
+  Archived Metal development code. It is not the production OpenGL semantic
+  engine and is not linked by default.
 - `AO46AGXMac/`
-  The planned macOS platform adapter beneath Mesa's upstream Asahi userspace
-  driver. It will contain device, BO, GPU-VA, queue, submission,
-  synchronization, IOSurface, and presentation integration without duplicating
-  Mesa OpenGL or Asahi compiler code.
+  Archived direct-AGX research adapter. See `docs/research/evidence/` for its
+  retained observations and raw analysis output.
 - `runtime/`
   Framework-side runtime code that implements the driver and owns the framework-to-backend bridge.
 - `client/`
@@ -53,14 +52,14 @@ The first framework milestone is a clean system-driver bring-up with:
 
 - an exact-path Apple `OpenGL.framework` loader target
 - a real `OpenGL_4.6.framework` target
-- a framework-owned backend boundary that selects Mesa Asahi only
+- a framework-owned backend boundary that will select Mesa's Metal-backed path
 - initial `CGL*` compatibility entrypoints
 - Khronos `gl*` forwarding into Mesa
 
-The native-backend milestone then builds the upstream Mesa/Asahi stack as a
-pinned dependency, adds the AO46AGXMac platform boundary, and validates one
-macOS/GPU profile at a time. Until that work is complete, AO46 must not claim
-native AGX execution or macOS OpenGL 4.6 conformance.
+The backend milestone integrates Mesa's reusable NIR-to-MSL machinery with an
+AO46 Metal screen, resource, pipeline, synchronization, and presentation
+implementation. Until that work and staged CTS are complete, AO46 must not
+claim macOS OpenGL 4.6 conformance.
 
 ## Current Shape
 
@@ -74,12 +73,12 @@ Right now this subproject is an early in-development driver:
 - `gl*` entrypoints and the backend proc table are generated from a vendored Khronos-facing registry snapshot stored in this repo
 - old handwritten GL2MTL state, texture, buffer, pbuffer, and raster paths are archived only; their feature lists are not claims about the production framework
 - when a standard Khronos OpenGL token or function name already exists, the code now prefers that Khronos spelling directly; `AO46*` names are reserved for private driver plumbing
-- the runtime now selects only the native Mesa Asahi backend. It fails CGL
-  context creation explicitly until the macOS winsys can create an AGX screen;
-  it never falls back to `libgl2mtl.dylib`
-- the device-profile query, 64-byte capability request, and profile gate are
-  implemented for the current host; BO, GPU-VA, queue, submission, and GPU
-  synchronization operations remain the blocking macOS winsys work
+- the current runtime still fails CGL context creation while no live Mesa Metal
+  screen exists; it does not silently select archived GL2MTL code or claim a
+  direct AGX runtime
+- direct AGX device-profile, BO, queue, submission, and shader-residency work
+  is retained as research evidence rather than treated as the active blocker
+  for the Metal backend
 
 ## Build
 

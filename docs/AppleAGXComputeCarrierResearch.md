@@ -1,6 +1,10 @@
 # Apple AGX Compute Carrier Research
 
-Status: active, profile-gated reverse-engineering record. This document records
+Status: preserved direct-AGX research. These observations are retained as
+evidence and are not a selected AO46 submission path. The active backend plan
+is [AO46MetalBackendPlan.md](AO46MetalBackendPlan.md).
+
+Historical scope: profile-gated reverse-engineering record. This document records
 observed behavior of an Apple-created compute command carrier. It is not a
 declaration of a portable Apple ABI, and it does not authorize AO46 to replay
 private object layouts on another operating-system or AGX profile.

@@ -1,10 +1,16 @@
-# AO46 Native AGX Architecture
+# AO46 Direct AGX Research Architecture
 
-Status: governing design plan. The runtime selects the native Mesa/Asahi path
-only. Until its macOS winsys can create an AGX Gallium screen, CGL context
-creation fails explicitly; no GL2MTL fallback is selected.
+Status: archived research architecture. This document preserves the direct
+Mesa/Asahi-to-AGX investigation, its implementation boundary, and its evidence
+model. It is not the active AO46 runtime strategy and must not be read as an
+OpenGL 4.6 conformance claim.
 
-## Decision
+The active delivery plan is the public-Metal backend described in
+[AO46MetalBackendPlan.md](AO46MetalBackendPlan.md). The direct AGX work,
+including its trace and Ghidra records, remains valuable research for resource,
+queue, residency, and presentation understanding.
+
+## Historical Decision
 
 AO46 does not implement a second OpenGL driver in project code. It reuses the
 upstream Mesa OpenGL implementation and the upstream Mesa Asahi Gallium driver
@@ -19,7 +25,7 @@ Those responsibilities stay in Mesa and Asahi. AO46 owns the macOS-facing
 framework ABI and, after the frontend is functional, the platform boundary
 needed to make the upstream Asahi userspace stack operate on macOS.
 
-## Target Topology
+## Research Topology
 
 ```text
 macOS application
@@ -193,7 +199,7 @@ The native build now removes `xf86drm.h` from the shared `agx_device.h` and
 batch, fence, and pipe implementation files, which is the required separation
 before a macOS BO/VM/queue/synchronization implementation can replace them.
 
-## Delivery Order
+## Historical Delivery Order
 
 1. Keep the AO46 framework, CGL, and NSOpenGL frontend connected to Mesa's GL
    frontend. Remove bespoke GL semantics from the critical path rather than

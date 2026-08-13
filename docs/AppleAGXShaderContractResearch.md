@@ -1,6 +1,10 @@
 # Apple AGX Shader Contract Research
 
-Status: active, profile-gated investigation record for the missing Mesa Asahi
+Status: preserved direct-AGX research. This record documents shader-residency
+and provenance observations; it is not a runtime admission contract. The
+active backend plan is [AO46MetalBackendPlan.md](AO46MetalBackendPlan.md).
+
+Historical scope: a profile-gated investigation recorded the missing Mesa Asahi
 `AGX_BO_LOW_VA | AGX_BO_EXEC` path. This is not a private API declaration and
 does not enable either flag in AO46.
 
@@ -828,7 +832,7 @@ AGX byte stream cannot substitute for the Apple-owned resource lifecycle.
 This is a reverse-engineering evidence milestone, not a callable AO46 UABI.
 The method-dispatch and resource records remain opaque and profile-specific;
 AO46 neither constructs them nor sends an inferred request to the user client.
-An active, profile-gated probe remains a later phase once the selected template,
+A profile-gated probe remains a later research phase once the selected template,
 its resource lifetime, and its failure cleanup are fully established. Such a
 probe must begin with an Apple-created ordinary-data control and must not begin
 by fabricating executable policy or submitting Asahi code.

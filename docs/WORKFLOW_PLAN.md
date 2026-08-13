@@ -4,31 +4,24 @@ This document is the active engineering workflow plan for `Khronos_AppleICDs`.
 
 It adopts the repo-to-full-OpenGL-4.6 engineering map originally assessed against commit `1a0d21e` and turns that assessment into the working implementation order for the driver framework from this point forward.
 
-## Governing Native AGX Pivot
+## Governing Mesa Metal Direction
 
-The authoritative architecture is [`AO46AGXNativeArchitecture.md`](AO46AGXNativeArchitecture.md).
+The authoritative architecture is [`AO46MetalBackendPlan.md`](AO46MetalBackendPlan.md).
 
-AO46 no longer plans to manually implement OpenGL 4.6 semantics, GLSL, NIR
-lowering, shader stages, object validation, or AGX GPU execution. The full Mesa
-OpenGL implementation and full Mesa Asahi Gallium driver remain upstream code
-and are the only source of those behaviours. AO46 code is limited to macOS
-framework/CGL/NSOpenGL integration and, later, the macOS platform adapter below
-Asahi's userspace driver.
+AO46 reuses Mesa for the complete OpenGL semantic stack: API behavior, objects,
+validation, dispatch, GLSL, SPIR-V, NIR, and the reusable NIR-to-MSL compiler
+machinery. AO46 must not grow a competing handwritten OpenGL implementation or
+a separate GLSL-to-Metal compiler.
 
-The Metal-oriented workstreams and phase descriptions below are retained as a
-record of the deprecated development backend and its existing tests. They are not a mandate
-to build a parallel GL implementation. All future feature work must first ask
-whether upstream Mesa/Asahi already provides the behavior; if it does, AO46
-integrates that existing implementation instead of recreating it.
+The active engineering work is a public-Metal backend beneath Mesa plus the
+macOS integration Mesa does not provide: Metal resources/pipelines/commands,
+IOSurface and CAMetalLayer presentation, CGL/NSOpenGL, framework ABI, ICD and
+user-space libraries, diagnostics, and staged CTS.
 
-The preferred macOS platform route is now defined by
-[`AppleNativeAGXBridgePlan.md`](AppleNativeAGXBridgePlan.md): AO46 should use a
-small, profile-gated ABI adapter to Apple's existing AGX userspace
-infrastructure when a low-level callable boundary is proven. The direct IOKit
-UABI prototype remains a preserved, fail-closed fallback research route, not
-the desired default implementation. Neither route permits Metal rendering,
-OpenGL-to-Metal translation, MSL shader generation, or a project-local OpenGL
-semantic engine.
+The direct Mesa/Asahi-to-AGX/UABI investigation is archived research. Its
+traces, Ghidra reports, contracts, and fail-closed prototypes remain in the
+repository as evidence, but it is not selected as the runtime path. Historical
+`GL2MTL` sources likewise remain archived and cannot become a semantic fallback.
 
 ## Status Legend
 
@@ -48,6 +41,26 @@ semantic engine.
 - Capability exposure must be driven by real backend support, not aspirational version strings.
 - The driver must not advertise full OpenGL 4.6 until required behavior passes deeper semantic and conformance coverage.
 - System replacement, installer behavior, and rollback safety remain first-class workstreams, not afterthoughts.
+
+## Active Mesa Metal Backend Dashboard
+
+- `[~]` Mesa semantic and compiler reuse: Mesa OpenGL, state tracker, GLSL,
+  SPIR-V, NIR, and KosmicKrisp NIR-to-MSL sources are present. The current
+  CMake graph can build the NIR-to-MSL library as an excluded component; it is
+  not yet a live framework backend.
+- `[ ]` Mesa Metal screen and context: create a Metal-backed `pipe_screen` and
+  `pipe_context`, then prove a Mesa-controlled offscreen clear/readback.
+- `[ ]` Metal resources and pipelines: bind Mesa buffers, textures, samplers,
+  framebuffers, shaders, and synchronization to Metal resources/pipelines
+  without recreating GL validation.
+- `[~]` Framework and ICD: the router, framework, CGL/NSOpenGL bridge, client,
+  ICD, user-space libraries, generated dispatch, and smoke harnesses exist;
+  they still need a live Mesa Metal screen and real capability reporting.
+- `[ ]` Drawable and presentation: connect IOSurface, CAMetalLayer, resize,
+  Retina scale, swap interval, present, and loss handling to the live backend.
+- `[~]` CTS admission: local framework and contract smoke coverage exists.
+  Targeted Mesa rendering tests and staged Khronos CTS begin only after the
+  first real Metal-backed offscreen path is deterministic.
 
 ## Workflow Rules For Each Pass
 
@@ -130,7 +143,10 @@ semantic engine.
   only as a fail-closed fallback when that boundary cannot be established.
 - Keep public repo documentation aligned with the current implementation boundary.
 
-## Native Winsys Six-Lane Dashboard
+## Archived Direct AGX Research Dashboard
+
+The following six-lane record preserves the completed and blocked direct
+AGX/UABI investigation. It is not the active implementation queue.
 
 ### Direct macOS UABI Phases
 
@@ -515,6 +531,14 @@ handles before it can reach the carrier boundary.
   blocker before its Mesa clear/readback section can run. Real Mesa offscreen
   rendering and staged CTS remain blocked on lanes 2 and 4.
 
+## Historical Framework Audit
+
+The following workstreams record earlier framework and handwritten-backend
+assessment. They remain useful for bug triage, but no new OpenGL semantics are
+to be implemented from these lists when Mesa already owns them. Active work
+routes such behavior through Mesa and concentrates AO46 changes on the Metal
+backend, framework/ICD integration, CTS failures, and macOS specialization.
+
 ## Workstreams
 
 1. `Implemented` System-facing driver architecture
@@ -647,7 +671,7 @@ handles before it can reach the carrier boundary.
 
 33. `Archived` GL2MTL development backend
     Scope: retained for source comparison and its existing tests only. It is excluded from production framework selection.
-    Still required: no production work; Mesa/Asahi owns semantic and hardware-driver execution.
+    Still required: no production work; Mesa owns semantic execution and the active route targets its Metal machinery.
 
 34. `Required` Capability and format database
     Scope: not implemented yet.
@@ -655,7 +679,7 @@ handles before it can reach the carrier boundary.
 
 35. `Archived` GL2MTL gap workstream
     Scope: historical design notes for the deprecated development target.
-    Still required: no production work; Mesa/Asahi owns conformance behavior and reports only verified backend capability.
+    Still required: no production work; the active Mesa-to-Metal path reports only verified backend capability.
 
 36. `Partial` Error semantics
     Scope: `glGetError` and internal error tracking already exist.
@@ -685,33 +709,40 @@ handles before it can reach the carrier boundary.
 
 ## Phase Order
 
-1. Phase 1: Core object correctness
-   Deliver: object namespace and lifetime system, complete buffer storage/mapping, full VAO and vertex attribute configuration, texture object foundation, framebuffer/renderbuffer completeness, broader state queries, and stronger error handling.
+1. Phase 1: Mesa Metal screen bring-up
+   Deliver: one Mesa-owned `pipe_screen`/`pipe_context` using `MTLDevice`, a
+   Metal queue, Mesa's NIR-to-MSL output, deterministic offscreen clear, and
+   CPU readback. No hand-written GL semantics.
 
-2. Phase 2: Real Metal graphics path
-   Deliver: `MTLDevice` and queue ownership, real GPU buffer/texture resources, GLSL vertex/fragment compiler path, linker/reflection, Metal render pipelines, depth/stencil and blending, indexed/instanced rendering, and window presentation.
+2. Phase 2: Mesa resource and pipeline path
+   Deliver: Mesa-owned buffers, textures, samplers, shaders, framebuffers,
+   draw calls, hazards, and synchronization mapped to Metal resources and
+   pipelines, with capability reporting driven by proven behavior.
 
-3. Phase 3: Modern resource model
-   Deliver: UBOs, sampler objects, immutable storage, DSA, texture arrays and multisampling, framebuffer blits/resolves, persistent mappings, and multi-bind APIs.
+3. Phase 3: macOS drawable and framework integration
+   Deliver: CGL/NSOpenGL context admission, IOSurface/CAMetalLayer lifecycle,
+   Retina updates, swap/present, ICD dispatch, user-space libraries, error
+   propagation, and context loss behavior against the live Mesa Metal screen.
 
-4. Phase 4: Compute and memory
-   Deliver: compute shaders, SSBOs, images, atomics, atomic counters, memory barriers, sync objects, and indirect dispatch.
+4. Phase 4: targeted feature exposure and CTS
+   Deliver: enable Mesa features only where the Metal backend supports them,
+   run targeted OpenGL CTS groups, then expand through compute, storage/image,
+   synchronization, advanced stages, and the verified OpenGL 4.6 delta.
 
-5. Phase 5: Advanced graphics stages
-   Deliver: tessellation, geometry-shader emulation, transform-feedback emulation, layered rendering, indirect drawing, multi-draw indirect, pipeline statistics, and complex queries.
-
-6. Phase 6: OpenGL 4.6 completion
-   Deliver: SPIR-V ingestion, specialization, group-vote operations, shader draw parameters, indirect parameter buffers, anisotropic filtering, polygon offset clamp, no-error contexts, and transform-feedback overflow queries.
-
-7. Phase 7: Shipping quality
-   Deliver: Khronos conformance, multi-context stress, CAD/scientific testing, Minecraft and shader-pack testing, performance optimization, compatibility database, safe installer and rollback, and long-duration stability coverage.
+5. Phase 5: AO46 specialization and release-quality work
+   Deliver: compatibility handling for real applications, performance and
+   pipeline caches, multi-context stress, diagnostics, installer rollback,
+   long-duration reliability tests, and broader CTS coverage.
 
 ## Immediate Execution Policy
 
 - We follow the phase order above unless a lower-level dependency forces a reorder.
-- Each feature pass should land with tests, documentation, and backend semantics together.
-- We prefer finishing object families completely enough to be dependable before advertising adjacent high-level features.
-- Current practical focus remains Phase 1 and the early edge of Phase 2.
+- Each pass begins with the available build/test sweep, then advances the Mesa
+  Metal backend, AO46 framework/ICD integration, or CTS failure resolution.
+- Each capability lands with its Mesa path, Metal behavior, framework exposure,
+  regression coverage, and updated feature gate together.
+- Current practical focus is Phase 1: a live Mesa-controlled Metal screen with
+  deterministic offscreen rendering and readback.
 
 ## Current Repository Summary
 
@@ -724,36 +755,23 @@ handles before it can reach the carrier boundary.
 - CGL and NSOpenGL integration
 - generated API dispatch
 - context and share-group foundations
-- real buffer and texture beginnings
-- real offscreen storage
-- basic drawing and readback
 - meaningful smoke tests
 - installer architecture
+- preserved direct-AGX research evidence and Ghidra analysis
 
 ### Partially established
 
-- VAO and VBO behavior
-- texture system
-- rasterization
-- framebuffer-like storage
-- GL state model
-- Metal translation boundary
-- compatibility behavior
+- Mesa semantic/compiler reuse boundary
+- NIR-to-MSL compiler sources in the build graph
+- Metal backend build scaffolding
+- framework/ICD capability and failure plumbing
+- CGL/NSOpenGL drawable integration
 
 ### Major systems still to be built
 
-- GLSL 4.60 compiler
-- shader linker and reflection
-- full GPU-backed Metal execution
-- complete VAO and buffer system
-- UBO, SSBO, image, and atomic model
-- complete texture and FBO systems
-- compute shaders
-- tessellation
-- geometry emulation
-- transform feedback
-- complete synchronization
-- queries
-- DSA
-- SPIR-V
-- conformance and optimization
+- live Mesa Metal `pipe_screen` and `pipe_context`
+- Metal resource, shader/pipeline, command, synchronization, and readback path
+- IOSurface/CAMetalLayer presentation and resize lifecycle
+- real framework/ICD capability gates backed by the Metal screen
+- staged Khronos CTS execution and failure resolution
+- application compatibility, performance, rollback, and stability work

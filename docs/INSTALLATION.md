@@ -2,6 +2,13 @@
 
 `Khronos_AppleICDs` ships a bootstrap installer that pulls the repository, builds from source on the target machine, and installs the live framework and driver outputs into macOS.
 
+This is a developer-only WIP installer. The active project direction is the
+Mesa-to-Metal backend described in
+[`AO46MetalBackendPlan.md`](AO46MetalBackendPlan.md); current builds do not
+establish system-wide OpenGL 4.6 compatibility or Khronos CTS conformance.
+The direct AGX/UABI investigation is preserved research, not the runtime path
+installed by this workflow.
+
 ## Target Paths
 
 The live install writes to:
@@ -26,6 +33,9 @@ Before a live install to `/`, the installer checks:
 - `csrutil authenticated-root status`
 
 The install proceeds only when those protections are disabled, or when Authenticated Root is not supported by that macOS release.
+
+Passing this gate only allows a local experiment. It is not an endorsement of
+the install as stable, complete, or safe for daily application workloads.
 
 When the machine passes the gate, the installer prints:
 

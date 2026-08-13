@@ -1,5 +1,9 @@
 # Apple AGX System Research Map
 
+Status: preserved direct-AGX research map. It remains useful for diagnosis and
+historical evidence, not as the active AO46 runtime implementation plan. See
+[AO46MetalBackendPlan.md](AO46MetalBackendPlan.md).
+
 This document defines the research boundary for the AO46 macOS winsys. It is
 for understanding the locally installed Apple GPU stack, not for copying,
 linking, or redistributing Apple binaries.

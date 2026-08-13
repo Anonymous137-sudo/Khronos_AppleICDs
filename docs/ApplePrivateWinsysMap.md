@@ -1,6 +1,11 @@
 # Apple Private Winsys Map
 
-Status: profile-specific research map for the direct AO46 Asahi-to-AGX path.
+Status: archived research map. This document records observed ownership
+boundaries from the direct AGX investigation and is not a runtime integration
+specification. The active AO46 direction is documented in
+[AO46MetalBackendPlan.md](AO46MetalBackendPlan.md).
+
+Historical scope: profile-specific research map for the direct AO46 Asahi-to-AGX path.
 This document identifies the Apple-owned layers around the macOS AGX user
 client. It does not copy Apple code, link AO46 to private implementation
 classes, or make an undocumented constructor callable.
