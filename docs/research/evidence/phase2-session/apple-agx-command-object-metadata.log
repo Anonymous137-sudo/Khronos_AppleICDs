@@ -1,0 +1,434 @@
+Apple AGX bridge runtime probe: class=IOGPUMetalCommandQueue selector=submitCommandBuffers:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge runtime probe: class=IOGPUMetalCommandBuffer selector=fillCommandBufferArgs:commandQueue: encoding=v32@0:8^{IOGPUCommandQueueCommandBufferArgs=III(?=@?Q)(?=@?Q)IQ}16@24
+Apple AGX bridge runtime probe: class=IOGPUMetalCommandQueue selector=initWithDevice:descriptor: encoding=@32@0:8@16@24
+Apple AGX bridge runtime probe: class=IOGPUMetalCommandBuffer selector=initWithQueue:retainedReferences:synchronousDebugMode: encoding=@32@0:8@16B24B28
+Apple AGX bridge class probe: class=IOGPUMetalDevice present=1 superclass=_MTLDevice
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=memoryInfo encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=initWithAcceleratorPort: encoding=@20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newLateEvalEvent encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=maxTransferRate encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=updateGPUSelectionProperties encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=dedicatedMemorySize encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=supportPriorityBand encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=registryID encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=isRemovable encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newIndirectCommandBufferWithDescriptor:maxCommandCount:options: encoding=@40@0:8@16Q24Q32
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newUncachedIOHandleWithURL:compressionType:error: encoding=@40@0:8@16q24^@32
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=acceleratorPort encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=supportsVertexAmplification encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=getSlottedGPUProperties:transferRate: encoding=v32@0:8^Q16^Q24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=_purgeDevice encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newGLDrawable encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=deviceRef encoding=^{__IOGPUDevice=}16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=initialKernelCommandShmemSize encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=hwResourcePools encoding=^@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newCommandQueueWithDescriptor: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=getSurfaceMode:width:height:forId: encoding=i44@0:8^Q16^I24^I32I40
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newFence encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newArgumentEncoderWithLayout: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newAccelerationStructureWithBuffer:offset:resourceIndex: encoding=@40@0:8@16Q24Q32
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newUncachedIOFileHandleWithURL:compressionMethod:error: encoding=@40@0:8@16q24^@32
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=indirectArgumentBufferDecodingData encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=bufferClass encoding=#16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=isBuiltIn encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=_setDeviceWrapper: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=_addResource: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newEvent encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newEventWithOptions: encoding=@24@0:8q16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=hasUnifiedMemory encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=currentAllocatedSize encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newAccelerationStructureWithSize: encoding=@24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=.cxx_destruct encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newAccelerationStructureWithSize:resourceIndex: encoding=@32@0:8Q16Q24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newIOCommandQueueWithDescriptor:error: encoding=@32@0:8@16^@24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=maxBufferLength encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=peerCount encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newIOHandleWithURL:error: encoding=@32@0:8@16^@24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=location encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=setComputePipelineStateCommandShmemSize: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=getExternalGPUProperties:transferRate: encoding=v32@0:8^Q16^Q24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=hwResourcePoolCount encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=akResourceListPool encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newUncachedIOHandleWithURL:error: encoding=@32@0:8@16^@24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=peerIndex encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newTiledTextureWithBytesNoCopy:length:descriptor:offset:bytesPerRow: encoding=@56@0:8^v16Q24@32Q40Q48
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=isLowPower encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=supportsResourceDetachBacking encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=_removeResource: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=_setAcceleratorService: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newIntersectionFunctionTableWithDescriptor: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=locationNumber encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newTiledTextureWithBytesNoCopy:length:deallocator:descriptor:offset:bytesPerRow: encoding=@64@0:8^v16Q24@?32@40Q48Q56
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=recommendedMaxWorkingSetSize encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=getBuiltInGPUProperties:transferRate: encoding=v32@0:8^Q16^Q24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=retainPeerConnection: encoding=B24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=setSegmentListShmemSize: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newIndirectArgumentBufferLayoutWithStructType: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=_deviceWrapper encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=isSlotted encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newIOFileHandleWithURL:compressionMethod:error: encoding=@40@0:8@16q24^@32
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=isHeadless encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=supportsBackgroundAppRole encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newIOHandleWithURL:compressionMethod:error: encoding=@40@0:8@16q24^@32
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=sharedMemorySize encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newIndirectArgumentEncoderWithLayout: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=launchMappingThread encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=numCommandBuffers encoding=i16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=initialSegmentListShmemSize encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=initialSidebandShmemSize encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=allocBufferSubDataWithLength:options:alignment:heapIndex:bufferIndex:bufferOffset: encoding=@64@0:8Q16Q24Q32^s40^s48^Q56
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=setIndirectArgumentBufferDecodingData: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=supportsVertexAmplificationCount: encoding=B24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=peerGroupID encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=initWithAcceleratorPort:options: encoding=@28@0:8I16Q20
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=setHwResourcePool:count: encoding=v28@0:8^@16i24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=initialIOKernelCommandListShmemSize encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newIOFileHandleWithURL:error: encoding=@32@0:8@16^@24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=deallocBufferSubData:heapIndex:bufferIndex:bufferOffset:length: encoding=v48@0:8@16s24s28Q32Q40
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newUncachedIOFileHandleWithURL:error: encoding=@32@0:8@16^@24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newIOHandleWithURL:compressionType:error: encoding=@40@0:8@16q24^@32
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=allocBufferSubDataWithLength:options:alignment:heapIndex:bufferIndex:bufferOffset:parentAddress:parentLength: encoding=@80@0:8Q16Q24Q32^s40^s48^Q56Q64Q72
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newDevicePoolAliasedCommandAllocator encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=cmdBufArgsSize encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=initialDebugBufferShmemSize encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=newAccelerationStructureWithBuffer:offset: encoding=@32@0:8@16Q24
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=dealloc encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=akPrivateResourceListPool encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalDevice selector=releasePeerConnection: encoding=v24@0:8@16
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_deviceRef encoding=^{__IOGPUDevice=} offset=712
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_acceleratorPort encoding=I offset=720
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_acceleratorService encoding=@"MTLIOAccelService" offset=728
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_storageCreateParams encoding={?="segmentListShmemPool"@"IOGPUMetalDeviceShmemPool""kernelCommandShmemPool"@"IOGPUMetalDeviceShmemPool""sidebandPool"@"IOGPUMetalDeviceShmemPool""hwResourcePools"^@"hwResourcePoolCount"I"akResourceListPool"@"MTLResourceListPool""akPrivateResourceListPool"@"MTLResourceListPool""debugBufferShmemPool"@"IOGPUMetalDeviceShmemPool"} offset=736
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_commandBufferStoragePool encoding=^{IOGPUMetalCommandBufferStoragePool={gpuStorageQueue=^{IOGPUMetalCommandBufferStorage}^^{IOGPUMetalCommandBufferStorage}}{os_unfair_lock_s=I}iii@^{?}} offset=800
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_configBits encoding=I offset=808
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_deviceBits encoding=I offset=812
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_textureRam encoding=Q offset=816
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_videoRam encoding=Q offset=824
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_sharedMemorySize encoding=Q offset=832
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_accelID encoding=I offset=840
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_numCommandBuffers encoding=i offset=844
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_segmentByteThreshold encoding=Q offset=848
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_peerGroupID encoding=Q offset=856
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_peerIndex encoding=I offset=864
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_peerCount encoding=I offset=868
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_peerMask encoding=I offset=872
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_peerConnectionsLock encoding=@"NSLock" offset=880
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_peerConnections encoding=[4{?="device"@"IOGPUMetalDevice""refCount"i}] offset=888
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_ioKernelCommandListShmemPool encoding=@"IOGPUMetalDeviceShmemPool" offset=952
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_disableGPUIO encoding=B offset=960
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_buffer_suballocator encoding=^{IOGPUMetalSuballocator=} offset=968
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_device_dispatch_queue encoding=@"NSObject<OS_dispatch_queue>" offset=976
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_device_pool_cleanup_queue encoding=@"NSObject<OS_dispatch_queue>" offset=984
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_device_pool_cleanup_source encoding=@"NSObject<OS_dispatch_source>" offset=992
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_device_pool_cleanup_lock encoding={os_unfair_lock_s="_os_unfair_lock_opaque"I} offset=1000
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_device_pool_cleanup_scheduled encoding=B offset=1004
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_device_pool_cleanup_requested encoding=B offset=1005
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_bufferClass encoding=# offset=1008
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_registryID encoding=Q offset=1016
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_location encoding=Q offset=1024
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_locationNumber encoding=Q offset=1032
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_maxTransferRate encoding=Q offset=1040
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_deviceWrapper encoding=@"<MTLDeviceSPI>" offset=1048
+Apple AGX bridge class ivar: class=IOGPUMetalDevice name=_mappingQueue encoding=@"NSObject<OS_dispatch_queue>" offset=1056
+Apple AGX bridge class probe: class=IOGPUCommandQueue present=0
+Apple AGX bridge class probe: class=IOGPUMetalCommandQueue present=1 superclass=_MTLCommandQueue
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=removeInternalResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=setLabel: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=initWithDevice:descriptor:args:argsSize: encoding=@44@0:8@16@24^{IOGPUDeviceNewCommandQueueArgs=[1024c]iCC[2C]}32I40
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=removeInternalResidencySets:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=addResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=submitCommandBuffers:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=setCompletionQueue: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=device encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=setGPUPriority: encoding=B24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=getBackgroundGPUPriority encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=addInternalResidencySets:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=_submitCommandBuffers:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=removeResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=getGPUPriority encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=supportsBackgroundAppRole encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=initWithDevice:descriptor: encoding=@32@0:8@16@24
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=_setGPUPriority:backgroundPriority: encoding=B32@0:8Q16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=setGPUPriority:offset: encoding=B28@0:8Q16S24
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=removeResidencySets:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=addInternalResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=setBackgroundGPUPriority: encoding=B24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=setBackgroundGPUPriority:offset: encoding=B28@0:8Q16S24
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=dealloc encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=addResidencySets:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandQueue selector=dispatchAvailableCompletionNotifications encoding=v16@0:8
+Apple AGX bridge class ivar: class=IOGPUMetalCommandQueue name=_commandQueue encoding=^{__IOGPUCommandQueue=} offset=680
+Apple AGX bridge class ivar: class=IOGPUMetalCommandQueue name=_device encoding=@"IOGPUMetalDevice<MTLDevice>" offset=688
+Apple AGX bridge class ivar: class=IOGPUMetalCommandQueue name=_disableAsyncCompletionDispatch encoding=B offset=696
+Apple AGX bridge class ivar: class=IOGPUMetalCommandQueue name=_priority encoding=Q offset=704
+Apple AGX bridge class ivar: class=IOGPUMetalCommandQueue name=_backgroundPriority encoding=Q offset=712
+Apple AGX bridge class ivar: class=IOGPUMetalCommandQueue name=_resourceGroups encoding=[2@"NSCountedSet"] offset=720
+Apple AGX bridge class ivar: class=IOGPUMetalCommandQueue name=_resourceGroupsLock encoding={os_unfair_lock_s="_os_unfair_lock_opaque"I} offset=736
+Apple AGX bridge class probe: class=IOGPUCommandBuffer present=0
+Apple AGX bridge class probe: class=IOGPUMetalCommandBuffer present=1 superclass=_MTLCommandBuffer
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=encodeWaitForEvent:value: encoding=v32@0:8@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=setProtectionOptions: encoding=v24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=protectionOptions encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=validate encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=setLabel: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=doCorruptCBSPI: encoding=v20@0:8i16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=useResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=didCompleteWithStartTime:endTime:error: encoding=v40@0:8Q16Q24@32
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=encodeSignalEvent:value: encoding=v32@0:8@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=gpuFaultAddress encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=fillCommandBufferArgs:commandQueue: encoding=v32@0:8^{IOGPUCommandQueueCommandBufferArgs=III(?=@?Q)(?=@?Q)IQ}16@24
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=akPrivateResourceList encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=endCurrentSegment encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=useResidencySets:count: encoding=v32@0:8r^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=useInternalResidencySets:count: encoding=v32@0:8r^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=commit encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=_encodePurgedResources encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=kprintfBytes:length: encoding=v32@0:8r*16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=getCurrentKernelCommandBufferPointer:end: encoding=v32@0:8^^v16^^v24
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=_debugBytes:length:output_type: encoding=v36@0:8r*16Q24I32
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=setCurrentSegmentListPointer: encoding=v24@0:8^v16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=allocCommandBufferResourceAtIndex: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=_reserveKernelCommandBufferSpace: encoding=^v24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=commitEncoder encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=device encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=getCurrentKernelCommandBufferStart:current:end: encoding=v40@0:8^^v16^^v24^^v32
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=setSegmentListLockedPeerIndex: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=encodeSignalEvent:value:agentMask: encoding=v40@0:8@16Q24Q32
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=setResponsibleTaskIDs:count: encoding=v28@0:8r^I16I24
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=growKernelCommandBuffer: encoding=v24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=encodeConditionalAbortEvent: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=growSegmentList encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=pushDebugGroup: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=setCurrentKernelCommandBufferPointer: encoding=v24@0:8^v16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=ioGPUResourceList encoding=^{IOGPUResourceList=[114I]^I^Q^(?)IIIIIIII^{IOGPUSegmentResourceDescriptorGroup}QQIIIIIII^?^v}16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=getSegmentListPointerStart:current:end: encoding=v40@0:8^^v16^^v24^^v32
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=encodeSubmitSleepMS: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=getSegmentListLockedPeerIndex: encoding=B24@0:8^I16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=addPurgedResource: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=commitAndReset encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=commandBufferResourceInfo encoding=^{IOGPUMetalCommandBufferResourceInfo=Q^I^I^I@{IOGPUResourceInfo=^{__IOSurface}b56b8I}}16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=initWithQueue:retainedReferences: encoding=@28@0:8@16B24
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=encodeSignalEventScheduled:value: encoding=v32@0:8@16Q24
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=addPurgedHeap: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=kernelCommandCollectTimeStamp encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=akResourceList encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=initWithQueue:retainedReferences:synchronousDebugMode: encoding=@32@0:8@16B24B28
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=allocateSidebandBuffer: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=getSegmentListHeader encoding=^{IOGPUSegmentListHeader=QII[0{IOGPUSegmentResourceListHeader=QIIIIII[0{IOGPUSegmentResourceDescriptorGroup=[6I][6I][6S]SS}]}]}16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=commandBufferStorage encoding=^{IOGPUMetalCommandBufferStorage=@^{IOGPUMetalCommandBufferStoragePool}{?=^{IOGPUMetalCommandBufferStorage}^^{IOGPUMetalCommandBufferStorage}}@***{IOGPUMetalCommandBufferSidebandBuffer=@***}@**^{IOGPUSegmentListHeader}^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}{IOGPUResourceList=[114I]^I^Q^(?)IIIIIIII^{IOGPUSegmentResourceDescriptorGroup}QQIIIIIII^?^v}@@QQ^@^{IOGPUMetalCommandBufferResourceInfo}Q^@IQ^{IOGPUSegmentListShmemHeader}^{IOGPUSegmentKernelCommmandListHeader}IIiiI^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}I@**^{sIOGPUKernelCommandSetResourceGroupsArgs}[2@]B}16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=growSidebandBuffer: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=beginSegment: encoding=v24@0:8^v16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=useInternalResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=setCurrentCommandEncoder: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=growDebugBuffer: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=popDebugGroup encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=encodeWaitForEvent:value:timeout: encoding=v36@0:8@16Q24I32
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=allocDebugBuffer encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=dealloc encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalCommandBuffer selector=getDebugBufferPointerStart:end: encoding=v32@0:8^^v16^^v24
+Apple AGX bridge class ivar: class=IOGPUMetalCommandBuffer name=_device encoding=@"IOGPUMetalDevice<MTLDevice>" offset=704
+Apple AGX bridge class ivar: class=IOGPUMetalCommandBuffer name=_storage encoding=^{IOGPUMetalCommandBufferStorage=@^{IOGPUMetalCommandBufferStoragePool}{?=^{IOGPUMetalCommandBufferStorage}^^{IOGPUMetalCommandBufferStorage}}@***{IOGPUMetalCommandBufferSidebandBuffer=@***}@**^{IOGPUSegmentListHeader}^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}{IOGPUResourceList=[114I]^I^Q^(?)IIIIIIII^{IOGPUSegmentResourceDescriptorGroup}QQIIIIIII^?^v}@@QQ^@^{IOGPUMetalCommandBufferResourceInfo}Q^@IQ^{IOGPUSegmentListShmemHeader}^{IOGPUSegmentKernelCommmandListHeader}IIiiI^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}I@**^{sIOGPUKernelCommandSetResourceGroupsArgs}[2@]B} offset=712
+Apple AGX bridge class ivar: class=IOGPUMetalCommandBuffer name=_submitToHardwareTimeStampPointer encoding=^Q offset=720
+Apple AGX bridge class ivar: class=IOGPUMetalCommandBuffer name=_protectionOptions encoding=Q offset=728
+Apple AGX bridge class ivar: class=IOGPUMetalCommandBuffer name=_scheduledCallbackBlockPtr encoding=^v offset=736
+Apple AGX bridge class ivar: class=IOGPUMetalCommandBuffer name=_completedCallbackBlockPtr encoding=^v offset=744
+Apple AGX bridge class ivar: class=IOGPUMetalCommandBuffer name=_commitAndResetSem encoding=@"NSObject<OS_dispatch_semaphore>" offset=752
+Apple AGX bridge class ivar: class=IOGPUMetalCommandBuffer name=_purgedResources encoding=@"NSMutableSet" offset=760
+Apple AGX bridge class ivar: class=IOGPUMetalCommandBuffer name=_gpuFaultAddress encoding=Q offset=768
+Apple AGX bridge class probe: class=IOGPUMetal4CommandAllocator present=1 superclass=_MTL4CommandAllocator
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=initWithDevice: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=allocatedSize encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=getGeneration encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=initWithDevice:descriptor: encoding=@32@0:8@16@24
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=setCurrentCommandEncoder: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=setHwResourcePool:count: encoding=v28@0:8^@16I24
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=dealloc encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=reset encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=getCommandBufferStorage:retainReferences: encoding=^{IOGPUMetalCommandBufferStorage=@^{IOGPUMetalCommandBufferStoragePool}{?=^{IOGPUMetalCommandBufferStorage}^^{IOGPUMetalCommandBufferStorage}}@***{IOGPUMetalCommandBufferSidebandBuffer=@***}@**^{IOGPUSegmentListHeader}^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}{IOGPUResourceList=[114I]^I^Q^(?)IIIIIIII^{IOGPUSegmentResourceDescriptorGroup}QQIIIIIII^?^v}@@QQ^@^{IOGPUMetalCommandBufferResourceInfo}Q^@IQ^{IOGPUSegmentListShmemHeader}^{IOGPUSegmentKernelCommmandListHeader}IIiiI^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}I@**^{sIOGPUKernelCommandSetResourceGroupsArgs}[2@]B}28@0:8Q16B24
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=initAllocatorWithDevice: encoding=B24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=initWithDeviceAndAliasToDevicePools: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandAllocator selector=returnCommandBufferStorage:commandAllocatorGeneration: encoding=v28@0:8^{IOGPUMetalCommandBufferStorage=@^{IOGPUMetalCommandBufferStoragePool}{?=^{IOGPUMetalCommandBufferStorage}^^{IOGPUMetalCommandBufferStorage}}@***{IOGPUMetalCommandBufferSidebandBuffer=@***}@**^{IOGPUSegmentListHeader}^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}{IOGPUResourceList=[114I]^I^Q^(?)IIIIIIII^{IOGPUSegmentResourceDescriptorGroup}QQIIIIIII^?^v}@@QQ^@^{IOGPUMetalCommandBufferResourceInfo}Q^@IQ^{IOGPUSegmentListShmemHeader}^{IOGPUSegmentKernelCommmandListHeader}IIiiI^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}I@**^{sIOGPUKernelCommandSetResourceGroupsArgs}[2@]B}16I24
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandAllocator name=_busyQueue encoding={commandBufferStorageBusyQueue="tqh_first"^{IOGPUMetalCommandBufferStorage}"tqh_last"^^{IOGPUMetalCommandBufferStorage}} offset=72
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandAllocator name=_busyQueueCount encoding=i offset=88
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandAllocator name=_lock encoding={os_unfair_lock_s="_os_unfair_lock_opaque"I} offset=92
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandAllocator name=_storageCreateParams encoding={?="segmentListShmemPool"@"IOGPUMetalDeviceShmemPool""kernelCommandShmemPool"@"IOGPUMetalDeviceShmemPool""sidebandPool"@"IOGPUMetalDeviceShmemPool""hwResourcePools"^@"hwResourcePoolCount"I"akResourceListPool"@"MTLResourceListPool""akPrivateResourceListPool"@"MTLResourceListPool""debugBufferShmemPool"@"IOGPUMetalDeviceShmemPool"} offset=96
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandAllocator name=_commandBufferStoragePool encoding=^{IOGPUMetalCommandBufferStoragePool={gpuStorageQueue=^{IOGPUMetalCommandBufferStorage}^^{IOGPUMetalCommandBufferStorage}}{os_unfair_lock_s=I}iii@^{?}} offset=160
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandAllocator name=_generation encoding=I offset=168
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandAllocator name=_aliasToDevice encoding=B offset=172
+Apple AGX bridge class probe: class=IOGPUMetal4CommandQueue present=1 superclass=_MTL4CommandQueue
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=initWithDevice: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=removeInternalResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=initWithDevice:descriptor:args:argsSize: encoding=@44@0:8@16@24^{IOGPUDeviceNewCommandQueueArgs=[1024c]iCC[2C]}32I40
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=removeInternalResidencySets:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=addResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=addInternalResidencySets:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=removeResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=supportsBackgroundAppRole encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=initWithDevice:descriptor: encoding=@32@0:8@16@24
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=removeResidencySets:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=addInternalResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=dealloc encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=addResidencySets:count: encoding=v32@0:8^@16Q24
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=commandAllocator encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=copyBufferMappingsFromBuffer:toBuffer:operations:count: encoding=v48@0:8@16@24r^{?={_NSRange=QQ}Q}32Q40
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=preCommit:count:options: encoding=@40@0:8r^@16Q24@32
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=signalEvent:value: encoding=v32@0:8@16Q24
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=updateBufferMappings:heap:operations:count: encoding=v48@0:8@16@24r^{?=Q{_NSRange=QQ}Q}32Q40
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=waitForEvent:value: encoding=v32@0:8@16Q24
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=waitForEvent:value:timeout: encoding=v36@0:8@16Q24S32
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=setScheduledHandler: encoding=v24@0:8@?16
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=_commit:count:commitFeedback: encoding=v40@0:8r^@16Q24@32
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=allocateMappingCommandBuffer encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=commandBufferComplete:commandAllocator:commandAllocatorGeneration:storage:submissionID:startTime:completionTime:kernelError:error:commitFeedback:commitComplete: encoding=v92@0:8@16@24I32^{IOGPUMetalCommandBufferStorage=@^{IOGPUMetalCommandBufferStoragePool}{?=^{IOGPUMetalCommandBufferStorage}^^{IOGPUMetalCommandBufferStorage}}@***{IOGPUMetalCommandBufferSidebandBuffer=@***}@**^{IOGPUSegmentListHeader}^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}{IOGPUResourceList=[114I]^I^Q^(?)IIIIIIII^{IOGPUSegmentResourceDescriptorGroup}QQIIIIIII^?^v}@@QQ^@^{IOGPUMetalCommandBufferResourceInfo}Q^@IQ^{IOGPUSegmentListShmemHeader}^{IOGPUSegmentKernelCommmandListHeader}IIiiI^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}I@**^{sIOGPUKernelCommandSetResourceGroupsArgs}[2@]B}36Q44Q52Q60I68@72@80B88
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=commitFillArgs:count:args:argsSize:commitFeedback: encoding=v52@0:8^@16Q24Q32I40@44
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=commitMappingCommandBuffer encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=endTier1MappingCommands encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandQueue selector=initIOGPUMTL4CommandQueue:descriptor:args:argsSize: encoding=@44@0:8@16@24^{IOGPUDeviceNewCommandQueueArgs=[1024c]iCC[2C]}32I40
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_mappingLock encoding={os_unfair_lock_s="_os_unfair_lock_opaque"I} offset=96
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_mappingCommandBuffer encoding=@"IOGPUMetal4CommandBuffer" offset=104
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_postMappingEvent encoding=@"<MTLSharedEventSPI>" offset=112
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_postMappingValue encoding=Q offset=120
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_disableAsyncMapping encoding=B offset=128
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_tier1ResourceMapping encoding=B offset=129
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_commandQueue encoding=^{__IOGPUCommandQueue=} offset=136
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_qosLevel encoding=i offset=144
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_completionQueue encoding=@"NSObject<OS_dispatch_queue>" offset=152
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_resourceGroups encoding=[2@"NSCountedSet"] offset=160
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_resourceGroupsLock encoding={os_unfair_lock_s="_os_unfair_lock_opaque"I} offset=176
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_commandAllocator encoding=@"IOGPUMetal4CommandAllocator" offset=184
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_lastSubmissionID encoding=Q offset=192
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandQueue name=_scheduledHandler encoding=@? offset=200
+Apple AGX bridge class probe: class=IOGPUMetal4CommandBuffer present=1 superclass=_MTL4CommandBuffer
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=encodeWaitForEvent:value: encoding=v32@0:8@16Q24
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=setProtectionOptions: encoding=v24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=protectionOptions encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=initWithDevice: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=setLabel: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=useResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=encodeSignalEvent:value: encoding=v32@0:8@16Q24
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=akPrivateResourceList encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=endCurrentSegment encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=useResidencySets:count: encoding=v32@0:8r^@16Q24
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=useInternalResidencySets:count: encoding=v32@0:8r^@16Q24
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=getCurrentKernelCommandBufferPointer:end: encoding=v32@0:8^^v16^^v24
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=setCurrentSegmentListPointer: encoding=v24@0:8^v16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=allocCommandBufferResourceAtIndex: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=_reserveKernelCommandBufferSpace: encoding=^v24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=commitEncoder encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=getCurrentKernelCommandBufferStart:current:end: encoding=v40@0:8^^v16^^v24^^v32
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=growKernelCommandBuffer: encoding=v24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=growSegmentList encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=setCurrentKernelCommandBufferPointer: encoding=v24@0:8^v16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=ioGPUResourceList encoding=^{IOGPUResourceList=[114I]^I^Q^(?)IIIIIIII^{IOGPUSegmentResourceDescriptorGroup}QQIIIIIII^?^v}16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=getSegmentListPointerStart:current:end: encoding=v40@0:8^^v16^^v24^^v32
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=akResourceList encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=allocateSidebandBuffer: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=commandBufferStorage encoding=^{IOGPUMetalCommandBufferStorage=@^{IOGPUMetalCommandBufferStoragePool}{?=^{IOGPUMetalCommandBufferStorage}^^{IOGPUMetalCommandBufferStorage}}@***{IOGPUMetalCommandBufferSidebandBuffer=@***}@**^{IOGPUSegmentListHeader}^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}{IOGPUResourceList=[114I]^I^Q^(?)IIIIIIII^{IOGPUSegmentResourceDescriptorGroup}QQIIIIIII^?^v}@@QQ^@^{IOGPUMetalCommandBufferResourceInfo}Q^@IQ^{IOGPUSegmentListShmemHeader}^{IOGPUSegmentKernelCommmandListHeader}IIiiI^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}I@**^{sIOGPUKernelCommandSetResourceGroupsArgs}[2@]B}16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=growSidebandBuffer: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=beginSegment: encoding=v24@0:8^v16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=useInternalResidencySet: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=growDebugBuffer: encoding=v20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=encodeWaitForEvent:value:timeout: encoding=v36@0:8@16Q24I32
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=allocDebugBuffer encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=dealloc encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=getDebugBufferPointerStart:end: encoding=v32@0:8^^v16^^v24
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=beginCommandBufferWithAllocator: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=beginCommandBufferWithAllocator:options: encoding=v32@0:8@16@24
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=copyBufferMappingsFromBuffer:toBuffer:operations:count: encoding=v48@0:8@16@24r^{?={_NSRange=QQ}Q}32Q40
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=endCommandBuffer encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=resetCommandBuffer encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=updateBufferMappings:heap:operations:count: encoding=v48@0:8@16@24r^{?=Q{_NSRange=QQ}Q}32Q40
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=beginIOGPUCommandBufferWithAllocator:options: encoding=v32@0:8@16@24
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=encodePostMappingWaitEvent:postMappingValue:timeout: encoding=v36@0:8@16Q24I32
+Apple AGX bridge class method: class=IOGPUMetal4CommandBuffer selector=fillCommandBufferArgs: encoding=v24@0:8^{IOGPUCommandQueueCommandBufferArgs=III(?=@?Q)(?=@?Q)IQ}16
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandBuffer name=_storage encoding=^{IOGPUMetalCommandBufferStorage=@^{IOGPUMetalCommandBufferStoragePool}{?=^{IOGPUMetalCommandBufferStorage}^^{IOGPUMetalCommandBufferStorage}}@***{IOGPUMetalCommandBufferSidebandBuffer=@***}@**^{IOGPUSegmentListHeader}^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}{IOGPUResourceList=[114I]^I^Q^(?)IIIIIIII^{IOGPUSegmentResourceDescriptorGroup}QQIIIIIII^?^v}@@QQ^@^{IOGPUMetalCommandBufferResourceInfo}Q^@IQ^{IOGPUSegmentListShmemHeader}^{IOGPUSegmentKernelCommmandListHeader}IIiiI^{IOGPUSegmentResourceListHeader}^{IOGPUSegmentResourceDescriptorGroup}I@**^{sIOGPUKernelCommandSetResourceGroupsArgs}[2@]B} offset=96
+Apple AGX bridge class ivar: class=IOGPUMetal4CommandBuffer name=_protectionOptions encoding=Q offset=104
+Apple AGX bridge class probe: class=IOGPUMetalIndirectCommandBuffer present=1 superclass=IOGPUMetalResource
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=storageMode encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=isComplete encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=descriptor encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=makeAliasable encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=setPurgeableState: encoding=Q24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=gpuResourceID encoding={MTLResourceID=Q}16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=gpuHandle encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=uniqueIdentifier encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=size encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=waitUntilComplete encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=isAliasable encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=dealloc encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=isWriteComplete encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=resetWithRange: encoding=v32@0:8{_NSRange=QQ}16
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=doesAliasAllResources:count: encoding=B32@0:8r^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=doesAliasAnyResources:count: encoding=B32@0:8r^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=doesAliasResource: encoding=B24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=getHeader:headerSize: encoding=v32@0:8^^v16^Q24
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=indirectComputeCommandAtIndex: encoding=@24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=indirectRenderCommandAtIndex: encoding=@24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=privateICBuffer encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=commandBufferType encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalIndirectCommandBuffer selector=initWithBuffer:descriptor:maxCommandCount: encoding=@40@0:8@16@24Q32
+Apple AGX bridge class ivar: class=IOGPUMetalIndirectCommandBuffer name=_privateICBuffer encoding=@"IOGPUMetalBuffer" offset=320
+Apple AGX bridge class ivar: class=IOGPUMetalIndirectCommandBuffer name=_maxCommandCount encoding=Q offset=328
+Apple AGX bridge class ivar: class=IOGPUMetalIndirectCommandBuffer name=_commandBufferType encoding=Q offset=336
+Apple AGX bridge class ivar: class=IOGPUMetalIndirectCommandBuffer name=_privateIndirectComputeEncoder encoding=@"<MTLIndirectComputeCommandEncoder>" offset=344
+Apple AGX bridge class ivar: class=IOGPUMetalIndirectCommandBuffer name=_privateIndirectRenderEncoder encoding=@"<MTLIndirectRenderCommandEncoder>" offset=352
+Apple AGX bridge class ivar: class=IOGPUMetalIndirectCommandBuffer name=_descriptor encoding=@"MTLIndirectCommandBufferDescriptor" offset=360
+Apple AGX bridge class ivar: class=IOGPUMetalIndirectCommandBuffer name=_internalHeader encoding={MTLIndirectCommandBufferHeader="headerSize"Q"commandTypes"I"inheritPipelineState"B"inheritBuffers"B"maxVertexBufferBindCount"C"maxFragmentBufferBindCount"C"maxKernelBufferBindCount"C"maxObjectBufferBindCount"C"maxMeshBufferBindCount"C"supportRayTracing"B"supportDynamicAttributeStride"B"maxKernelThreadgroupMemoryBindCount"C"maxObjectThreadgroupMemoryBindCount"C"maxScissorRectCount"C"maxViewportCount"C"inheritDepthStencilState"B"inheritDepthBias"B"inheritStencilReferenceValues"B"inheritDepthClipMode"B"inheritCullMode"B"inheritFrontFacingWinding"B"inheritTriangleFillMode"B"inheritDepthTestBounds"B"inheritScissorRects"B"inheritViewports"B"inheritBlendColor"B"allowOverrideRenderStates"q"size"Q} offset=368
+Apple AGX bridge class probe: class=IOGPUResource present=0
+Apple AGX bridge class probe: class=IOGPUMetalResource present=1 superclass=_MTLResource
+Apple AGX bridge class method: class=IOGPUMetalResource selector=heap encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=protectionOptions encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=storageMode encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=isComplete encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=.cxx_destruct encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=hazardTrackingMode encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=emitResourceInfoTraceEvent encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=setLabel: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalResource selector=cpuCacheMode encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=allocatedSize encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=resourceOptions encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=resourceID encoding=I16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=makeAliasable encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=setPurgeableState: encoding=Q24@0:8Q16
+Apple AGX bridge class method: class=IOGPUMetalResource selector=setOwnerWithIdentity: encoding=i20@0:8I16
+Apple AGX bridge class method: class=IOGPUMetalResource selector=initWithResource: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalResource selector=device encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=resourceSize encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=gpuAddress encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=label encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=unfilteredResourceOptions encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=_setLabel: encoding=v24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalResource selector=waitUntilComplete encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=isAliasable encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=virtualAddress encoding=^v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=copyAnnotations encoding=^{__CFArray=}16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=dealloc encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=isWriteComplete encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=allocationID encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=doesAliasAllResources:count: encoding=B32@0:8r^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalResource selector=doesAliasAnyResources:count: encoding=B32@0:8r^@16Q24
+Apple AGX bridge class method: class=IOGPUMetalResource selector=doesAliasResource: encoding=B24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalResource selector=heapOffset encoding=Q16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=isPurgeable encoding=B16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=responsibleProcess encoding=i16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=setResponsibleProcess: encoding=v20@0:8i16
+Apple AGX bridge class method: class=IOGPUMetalResource selector=annotateResource: encoding=v24@0:8^{__CFDictionary=}16
+Apple AGX bridge class method: class=IOGPUMetalResource selector=copyAnnotationDictionary:obj_key_name:obj_dict: encoding=^{__CFDictionary=}40@0:8Q16^{__CFString=}24^{__CFDictionary=}32
+Apple AGX bridge class method: class=IOGPUMetalResource selector=initMemoryless:descriptor: encoding=@32@0:8@16@24
+Apple AGX bridge class method: class=IOGPUMetalResource selector=initStandinWithDevice: encoding=@24@0:8@16
+Apple AGX bridge class method: class=IOGPUMetalResource selector=initWithDevice:options:args:argsSize: encoding=@44@0:8@16Q24^{IOGPUNewResourceArgs={IOGPUNewResourceData=IISSSSCCCCIQQQII(?={?=QQQ(?=IQ)}{?=IIII[2Q]}{?=QQQ}{?=I}{?=QQQI})}}32I40
+Apple AGX bridge class method: class=IOGPUMetalResource selector=initWithDevice:remoteStorageResource:options:args:argsSize: encoding=@52@0:8@16@24Q32^{IOGPUNewResourceArgs={IOGPUNewResourceData=IISSSSCCCCIQQQII(?={?=QQQ(?=IQ)}{?=IIII[2Q]}{?=QQQ}{?=I}{?=QQQI})}}40I48
+Apple AGX bridge class method: class=IOGPUMetalResource selector=releaseStrongDevice encoding=v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=resourceRef encoding=^{__IOGPUResource={__CFRuntimeBase=QAQ}^{__IOGPUDevice}^vQQIIQQ^{IOGPUClientSharedRO}QQQQ^v[0Q]}16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=retainedLabel encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=weakDevice encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=attachedResourceInfoTraceEmitter encoding=@16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=metadataVirtualAddress encoding=^v16@0:8
+Apple AGX bridge class method: class=IOGPUMetalResource selector=setAttachedResourceInfoTraceEmitter: encoding=v24@0:8@16
+Apple AGX bridge class ivar: class=IOGPUMetalResource name=_res encoding={_IOGPUMetalResource="vendor"(?="reserved"[4Q])"info"{IOGPUResourceInfo="iosurface"^{__IOSurface}"resourceSize"b56"iosurfaceField"b8"resourceID"I}"sharedAllocationUniqueId"Q"cachedAllocationUniqueId"Q"gpuAddress"Q"device"@"IOGPUMetalDevice<MTLDevice>""label"@"NSString""globalTraceObjectID"Q"labelTraceID"Q"resourceRef"^{__IOGPUResource}"clientSharedRO"^{IOGPUClientSharedRO}"virtualAddress"^v"options"Q"storageMode"Q"cpuCacheMode"Q"responsibleProcess"i"purgeableState"Q"purgeableAllowed"B"heap"@"IOGPUMetalHeap""resource"@"IOGPUMetalResource""offset"Q"length"Q"pinned"B"labelLock"{os_unfair_lock_s="_os_unfair_lock_opaque"I}"metadataVirtualAddress"^v"remoteStorageResource"@"IOGPUMetalResource"} offset=32
+Apple AGX bridge class ivar: class=IOGPUMetalResource name=next encoding=@"IOGPUMetalResource" offset=272
+Apple AGX bridge class ivar: class=IOGPUMetalResource name=prev encoding=@"IOGPUMetalResource" offset=280
+Apple AGX bridge class ivar: class=IOGPUMetalResource name=uniqueId encoding=Q offset=288
+Apple AGX bridge class ivar: class=IOGPUMetalResource name=weakSelf encoding=@"IOGPUMetalResource" offset=296
+Apple AGX bridge class ivar: class=IOGPUMetalResource name=weakDevice encoding=@"IOGPUMetalDevice<MTLDevice>" offset=304
+Apple AGX bridge class ivar: class=IOGPUMetalResource name=attachedResourceInfoTraceEmitter encoding=@ offset=312

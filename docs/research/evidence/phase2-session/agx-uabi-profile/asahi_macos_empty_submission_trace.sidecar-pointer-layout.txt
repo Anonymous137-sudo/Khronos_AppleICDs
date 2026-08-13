@@ -1,0 +1,4 @@
+AGX_SIDECAR_POINTER_LAYOUT captures=3 bytes=512 words=64
+AGX_SIDECAR_POINTER_LAYOUT target_offset=0xab8 captures=1 classification=ascii-cstring-table stable_nonzero=64 variable_nonzero=0
+AGX_SIDECAR_POINTER_LAYOUT target_offset=0xa58 captures=1 classification=ascii-cstring-table stable_nonzero=64 variable_nonzero=0
+AGX_SIDECAR_POINTER_LAYOUT target_offset=0x790 captures=1 classification=ascii-cstring-table stable_nonzero=64 variable_nonzero=0

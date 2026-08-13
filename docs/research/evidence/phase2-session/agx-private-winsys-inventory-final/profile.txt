@@ -1,0 +1,10 @@
+AO46 Apple AGX private winsys inventory
+generated_utc=2026-08-11T18:56:52Z
+agx_family=G16X
+agx_bundle=/System/Library/Extensions/AGXMetalG16X.bundle
+agx_binary=/System/Library/Extensions/AGXMetalG16X.bundle/Contents/MacOS/AGXMetalG16X
+fe7518dbd4b362f293070fa07b3f8bb367db5d859792e237d34f5ba36b4b0e34  /System/Library/Extensions/AGXMetalG16X.bundle/Contents/MacOS/AGXMetalG16X
+ProductName:		macOS
+ProductVersion:		26.5.2
+BuildVersion:		25F84
+arm64
