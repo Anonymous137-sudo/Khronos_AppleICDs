@@ -22,6 +22,11 @@ if ! command -v meson >/dev/null 2>&1; then
     exit 1
 fi
 
+if ! command -v ninja >/dev/null 2>&1; then
+    echo "ninja is required to build Mesa KosmicKrisp porting artifacts" >&2
+    exit 1
+fi
+
 if [ -n "${OPENGLKHR_SKIP_MESA_BOOTSTRAP:-}" ]; then
     exit 0
 fi
@@ -113,3 +118,8 @@ meson compile -C "$mesa_build_dir" \
     asahi_lib \
     libpoly_nir \
     asahi_macos_winsys
+
+# Meson target names cannot contain a path. Build libkk explicitly through the
+# known Ninja output target so it remains a checked porting artifact, not a
+# runtime dependency of OpenGL_4.6.framework.
+ninja -C "$mesa_build_dir" src/kosmickrisp/vulkan/libkk.a

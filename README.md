@@ -6,21 +6,26 @@ system-framework and driver project for macOS.
 Its goal is to provide a modern OpenGL 4.6 core-profile stack through a real system framework, system-space loader pieces, and user-space `libGL*.dylib` bridges, filling in the modern OpenGL path Apple stopped advancing when OpenGL was deprecated on macOS Mojave 10.14 in 2018.
 
 The active direction reuses Mesa's OpenGL core, state tracker, GLSL, SPIR-V,
-NIR, and NIR-to-MSL compiler machinery. AO46 focuses on the Metal execution
-backend and the macOS-specific work Mesa does not provide: framework ABI,
-CGL/NSOpenGL, drawable lifecycle, `libGLICD.dylib`, user-space `libGL*.dylib`
-bridges, compatibility behavior, and staged CTS readiness.
+NIR, and NIR-to-MSL compiler machinery. `AO46MTLGallium` is the single
+Mesa-facing Gallium driver, while `AO46AGXMetalAdapter` owns the lower Metal
+execution boundary: device/queue, resources, pipelines, fences, and drawables.
+AO46 also owns framework ABI, CGL/NSOpenGL, `libGLICD.dylib`, user-space
+`libGL*.dylib` bridges, compatibility behavior, and staged CTS readiness.
 
 AO46 does not hand-write a second OpenGL semantic engine or a separate
-GLSL-to-Metal compiler. The historical direct AGX/UABI work is retained as
-research, including its raw evidence, but is not the active runtime path or a
-conformance claim. See [the active Mesa Metal backend
+GLSL-to-Metal compiler. The prior `GL2MTL/mtl_driver.m` implementation is the
+audited migration baseline for `AO46MTLGallium`, not a fallback backend. The
+historical direct AGX/UABI work is retained as research, including its raw
+evidence; it informs profile policy and diagnostics but is not an active
+runtime submission path or a conformance claim. See [the active Mesa Metal backend
 plan](docs/AO46MetalBackendPlan.md).
 
 ## Repository Layout
 
 - `OpenGL_4.6(Core Profile)/Apple_ICD`
   Main source tree for `OpenGL_4.6.framework`, the Apple-path `OpenGL.framework` loader, the internal ICD/backend boundary, the user-space `libGL*.dylib` drivers, test coverage, and packaging scripts.
+- `Vulkan_1.4.360(Core Profile)`
+  AVK143's parallel Vulkan source root. It currently provides a validated Mesa/KosmicKrisp prerequisite target and workflow contract for `Vulkan_1.4.3.framework`, `libvk*.dylib`, `NSVulkan_KHR`, and the CVK ABI; it does not yet provide a Vulkan runtime or ICD.
 - `docs/INSTALLATION.md`
   Live-install notes for developer machines, installer behavior, target paths, and update flow.
 - `docs/AO46MetalBackendPlan.md`
@@ -52,8 +57,10 @@ OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/build
 OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/stage
 ```
 
-Passing the current smoke suite validates framework and integration scaffolding
-only. It does not establish Metal-backed OpenGL 4.6 support or CTS conformance.
+Passing the current smoke suite validates the routed core-context and bounded
+Metal execution paths only. Mesa currently realizes the promoted driver as
+OpenGL 3.3 core through the promoted Metal Gallium screen; this does not
+establish OpenGL 4.6 support or CTS conformance.
 
 ## Installer
 

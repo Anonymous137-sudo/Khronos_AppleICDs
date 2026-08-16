@@ -37,8 +37,23 @@ set(ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(MESA_ROOT "${ROOT_DIR}/../mesa")   # Mesa source tree (submodule)
 set(AO46_MESA_BUILD_DIR "${MESA_ROOT}/build-ao46-asahi-arm64" CACHE PATH "Path to the Meson-built Mesa Asahi directory")
 set(MESA_BUILD_DIR "${AO46_MESA_BUILD_DIR}")
-option(OPENGLKHR_BUILD_DEPRECATED_GL2MTL
-    "Build the deprecated GL2MTL development backend (never linked by OpenGL_4.6)"
+set(AO46_MESA_KOSMICKRISP_BUILD_DIR "${MESA_ROOT}/build-ao46-kosmickrisp-arm64" CACHE PATH
+    "Path to a Mesa build with KosmicKrisp libkk generated artifacts"
+)
+set(AO46_MESA_LIBKK_GENERATED_DIR
+    "${AO46_MESA_KOSMICKRISP_BUILD_DIR}/src/kosmickrisp/libkk"
+)
+set(AO46_MESA_KOSMICKRISP_BRIDGE_DIR
+    "${AO46_MESA_KOSMICKRISP_BUILD_DIR}/src/kosmickrisp/bridge"
+)
+set(AO46_MESA_KOSMICKRISP_COMPILER_DIR
+    "${AO46_MESA_KOSMICKRISP_BUILD_DIR}/src/kosmickrisp/compiler"
+)
+set(AO46_MESA_KOSMICKRISP_VULKAN_DIR
+    "${AO46_MESA_KOSMICKRISP_BUILD_DIR}/src/kosmickrisp/vulkan"
+)
+option(OPENGLKHR_BUILD_ARCHIVED_AGX_RESEARCH
+    "Build archived direct-AGX/UABI research targets (never linked by OpenGL_4.6)"
     OFF
 )
 set(AO46_MESA_PYTHON
@@ -264,26 +279,19 @@ find_library(MESA_UTIL_C11_LIB    NAMES mesa_util_c11  PATHS "${MESA_BUILD_DIR}/
 find_library(MESA_UTIL_SIMD_LIB   NAMES mesa_util_simd PATHS "${MESA_BUILD_DIR}/src/util" NO_DEFAULT_PATH)
 find_library(MESA_COMPILER_LIB    NAMES compiler       PATHS "${MESA_BUILD_DIR}/src/compiler" NO_DEFAULT_PATH)
 find_library(MESA_NIR_LIB         NAMES nir            PATHS "${MESA_BUILD_DIR}/src/compiler/nir" NO_DEFAULT_PATH)
+find_library(MESA_POLY_NIR_LIB    NAMES libpoly_nir    PATHS "${MESA_BUILD_DIR}/src/poly/nir" NO_DEFAULT_PATH)
 find_library(MESA_GLSL_UTIL_LIB   NAMES glsl_util      PATHS "${MESA_BUILD_DIR}/src/compiler/glsl" NO_DEFAULT_PATH)
 find_library(MESA_GLSL_LIB        NAMES glsl           PATHS "${MESA_BUILD_DIR}/src/compiler/glsl" NO_DEFAULT_PATH)
-find_library(MESA_ASAHI_GALLIUM_LIB NAMES asahi
-    PATHS "${MESA_BUILD_DIR}/src/gallium/drivers/asahi" NO_DEFAULT_PATH)
-find_library(MESA_ASAHI_COMPILER_LIB NAMES asahi_compiler
-    PATHS "${MESA_BUILD_DIR}/src/asahi/compiler" NO_DEFAULT_PATH)
-find_library(MESA_ASAHI_CORE_LIB NAMES asahi_lib
-    PATHS "${MESA_BUILD_DIR}/src/asahi/lib" NO_DEFAULT_PATH)
-find_library(MESA_ASAHI_DECODE_LIB NAMES asahi_decode
-    PATHS "${MESA_BUILD_DIR}/src/asahi/lib" NO_DEFAULT_PATH)
-find_library(MESA_AGX_DISASM_LIB NAMES agx2_disasm
-    PATHS "${MESA_BUILD_DIR}/src/asahi/isa" NO_DEFAULT_PATH)
-find_library(MESA_ASAHI_LAYOUT_LIB NAMES asahi_layout
-    PATHS "${MESA_BUILD_DIR}/src/asahi/layout" NO_DEFAULT_PATH)
-find_library(MESA_POLY_NIR_LIB NAMES libpoly_nir
-    PATHS "${MESA_BUILD_DIR}/src/poly/nir" NO_DEFAULT_PATH)
-find_library(MESA_ASAHI_MACOS_WINSYS_LIB NAMES asahi_macos_winsys
-    PATHS "${MESA_BUILD_DIR}/src/asahi/lib" NO_DEFAULT_PATH)
 find_library(MESA_BLAKE3_LIB NAMES blake3
     PATHS "${MESA_BUILD_DIR}/src/util/blake3" NO_DEFAULT_PATH)
+find_library(AO46_MESA_KOSMICKRISP_BRIDGE_LIB NAMES mtl_bridge
+    PATHS "${AO46_MESA_KOSMICKRISP_BRIDGE_DIR}" NO_DEFAULT_PATH)
+find_library(AO46_MESA_KOSMICKRISP_COMPILER_LIB NAMES msl_compiler
+    PATHS "${AO46_MESA_KOSMICKRISP_COMPILER_DIR}" NO_DEFAULT_PATH)
+find_library(AO46_MESA_KOSMICKRISP_VULKAN_LIB NAMES kk
+    PATHS "${AO46_MESA_KOSMICKRISP_VULKAN_DIR}" NO_DEFAULT_PATH)
+find_library(AO46_MESA_ASAHI_GALLIUM_REFERENCE_LIB NAMES asahi
+    PATHS "${MESA_BUILD_DIR}/src/gallium/drivers/asahi" NO_DEFAULT_PATH)
 find_library(LLVM_LIB NAMES LLVM LLVM-22
     PATHS /opt/homebrew/opt/llvm/lib /usr/local/opt/llvm/lib NO_DEFAULT_PATH)
 
@@ -296,25 +304,63 @@ if(NOT MESA_GLAPI_LIB OR
    NOT MESA_UTIL_SIMD_LIB OR
    NOT MESA_COMPILER_LIB OR
    NOT MESA_NIR_LIB OR
+   NOT MESA_POLY_NIR_LIB OR
    NOT MESA_GLSL_UTIL_LIB OR
    NOT MESA_GLSL_LIB OR
-   NOT MESA_ASAHI_GALLIUM_LIB OR
-   NOT MESA_ASAHI_COMPILER_LIB OR
-   NOT MESA_ASAHI_CORE_LIB OR
-   NOT MESA_ASAHI_DECODE_LIB OR
-   NOT MESA_AGX_DISASM_LIB OR
-   NOT MESA_ASAHI_LAYOUT_LIB OR
-   NOT MESA_POLY_NIR_LIB OR
-   NOT MESA_ASAHI_MACOS_WINSYS_LIB OR
    NOT MESA_BLAKE3_LIB OR
+   NOT AO46_MESA_KOSMICKRISP_BRIDGE_LIB OR
+   NOT AO46_MESA_KOSMICKRISP_COMPILER_LIB OR
+   NOT AO46_MESA_KOSMICKRISP_VULKAN_LIB OR
+   NOT AO46_MESA_ASAHI_GALLIUM_REFERENCE_LIB OR
    NOT LLVM_LIB)
     message(FATAL_ERROR
-        "Required Mesa/Asahi archives were not found under '${MESA_BUILD_DIR}'. "
-        "OpenGL_4.6 has no alternate runtime fallback. Run "
-        "scripts/bootstrap_mesa.sh after completing the macOS Asahi winsys "
-        "port, or point AO46_MESA_BUILD_DIR at a completed Asahi build with "
-        "LLVM and BLAKE3 available.")
+        "Required Mesa GL/NIR archives were not found under '${MESA_BUILD_DIR}'. "
+        "Point AO46_MESA_BUILD_DIR at a completed Mesa build with LLVM and "
+        "BLAKE3 available.")
 endif()
+
+# AO46 consumes KosmicKrisp's Metal bridge directly. Do not silently fall
+# back to a second, handwritten resource layer when this Mesa artifact is absent.
+if(NOT EXISTS "${AO46_MESA_LIBKK_GENERATED_DIR}/libkk_shaders.c" OR
+   NOT EXISTS "${AO46_MESA_LIBKK_GENERATED_DIR}/libkk_shaders.h")
+    message(FATAL_ERROR
+        "Mesa KosmicKrisp artifacts are required under '${AO46_MESA_KOSMICKRISP_BUILD_DIR}'. "
+        "Build the Mesa kosmickrisp configuration before configuring AO46.")
+endif()
+
+add_library(AO46MesaKosmicKrispBridge STATIC IMPORTED GLOBAL)
+set_target_properties(AO46MesaKosmicKrispBridge PROPERTIES
+    IMPORTED_LOCATION "${AO46_MESA_KOSMICKRISP_BRIDGE_LIB}"
+)
+
+add_library(AO46MesaMSLCompiler STATIC IMPORTED GLOBAL)
+set_target_properties(AO46MesaMSLCompiler PROPERTIES
+    IMPORTED_LOCATION "${AO46_MESA_KOSMICKRISP_COMPILER_LIB}"
+)
+target_link_libraries(AO46MesaMSLCompiler INTERFACE ${MESA_BLAKE3_LIB})
+
+# These archives retain the full upstream feature implementation for bounded
+# AO46 ports. Neither is linked into the OpenGL framework: libkk is a Vulkan
+# frontend and libasahi emits AGX/DRM work, not Metal command buffers.
+add_library(AO46MesaKosmicKrispVulkanReference STATIC IMPORTED GLOBAL)
+set_target_properties(AO46MesaKosmicKrispVulkanReference PROPERTIES
+    IMPORTED_LOCATION "${AO46_MESA_KOSMICKRISP_VULKAN_LIB}"
+)
+
+add_library(AO46MesaAsahiGalliumReference STATIC IMPORTED GLOBAL)
+set_target_properties(AO46MesaAsahiGalliumReference PROPERTIES
+    IMPORTED_LOCATION "${AO46_MESA_ASAHI_GALLIUM_REFERENCE_LIB}"
+)
+
+add_custom_target(AO46MesaUpstreamPortingArtifacts
+    DEPENDS
+        "${AO46_MESA_KOSMICKRISP_VULKAN_LIB}"
+        "${AO46_MESA_ASAHI_GALLIUM_REFERENCE_LIB}"
+)
+
+# Adapter sources are compiled into both production libraries and smoke tests.
+include_directories("${MESA_ROOT}/src")
+link_libraries(AO46MesaKosmicKrispBridge)
 
 if(NOT SPIRV_TOOLS_INCLUDE_DIR OR NOT SPIRV_TOOLS_LIB OR NOT ZSTD_LIB OR NOT ZLIB_LIB)
     message(FATAL_ERROR
@@ -322,23 +368,62 @@ if(NOT SPIRV_TOOLS_INCLUDE_DIR OR NOT SPIRV_TOOLS_LIB OR NOT ZSTD_LIB OR NOT ZLI
         "Need SPIR-V Tools headers/library plus zstd and zlib.")
 endif()
 
-# The framework and direct-device smoke link this Meson archive rather than
-# compiling a private copy. Keep it current so a CMake relink cannot test stale
-# winsys code after an AGX UABI change.
-find_program(AO46_NINJA_EXECUTABLE NAMES ninja REQUIRED)
-find_program(AO46_LLVM_AR_EXECUTABLE NAMES llvm-ar
-    HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin
-    REQUIRED)
-get_filename_component(AO46_LLVM_BIN_DIR "${AO46_LLVM_AR_EXECUTABLE}" DIRECTORY)
-add_custom_target(AO46MesaMacOSWinsysArchive
-    COMMAND "${CMAKE_COMMAND}" -E env "MAKEFLAGS="
-            "PATH=${AO46_LLVM_BIN_DIR}:$ENV{PATH}"
-            "${AO46_NINJA_EXECUTABLE}" -C "${MESA_BUILD_DIR}"
-            "src/asahi/lib/libasahi_macos_winsys.a"
-    BYPRODUCTS "${MESA_ASAHI_MACOS_WINSYS_LIB}"
-    COMMENT "Synchronizing Mesa macOS AGX winsys archive"
-    VERBATIM
+# Mesa's libkk build emits the poly tessellation MSL kernels used by AO46.
+set(AO46_HAVE_MESA_LIBKK 1)
+add_library(AO46MesaPolyKernelArtifacts STATIC
+    "${AO46_MESA_LIBKK_GENERATED_DIR}/libkk_shaders.c"
 )
+target_include_directories(AO46MesaPolyKernelArtifacts
+    PRIVATE
+        "${AO46_MESA_LIBKK_GENERATED_DIR}"
+        "${MESA_INCLUDE_DIRS}"
+)
+target_compile_definitions(AO46MesaPolyKernelArtifacts
+    PRIVATE
+        ${MESA_COMPILE_DEFINITIONS}
+)
+
+if(OPENGLKHR_BUILD_ARCHIVED_AGX_RESEARCH)
+    find_library(MESA_ASAHI_GALLIUM_LIB NAMES asahi
+        PATHS "${MESA_BUILD_DIR}/src/gallium/drivers/asahi" NO_DEFAULT_PATH)
+    find_library(MESA_ASAHI_COMPILER_LIB NAMES asahi_compiler
+        PATHS "${MESA_BUILD_DIR}/src/asahi/compiler" NO_DEFAULT_PATH)
+    find_library(MESA_ASAHI_CORE_LIB NAMES asahi_lib
+        PATHS "${MESA_BUILD_DIR}/src/asahi/lib" NO_DEFAULT_PATH)
+    find_library(MESA_ASAHI_DECODE_LIB NAMES asahi_decode
+        PATHS "${MESA_BUILD_DIR}/src/asahi/lib" NO_DEFAULT_PATH)
+    find_library(MESA_AGX_DISASM_LIB NAMES agx2_disasm
+        PATHS "${MESA_BUILD_DIR}/src/asahi/isa" NO_DEFAULT_PATH)
+    find_library(MESA_ASAHI_LAYOUT_LIB NAMES asahi_layout
+        PATHS "${MESA_BUILD_DIR}/src/asahi/layout" NO_DEFAULT_PATH)
+    find_library(MESA_POLY_NIR_LIB NAMES libpoly_nir
+        PATHS "${MESA_BUILD_DIR}/src/poly/nir" NO_DEFAULT_PATH)
+    find_library(MESA_ASAHI_MACOS_WINSYS_LIB NAMES asahi_macos_winsys
+        PATHS "${MESA_BUILD_DIR}/src/asahi/lib" NO_DEFAULT_PATH)
+
+    if(NOT MESA_ASAHI_CORE_LIB OR NOT MESA_ASAHI_DECODE_LIB OR
+       NOT MESA_AGX_DISASM_LIB OR NOT MESA_ASAHI_LAYOUT_LIB OR
+       NOT MESA_ASAHI_MACOS_WINSYS_LIB)
+        message(FATAL_ERROR
+            "Archived AGX research requires the historical Asahi archives "
+            "under '${MESA_BUILD_DIR}'.")
+    endif()
+
+    find_program(AO46_NINJA_EXECUTABLE NAMES ninja REQUIRED)
+    find_program(AO46_LLVM_AR_EXECUTABLE NAMES llvm-ar
+        HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin
+        REQUIRED)
+    get_filename_component(AO46_LLVM_BIN_DIR "${AO46_LLVM_AR_EXECUTABLE}" DIRECTORY)
+    add_custom_target(AO46MesaMacOSWinsysArchive
+        COMMAND "${CMAKE_COMMAND}" -E env "MAKEFLAGS="
+                "PATH=${AO46_LLVM_BIN_DIR}:$ENV{PATH}"
+                "${AO46_NINJA_EXECUTABLE}" -C "${MESA_BUILD_DIR}"
+                "src/asahi/lib/libasahi_macos_winsys.a"
+        BYPRODUCTS "${MESA_ASAHI_MACOS_WINSYS_LIB}"
+        COMMENT "Synchronizing archived Mesa macOS AGX winsys research"
+        VERBATIM
+    )
+endif()
 
 # -------------------------------------------------------------
 # 3. Public headers (for framework)
@@ -356,29 +441,47 @@ set(AO46_FRAMEWORK_MODULEMAP
 # -------------------------------------------------------------
 # 4. Runtime + Bridge (MesaPlatform)
 # -------------------------------------------------------------
+# This must be shared by Gallium and the framework: embedding it in both would
+# register duplicate Objective-C MTL4 completion classes in one process.
+add_library(AO46AGXMetalAdapter SHARED
+    MesaPlatform/AO46MetalAdapter.m
+    MesaPlatform/AO46MetalDrawable.m
+    MesaPlatform/AO46MetalWindow.m
+)
+
+target_include_directories(AO46AGXMetalAdapter
+    PUBLIC
+        MesaPlatform
+)
+
+target_compile_options(AO46AGXMetalAdapter PRIVATE -fobjc-arc)
+
+target_link_libraries(AO46AGXMetalAdapter
+    PUBLIC
+        "-framework Foundation"
+        "-framework Metal"
+        "-framework QuartzCore"
+        "-framework AppKit"
+        "-framework IOSurface"
+)
+
+set_target_properties(AO46AGXMetalAdapter PROPERTIES
+    OUTPUT_NAME "AO46AGXMetalAdapter"
+)
+
 add_library(OpenGL46RuntimeObjects OBJECT
     runtime/src/AppleOpenGL46Runtime.c
     MesaPlatform/AO46MesaBridge.c
-    MesaPlatform/AppleOpenGLAsahi.c
-    MesaPlatform/AppleAGXNativeBridge.m
-    MesaPlatform/AppleAGXOpaqueCarrier.m
-    MesaPlatform/AppleAGXConfiguredCarrier.m
-    MesaPlatform/AppleAGXMetalResourceRef.m
-    MesaPlatform/AppleAGXMetalAllocation.m
-    MesaPlatform/AppleAGXMetalBOProvider.m
-    MesaPlatform/AppleAGXMetalResourceSet.m
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_device.c"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_uabi.c"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_bo.c"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_shader_provenance.c"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_queue.c"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_command.c"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_observation.c"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_build.c"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_submission_lease.c"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_iosurface.m"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_screen_bootstrap.c"
-    "${MESA_ROOT}/src/asahi/lib/agx_macos_mesa_device.c"
+    MesaPlatform/AO46MetalBackend.m
+    MesaPlatform/AO46MetalGalliumScreen.c
+    MesaPlatform/AO46MesaRGB32BufferTextureBinding.c
+    MesaPlatform/AO46MesaNIRBufferTexture.c
+    MesaPlatform/AO46MesaRGB32BufferTexturePipeline.c
+    MesaPlatform/AO46MesaPolyTessellation.c
+    MesaPlatform/AO46MesaPolyKernelCatalog.c
+    MesaPlatform/AO46MesaPolyKernelExecutor.c
+    MesaPlatform/AO46MesaMSLComputePipeline.c
+    MesaPlatform/AO46MesaMSLRenderPipeline.c
 )
 
 target_include_directories(OpenGL46RuntimeObjects
@@ -386,55 +489,29 @@ target_include_directories(OpenGL46RuntimeObjects
         runtime/include
         MesaPlatform
         "${MESA_INCLUDE_DIRS}"
+        "${AO46_MESA_LIBKK_GENERATED_DIR}"
 )
 
 target_compile_definitions(OpenGL46RuntimeObjects
     PRIVATE
         ${MESA_COMPILE_DEFINITIONS}
+        GL_SILENCE_DEPRECATION
+        AO46_HAVE_MESA_LIBKK=${AO46_HAVE_MESA_LIBKK}
+)
+
+set_source_files_properties(
+    MesaPlatform/AO46MetalAdapter.m
+    MesaPlatform/AO46MetalDrawable.m
+    MesaPlatform/AO46MetalWindow.m
+    MesaPlatform/AO46MetalBackend.m
+    PROPERTIES COMPILE_OPTIONS "-fobjc-arc"
 )
 
 # -------------------------------------------------------------
 # 5. Metal Shader Translation (NIR -> MSL)
 # -------------------------------------------------------------
-set(AO46_MSL_NIR_ALGEBRAIC_C
-    "${CMAKE_CURRENT_BINARY_DIR}/generated/msl_nir_algebraic.c"
-)
-
-add_custom_command(
-    OUTPUT "${AO46_MSL_NIR_ALGEBRAIC_C}"
-    COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/generated"
-    COMMAND /bin/sh -c "\"${AO46_PYTHON_EXECUTABLE}\" \"${MESA_ROOT}/src/kosmickrisp/compiler/msl_nir_algebraic.py\" -p \"${MESA_ROOT}/src/compiler/nir\" > \"${AO46_MSL_NIR_ALGEBRAIC_C}\""
-    DEPENDS
-        "${MESA_ROOT}/src/kosmickrisp/compiler/msl_nir_algebraic.py"
-        "${MESA_ROOT}/src/compiler/nir/nir_algebraic.py"
-    VERBATIM
-)
-
-if(OPENGLKHR_BUILD_DEPRECATED_GL2MTL)
-add_library(AO46MetalMSLCompiler STATIC EXCLUDE_FROM_ALL
-    "${AO46_MSL_NIR_ALGEBRAIC_C}"
-    "${MESA_ROOT}/src/kosmickrisp/compiler/nir_to_msl.c"
-    "${MESA_ROOT}/src/kosmickrisp/compiler/msl_type_inference.c"
-    "${MESA_ROOT}/src/kosmickrisp/compiler/msl_iomap.c"
-    "${MESA_ROOT}/src/kosmickrisp/compiler/msl_nir_gather_common.c"
-    "${MESA_ROOT}/src/kosmickrisp/compiler/msl_nir_lower_common.c"
-    "${MESA_ROOT}/src/kosmickrisp/compiler/msl_nir_lower_subgroups.c"
-    "${MESA_ROOT}/src/util/blake3/blake3.c"
-    "${MESA_ROOT}/src/util/blake3/blake3_dispatch.c"
-    "${MESA_ROOT}/src/util/blake3/blake3_portable.c"
-    "${MESA_ROOT}/src/util/blake3/blake3_neon.c"
-)
-
-target_include_directories(AO46MetalMSLCompiler
-    PRIVATE
-        "${MESA_INCLUDE_DIRS}"
-)
-
-target_compile_definitions(AO46MetalMSLCompiler
-    PRIVATE
-        ${MESA_COMPILE_DEFINITIONS}
-)
-endif()
+# AO46 links Mesa's KosmicKrisp compiler archive directly. Recompiling its
+# sources here would create a divergent local copy of the Metal backend.
 
 # -------------------------------------------------------------
 # 6. Mesa Companion Libraries (glcpp + SPIR-V/vtn)
@@ -565,32 +642,35 @@ target_compile_definitions(AO46MesaVTN
 )
 
 # -------------------------------------------------------------
-# 7. Archived GL2MTL Development Target
+# 7. AO46 Mesa-Facing Gallium Driver
 # -------------------------------------------------------------
-# This target is intentionally outside the production framework dependency graph.
-if(OPENGLKHR_BUILD_DEPRECATED_GL2MTL)
-add_library(LibGL2MTLBackend SHARED EXCLUDE_FROM_ALL
+# `mtl_driver.m` is the audited migration baseline for the required,
+# promoted AO46 Mesa-facing Gallium implementation.
+add_library(AO46MTLGallium SHARED
     GL2MTL/mtl_driver.m
     GL2MTL/mtl_shader_compiler.m
 )
 
-target_include_directories(LibGL2MTLBackend
+target_include_directories(AO46MTLGallium
     PRIVATE
         GL2MTL
+        MesaPlatform
         "${MESA_INCLUDE_DIRS}"
 )
 
-target_compile_definitions(LibGL2MTLBackend
+target_compile_definitions(AO46MTLGallium
     PRIVATE
         ${MESA_COMPILE_DEFINITIONS}
 )
 
-target_link_libraries(LibGL2MTLBackend
+target_link_libraries(AO46MTLGallium
     PRIVATE
-        AO46MetalMSLCompiler
+        AO46AGXMetalAdapter
+        AO46MesaMSLCompiler
         ${MESA_GLSL_LIB}
         ${MESA_GLSL_UTIL_LIB}
         ${MESA_NIR_LIB}
+        ${MESA_POLY_NIR_LIB}
         ${MESA_COMPILER_LIB}
         ${MESA_GALLIUM_AUX}
         ${MESA_UTIL_LIB}
@@ -603,7 +683,8 @@ target_link_libraries(LibGL2MTLBackend
         "-framework Foundation"
 )
 
-endif()
+set_target_properties(AO46MTLGallium PROPERTIES OUTPUT_NAME "AO46MTLGallium")
+add_dependencies(AO46MTLGallium AO46MesaUpstreamPortingArtifacts)
 
 # -------------------------------------------------------------
 # 8. Main Framework (OpenGL_4.6.framework)
@@ -632,25 +713,21 @@ target_compile_definitions(OpenGL_4_6
 
 target_link_libraries(OpenGL_4_6
     PRIVATE
+        AO46AGXMetalAdapter
+        AO46MTLGallium
         ${MESA_ST_MESA_LIB}
         ${MESA_GLAPI_LIB}
         ${MESA_GLSL_LIB}
         AO46MesaGLCPP
         ${MESA_GLSL_UTIL_LIB}
         ${MESA_NIR_LIB}
+        ${MESA_POLY_NIR_LIB}
         ${MESA_COMPILER_LIB}
+        AO46MesaMSLCompiler
         AO46MesaVTN
         ${SPIRV_TOOLS_LIB}
         ${SPIRV_TOOLS_OPT_LIB}
         ${MESA_GALLIUM_AUX}
-        ${MESA_ASAHI_GALLIUM_LIB}
-        ${MESA_ASAHI_COMPILER_LIB}
-        ${MESA_ASAHI_CORE_LIB}
-        ${MESA_ASAHI_DECODE_LIB}
-        ${MESA_AGX_DISASM_LIB}
-        ${MESA_ASAHI_LAYOUT_LIB}
-        ${MESA_POLY_NIR_LIB}
-        ${MESA_ASAHI_MACOS_WINSYS_LIB}
         ${MESA_UTIL_LIB}
         ${MESA_BLAKE3_LIB}
         ${LLVM_LIB}
@@ -661,12 +738,12 @@ target_link_libraries(OpenGL_4_6
         # C++ standard library (Mesa uses C++)
         "-lc++"
         "-framework Foundation"
-        "-framework IOKit"
-        "-framework CoreFoundation"
-        "-framework IOSurface"
         "-framework Metal"
 )
-add_dependencies(OpenGL_4_6 AO46MesaMacOSWinsysArchive)
+
+if(AO46_HAVE_MESA_LIBKK)
+    target_link_libraries(OpenGL_4_6 PRIVATE AO46MesaPolyKernelArtifacts)
+endif()
 
 set_target_properties(OpenGL_4_6 PROPERTIES
     FRAMEWORK TRUE
@@ -816,6 +893,566 @@ set_target_properties(LibNSOpenGLContextDriver PROPERTIES
 if(BUILD_TESTING)
     enable_testing()
 
+    add_test(
+        NAME AO46MesaReuseInventory
+        COMMAND "${AO46_PYTHON_EXECUTABLE}"
+            "${ROOT_DIR}/scripts/inventory_mesa_reuse.py"
+            --mesa-root "${MESA_ROOT}"
+            --check
+            --check-artifacts
+    )
+
+    if(TARGET AO46MTLGallium)
+        add_executable(AO46MTLGalliumAdapterSmoke
+            tests/AO46MTLGalliumAdapterSmoke.m
+        )
+
+        target_include_directories(AO46MTLGalliumAdapterSmoke
+            PRIVATE
+                GL2MTL
+                MesaPlatform
+                "${MESA_INCLUDE_DIRS}"
+        )
+
+    target_link_libraries(AO46MTLGalliumAdapterSmoke
+        PRIVATE
+            AO46MTLGallium
+            AO46AGXMetalAdapter
+    )
+
+        target_compile_options(AO46MTLGalliumAdapterSmoke PRIVATE -fobjc-arc)
+
+        add_test(
+            NAME AO46MTLGalliumAdapterSmoke
+            COMMAND $<TARGET_FILE:AO46MTLGalliumAdapterSmoke>
+        )
+    endif()
+
+    add_executable(AO46CGLShimCompatSmoke
+        tests/AO46CGLShimCompatSmoke.c
+    )
+
+    add_test(
+        NAME AO46CGLShimCompatSmoke
+        COMMAND $<TARGET_FILE:AO46CGLShimCompatSmoke>
+    )
+
+    set_tests_properties(AO46CGLShimCompatSmoke PROPERTIES
+        ENVIRONMENT
+            "AO46_SHIM_PATH=$<TARGET_FILE:AppleOpenGLShim>;AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    add_executable(AO46MetalAdapterSmoke
+        tests/AO46MetalAdapterSmoke.m
+        MesaPlatform/AO46MetalAdapter.m
+    )
+
+    target_include_directories(AO46MetalAdapterSmoke
+        PRIVATE
+            MesaPlatform
+    )
+
+    target_link_libraries(AO46MetalAdapterSmoke
+        PRIVATE
+            "-framework Foundation"
+            "-framework Metal"
+            "-framework IOSurface"
+    )
+
+    target_compile_options(AO46MetalAdapterSmoke PRIVATE -fobjc-arc)
+
+    add_test(
+        NAME AO46MetalAdapterSmoke
+        COMMAND $<TARGET_FILE:AO46MetalAdapterSmoke>
+    )
+
+    add_executable(AO46MetalWindowPolicySmoke
+        tests/AO46MetalWindowPolicySmoke.m
+    )
+
+    target_include_directories(AO46MetalWindowPolicySmoke
+        PRIVATE
+            MesaPlatform
+    )
+
+    target_link_libraries(AO46MetalWindowPolicySmoke
+        PRIVATE
+            AO46AGXMetalAdapter
+    )
+
+    target_compile_options(AO46MetalWindowPolicySmoke PRIVATE -fobjc-arc)
+
+    add_test(
+        NAME AO46MetalWindowPolicySmoke
+        COMMAND $<TARGET_FILE:AO46MetalWindowPolicySmoke>
+    )
+
+    set_tests_properties(AO46MetalWindowPolicySmoke PROPERTIES
+        ENVIRONMENT
+            "DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    add_executable(AO46MetalGalliumScreenSmoke
+        tests/AO46MetalGalliumScreenSmoke.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+    )
+
+    target_include_directories(AO46MetalGalliumScreenSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_link_libraries(AO46MetalGalliumScreenSmoke
+        PRIVATE
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            "-framework Foundation"
+            "-framework Metal"
+    )
+
+    add_test(
+        NAME AO46MetalGalliumScreenSmoke
+        COMMAND $<TARGET_FILE:AO46MetalGalliumScreenSmoke>
+    )
+
+    add_executable(AO46MetalGalliumTextureSmoke
+        tests/AO46MetalGalliumTextureSmoke.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+    )
+
+    target_include_directories(AO46MetalGalliumTextureSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_link_libraries(AO46MetalGalliumTextureSmoke
+        PRIVATE
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            "-framework Foundation"
+            "-framework Metal"
+    )
+
+    add_test(
+        NAME AO46MetalGalliumTextureSmoke
+        COMMAND $<TARGET_FILE:AO46MetalGalliumTextureSmoke>
+    )
+
+    add_executable(AO46MesaNIRComputeSmoke
+        tests/AO46MesaNIRComputeSmoke.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+        MesaPlatform/AO46MesaMSLComputePipeline.c
+    )
+
+    target_include_directories(AO46MesaNIRComputeSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AO46MesaNIRComputeSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AO46MesaNIRComputeSmoke
+        PRIVATE
+            AO46MesaMSLCompiler
+            ${MESA_NIR_LIB}
+            ${MESA_COMPILER_LIB}
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-framework Foundation"
+            "-framework Metal"
+    )
+
+    add_test(
+        NAME AO46MesaNIRComputeSmoke
+        COMMAND $<TARGET_FILE:AO46MesaNIRComputeSmoke>
+    )
+
+    add_executable(AO46MesaNIRComputeStateSmoke
+        tests/AO46MesaNIRComputeStateSmoke.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+        MesaPlatform/AO46MesaMSLComputePipeline.c
+        MesaPlatform/AO46MesaPolyTessellation.c
+        MesaPlatform/AO46MesaPolyKernelCatalog.c
+        MesaPlatform/AO46MesaPolyKernelExecutor.c
+    )
+
+    target_include_directories(AO46MesaNIRComputeStateSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+            "${AO46_MESA_LIBKK_GENERATED_DIR}"
+    )
+
+    target_compile_definitions(AO46MesaNIRComputeStateSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+            AO46_HAVE_MESA_LIBKK=${AO46_HAVE_MESA_LIBKK}
+    )
+
+    target_link_libraries(AO46MesaNIRComputeStateSmoke
+        PRIVATE
+            AO46MesaPolyKernelArtifacts
+            AO46MesaMSLCompiler
+            ${MESA_POLY_NIR_LIB}
+            ${MESA_NIR_LIB}
+            ${MESA_COMPILER_LIB}
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-lc++"
+            "-framework Foundation"
+            "-framework Metal"
+            "-framework IOSurface"
+    )
+
+    add_test(
+        NAME AO46MesaNIRComputeStateSmoke
+        COMMAND $<TARGET_FILE:AO46MesaNIRComputeStateSmoke>
+    )
+
+    add_executable(AO46MesaPolyTessellationSmoke
+        tests/AO46MesaPolyTessellationSmoke.c
+        MesaPlatform/AO46MesaPolyTessellation.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+        MesaPlatform/AO46MesaMSLRenderPipeline.c
+    )
+
+    target_include_directories(AO46MesaPolyTessellationSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AO46MesaPolyTessellationSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AO46MesaPolyTessellationSmoke
+        PRIVATE
+            AO46MesaMSLCompiler
+            ${MESA_POLY_NIR_LIB}
+            ${MESA_NIR_LIB}
+            ${MESA_COMPILER_LIB}
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-lc++"
+            "-framework Foundation"
+            "-framework Metal"
+    )
+
+    add_test(
+        NAME AO46MesaPolyTessellationSmoke
+        COMMAND $<TARGET_FILE:AO46MesaPolyTessellationSmoke>
+    )
+
+    if(AO46_HAVE_MESA_LIBKK)
+        add_executable(AO46MesaPolyKernelCatalogSmoke
+            tests/AO46MesaPolyKernelCatalogSmoke.m
+            MesaPlatform/AO46MesaPolyTessellation.c
+            MesaPlatform/AO46MesaPolyKernelCatalog.c
+            MesaPlatform/AO46MesaPolyKernelExecutor.c
+            MesaPlatform/AO46MetalAdapter.m
+            MesaPlatform/AO46MetalGalliumScreen.c
+            MesaPlatform/AO46MesaMSLComputePipeline.c
+        )
+
+        target_include_directories(AO46MesaPolyKernelCatalogSmoke
+            PRIVATE
+                MesaPlatform
+                "${AO46_MESA_LIBKK_GENERATED_DIR}"
+                "${MESA_INCLUDE_DIRS}"
+        )
+
+        target_compile_definitions(AO46MesaPolyKernelCatalogSmoke
+            PRIVATE
+                ${MESA_COMPILE_DEFINITIONS}
+                AO46_HAVE_MESA_LIBKK=1
+        )
+
+        target_link_libraries(AO46MesaPolyKernelCatalogSmoke
+            PRIVATE
+            AO46MesaPolyKernelArtifacts
+            AO46MesaMSLCompiler
+            ${MESA_POLY_NIR_LIB}
+            ${MESA_NIR_LIB}
+            ${MESA_COMPILER_LIB}
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-lc++"
+            "-framework Foundation"
+            "-framework Metal"
+        )
+
+        target_compile_options(AO46MesaPolyKernelCatalogSmoke PRIVATE -fobjc-arc)
+
+        add_test(
+            NAME AO46MesaPolyKernelCatalogSmoke
+            COMMAND $<TARGET_FILE:AO46MesaPolyKernelCatalogSmoke>
+        )
+
+        add_executable(AO46MesaPolyGalliumChainSmoke
+            tests/AO46MesaPolyGalliumChainSmoke.m
+            MesaPlatform/AO46MesaPolyTessellation.c
+            MesaPlatform/AO46MesaPolyKernelCatalog.c
+            MesaPlatform/AO46MesaPolyKernelExecutor.c
+            MesaPlatform/AO46MetalAdapter.m
+            MesaPlatform/AO46MetalGalliumScreen.c
+            MesaPlatform/AO46MesaMSLComputePipeline.c
+            MesaPlatform/AO46MesaMSLRenderPipeline.c
+        )
+
+        target_include_directories(AO46MesaPolyGalliumChainSmoke
+            PRIVATE
+                MesaPlatform
+                "${AO46_MESA_LIBKK_GENERATED_DIR}"
+                "${MESA_INCLUDE_DIRS}"
+        )
+
+        target_compile_definitions(AO46MesaPolyGalliumChainSmoke
+            PRIVATE
+                ${MESA_COMPILE_DEFINITIONS}
+                AO46_HAVE_MESA_LIBKK=1
+        )
+
+        target_link_libraries(AO46MesaPolyGalliumChainSmoke
+            PRIVATE
+                AO46MesaPolyKernelArtifacts
+                AO46MesaMSLCompiler
+                ${MESA_POLY_NIR_LIB}
+                ${MESA_NIR_LIB}
+                ${MESA_COMPILER_LIB}
+                ${MESA_GALLIUM_AUX}
+                ${MESA_UTIL_LIB}
+                ${MESA_UTIL_SIMD_LIB}
+                ${MESA_UTIL_C11_LIB}
+                ${MESA_BLAKE3_LIB}
+                "-lc++"
+                "-framework Foundation"
+                "-framework Metal"
+        )
+
+        target_compile_options(AO46MesaPolyGalliumChainSmoke PRIVATE -fobjc-arc)
+
+        add_test(
+            NAME AO46MesaPolyGalliumChainSmoke
+            COMMAND $<TARGET_FILE:AO46MesaPolyGalliumChainSmoke>
+        )
+    endif()
+
+    add_executable(AO46MesaNIRGraphicsSmoke
+        tests/AO46MesaNIRGraphicsSmoke.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+        MesaPlatform/AO46MesaMSLRenderPipeline.c
+    )
+
+    target_include_directories(AO46MesaNIRGraphicsSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AO46MesaNIRGraphicsSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AO46MesaNIRGraphicsSmoke
+        PRIVATE
+            AO46MesaMSLCompiler
+            ${MESA_NIR_LIB}
+            ${MESA_COMPILER_LIB}
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-framework Foundation"
+            "-framework Metal"
+    )
+
+    add_test(
+        NAME AO46MesaNIRGraphicsSmoke
+        COMMAND $<TARGET_FILE:AO46MesaNIRGraphicsSmoke>
+    )
+
+    add_executable(AO46MesaNIRBufferTextureGraphicsSmoke
+        tests/AO46MesaNIRBufferTextureGraphicsSmoke.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+        MesaPlatform/AO46MesaMSLRenderPipeline.c
+    )
+
+    target_include_directories(AO46MesaNIRBufferTextureGraphicsSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AO46MesaNIRBufferTextureGraphicsSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AO46MesaNIRBufferTextureGraphicsSmoke
+        PRIVATE
+            AO46MesaMSLCompiler
+            ${MESA_NIR_LIB}
+            ${MESA_COMPILER_LIB}
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-framework Foundation"
+            "-framework Metal"
+    )
+
+    add_test(
+        NAME AO46MesaNIRBufferTextureGraphicsSmoke
+        COMMAND $<TARGET_FILE:AO46MesaNIRBufferTextureGraphicsSmoke>
+    )
+
+    add_executable(AO46MesaNIRTextureSmoke
+        tests/AO46MesaNIRTextureSmoke.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+        MesaPlatform/AO46MesaMSLRenderPipeline.c
+    )
+
+    target_include_directories(AO46MesaNIRTextureSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AO46MesaNIRTextureSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AO46MesaNIRTextureSmoke
+        PRIVATE
+            AO46MesaMSLCompiler
+            ${MESA_NIR_LIB}
+            ${MESA_COMPILER_LIB}
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-framework Foundation"
+            "-framework Metal"
+    )
+
+    add_test(
+        NAME AO46MesaNIRTextureSmoke
+        COMMAND $<TARGET_FILE:AO46MesaNIRTextureSmoke>
+    )
+
+    add_executable(AO46MesaNIRUniformSmoke
+        tests/AO46MesaNIRUniformSmoke.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+        MesaPlatform/AO46MesaMSLRenderPipeline.c
+    )
+
+    target_include_directories(AO46MesaNIRUniformSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AO46MesaNIRUniformSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AO46MesaNIRUniformSmoke
+        PRIVATE
+            AO46MesaMSLCompiler
+            ${MESA_NIR_LIB}
+            ${MESA_COMPILER_LIB}
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-framework Foundation"
+            "-framework Metal"
+    )
+
+    add_test(
+        NAME AO46MesaNIRUniformSmoke
+        COMMAND $<TARGET_FILE:AO46MesaNIRUniformSmoke>
+    )
+
+    add_executable(AO46MesaNIRIndexedSmoke
+        tests/AO46MesaNIRIndexedSmoke.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+        MesaPlatform/AO46MesaMSLComputePipeline.c
+        MesaPlatform/AO46MesaMSLRenderPipeline.c
+    )
+
+    target_include_directories(AO46MesaNIRIndexedSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AO46MesaNIRIndexedSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+    )
+
+    target_link_libraries(AO46MesaNIRIndexedSmoke
+        PRIVATE
+            AO46MesaMSLCompiler
+            ${MESA_NIR_LIB}
+            ${MESA_COMPILER_LIB}
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-framework Foundation"
+            "-framework Metal"
+    )
+
+    add_test(
+        NAME AO46MesaNIRIndexedSmoke
+        COMMAND $<TARGET_FILE:AO46MesaNIRIndexedSmoke>
+    )
+
+    if(OPENGLKHR_BUILD_ARCHIVED_AGX_RESEARCH)
     add_executable(AppleOpenGLAsahiBackendSmoke
         tests/AppleOpenGLAsahiBackendSmoke.c
         MesaPlatform/AppleOpenGLAsahi.c
@@ -1601,6 +2238,8 @@ if(BUILD_TESTING)
         COMMAND $<TARGET_FILE:AGXSubmitInfoSmoke>
     )
 
+    endif()
+
     add_executable(AO46RuntimeCompatSmoke
         tests/AO46RuntimeCompatSmoke.c
     )
@@ -1610,7 +2249,13 @@ if(BUILD_TESTING)
             runtime/include
             client/include
             drivers/include
+            MesaPlatform
             "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AO46RuntimeCompatSmoke
+        PRIVATE
+            GL_SILENCE_DEPRECATION
     )
 
     target_link_libraries(AO46RuntimeCompatSmoke
@@ -1627,6 +2272,67 @@ if(BUILD_TESTING)
         ENVIRONMENT
             "AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
     )
+
+    add_executable(AO46MesaWindowLayerSmoke
+        tests/AO46MesaWindowLayerSmoke.m
+    )
+
+    target_include_directories(AO46MesaWindowLayerSmoke
+        PRIVATE
+            runtime/include
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AO46MesaWindowLayerSmoke
+        PRIVATE
+            GL_SILENCE_DEPRECATION
+    )
+
+    target_link_libraries(AO46MesaWindowLayerSmoke
+        PRIVATE
+            OpenGL_4_6
+            "-framework CoreGraphics"
+            "-framework QuartzCore"
+    )
+
+    target_compile_options(AO46MesaWindowLayerSmoke PRIVATE -fobjc-arc)
+
+    add_test(
+        NAME AO46MesaWindowLayerSmoke
+        COMMAND $<TARGET_FILE:AO46MesaWindowLayerSmoke>
+    )
+
+    set_tests_properties(AO46MesaWindowLayerSmoke PROPERTIES
+        ENVIRONMENT
+            "AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    # A real present requires a WindowServer, so this stays opt-in rather than CTest.
+    add_executable(AO46MesaWindowPresentationSmoke
+        tests/AO46MesaWindowPresentationSmoke.m
+    )
+
+    target_include_directories(AO46MesaWindowPresentationSmoke
+        PRIVATE
+            runtime/include
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_definitions(AO46MesaWindowPresentationSmoke
+        PRIVATE
+            GL_SILENCE_DEPRECATION
+    )
+
+    target_link_libraries(AO46MesaWindowPresentationSmoke
+        PRIVATE
+            OpenGL_4_6
+            "-framework AppKit"
+            "-framework QuartzCore"
+    )
+
+    target_compile_options(AO46MesaWindowPresentationSmoke PRIVATE -fobjc-arc)
 
     add_executable(AO46MesaProfileNegotiationSmoke
         tests/AO46MesaProfileNegotiationSmoke.c
@@ -1664,6 +2370,32 @@ if(BUILD_TESTING)
             "AO46_ENABLE_NATIVE_SCREEN_BOOTSTRAP=1;AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
     )
 
+    add_executable(AO46MesaCapabilityAuditSmoke
+        tests/AO46MesaCapabilityAuditSmoke.c
+    )
+
+    target_include_directories(AO46MesaCapabilityAuditSmoke
+        PRIVATE
+            runtime/include
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_link_libraries(AO46MesaCapabilityAuditSmoke
+        PRIVATE
+            OpenGL_4_6
+    )
+
+    add_test(
+        NAME AO46MesaCapabilityAuditSmoke
+        COMMAND $<TARGET_FILE:AO46MesaCapabilityAuditSmoke>
+    )
+
+    set_tests_properties(AO46MesaCapabilityAuditSmoke PROPERTIES
+        ENVIRONMENT
+            "AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
     add_executable(AO46NSOpenGLCompatSmoke
         tests/AO46NSOpenGLCompatSmoke.m
     )
@@ -1693,4 +2425,53 @@ if(BUILD_TESTING)
         ENVIRONMENT
             "AO46_FRAMEWORK_PATH=$<TARGET_FILE:OpenGL_4_6>;DYLD_FRAMEWORK_PATH=${CMAKE_CURRENT_BINARY_DIR};DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
     )
+
+    # Several smoke targets compile the adapter directly to isolate Mesa layers.
+    # Keep their framework set in sync with the adapter's IOSurface import ABI.
+    foreach(AO46_DIRECT_ADAPTER_TARGET
+        AO46MetalAdapterSmoke
+        AO46MetalGalliumScreenSmoke
+        AO46MetalGalliumTextureSmoke
+        AO46MesaNIRComputeSmoke
+        AO46MesaNIRComputeStateSmoke
+        AO46MesaPolyTessellationSmoke
+        AO46MesaPolyKernelCatalogSmoke
+        AO46MesaPolyGalliumChainSmoke
+        AO46MesaNIRGraphicsSmoke
+        AO46MesaNIRBufferTextureGraphicsSmoke
+        AO46MesaNIRTextureSmoke
+        AO46MesaNIRUniformSmoke
+        AO46MesaNIRIndexedSmoke
+    )
+        if(TARGET ${AO46_DIRECT_ADAPTER_TARGET})
+            if(NOT AO46_DIRECT_ADAPTER_TARGET STREQUAL "AO46MetalAdapterSmoke")
+                target_sources(${AO46_DIRECT_ADAPTER_TARGET}
+                    PRIVATE
+                        MesaPlatform/AO46MesaRGB32BufferTextureBinding.c
+                        MesaPlatform/AO46MesaNIRBufferTexture.c
+                        MesaPlatform/AO46MesaRGB32BufferTexturePipeline.c
+                        MesaPlatform/AO46MesaMSLRenderPipeline.c
+                )
+                target_compile_definitions(${AO46_DIRECT_ADAPTER_TARGET}
+                    PRIVATE
+                        ${MESA_COMPILE_DEFINITIONS}
+                )
+                if(AO46_DIRECT_ADAPTER_TARGET STREQUAL "AO46MetalGalliumScreenSmoke" OR
+                   AO46_DIRECT_ADAPTER_TARGET STREQUAL "AO46MetalGalliumTextureSmoke")
+                    target_link_libraries(${AO46_DIRECT_ADAPTER_TARGET}
+                        PRIVATE
+                            AO46MesaMSLCompiler
+                            ${MESA_NIR_LIB}
+                            ${MESA_COMPILER_LIB}
+                            ${MESA_BLAKE3_LIB}
+                            "-lc++"
+                    )
+                endif()
+            endif()
+            target_link_libraries(${AO46_DIRECT_ADAPTER_TARGET}
+                PRIVATE
+                    "-framework IOSurface"
+            )
+        endif()
+    endforeach()
 endif()

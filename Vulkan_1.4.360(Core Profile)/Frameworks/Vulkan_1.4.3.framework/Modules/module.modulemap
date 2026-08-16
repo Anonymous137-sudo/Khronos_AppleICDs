@@ -1,0 +1,9 @@
+framework module Vulkan_1_4_3 {
+  umbrella header "Vulkan_1.4.3.h"
+  explicit module NSVulkan_KHR {
+    header "NSVulkan_KHR.h"
+    requires objc
+    export *
+  }
+  export *
+}

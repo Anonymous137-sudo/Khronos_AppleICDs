@@ -1,6 +1,8 @@
 #ifndef AO46_MESA_BRIDGE_H
 #define AO46_MESA_BRIDGE_H
 
+#include <stdbool.h>
+
 #include <OpenGL/CGLTypes.h>
 #include "AppleOpenGL46Runtime.h"
 
@@ -13,6 +15,38 @@ extern "C" {
  * Must be called before any other bridge function.
  */
 CGLError AO46MesaInit(void);
+
+/*
+ * Snapshot the state-tracker inputs that decide the advertised core profile.
+ * The audit is diagnostic only: it never raises capabilities or overrides a
+ * Mesa version decision.
+ */
+struct AO46MesaCoreCapabilityAudit {
+    int core_version;
+    int glsl_version;
+    bool gl33_blend_func_extended;
+    bool gl33_explicit_attrib_location;
+    bool gl33_instanced_arrays;
+    bool gl33_shader_bit_encoding;
+    bool gl33_texture_rgb10_a2ui;
+    bool gl33_timer_query;
+    bool gl33_vertex_type_2_10_10_10_rev;
+    bool gl33_texture_swizzle;
+    bool gl40_draw_buffers_blend;
+    bool gl40_draw_indirect;
+    bool gl40_gpu_shader5;
+    bool gl40_gpu_shader_fp64;
+    bool gl40_sample_shading;
+    bool gl40_tessellation_shader;
+    bool gl40_texture_buffer_object_rgb32;
+    bool gl40_texture_cube_map_array;
+    bool gl40_texture_query_lod;
+    bool gl40_transform_feedback2;
+    bool gl40_transform_feedback3;
+};
+
+CGLError AO46MesaAuditCoreCapabilities(
+    struct AO46MesaCoreCapabilityAudit *out_audit);
 
 /**
  * Create a Mesa state tracker context from a pixel format.

@@ -13,15 +13,20 @@ validation, dispatch, GLSL, SPIR-V, NIR, and the reusable NIR-to-MSL compiler
 machinery. AO46 must not grow a competing handwritten OpenGL implementation or
 a separate GLSL-to-Metal compiler.
 
-The active engineering work is a public-Metal backend beneath Mesa plus the
-macOS integration Mesa does not provide: Metal resources/pipelines/commands,
-IOSurface and CAMetalLayer presentation, CGL/NSOpenGL, framework ABI, ICD and
+The active engineering work is split into two components beneath Mesa:
+`AO46MTLGallium.m` owns Gallium callbacks, Mesa-to-MSL pipeline assembly, and
+resource/state translation; `AO46AGXMetalAdapter` owns Metal device/queue,
+resource lifetime, pipeline cache, fences, drawables, and performance policy.
+The macOS framework work remains CGL/NSOpenGL, framework ABI, ICD and
 user-space libraries, diagnostics, and staged CTS.
 
 The direct Mesa/Asahi-to-AGX/UABI investigation is archived research. Its
 traces, Ghidra reports, contracts, and fail-closed prototypes remain in the
-repository as evidence, but it is not selected as the runtime path. Historical
-`GL2MTL` sources likewise remain archived and cannot become a semantic fallback.
+repository as evidence, but it is not selected as the runtime path. Its
+findings can inform AO46 profile gates, diagnostics, invariants, and performance
+policy, never private runtime carrier injection or raw AGX submission. The
+existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
+`AO46MTLGallium.m`, not a separate fallback driver.
 
 ## Status Legend
 
@@ -45,42 +50,142 @@ repository as evidence, but it is not selected as the runtime path. Historical
 ## Active Mesa Metal Backend Dashboard
 
 - `[~]` Mesa semantic and compiler reuse: Mesa OpenGL, state tracker, GLSL,
-  SPIR-V, NIR, and KosmicKrisp NIR-to-MSL sources are present. The current
-  CMake graph can build the NIR-to-MSL library as an excluded component; it is
-  not yet a live framework backend.
-- `[ ]` Mesa Metal screen and context: create a Metal-backed `pipe_screen` and
-  `pipe_context`, then prove a Mesa-controlled offscreen clear/readback.
-- `[ ]` Metal resources and pipelines: bind Mesa buffers, textures, samplers,
-  framebuffers, shaders, and synchronization to Metal resources/pipelines
-  without recreating GL validation.
+  SPIR-V, NIR, and KosmicKrisp NIR-to-MSL sources are present. Real Mesa NIR
+  compute, vertex, and fragment shaders now lower through KosmicKrisp, compile
+  as MSL, and execute through AO46's bounded Mesa Metal context. The framework
+  now creates supported-core state-tracker contexts through that screen; broad
+  state-tracker graphics coverage remains incomplete.
+- `[x]` Metal adapter bootstrap: AO46 owns one `MTLDevice`/command queue,
+  shared buffer allocation, MSL compute-pipeline creation, direct command
+  encoding, completion wait, and GPU readback. The hardware smoke test passes.
+- `[~]` Two-part migration: `AO46AGXMetalAdapter` is now a reusable library
+  linked by the framework and `AO46MTLGallium`. The promoted Gallium screen
+  borrows the adapter-owned Metal device/queue rather than creating a second
+  pair; lifecycle smoke coverage proves the identity and teardown contract.
+  The framework selects this driver for supported-core CGL admission. Mesa
+  currently realizes it as core 3.3, so GL 4.6 and window presentation remain
+  profile-gated until their missing capabilities are complete.
+- `[~]` Mesa Metal screen and context: AO46 has a Metal-backed `pipe_screen`
+  and graphics-capable `pipe_context` with buffer and bounded 2D color
+  resources, upload/blit/compute/full-surface-clear/vertex-buffer-triangle
+  command submission, resource retention, fence completion, and deterministic
+  buffer or texture readback. Single-draw direct or native-indirect `draw_vbo`
+  triangle lists now consume retained framebuffer and vertex-buffer state.
+  Direct draws carry base-instance/count state and static per-instance vertex
+  divisors. Supported-core Mesa state-tracker contexts now use the promoted
+  driver; GL 4.6 capability, general graphics state, and window presentation
+  remain.
+- `[~]` Metal resources and pipelines: `RGBA8`/`BGRA8` renderable 2D textures,
+  color surfaces, aligned staging upload/readback, and Mesa-generated
+  vertex/fragment render pipelines with interleaved `float4` position plus
+  `float2` UV inputs and a vertex-to-fragment varying are wired. A bounded
+  two-source `RGBA8` texture sampler smoke verifies four distinct combined
+  regions through sparse public Metal texture/sampler slots `1` and `3`.
+  A second graphics smoke reads constant-offset ranges from Mesa `UBO 0` and
+  `UBO 1`, retaining their `PIPE_BIND_CONSTANT_BUFFER` resources at Metal
+  buffer `0` and buffer `16`. Missing or undersized bindings are rejected.
+  Direct `draw_vbo` now consumes matching vertex/fragment Gallium
+  `set_constant_buffer` bindings for the reflected UBO mask; missing,
+  conflicting, or undersized state fails closed. Dynamic UBO indexing/offsets,
+  arrays/layouts, plus general texture views/sampler state, framebuffers,
+  depth/stencil, general graphics pipelines, and general synchronization remain.
+- `[x]` KosmicKrisp's public MTL4 compiler, argument tables, and bridge
+  encoders are active in the AO46 adapter. MTL4 pipeline records support
+  validated buffers, textures, samplers, `float2`/`float4` vertex layouts,
+  texture upload/readback/clear/copy, and event-ordered queue submission. The
+  texture-copy smoke verifies an upload, GPU texture copy, and readback. A
+  paired classic PSO is retained only for legacy ICB fallback; it is not
+  another GL translation path.
+- `[~]` Bounded indexed graphics: Mesa-generated vertex and fragment MSL can
+  now submit retained `uint16` or `uint32` `PIPE_BIND_INDEX_BUFFER` triangle
+  lists with explicit aligned offsets and counts. AO46 validates the complete
+  post-base-vertex span before encoding `drawIndexedPrimitives`, rejects invalid
+  counts/ranges, splits primitive-restart runs, and retains the EBO until the
+  Gallium fence retires. The bounded `draw_vbo` path covers one indexed or
+  non-indexed direct triangle-list draw and a sequence of `1..64` host-visible
+  indirect parameter records submitted through Metal's indirect encoder. The
+  CPU only preflights each record and matching EBO range; the GPU consumes the
+  records. A Mesa compute-produced `indirect_draw_count` buffer now selects a
+  public Metal ICB execution range in the same command buffer, with no CPU
+  count readback and a GPU clamp to the bounded sequence. The individual
+  command records remain CPU-visible/prevalidated, and texture/sampler-bearing
+  pipelines remain outside the ICB-count path.
+  Direct indexed/non-indexed draws also emit native instance count/base-instance
+  parameters and bind static per-instance vertex divisors. GPU-driven
+  GPU-generated multi-record command batches and general state-tracker binding
+  remain. A single shader-writable indexed record can execute directly without
+  a CPU map, and TCS/TES state objects are now bound and validated against the
+  bounded Mesa Poly plan.
 - `[~]` Framework and ICD: the router, framework, CGL/NSOpenGL bridge, client,
   ICD, user-space libraries, generated dispatch, and smoke harnesses exist;
   they still need a live Mesa Metal screen and real capability reporting.
-- `[ ]` Drawable and presentation: connect IOSurface, CAMetalLayer, resize,
-  Retina scale, swap interval, present, and loss handling to the live backend.
+- `[~]` Drawable and presentation: CGL now resolves public `NSView`,
+  `NSWindow`, or `CAMetalLayer` inputs to an AO46-owned Metal layer, allocates
+  a Mesa color target matching its backing dimensions and format, copies the
+  target into an acquired drawable, and presents it through the MTL4 timeline.
+  The source and drawable remain retained until the completion fence retires.
+  `NSOpenGLContext` preserves the target across `flushBuffer`; update handles
+  AppKit backing-size changes, and swap interval controls display sync. The
+  automated layer smoke covers CGL attach/update/detach plus a retry-safe
+  no-drawable flush without a compositor. A failed drawable acquire marks the
+  target lost and rebuilds it before that retry, so callers do not need an
+  explicit `CGLUpdateContext`. Supported `RGBA8`/`BGRA8` layers default to
+  explicit sRGB; AO46 rejects wide-gamut layers until its transfer policy is
+  validated. The RGB32 buffer-texture path now derives a selected-slot binding
+  vector from the actual Gallium sampler-view subrange for both Mesa graphics
+  stages, uses it to create the NIR-lowered Metal pipeline, and validates the
+  same slots at draw submission. The live vertex view now reaches bounded
+  Gallium `draw_vbo` state submission, and a hardware smoke verifies
+  independent vertex slot `3` and fragment slot `2` roots without a staging
+  copy. It now combines independent fragment slots `2` and `4`, then rebinds
+  slot `2` to verify that the draw uses the live Gallium range without
+  recompiling the pipeline. Unbinding a required slot fail-closes the draw,
+  while one sparse Gallium multi-slot update restores both fragment roots. It remains a
+  prerequisite rather than admission for
+  `ARB_texture_buffer_object_rgb32`.
+  The adapter also has a hardware-verified public `IOSurface` import path for
+  non-planar `RGBA8`/`BGRA8` textures. An opt-in visible WindowServer smoke
+  covers real `NSWindow`/`CAMetalLayer` presentation without making headless
+  CTest runs flaky. Successful compositor hosting and full device/context-loss
+  recovery remain.
 - `[~]` CTS admission: local framework and contract smoke coverage exists.
   Targeted Mesa rendering tests and staged Khronos CTS begin only after the
   first real Metal-backed offscreen path is deterministic.
 
 ## Workflow Rules For Each Pass
 
-- Start with `cmake --build` and `ctest` in the repo-local `artifacts/build`.
-- Prefer one coherent vertical slice per pass: object model, API surface, backend behavior, and tests together.
-- Every native-winsys pass advances all six readiness lanes in parallel:
-  1. GPU-VA resource ownership and BO lifetime.
-  2. Submission UABI observation and sidecar validation.
-  3. Completion, fence, retirement, and failure handling.
-  4. Native Mesa `pipe_screen` and context admission.
-  5. IOSurface, CAMetalLayer, resize, and presentation lifecycle.
-  6. Offscreen rendering, readback, and CTS admission.
-  A lane may advance only with tested implementation work, a newly controlled
-  hardware observation, or an explicitly verified blocker. A TODO,
-  documentation-only change, version string, or fallback backend is not
-  progress. Each pass reports `[x]`, `[~]`, or `[ ]` for every lane.
-- Expand existing smoke coverage whenever a new object family or state path becomes real.
-- Treat Mesa/Asahi as the sole GL semantic and hardware-driver implementation.
-- Keep the Metal execution backend isolated as a deprecated development target;
-  it must not become a framework runtime fallback.
+- Start with the configured Mesa/Metal build and `ctest`; do not use a stale
+  build directory whose CMake cache names another checkout.
+- Use the six lanes in [`AO46MetalBackendPlan.md`](AO46MetalBackendPlan.md) as
+  the active checklist: Gallium contract, resources/formats, NIR-to-MSL
+  pipelines, command/synchronization, macOS frontends/drawables, and CTS.
+- Use a parallel feature cadence rather than a strict version-by-version
+  order: finish one nearest low-dependency GL blocker, advance one higher-core
+  capability backed by existing Mesa/KosmicKrisp machinery, and maintain the
+  parallel AVK143 Vulkan plan in
+  [`Vulkan_1.4.360 (Core Profile)/README.md`](../Vulkan_1.4.360%20(Core%20Profile)/README.md).
+  This does not relax capability gates: each reported feature still needs a
+  real implementation and regression coverage.
+- Each pass has one primary lane and runs targeted regression checks for every
+  affected secondary lane. A lane may advance only with tested implementation
+  work and its stated exit condition. A TODO, documentation-only change,
+  version string, or fallback backend is not progress.
+- Keep Mesa as the sole OpenGL semantic and shader authority. Keep all Gallium
+  callbacks in `AO46MTLGallium.m` and all low-level Metal execution/lifetime
+  work in `AO46AGXMetalAdapter`.
+- Before introducing an AO46-local backend subsystem, consult and verify
+  [`MesaMetalReuseInventory.md`](MesaMetalReuseInventory.md). Prefer direct KK
+  reuse, then a bounded KK/Asahi algorithm port with upstream attribution and
+  a regression test; never import Asahi's AGX/DRM execution core.
+- Expand smoke coverage whenever a resource, pipeline, submission, drawable,
+  or framework state becomes real. Use test results to gate capability exposure.
+- Report `[x]`, `[~]`, and `[ ]` for all six active lanes after every pass.
+- Keep public repo documentation aligned with the current implementation boundary.
+
+## Historical Direct AGX Research Notes
+
+The notes below remain valuable evidence for Apple-GPU ownership and lifecycle
+design, but they do not constrain the active Mesa/Metal implementation queue.
 - Before accepting static Apple GPU identifiers on a new macOS/AGX profile,
   capture `inventory_apple_agx_stack.sh` output and correlate it with a
   controlled `wrap.dylib` trace. Static metadata alone never authorizes UABI
@@ -138,10 +243,9 @@ repository as evidence, but it is not selected as the runtime path. Historical
   Mesa's low-VA USC window. Raw queue commit, sidecar admission,
   low-VA/executable residency, and completion ABI evidence still remain
   required before a native `pipe_screen` can exist.
-- Prefer the Apple-native bridge when it can pass Asahi resources and command
-  records below Metal command encoding. Keep the direct-UABI route available
-  only as a fail-closed fallback when that boundary cannot be established.
-- Keep public repo documentation aligned with the current implementation boundary.
+- Historical direction: the direct bridge was intended to pass Asahi resources
+  and command records below Metal command encoding. It remains fail-closed
+  research and is not a fallback for the active Mesa/Metal backend.
 
 ## Archived Direct AGX Research Dashboard
 
@@ -566,8 +670,8 @@ backend, framework/ICD integration, CTS failures, and macOS specialization.
    Still required: persistent/coherent mapping behavior, deeper target-specific semantics for PBO/indirect/uniform/storage consumers, broader 64-bit/object query coverage, and a real Metal buffer allocation/synchronization strategy.
 
 7. `Partial` Vertex arrays and attribute input
-   Scope: VAO state and basic floating-point attribute pulling exist for the current draw path.
-   Still required: full VAO lifecycle, integer/double attributes, normalized and packed formats, attribute divisors, base-vertex/base-instance rules, primitive restart, multiple binding models, DSA VAO APIs, state queries, and shader-based or repacked vertex pulling for hard layouts.
+   Scope: VAO state, basic floating-point attribute pulling, and static per-instance vertex divisors exist for the current draw path.
+   Still required: full VAO lifecycle, integer/double attributes, normalized and packed formats, dynamic divisor state, complete base-vertex/base-instance rules, multiple binding models, DSA VAO APIs, state queries, and shader-based or repacked vertex pulling for hard layouts.
 
 8. `Required` Shader-language implementation
    Scope: this is one of the largest missing systems.
@@ -594,8 +698,13 @@ backend, framework/ICD integration, CTS failures, and macOS specialization.
     Still required: full FBO lifecycle, attachments, completeness validation, renderbuffers, blits/resolves, layered rendering, clear-buffer APIs, and completeness caching.
 
 14. `Partial` Drawing commands
-    Scope: `glDrawArrays`, `glDrawElements`, `glDrawRangeElements`, `glFlush`, and `glFinish` exist with basic indexed and non-indexed pulling.
-    Still required: instancing, base-vertex/base-instance, multi-draw, indirect drawing, transform-feedback drawing, primitive restart, patches, adjacency, conditional rendering, and broader draw validation.
+    Scope: `glDrawArrays`, `glDrawElements`, `glDrawRangeElements`, `glFlush`, and `glFinish` exist with basic indexed/non-indexed pulling, bounded base-vertex, primitive restart, a `1..64` record indirect sequence, and static direct-instancing input.
+    Vertex-element state now has a bounded Gallium lifecycle for contiguous `float2`/`float4` inputs, including per-instance divisors, and rejects layouts that disagree with the Metal pipeline descriptor.
+    Still required: generalized GPU-generated indirect argument records and
+    unbounded batches, transform-feedback drawing, general patches/adjacency,
+    conditional rendering, general vertex formats/sparse attributes, and
+    broader draw validation. A bounded GPU-produced indirect-count path exists
+    only for prevalidated ICB command records.
 
 15. `Required` Tessellation pipeline
     Scope: not implemented yet.
@@ -667,19 +776,31 @@ backend, framework/ICD integration, CTS failures, and macOS specialization.
 
 32. `Required` OpenGL 4.6-specific feature delta
     Scope: final 4.6 feature completion.
-    Required: indirect draw parameter support, pipeline-statistics queries, polygon offset clamp, no-error contexts, expanded shader atomic-counter ops, shader draw parameters, group-vote operations, SPIR-V ingestion, anisotropic filtering, and transform-feedback overflow queries.
+    Required: generalized GPU-generated indirect argument records and
+    unbounded batches, pipeline-statistics queries, polygon offset clamp,
+    no-error contexts, expanded shader atomic-counter ops, shader draw
+    parameters, group-vote operations, SPIR-V ingestion, anisotropic filtering,
+    and transform-feedback overflow queries. The current bounded GPU count path
+    is not sufficient for this OpenGL 4.6 requirement.
 
-33. `Archived` GL2MTL development backend
-    Scope: retained for source comparison and its existing tests only. It is excluded from production framework selection.
-    Still required: no production work; Mesa owns semantic execution and the active route targets its Metal machinery.
+33. `Partial` AO46MTLGallium migration
+    Scope: audit and migrate `GL2MTL/mtl_driver.m` into the single Mesa-facing
+    `AO46MTLGallium.m` driver. The promoted build target now exists; remove the
+    remaining legacy source naming only after equivalent or stronger regression
+    coverage is in place.
+    Still required: capability audit, adapter ABI extraction, active framework
+    integration, and per-feature Metal regression coverage.
 
 34. `Required` Capability and format database
     Scope: not implemented yet.
     Required: central capability tables driven by GPU family, macOS version, format support, limits, and alignment rules, with one source of truth for queries, extension exposure, validation, and rejection policy.
 
-35. `Archived` GL2MTL gap workstream
-    Scope: historical design notes for the deprecated development target.
-    Still required: no production work; the active Mesa-to-Metal path reports only verified backend capability.
+35. `Required` AO46AGXMetalAdapter boundary
+    Scope: keep Metal queue/resource/pipeline/fence/drawable services below
+    `AO46MTLGallium.m`, informed by profile-gated research without depending on
+    private AGX runtime contracts.
+    Still required: extracted adapter ABI, capability policy, resource hazards,
+    presentation lifecycle, and regression coverage.
 
 36. `Partial` Error semantics
     Scope: `glGetError` and internal error tracking already exist.

@@ -1,4 +1,5 @@
 #include "AppleOpenGL46Runtime.h"
+#include "AO46MetalBackend.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -129,6 +130,10 @@ int main(void)
     GLubyte preserved_pixel[4] = { 0 };
     GLubyte triangle_pixel[4] = { 0 };
     GLubyte indexed_triangle_pixel[4] = { 0 };
+    GLubyte indirect_triangle_pixel[4] = { 0 };
+    GLubyte normalized_vertex_pixel[4] = { 0 };
+    GLubyte sample_mask_pixel[4] = { 0 };
+    GLubyte sample_shading_pixel[4] = { 0 };
     GLubyte background_pixel[4] = { 0 };
     GLubyte textured_pixel[4] = { 0 };
     GLubyte uploaded_texture_readback[16] = { 0 };
@@ -165,6 +170,10 @@ int main(void)
     GLuint dsa_vbo = 0;
     GLuint dsa_immutable_vbo = 0;
     GLuint ebo = 0;
+    GLuint indirect_vbo = 0;
+    GLuint normalized_color_vbo = 0;
+    GLuint sample_shading_fragment_shader = 0;
+    GLuint sample_shading_program = 0;
     GLuint vao = 0;
     GLint compile_status = 0;
     GLint textured_fragment_compile_status = 0;
@@ -202,6 +211,8 @@ int main(void)
     int have_shader_storage = 0;
     int have_atomic_counters = 0;
     int have_texture_storage = 0;
+    int have_draw_indirect = 0;
+    int have_sample_shading = 0;
     const CGLPixelFormatAttribute attribs46[] = {
         kCGLPFAOpenGLProfile,
         (CGLPixelFormatAttribute)kCGLOGLPVersion_GL4_6_Core,
@@ -337,8 +348,14 @@ int main(void)
 
         AO46SetCurrentContext(NULL);
         AO46DestroyContext(ctx46);
-    } else if (create46_error == kCGLBadContext && ctx46 == NULL) {
-        fprintf(stderr, "native Mesa Asahi winsys is not ready; context creation is correctly blocked\n");
+    } else if ((create46_error == kCGLBadContext ||
+                create46_error == kCGLBadPixelFormat) && ctx46 == NULL &&
+               (AO46MetalBackendContextBlockers() &
+                (AO46_METAL_CONTEXT_BLOCKER_DEVICE |
+                 AO46_METAL_CONTEXT_BLOCKER_PIPE_SCREEN |
+                 AO46_METAL_CONTEXT_BLOCKER_PIPE_CONTEXT)) != 0) {
+        fprintf(stderr,
+                "Mesa Metal pipe_context is not ready; context creation is correctly blocked\n");
         if (expect_no_error("AO46SetCurrentContext(NULL) without native screen",
                             AO46SetCurrentContext(NULL))) {
             AO46DestroyPixelFormat(pix46);
@@ -448,6 +465,12 @@ int main(void)
     have_texture_storage = gl_has_core_or_extension(gl_major, gl_minor,
                                                     4, 2,
                                                     "GL_ARB_texture_storage");
+    have_draw_indirect = gl_has_core_or_extension(gl_major, gl_minor,
+                                                   4, 0,
+                                                   "GL_ARB_draw_indirect");
+    have_sample_shading = gl_has_core_or_extension(gl_major, gl_minor,
+                                                    4, 0,
+                                                    "GL_ARB_sample_shading");
 
     gl_string = glGetString(GL_VERSION);
     snprintf(gl_version_prefix, sizeof(gl_version_prefix), "%d.%d", gl_major, gl_minor);
@@ -722,6 +745,70 @@ int main(void)
 
         glReadPixels(16, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, triangle_pixel);
 
+        if (have_draw_indirect) {
+            static const GLuint indirect_arguments[] = { 3, 1, 0, 0 };
+
+            glGenBuffers(1, &indirect_vbo);
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirect_vbo);
+            glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(indirect_arguments),
+                         indirect_arguments, GL_STATIC_DRAW);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArraysIndirect(GL_TRIANGLES, NULL);
+            glReadPixels(16, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                         indirect_triangle_pixel);
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+            if (expect_true("glDrawArraysIndirect completes without GL error",
+                            glGetError() == GL_NO_ERROR) ||
+                expect_true("indirect triangle center pixel is shaded",
+                            indirect_triangle_pixel[0] > 0 &&
+                            indirect_triangle_pixel[1] > 0 &&
+                            indirect_triangle_pixel[2] > 0 &&
+                            indirect_triangle_pixel[3] == 255)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+        }
+
+        {
+            static const GLubyte normalized_colors[] = {
+                255, 0, 0,
+                0, 255, 0,
+                0, 0, 255,
+            };
+
+            glGenBuffers(1, &normalized_color_vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, normalized_color_vbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(normalized_colors),
+                         normalized_colors, GL_STATIC_DRAW);
+            glVertexAttribPointer(1, 3, GL_UNSIGNED_BYTE, GL_TRUE,
+                                  3 * (GLsizei)sizeof(GLubyte), NULL);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glReadPixels(16, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                         normalized_vertex_pixel);
+
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE,
+                                  6 * (GLsizei)sizeof(GLfloat),
+                                  (const void *)(2 * sizeof(GLfloat)));
+            if (expect_true("normalized three-component vertex input draws without GL error",
+                            glGetError() == GL_NO_ERROR) ||
+                expect_true("normalized three-component vertex input shades the triangle",
+                            normalized_vertex_pixel[0] > 0 &&
+                            normalized_vertex_pixel[1] > 0 &&
+                            normalized_vertex_pixel[2] > 0 &&
+                            normalized_vertex_pixel[3] == 255)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+        }
+
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, (const void *)0);
         if (expect_true("indexed triangle draw completes without GL error", glGetError() == GL_NO_ERROR)) {
@@ -755,6 +842,107 @@ int main(void)
             AO46DestroyPixelFormat(pix);
             return 1;
         }
+
+        /* GL sample masks become Mesa-generated fragment-output variants. */
+        glEnable(GL_MULTISAMPLE);
+        glEnable(GL_SAMPLE_MASK);
+        glSampleMaski(0, 0x1u);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glReadPixels(16, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                     sample_mask_pixel);
+        glSampleMaski(0, ~0u);
+        if (expect_true("glSampleMaski masks multisample coverage without GL error",
+                        glGetError() == GL_NO_ERROR) ||
+            expect_true("glSampleMaski resolves fewer covered samples",
+                        sample_mask_pixel[0] > 0 &&
+                        sample_mask_pixel[0] < triangle_pixel[0] &&
+                        sample_mask_pixel[1] > 0 &&
+                        sample_mask_pixel[1] < triangle_pixel[1] &&
+                        sample_mask_pixel[2] > 0 &&
+                        sample_mask_pixel[2] < triangle_pixel[2] &&
+                        sample_mask_pixel[3] == 255)) {
+            AO46SetCurrentContext(NULL);
+            AO46DestroyContext(copy_ctx);
+            AO46DestroyContext(ctx);
+            AO46DestroyPixelFormat(pix);
+            return 1;
+        }
+        glDisable(GL_SAMPLE_MASK);
+
+        if (have_sample_shading) {
+            static const GLchar *sample_shading_fragment_source =
+                "#version 330 core\n"
+                "#extension GL_ARB_sample_shading : require\n"
+                "out vec4 fragColor;\n"
+                "void main(void)\n"
+                "{\n"
+                "    fragColor = vec4((float(gl_SampleID) + 1.0) / 4.0, 0.0, 0.0, 1.0);\n"
+                "}\n";
+
+            sample_shading_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+            sample_shading_program = glCreateProgram();
+            if (expect_true("sample-shading fragment shader exists",
+                            sample_shading_fragment_shader != 0) ||
+                expect_true("sample-shading program exists",
+                            sample_shading_program != 0)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glShaderSource(sample_shading_fragment_shader, 1,
+                           &sample_shading_fragment_source, NULL);
+            glCompileShader(sample_shading_fragment_shader);
+            glGetShaderiv(sample_shading_fragment_shader, GL_COMPILE_STATUS,
+                          &compile_status);
+            glAttachShader(sample_shading_program, vertex_shader);
+            glAttachShader(sample_shading_program, sample_shading_fragment_shader);
+            glBindAttribLocation(sample_shading_program, 0, "position");
+            glBindAttribLocation(sample_shading_program, 1, "color");
+            glLinkProgram(sample_shading_program);
+            glGetProgramiv(sample_shading_program, GL_LINK_STATUS, &link_status);
+            if (expect_true("sample-shading fragment shader compiles",
+                            compile_status == GL_TRUE) ||
+                expect_true("sample-shading program links", link_status == GL_TRUE)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+
+            glUseProgram(sample_shading_program);
+            glEnable(GL_SAMPLE_SHADING);
+            glMinSampleShading(1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glReadPixels(16, 16, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                         sample_shading_pixel);
+            glDisable(GL_SAMPLE_SHADING);
+            glUseProgram(program);
+            glDeleteShader(sample_shading_fragment_shader);
+            glDeleteProgram(sample_shading_program);
+            sample_shading_fragment_shader = 0;
+            sample_shading_program = 0;
+            if (expect_true("glMinSampleShading produces per-sample invocations",
+                            glGetError() == GL_NO_ERROR) ||
+                expect_true("per-sample fragment output resolves all sample IDs",
+                            sample_shading_pixel[0] >= 154 &&
+                            sample_shading_pixel[0] <= 164 &&
+                            sample_shading_pixel[1] == 0 &&
+                            sample_shading_pixel[2] == 0 &&
+                            sample_shading_pixel[3] == 255)) {
+                AO46SetCurrentContext(NULL);
+                AO46DestroyContext(copy_ctx);
+                AO46DestroyContext(ctx);
+                AO46DestroyPixelFormat(pix);
+                return 1;
+            }
+        }
+        glDisable(GL_MULTISAMPLE);
 
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(shifted_triangle_vertices), shifted_triangle_vertices);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -1792,6 +1980,8 @@ int main(void)
         glDeleteBuffers(1, &dsa_immutable_vbo);
         glDeleteBuffers(1, &dsa_vbo);
         glDeleteBuffers(1, &copy_vbo);
+        glDeleteBuffers(1, &indirect_vbo);
+        glDeleteBuffers(1, &normalized_color_vbo);
         glDeleteBuffers(1, &ebo);
         glDeleteBuffers(1, &vbo);
         glDeleteShader(vertex_shader);
@@ -1804,6 +1994,10 @@ int main(void)
                         glIsBuffer(dsa_immutable_vbo) == GL_FALSE) ||
             expect_true("glIsBuffer(dsa_vbo) clears after delete", glIsBuffer(dsa_vbo) == GL_FALSE) ||
             expect_true("glIsBuffer(copy_vbo) clears after delete", glIsBuffer(copy_vbo) == GL_FALSE) ||
+            expect_true("glIsBuffer(indirect_vbo) clears after delete",
+                        glIsBuffer(indirect_vbo) == GL_FALSE) ||
+            expect_true("glIsBuffer(normalized_color_vbo) clears after delete",
+                        glIsBuffer(normalized_color_vbo) == GL_FALSE) ||
             expect_true("glIsBuffer(ebo) clears after delete", glIsBuffer(ebo) == GL_FALSE) ||
             expect_true("glIsBuffer(vbo) clears after delete", glIsBuffer(vbo) == GL_FALSE) ||
             expect_true("glIsProgram(program) clears after delete", glIsProgram(program) == GL_FALSE) ||

@@ -146,6 +146,17 @@ static void *ao46_ns_resolve_view_drawable(NSView *view)
     return (__bridge void *)(window ? (id)window : (id)view);
 }
 
+static void ao46_ns_attach_view_drawable_if_needed(AO46ContextRef context,
+                                                    NSView *view)
+{
+    void *drawable = ao46_ns_resolve_view_drawable(view);
+
+    if (context && drawable &&
+        AO46ClientGetWindowHandleForContext(context) != drawable) {
+        (void)AO46ClientAttachWindowToContext(context, drawable);
+    }
+}
+
 @interface AO46NSOpenGLPixelFormat () {
     AO46PixelFormatRef _pixelFormat;
     NSData *_attributeData;
@@ -665,7 +676,7 @@ static NSData *ao46_ns_synthesize_attribute_data_for_pixel_format(AO46PixelForma
         return;
     }
 
-    (void)AO46ClientAttachWindowToContext(_context, ao46_ns_resolve_view_drawable(view));
+    ao46_ns_attach_view_drawable_if_needed(_context, view);
 }
 
 - (void)setFullScreen
@@ -701,7 +712,7 @@ static NSData *ao46_ns_synthesize_attribute_data_for_pixel_format(AO46PixelForma
 - (void)update
 {
     if (_view) {
-        (void)AO46ClientAttachWindowToContext(_context, ao46_ns_resolve_view_drawable(_view));
+        ao46_ns_attach_view_drawable_if_needed(_context, _view);
     }
     (void)AO46ClientUpdateContext(_context);
 }
@@ -709,7 +720,7 @@ static NSData *ao46_ns_synthesize_attribute_data_for_pixel_format(AO46PixelForma
 - (void)flushBuffer
 {
     if (_view) {
-        (void)AO46ClientAttachWindowToContext(_context, ao46_ns_resolve_view_drawable(_view));
+        ao46_ns_attach_view_drawable_if_needed(_context, _view);
     }
     (void)AO46ClientFlushDrawable(_context);
 }

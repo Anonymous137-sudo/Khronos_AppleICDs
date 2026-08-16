@@ -4,16 +4,18 @@
 #include "nir_to_msl.h"
 #import "compiler/shader_info.h"
 #include "util/ralloc.h"
+#include <stdint.h>
 
 /**
  * Compile a NIR shader to a Metal function.
  * Returns nil on error; sets error if provided.
  */
-id<MTLFunction>
-ao46_metal_compile_nir_to_msl(struct nir_shader *nir,
-                              const char *entry_name,
-                              MTLFunctionConstantValues *constants,
-                              NSError **error)
+static id<MTLFunction>
+ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
+                                       const char *entry_name,
+                                       MTLFunctionConstantValues *constants,
+                                       uint32_t static_sample_mask,
+                                       NSError **error)
 {
     (void)constants;
 
@@ -31,6 +33,18 @@ ao46_metal_compile_nir_to_msl(struct nir_shader *nir,
     }
 
     nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
+    if (work_nir->info.stage == MESA_SHADER_FRAGMENT) {
+        /* Mesa provides the selected fragment variant; lower its MSAA ABI to MSL. */
+        if (static_sample_mask != UINT32_MAX) {
+            msl_lower_static_sample_mask(work_nir, static_sample_mask);
+        }
+        if (work_nir->info.fs.uses_sample_shading) {
+            msl_nir_lower_sample_shading(work_nir);
+        }
+
+        /* The lowering may add FRAG_RESULT_SAMPLE_MASK and system-value inputs. */
+        nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
+    }
     msl_preprocess_nir(work_nir);
     msl_preprocess_nir_workarounds(work_nir, 0);
     msl_optimize_nir(work_nir);
@@ -71,7 +85,7 @@ ao46_metal_compile_nir_to_msl(struct nir_shader *nir,
     }
 
     MTLCompileOptions *options = [[MTLCompileOptions alloc] init];
-    options.fastMathEnabled = YES;
+    /* Keep Mesa shader results conservative until a CTS-backed relaxed mode exists. */
     options.languageVersion = MTLLanguageVersion2_4;
 
     NSError *compileError = nil;
@@ -95,4 +109,26 @@ ao46_metal_compile_nir_to_msl(struct nir_shader *nir,
 
     ralloc_free(work_nir);
     return func;
+}
+
+id<MTLFunction>
+ao46_metal_compile_nir_to_msl(struct nir_shader *nir,
+                              const char *entry_name,
+                              MTLFunctionConstantValues *constants,
+                              NSError **error)
+{
+    return ao46_metal_compile_nir_to_msl_internal(nir, entry_name, constants,
+                                                   UINT32_MAX, error);
+}
+
+id<MTLFunction>
+ao46_metal_compile_nir_to_msl_with_static_sample_mask(
+    struct nir_shader *nir,
+    const char *entry_name,
+    MTLFunctionConstantValues *constants,
+    uint32_t sample_mask,
+    NSError **error)
+{
+    return ao46_metal_compile_nir_to_msl_internal(nir, entry_name, constants,
+                                                   sample_mask, error);
 }

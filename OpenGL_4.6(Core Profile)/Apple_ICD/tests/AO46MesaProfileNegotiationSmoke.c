@@ -1,7 +1,10 @@
 #include "AppleOpenGL46Runtime.h"
-#include "AppleOpenGLAsahi.h"
+#include "AO46MetalBackend.h"
+
+#include "pipe/p_screen.h"
 
 #include <stdio.h>
+#include <string.h>
 
 static int
 fail(const char *label, CGLError error)
@@ -26,6 +29,13 @@ main(void)
     GLint minor = 0;
     GLubyte pixel[4] = {0};
     CGLError error;
+    struct pipe_screen *screen;
+
+    screen = AO46MetalBackendCreateScreen();
+    if (!screen || !screen->get_name ||
+        strcmp(screen->get_name(screen), "AO46 Metal Gallium") != 0) {
+        return fail("AO46 promoted Metal Gallium screen", kCGLBadContext);
+    }
 
     error = AO46ChoosePixelFormat(attributes, &pixel_format, &pixel_format_count);
     if (error != kCGLNoError || !pixel_format || pixel_format_count != 1) {
@@ -34,9 +44,10 @@ main(void)
 
     error = AO46CreateContext(pixel_format, NULL, &context);
     if ((error == kCGLBadPixelFormat || error == kCGLBadContext) && !context) {
-        if (AppleOpenGLAsahiContextBlockers() == 0) {
+        if ((AO46MetalBackendContextBlockers() &
+             AO46_METAL_CONTEXT_BLOCKER_GL46_CAPABILITY) == 0) {
             AO46DestroyPixelFormat(pixel_format);
-            return fail("AO46CreateContext(GL 4.6 core) without native blocker",
+            return fail("AO46CreateContext(GL 4.6 core) without capability blocker",
                         error);
         }
         AO46DestroyPixelFormat(pixel_format);
