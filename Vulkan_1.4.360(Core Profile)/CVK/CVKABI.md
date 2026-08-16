@@ -1,8 +1,8 @@
-# AVK143 CVK ABI Contract
+# CVK ABI Contract
 
-`AVK143CVK` is the stable macOS-facing ABI boundary between the future
-framework/ICD layer and Mesa-owned Vulkan objects. It is deliberately not a
-parallel Vulkan API or a replacement for Mesa dispatch.
+`CVK` is the stable macOS-facing ABI boundary between the future framework/ICD
+layer and Mesa-owned Vulkan objects. It is deliberately not a parallel Vulkan
+API or a replacement for Mesa dispatch.
 
 Its platform direction is now constrained by the public Apple CGL/NSOpenGL
 contract map in `../Research/AppleCGLNSOpenGLContractMap.md`. In particular,
@@ -12,11 +12,11 @@ representation or create a Vulkan object.
 
 ## Rules
 
-- `AVK143CVKInstance`, physical-device, device, and queue handles are opaque.
+- `CVKInstance`, physical-device, device, and queue handles are opaque.
 - A surface and submission use fixed-width values so their records are stable
   across language and dynamic-library boundaries.
 - Every public record begins with `structure_size` and `abi_version`; unknown
-  revisions fail with `AVK143_CVK_ERROR_INCOMPATIBLE_ABI`.
+  revisions fail with `kCVKErrorIncompatibleABI`.
 - `native_drawable` is borrowed for surface creation. The future
   `NSVulkan_KHR` bridge owns its AppKit/CAMetalLayer lifetime separately.
 - A submission stays retained until it reaches `COMPLETE` or `FAILED`. The
@@ -29,5 +29,6 @@ objects are wired in.
 
 The first compiled `NSVulkan_KHR` companion owns weak AppKit-view attachment
 and backing-size invalidation, then copies that state into a versioned
-`AVK143CVKSurfaceSnapshot`. It does not manufacture a CVK surface handle, a
-Vulkan instance, a `CAMetalLayer`, or a swapchain.
+`CVKSurfaceSnapshot`. It may retain and configure an application-owned
+`CAMetalLayer` without changing the view's layer tree, but does not manufacture
+a CVK surface handle, Vulkan instance, layer, or swapchain.

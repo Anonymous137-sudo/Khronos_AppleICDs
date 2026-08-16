@@ -5,6 +5,8 @@
 
 #import "NSVulkan_KHR.h"
 
+#import <QuartzCore/CAMetalLayer.h>
+
 #include <math.h>
 #include <stdint.h>
 
@@ -21,6 +23,7 @@ avk143_cvk_drawable_extent(CGFloat value)
 
 @implementation NSVulkanKHRSurface {
    __weak NSView *_view;
+   CAMetalLayer *_metalLayer;
    NSVulkanKHRSurfaceState _state;
    CGSize _drawableSize;
    CGFloat _backingScaleFactor;
@@ -55,11 +58,17 @@ avk143_cvk_drawable_extent(CGFloat value)
       _state = NSVulkanKHRSurfaceStateDetached;
       [self update];
    } else {
+      _metalLayer = nil;
       _state = NSVulkanKHRSurfaceStateDetached;
       _drawableSize = CGSizeZero;
       _backingScaleFactor = 1.0;
       ++_generation;
    }
+}
+
+- (CAMetalLayer *)metalLayer
+{
+   return _metalLayer;
 }
 
 - (NSVulkanKHRSurfaceState)state
@@ -97,6 +106,7 @@ avk143_cvk_drawable_extent(CGFloat value)
          _backingScaleFactor = 1.0;
          ++_generation;
       }
+      _metalLayer = nil;
       return;
    }
 
@@ -114,25 +124,45 @@ avk143_cvk_drawable_extent(CGFloat value)
       _backingScaleFactor = scale;
       ++_generation;
    }
+
+   if (_metalLayer) {
+      _metalLayer.contentsScale = scale;
+      _metalLayer.drawableSize = size;
+   }
 }
 
-- (BOOL)getCVKSurfaceSnapshot:(struct AVK143CVKSurfaceSnapshot *)outSnapshot
+- (BOOL)getCVKSurfaceSnapshot:(CVKSurfaceSnapshot *)outSnapshot
 {
    if (!outSnapshot)
       return NO;
 
    [self update];
-   *outSnapshot = (struct AVK143CVKSurfaceSnapshot){
+   *outSnapshot = (CVKSurfaceSnapshot){
       .structure_size = sizeof(*outSnapshot),
-      .abi_version = AVK143_CVK_ABI_VERSION,
+      .abi_version = CVK_ABI_VERSION,
       .state = _state == NSVulkanKHRSurfaceStateAttached
-         ? AVK143_CVK_DRAWABLE_ATTACHED
-         : AVK143_CVK_DRAWABLE_DETACHED,
+         ? kCVKDrawableAttached
+         : kCVKDrawableDetached,
       .drawable_width = avk143_cvk_drawable_extent(_drawableSize.width),
       .drawable_height = avk143_cvk_drawable_extent(_drawableSize.height),
       .backing_scale_factor = (float)_backingScaleFactor,
       .generation = _generation,
    };
+   return YES;
+}
+
+- (BOOL)attachMetalLayer:(CAMetalLayer *)layer
+{
+   if (!layer || !_view)
+      return NO;
+
+   [self update];
+   if (_state != NSVulkanKHRSurfaceStateAttached)
+      return NO;
+
+   _metalLayer = layer;
+   _metalLayer.contentsScale = _backingScaleFactor;
+   _metalLayer.drawableSize = _drawableSize;
    return YES;
 }
 

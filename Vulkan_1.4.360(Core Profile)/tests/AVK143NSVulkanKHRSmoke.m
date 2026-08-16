@@ -4,6 +4,7 @@
  */
 
 #import <AppKit/AppKit.h>
+#import <QuartzCore/CAMetalLayer.h>
 
 #import "NSVulkan_KHR.h"
 
@@ -23,8 +24,9 @@ main(void)
       NSView *view = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 64, 32)];
       NSVulkanKHRSurface *surface =
          [[NSVulkanKHRSurface alloc] initWithView:view];
+      CAMetalLayer *metal_layer = [CAMetalLayer layer];
       const NSUInteger attached_generation = surface.generation;
-      struct AVK143CVKSurfaceSnapshot snapshot = {0};
+      CVKSurfaceSnapshot snapshot = {0};
 
       if (!surface || surface.view != view ||
           surface.state != NSVulkanKHRSurfaceStateAttached ||
@@ -36,17 +38,25 @@ main(void)
          return 1;
       }
 
-      if (![surface getCVKSurfaceSnapshot:&snapshot] ||
-          snapshot.structure_size != sizeof(snapshot) ||
-          snapshot.abi_version != AVK143_CVK_ABI_VERSION ||
-          snapshot.state != AVK143_CVK_DRAWABLE_ATTACHED ||
-          snapshot.drawable_width != 64 || snapshot.drawable_height != 32 ||
-          !avk143_equal(snapshot.backing_scale_factor, 1.0) ||
-          snapshot.generation != attached_generation) {
-         fputs("AVK143 CVK AppKit snapshot contract mismatched\n", stderr);
+      if (![surface attachMetalLayer:metal_layer] ||
+          surface.metalLayer != metal_layer || view.layer == metal_layer ||
+          !avk143_equal(metal_layer.contentsScale, 1.0) ||
+          !avk143_equal(metal_layer.drawableSize.width, 64.0) ||
+          !avk143_equal(metal_layer.drawableSize.height, 32.0)) {
+         fputs("AVK143 NSVulkan_KHR Metal-layer handoff mismatched\n", stderr);
          return 1;
       }
 
+      if (![surface getCVKSurfaceSnapshot:&snapshot] ||
+          snapshot.structure_size != sizeof(snapshot) ||
+          snapshot.abi_version != CVK_ABI_VERSION ||
+          snapshot.state != kCVKDrawableAttached ||
+          snapshot.drawable_width != 64 || snapshot.drawable_height != 32 ||
+          !avk143_equal(snapshot.backing_scale_factor, 1.0) ||
+          snapshot.generation != attached_generation) {
+         fputs("CVK AppKit snapshot contract mismatched\n", stderr);
+         return 1;
+      }
       [surface update];
       if (surface.generation != attached_generation) {
          fputs("AVK143 NSVulkan_KHR changed without a drawable transition\n",
@@ -62,11 +72,21 @@ main(void)
          fputs("AVK143 NSVulkan_KHR resize contract mismatched\n", stderr);
          return 1;
       }
+      if (!avk143_equal(metal_layer.contentsScale, 1.0) ||
+          !avk143_equal(metal_layer.drawableSize.width, 128.0) ||
+          !avk143_equal(metal_layer.drawableSize.height, 48.0)) {
+         fputs("AVK143 NSVulkan_KHR did not update the Metal layer\n", stderr);
+         return 1;
+      }
       if (![surface getCVKSurfaceSnapshot:&snapshot] ||
-          snapshot.state != AVK143_CVK_DRAWABLE_ATTACHED ||
+          snapshot.state != kCVKDrawableAttached ||
           snapshot.drawable_width != 128 || snapshot.drawable_height != 48 ||
           snapshot.generation != surface.generation) {
-         fputs("AVK143 CVK resize snapshot mismatched\n", stderr);
+         fputs("CVK resize snapshot mismatched\n", stderr);
+         return 1;
+      }
+      if (surface.metalLayer != metal_layer) {
+         fputs("AVK143 NSVulkan_KHR lost the attached Metal layer\n", stderr);
          return 1;
       }
 
@@ -74,15 +94,15 @@ main(void)
       [surface clearDrawable];
       if (surface.view || surface.state != NSVulkanKHRSurfaceStateDetached ||
           !CGSizeEqualToSize(surface.drawableSize, CGSizeZero) ||
-          surface.generation <= resized_generation) {
+          surface.generation <= resized_generation || surface.metalLayer) {
          fputs("AVK143 NSVulkan_KHR detach contract mismatched\n", stderr);
          return 1;
       }
       if (![surface getCVKSurfaceSnapshot:&snapshot] ||
-          snapshot.state != AVK143_CVK_DRAWABLE_DETACHED ||
+          snapshot.state != kCVKDrawableDetached ||
           snapshot.drawable_width != 0 || snapshot.drawable_height != 0 ||
           snapshot.generation != surface.generation) {
-         fputs("AVK143 CVK detach snapshot mismatched\n", stderr);
+         fputs("CVK detach snapshot mismatched\n", stderr);
          return 1;
       }
 

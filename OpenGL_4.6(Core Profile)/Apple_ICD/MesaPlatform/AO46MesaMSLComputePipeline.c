@@ -9,6 +9,7 @@
 
 #include "kosmickrisp/compiler/nir_to_msl.h"
 #include "nir.h"
+#include "nir_builder.h"
 #include "nir_intrinsics.h"
 #include "util/ralloc.h"
 
@@ -70,6 +71,104 @@ ao46_mesa_compute_collect_static_buffer_bindings(const struct nir_shader *nir,
    return true;
 }
 
+struct AO46MesaStaticSSBOLowering {
+   bool valid;
+   bool lowered;
+};
+
+static bool
+ao46_mesa_lower_static_ssbo_address(nir_builder *builder,
+                                    nir_intrinsic_instr *intrinsic,
+                                    void *data)
+{
+   struct AO46MesaStaticSSBOLowering *lowering = data;
+   uint32_t ssbo_index;
+   nir_def *root;
+
+   if (intrinsic->intrinsic != nir_intrinsic_load_ssbo_address)
+      return false;
+
+   if (!nir_src_is_const(intrinsic->src[0]) ||
+       !nir_src_is_const(intrinsic->src[1]) ||
+       nir_src_as_uint(intrinsic->src[1]) != 0) {
+      lowering->valid = false;
+      return false;
+   }
+
+   ssbo_index = nir_src_as_uint(intrinsic->src[0]);
+   if (ssbo_index >= AO46_METAL_MAX_STATIC_BUFFER_BINDINGS - 2) {
+      lowering->valid = false;
+      return false;
+   }
+
+   builder->cursor = nir_before_instr(&intrinsic->instr);
+   root = nir_load_buffer_ptr_kk(builder, 1, 64, .binding = ssbo_index + 2);
+   nir_def_rewrite_uses(&intrinsic->def, root);
+   nir_instr_remove(&intrinsic->instr);
+   lowering->lowered = true;
+   return true;
+}
+
+/*
+ * Mesa lowers static-index SSBO operations to global memory. AO46 then maps
+ * each resulting address root onto the existing direct-MTLBuffer ABI. Dynamic
+ * indexing and robust-size queries stay fail-closed until descriptor tables
+ * and robust bounds metadata exist in the Gallium state path.
+ */
+static bool
+ao46_mesa_compute_lower_static_ssbo(nir_shader *nir)
+{
+   struct AO46MesaStaticSSBOLowering lowering = {.valid = true};
+   bool has_ssbo = false;
+
+   if (!nir)
+      return false;
+
+   nir_foreach_function_impl(impl, nir) {
+      nir_foreach_block(block, impl) {
+         nir_foreach_instr(instr, block) {
+            nir_intrinsic_instr *intrinsic;
+            unsigned index_src;
+
+            if (instr->type != nir_instr_type_intrinsic)
+               continue;
+
+            intrinsic = nir_instr_as_intrinsic(instr);
+            switch (intrinsic->intrinsic) {
+            case nir_intrinsic_load_ssbo:
+               index_src = 0;
+               break;
+            case nir_intrinsic_store_ssbo:
+               index_src = 1;
+               break;
+            case nir_intrinsic_ssbo_atomic:
+            case nir_intrinsic_ssbo_atomic_swap:
+            case nir_intrinsic_get_ssbo_size:
+            case nir_intrinsic_load_ssbo_address:
+               return false;
+            default:
+               continue;
+            }
+
+            if (!nir_src_is_const(intrinsic->src[index_src]) ||
+                nir_src_as_uint(intrinsic->src[index_src]) >=
+                   AO46_METAL_MAX_STATIC_BUFFER_BINDINGS - 2)
+               return false;
+            has_ssbo = true;
+         }
+      }
+   }
+
+   if (!has_ssbo)
+      return true;
+
+   (void)nir_lower_ssbo(nir, NULL);
+   (void)nir_shader_intrinsics_pass(
+      nir, ao46_mesa_lower_static_ssbo_address, nir_metadata_control_flow,
+      &lowering);
+   return lowering.valid && lowering.lowered;
+}
+
 bool
 AO46MesaComputePipelineCreate(const struct AO46MetalAdapter *adapter,
                               struct nir_shader *nir,
@@ -77,7 +176,8 @@ AO46MesaComputePipelineCreate(const struct AO46MetalAdapter *adapter,
 {
    uint16_t static_buffer_mask;
 
-   if (!ao46_mesa_compute_collect_static_buffer_bindings(nir,
+   if (!ao46_mesa_compute_lower_static_ssbo(nir) ||
+       !ao46_mesa_compute_collect_static_buffer_bindings(nir,
                                                           &static_buffer_mask))
       return false;
 

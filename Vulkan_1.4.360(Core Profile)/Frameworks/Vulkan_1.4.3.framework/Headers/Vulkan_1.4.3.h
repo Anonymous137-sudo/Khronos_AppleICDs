@@ -5,6 +5,6 @@
 
 #pragma once
 
-#include "AVK143CVK.h"
+#include "CVK.h"
 
 /* Objective-C consumers may import NSVulkan_KHR.h for the AppKit bridge. */

@@ -127,6 +127,13 @@ This tree includes runtime and bridge smoke harnesses:
   UVs through Mesa NIR vertex/fragment stages, binds constrained
   `PIPE_TEXTURE_2D` sampler views/states at sparse slots `1` and `3`, and
   verifies their combined sampled regions after Gallium fence retirement.
+- `tests/AO46MesaNIRSSBOSmoke.c`
+  Lowers static-index Mesa `load_ssbo` and `store_ssbo` operations through
+  Mesa's generic SSBO pass into AO46's direct `MTLBuffer` roots, then verifies
+  read/write output through Gallium fence-backed readback. Dynamic indexing,
+  robust size queries, atomics, barriers, and complete state-tracker SSBO
+  binding remain fail-closed, so this is groundwork rather than a GL 4.3
+  feature claim.
 - `tests/AO46MesaNIRUniformSmoke.c`
   Loads two fragment-color terms through Mesa NIR `UBO 0` and `UBO 1`, rejects
   missing or undersized bindings, maps nonzero UBO bindings to Metal buffers

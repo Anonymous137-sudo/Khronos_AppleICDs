@@ -1129,6 +1129,52 @@ if(BUILD_TESTING)
         COMMAND $<TARGET_FILE:AO46MesaNIRComputeStateSmoke>
     )
 
+    add_executable(AO46MesaNIRSSBOSmoke
+        tests/AO46MesaNIRSSBOSmoke.c
+        MesaPlatform/AO46MetalAdapter.m
+        MesaPlatform/AO46MetalGalliumScreen.c
+        MesaPlatform/AO46MesaMSLComputePipeline.c
+        MesaPlatform/AO46MesaPolyTessellation.c
+        MesaPlatform/AO46MesaPolyKernelCatalog.c
+        MesaPlatform/AO46MesaPolyKernelExecutor.c
+    )
+
+    target_include_directories(AO46MesaNIRSSBOSmoke
+        PRIVATE
+            MesaPlatform
+            "${MESA_INCLUDE_DIRS}"
+            "${AO46_MESA_LIBKK_GENERATED_DIR}"
+    )
+
+    target_compile_definitions(AO46MesaNIRSSBOSmoke
+        PRIVATE
+            ${MESA_COMPILE_DEFINITIONS}
+            AO46_HAVE_MESA_LIBKK=${AO46_HAVE_MESA_LIBKK}
+    )
+
+    target_link_libraries(AO46MesaNIRSSBOSmoke
+        PRIVATE
+            AO46MesaPolyKernelArtifacts
+            AO46MesaMSLCompiler
+            ${MESA_POLY_NIR_LIB}
+            ${MESA_NIR_LIB}
+            ${MESA_COMPILER_LIB}
+            ${MESA_GALLIUM_AUX}
+            ${MESA_UTIL_LIB}
+            ${MESA_UTIL_SIMD_LIB}
+            ${MESA_UTIL_C11_LIB}
+            ${MESA_BLAKE3_LIB}
+            "-lc++"
+            "-framework Foundation"
+            "-framework Metal"
+            "-framework IOSurface"
+    )
+
+    add_test(
+        NAME AO46MesaNIRSSBOSmoke
+        COMMAND $<TARGET_FILE:AO46MesaNIRSSBOSmoke>
+    )
+
     add_executable(AO46MesaPolyTessellationSmoke
         tests/AO46MesaPolyTessellationSmoke.c
         MesaPlatform/AO46MesaPolyTessellation.c
@@ -2434,6 +2480,7 @@ if(BUILD_TESTING)
         AO46MetalGalliumTextureSmoke
         AO46MesaNIRComputeSmoke
         AO46MesaNIRComputeStateSmoke
+        AO46MesaNIRSSBOSmoke
         AO46MesaPolyTessellationSmoke
         AO46MesaPolyKernelCatalogSmoke
         AO46MesaPolyGalliumChainSmoke

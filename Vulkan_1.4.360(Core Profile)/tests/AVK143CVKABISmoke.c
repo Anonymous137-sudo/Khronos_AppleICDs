@@ -7,45 +7,45 @@
 
 #include <stddef.h>
 
-_Static_assert(AVK143_CVK_ABI_VERSION == 1,
+_Static_assert(CVK_ABI_VERSION == 1,
                "The initial CVK ABI revision must remain stable");
-_Static_assert(sizeof(AVK143CVKSurface) == sizeof(uint64_t),
+_Static_assert(sizeof(CVKSurface) == sizeof(uint64_t),
                "CVK surface handles must be fixed width");
-_Static_assert(sizeof(AVK143CVKSubmission) == sizeof(uint64_t),
+_Static_assert(sizeof(CVKSubmission) == sizeof(uint64_t),
                "CVK submission handles must be fixed width");
-_Static_assert(offsetof(struct AVK143CVKInstanceCreateInfo, structure_size) == 0,
+_Static_assert(offsetof(CVKInstanceCreateInfo, structure_size) == 0,
                "CVK create records must begin with their size");
-_Static_assert(offsetof(struct AVK143CVKSurfaceCreateInfo, structure_size) == 0,
+_Static_assert(offsetof(CVKSurfaceCreateInfo, structure_size) == 0,
                "CVK surface records must begin with their size");
-_Static_assert(offsetof(struct AVK143CVKSurfaceSnapshot, structure_size) == 0,
+_Static_assert(offsetof(CVKSurfaceSnapshot, structure_size) == 0,
                "CVK surface snapshots must begin with their size");
-_Static_assert(offsetof(struct AVK143CVKSubmissionInfo, structure_size) == 0,
+_Static_assert(offsetof(CVKSubmissionInfo, structure_size) == 0,
                "CVK submission records must begin with their size");
 
 int
 main(void)
 {
-   const struct AVK143CVKInstanceCreateInfo instance = {
+   const CVKInstanceCreateInfo instance = {
       .structure_size = sizeof(instance),
-      .abi_version = AVK143_CVK_ABI_VERSION,
-      .requested_api_version = AVK143_CVK_API_VERSION_1_0,
+      .abi_version = CVK_ABI_VERSION,
+      .requested_api_version = CVK_API_VERSION_1_0,
       .application_name = "AVK143 ABI smoke",
    };
-   const struct AVK143CVKSurfaceCreateInfo surface = {
+   const CVKSurfaceCreateInfo surface = {
       .structure_size = sizeof(surface),
-      .abi_version = AVK143_CVK_ABI_VERSION,
-      .kind = AVK143_CVK_SURFACE_APPKIT_METAL_LAYER,
+      .abi_version = CVK_ABI_VERSION,
+      .kind = kCVKSurfaceAppKitMetalLayer,
    };
-   const struct AVK143CVKSubmissionInfo submission = {
+   const CVKSubmissionInfo submission = {
       .structure_size = sizeof(submission),
-      .abi_version = AVK143_CVK_ABI_VERSION,
+      .abi_version = CVK_ABI_VERSION,
       .submission = 7,
-      .state = AVK143_CVK_SUBMISSION_RECORDED,
+      .state = kCVKSubmissionRecorded,
    };
-   const struct AVK143CVKSurfaceSnapshot snapshot = {
+   const CVKSurfaceSnapshot snapshot = {
       .structure_size = sizeof(snapshot),
-      .abi_version = AVK143_CVK_ABI_VERSION,
-      .state = AVK143_CVK_DRAWABLE_ATTACHED,
+      .abi_version = CVK_ABI_VERSION,
+      .state = kCVKDrawableAttached,
       .drawable_width = 64,
       .drawable_height = 32,
       .backing_scale_factor = 1.0f,
@@ -53,10 +53,10 @@ main(void)
    };
 
    return instance.structure_size == sizeof(instance) &&
-                  surface.kind == AVK143_CVK_SURFACE_APPKIT_METAL_LAYER &&
-                  snapshot.state == AVK143_CVK_DRAWABLE_ATTACHED &&
+                  surface.kind == kCVKSurfaceAppKitMetalLayer &&
+                  snapshot.state == kCVKDrawableAttached &&
                   snapshot.generation != 0 &&
-                  submission.state == AVK143_CVK_SUBMISSION_RECORDED
+                  submission.state == kCVKSubmissionRecorded
              ? 0
              : 1;
 }

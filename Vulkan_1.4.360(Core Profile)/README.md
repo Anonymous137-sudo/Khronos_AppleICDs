@@ -17,7 +17,7 @@ not share a runtime ABI with the separate graphics project.
 ```text
 macOS Vulkan application
   -> Vulkan_1.4.3.framework / libvk*.dylib routing boundary
-  -> AVK143 CVK ABI and NSVulkan_KHR frontend
+  -> CVK ABI and NSVulkan_KHR frontend
   -> AVK143 ICD boundary
   -> Mesa Vulkan runtime and KosmicKrisp Vulkan driver machinery
   -> AVK143MetalAdapter
@@ -33,6 +33,11 @@ library aliases, ICD manifest location, framework install location, and app
 bundle routing remain design inputs rather than assumptions. The implementation
 must not replace macOS's system Metal libraries or call private AGX submission
 interfaces.
+
+Public framework and ABI declarations use Apple-style `CVK*` types and
+`kCVK*` values, with `NSVulkan_KHR` for AppKit. `AVK143*` is reserved for
+private framework, ICD, Mesa-platform, Metal-adapter, and build machinery; an
+application never needs an `AVK143`-prefixed ABI symbol.
 
 ## Ownership
 
@@ -90,7 +95,9 @@ Vulkan_1.4.360(Core Profile)/
 The public framework headers, module map, CVK ABI contract, and a compiled,
 headless-tested `NSVulkan_KHR` AppKit lifecycle library exist at this stage.
 This is not a driver: no loader, ICD, Vulkan object, Metal command, or
-CAMetalLayer surface is created yet.
+`CAMetalLayer` surface is created yet. The lifecycle library may retain and
+resize an application-supplied `CAMetalLayer`, but never installs or presents
+through it and never creates a Vulkan surface.
 
 ## Execution Architecture
 
@@ -165,8 +172,9 @@ only the macOS ABI and Metal execution boundary.
   compiled public surface lifecycle owner holds an `NSView` weakly and
   separates attach, update/backing-size change, and clear/detach transitions.
   It exports those transitions as a versioned C-only CVK snapshot without an
-  Objective-C pointer, then intentionally creates neither a `CAMetalLayer`
-  nor a Vulkan surface yet.
+  Objective-C pointer. It can retain and configure an application-supplied
+  `CAMetalLayer` without replacing `NSView.layer`; it creates neither a layer
+  nor a Vulkan surface and does not present yet.
 - `[ ]` Create `VkInstance`, physical-device enumeration, and extension
   reporting through Mesa runtime objects.
 - `[ ]` Add a loader smoke that creates and destroys an instance without a

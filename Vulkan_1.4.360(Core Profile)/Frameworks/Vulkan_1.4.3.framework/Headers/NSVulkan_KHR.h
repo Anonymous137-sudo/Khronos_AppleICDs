@@ -7,7 +7,9 @@
 
 #import <AppKit/AppKit.h>
 
-#include "AVK143CVK.h"
+#include "CVK.h"
+
+@class CAMetalLayer;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -28,6 +30,7 @@ typedef NS_ENUM(NSUInteger, NSVulkanKHRSurfaceState) {
 
 /* Mirrors NSOpenGLContext: attachment is non-owning and may disappear. */
 @property(nonatomic, weak, nullable) NSView *view;
+@property(nonatomic, readonly, nullable) CAMetalLayer *metalLayer;
 @property(nonatomic, readonly) NSVulkanKHRSurfaceState state;
 @property(nonatomic, readonly) CGSize drawableSize;
 @property(nonatomic, readonly) CGFloat backingScaleFactor;
@@ -37,7 +40,13 @@ typedef NS_ENUM(NSUInteger, NSVulkanKHRSurfaceState) {
 - (void)update;
 
 /* Copies the AppKit lifecycle state into the framework's C-only CVK record. */
-- (BOOL)getCVKSurfaceSnapshot:(struct AVK143CVKSurfaceSnapshot *)outSnapshot;
+- (BOOL)getCVKSurfaceSnapshot:(CVKSurfaceSnapshot *)outSnapshot;
+
+/*
+ * Retains and configures an application-supplied CAMetalLayer. This bridge
+ * never replaces NSView.layer itself; the application owns layer-tree policy.
+ */
+- (BOOL)attachMetalLayer:(CAMetalLayer *)layer;
 
 /* Detaches the AppKit drawable state without destroying any future CVK surface. */
 - (void)clearDrawable;
