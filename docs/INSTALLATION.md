@@ -95,8 +95,11 @@ Fast-forward the repository and its source submodules before rebuilding with:
 ```
 
 The active package is named for the verified Mesa Vulkan-Headers/registry
-revision 1.4.354. Its hardware smoke tests do not establish Vulkan CTS
-conformance; CTS qualification is the next required phase.
+revision 1.4.354. The staged ICD has passed an initial Vulkan CTS 1.4.3.2 slice
+(six compute cases and an offscreen triangle). The first info sweep still has
+two extension-enumeration failures for `VK_KHR_surface_maintenance1` and
+`VK_KHR_maintenance9`, so this remains a development package and is not a
+Vulkan CTS conformance claim.
 
 ## Legacy Framework Mode
 

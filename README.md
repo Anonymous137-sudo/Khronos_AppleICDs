@@ -99,10 +99,15 @@ JSON-ICD contract. It does not provide a `.framework`, `CVK`,
 
 The assembled driver has passed direct ICD dispatch, standard-loader instance
 and physical-device discovery, `vulkaninfo` runtime discovery, and a Vulkan
-compute/descriptor/fence/readback smoke on the Apple GPU. These are engineering
-smokes, not a Vulkan CTS/conformance claim. The next qualification phase is the
-official Vulkan CTS aligned with the driver-reported 1.4.3.2 conformance
-revision.
+compute/descriptor/fence/readback smoke on the Apple GPU. It has also passed an
+initial official Vulkan CTS 1.4.3.2 execution slice: six compute cases covering
+storage descriptors, shared memory, barriers, and image access, plus an
+offscreen render-pass triangle. The first `dEQP-VK.info.*` sweep passed 16 of
+19 cases; it exposed two extension-enumeration compatibility failures
+(`VK_KHR_surface_maintenance1` and `VK_KHR_maintenance9`) and one expected
+single-device `NotSupported` result. This is useful qualification evidence, not
+a Vulkan CTS/conformance claim; broader feature, WSI, and regression groups
+remain required.
 
 Build the package with:
 

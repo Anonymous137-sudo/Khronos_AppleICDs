@@ -119,7 +119,12 @@ the staged JSON manifest for loader discovery and device-level validation.
 `AVK143_VULKAN_LOADER` and `AVK143_KOSMICKRISP_MANIFEST`. It uses the standard
 loader to create a Vulkan 1.4 instance through the staged manifest and requires
 at least one physical device to pass. Standard Loader and `vulkaninfo`
-qualification passed on this checkout; CTS remains separate conformance work.
+qualification passed on this checkout. An initial official Vulkan CTS 1.4.3.2
+slice also passed six compute workloads and one offscreen render-pass triangle
+through the same loader/ICD setup. The first `dEQP-VK.info.*` sweep has two
+tracked extension-enumeration failures (`VK_KHR_surface_maintenance1` and
+`VK_KHR_maintenance9`), so CTS remains an active qualification track rather
+than a conformance claim.
 
 When `glslc` is available, `AVK143ComputeSmoke` is added as a fourth test. It
 compiles a tiny SPIR-V compute shader and verifies a host-visible storage buffer

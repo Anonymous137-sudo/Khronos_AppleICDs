@@ -42,7 +42,13 @@ driver path.
   physical-device enumeration against the staged manifest.
 - `[x]` Run `vulkaninfo`, a standard user-prefix discovery smoke, and a
   descriptor-backed compute/fence/readback smoke on the Apple GPU.
-- `[ ]` Run targeted Vulkan 1.4 CTS groups before claiming conformance.
+- `[x]` Run an initial targeted Vulkan CTS 1.4.3.2 slice through the standard
+  loader and staged ICD: six compute cases and one render-pass triangle passed.
+- `[~]` Resolve the two `dEQP-VK.info.*` extension-enumeration failures before
+  expanding qualification: `VK_KHR_surface_maintenance1` and
+  `VK_KHR_maintenance9` are advertised but unknown to this CTS 1.4.3.2 build.
+- `[ ]` Expand targeted Vulkan CTS coverage, including WSI and feature-specific
+  groups, before claiming conformance.
 - `[ ]` Implement and validate the separate hardware ray-tracing feature path.
 
 ## Version Boundary
@@ -80,3 +86,26 @@ It does not install a framework, loader replacement, custom AppKit ABI, or
 private graphics component. The package performs no SIP/AuthRoot check because
 it does not replace Apple system files. A successful install is a development
 milestone, not a Vulkan CTS or conformance claim.
+
+## CTS Baseline
+
+The first official CTS baseline used `vulkan-cts-1.4.3.2` with
+`VK_DRIVER_FILES` pointed at the staged KosmicKrisp JSON manifest. The following
+cases passed on the Apple GPU:
+
+```text
+dEQP-VK.compute.pipeline.basic.empty_workgroup_all
+dEQP-VK.compute.pipeline.basic.ubo_to_ssbo_single_invocation
+dEQP-VK.compute.pipeline.basic.copy_ssbo_single_invocation
+dEQP-VK.compute.pipeline.basic.ssbo_rw_single_invocation
+dEQP-VK.compute.pipeline.basic.shared_var_single_group
+dEQP-VK.compute.pipeline.basic.ssbo_cmd_barrier_single
+dEQP-VK.compute.pipeline.basic.copy_image_to_ssbo_small
+dEQP-VK.draw.renderpass.simple_draw.simple_draw_triangle_list
+```
+
+The accompanying `dEQP-VK.info.*` run produced 16 passes, two failures for the
+newer advertised extension names `VK_KHR_surface_maintenance1` and
+`VK_KHR_maintenance9`, and one expected `NotSupported` device-group case on a
+single-GPU host. These results are an initial compatibility baseline only, not a
+Khronos conformance result.
