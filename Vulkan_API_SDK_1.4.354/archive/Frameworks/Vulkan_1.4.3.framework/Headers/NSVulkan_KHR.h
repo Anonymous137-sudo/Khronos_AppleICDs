@@ -42,6 +42,13 @@ typedef NS_ENUM(NSUInteger, NSVulkanKHRSurfaceState) {
 /* Copies the AppKit lifecycle state into the framework's C-only CVK record. */
 - (BOOL)getCVKSurfaceSnapshot:(CVKSurfaceSnapshot *)outSnapshot;
 
+/* Returns the public policy applied to an attached CAMetalLayer. */
+- (BOOL)getCVKSurfaceConfiguration:(CVKSurfaceConfiguration *)outConfiguration;
+
+/* Validates and applies the public CVK layer policy without creating a surface. */
+- (BOOL)configureWithCVKSurfaceConfiguration:
+   (const CVKSurfaceConfiguration *)configuration;
+
 /*
  * Retains and configures an application-supplied CAMetalLayer. This bridge
  * never replaces NSView.layer itself; the application owns layer-tree policy.

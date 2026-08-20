@@ -17,6 +17,8 @@ _Static_assert(offsetof(CVKInstanceCreateInfo, structure_size) == 0,
                "CVK create records must begin with their size");
 _Static_assert(offsetof(CVKSurfaceCreateInfo, structure_size) == 0,
                "CVK surface records must begin with their size");
+_Static_assert(offsetof(CVKSurfaceConfiguration, structure_size) == 0,
+               "CVK surface configuration must begin with its size");
 _Static_assert(offsetof(CVKSurfaceSnapshot, structure_size) == 0,
                "CVK surface snapshots must begin with their size");
 _Static_assert(offsetof(CVKSubmissionInfo, structure_size) == 0,
@@ -36,6 +38,12 @@ main(void)
       .abi_version = CVK_ABI_VERSION,
       .kind = kCVKSurfaceAppKitMetalLayer,
    };
+   const CVKSurfaceConfiguration configuration = {
+      .structure_size = sizeof(configuration),
+      .abi_version = CVK_ABI_VERSION,
+      .pixel_format = kCVKSurfacePixelFormatBGRA8Unorm,
+      .framebuffer_only = 1,
+   };
    const CVKSubmissionInfo submission = {
       .structure_size = sizeof(submission),
       .abi_version = CVK_ABI_VERSION,
@@ -54,6 +62,8 @@ main(void)
 
    return instance.structure_size == sizeof(instance) &&
                   surface.kind == kCVKSurfaceAppKitMetalLayer &&
+                  configuration.pixel_format == kCVKSurfacePixelFormatBGRA8Unorm &&
+                  configuration.framebuffer_only == 1 &&
                   snapshot.state == kCVKDrawableAttached &&
                   snapshot.generation != 0 &&
                   submission.state == kCVKSubmissionRecorded

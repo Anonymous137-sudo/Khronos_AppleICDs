@@ -35,6 +35,7 @@ set(AVK143_FRAMEWORK_HEADERS
 )
 
 find_library(AVK143_APPKIT_FRAMEWORK AppKit REQUIRED)
+find_library(AVK143_METAL_FRAMEWORK Metal REQUIRED)
 find_library(AVK143_QUARTZCORE_FRAMEWORK QuartzCore REQUIRED)
 
 add_library(AVK143NSVulkanKHR STATIC
@@ -48,6 +49,7 @@ target_compile_options(AVK143NSVulkanKHR PRIVATE -fobjc-arc)
 target_link_libraries(AVK143NSVulkanKHR
     PUBLIC
         "${AVK143_APPKIT_FRAMEWORK}"
+        "${AVK143_METAL_FRAMEWORK}"
         "${AVK143_QUARTZCORE_FRAMEWORK}"
 )
 

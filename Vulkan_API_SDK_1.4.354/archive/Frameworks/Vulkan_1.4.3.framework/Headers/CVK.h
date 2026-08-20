@@ -40,6 +40,12 @@ typedef enum CVKSurfaceKind {
    kCVKSurfaceIOSurface = 2,
 } CVKSurfaceKind;
 
+/* Public Metal-layer policy. Vulkan image formats remain Mesa-owned. */
+typedef enum CVKSurfacePixelFormat {
+   kCVKSurfacePixelFormatBGRA8Unorm = 0,
+   kCVKSurfacePixelFormatRGBA8Unorm = 1,
+} CVKSurfacePixelFormat;
+
 /* An AppKit drawable lifecycle snapshot, not a VkSurfaceKHR substitute. */
 typedef enum CVKDrawableState {
    kCVKDrawableDetached = 0,
@@ -69,6 +75,14 @@ typedef struct CVKSurfaceCreateInfo {
    uint32_t reserved;
    const void *native_drawable;
 } CVKSurfaceCreateInfo;
+
+/* A validated layer policy that can be set before or after AppKit attachment. */
+typedef struct CVKSurfaceConfiguration {
+   uint32_t structure_size;
+   uint32_t abi_version;
+   CVKSurfacePixelFormat pixel_format;
+   uint32_t framebuffer_only;
+} CVKSurfaceConfiguration;
 
 /*
  * The public NSVulkan_KHR bridge exports this plain-C snapshot before a real

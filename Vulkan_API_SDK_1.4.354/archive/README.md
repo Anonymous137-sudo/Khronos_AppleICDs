@@ -1,13 +1,16 @@
-# Vulkan 1.4.360 (Core Profile)
+# Archived AVK143 Framework/CVK Prototype
 
 ## Status
 
-This is the reserved home for the AVK143 native Vulkan project. A compile-
-checked framework/CVK ABI contract and a static public-AppKit
-`NSVulkan_KHR` lifecycle component are present, but no Vulkan framework
-binary, ICD binary, loader replacement, or runtime dependency is created yet.
-The runtime boundary activates only after its Mesa and Metal ownership map is
-approved.
+This directory preserves the pre-ICD AVK143 framework/CVK experiment. It is
+not the active Vulkan product and does not define an SDK version, Vulkan
+conformance level, or public runtime ABI. Its historical documents may retain
+the old framework-oriented terminology so the engineering record remains
+traceable.
+
+The active driver is the standard-loader ICD in the parent directory. It uses
+Mesa's KosmicKrisp implementation and reports only the verified Vulkan API
+1.4.354 header/registry revision.
 
 The project uses Mesa's Vulkan runtime and driver interfaces directly. It does
 not share a runtime ABI with the separate graphics project.
@@ -95,8 +98,9 @@ Vulkan_1.4.360(Core Profile)/
 The public framework headers, module map, CVK ABI contract, and a compiled,
 headless-tested `NSVulkan_KHR` AppKit lifecycle library exist at this stage.
 This is not a driver: no loader, ICD, Vulkan object, Metal command, or
-`CAMetalLayer` surface is created yet. The lifecycle library may retain and
-resize an application-supplied `CAMetalLayer`, but never installs or presents
+`CAMetalLayer` surface is created yet. The lifecycle library may retain,
+resize, and apply a versioned CVK `RGBA8`/`BGRA8` plus framebuffer-only policy
+to an application-supplied `CAMetalLayer`, but never installs or presents
 through it and never creates a Vulkan surface.
 
 ## Execution Architecture
@@ -173,8 +177,9 @@ only the macOS ABI and Metal execution boundary.
   separates attach, update/backing-size change, and clear/detach transitions.
   It exports those transitions as a versioned C-only CVK snapshot without an
   Objective-C pointer. It can retain and configure an application-supplied
-  `CAMetalLayer` without replacing `NSView.layer`; it creates neither a layer
-  nor a Vulkan surface and does not present yet.
+  `CAMetalLayer` with versioned `CVKSurfaceConfiguration` pixel-format and
+  framebuffer-only state without replacing `NSView.layer`; it creates neither
+  a layer nor a Vulkan surface and does not present yet.
 - `[ ]` Create `VkInstance`, physical-device enumeration, and extension
   reporting through Mesa runtime objects.
 - `[ ]` Add a loader smoke that creates and destroys an instance without a

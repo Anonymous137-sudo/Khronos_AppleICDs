@@ -4,6 +4,7 @@
  */
 
 #import <AppKit/AppKit.h>
+#import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 
 #import "NSVulkan_KHR.h"
@@ -27,6 +28,7 @@ main(void)
       CAMetalLayer *metal_layer = [CAMetalLayer layer];
       const NSUInteger attached_generation = surface.generation;
       CVKSurfaceSnapshot snapshot = {0};
+      CVKSurfaceConfiguration configuration = {0};
 
       if (!surface || surface.view != view ||
           surface.state != NSVulkanKHRSurfaceStateAttached ||
@@ -42,8 +44,33 @@ main(void)
           surface.metalLayer != metal_layer || view.layer == metal_layer ||
           !avk143_equal(metal_layer.contentsScale, 1.0) ||
           !avk143_equal(metal_layer.drawableSize.width, 64.0) ||
-          !avk143_equal(metal_layer.drawableSize.height, 32.0)) {
+          !avk143_equal(metal_layer.drawableSize.height, 32.0) ||
+          metal_layer.pixelFormat != MTLPixelFormatBGRA8Unorm ||
+          !metal_layer.framebufferOnly) {
          fputs("AVK143 NSVulkan_KHR Metal-layer handoff mismatched\n", stderr);
+         return 1;
+      }
+
+      configuration = (CVKSurfaceConfiguration){
+         .structure_size = sizeof(configuration),
+         .abi_version = CVK_ABI_VERSION,
+         .pixel_format = kCVKSurfacePixelFormatRGBA8Unorm,
+         .framebuffer_only = 0,
+      };
+      if (![surface configureWithCVKSurfaceConfiguration:&configuration] ||
+          ![surface getCVKSurfaceConfiguration:&configuration] ||
+          configuration.pixel_format != kCVKSurfacePixelFormatRGBA8Unorm ||
+          configuration.framebuffer_only != 0 ||
+          metal_layer.pixelFormat != MTLPixelFormatRGBA8Unorm ||
+          metal_layer.framebufferOnly) {
+         fputs("CVK surface configuration did not reach the Metal layer\n", stderr);
+         return 1;
+      }
+      configuration.abi_version = 0;
+      if ([surface configureWithCVKSurfaceConfiguration:&configuration] ||
+          metal_layer.pixelFormat != MTLPixelFormatRGBA8Unorm ||
+          metal_layer.framebufferOnly) {
+         fputs("CVK surface configuration accepted an invalid ABI\n", stderr);
          return 1;
       }
 

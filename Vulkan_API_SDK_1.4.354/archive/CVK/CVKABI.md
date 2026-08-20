@@ -19,6 +19,9 @@ representation or create a Vulkan object.
   revisions fail with `kCVKErrorIncompatibleABI`.
 - `native_drawable` is borrowed for surface creation. The future
   `NSVulkan_KHR` bridge owns its AppKit/CAMetalLayer lifetime separately.
+- `CVKSurfaceConfiguration` governs only public `CAMetalLayer` pixel-format
+  and framebuffer-only state. Vulkan image selection and format negotiation
+  remain Mesa runtime responsibilities.
 - A submission stays retained until it reaches `COMPLETE` or `FAILED`. The
   future Metal adapter will translate its completion value to Mesa/KK fence and
   semaphore state.
@@ -30,5 +33,6 @@ objects are wired in.
 The first compiled `NSVulkan_KHR` companion owns weak AppKit-view attachment
 and backing-size invalidation, then copies that state into a versioned
 `CVKSurfaceSnapshot`. It may retain and configure an application-owned
-`CAMetalLayer` without changing the view's layer tree, but does not manufacture
-a CVK surface handle, Vulkan instance, layer, or swapchain.
+`CAMetalLayer` with a validated `CVKSurfaceConfiguration` without changing the
+view's layer tree, but does not manufacture a CVK surface handle, Vulkan
+instance, layer, or swapchain.

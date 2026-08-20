@@ -1,0 +1,7 @@
+# Reproducible local AVK143 build and staged ICD artifacts.
+/build/AVK143/
+/build/mesa-kosmickrisp-arm64/
+/build/mesa-kosmickrisp-arm64-v1.4.354/
+.DS_Store
+__pycache__/
+*.py[cod]

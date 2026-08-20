@@ -24,8 +24,10 @@ plan](docs/AO46MetalBackendPlan.md).
 
 - `OpenGL_4.6(Core Profile)/Apple_ICD`
   Main source tree for `OpenGL_4.6.framework`, the Apple-path `OpenGL.framework` loader, the internal ICD/backend boundary, the user-space `libGL*.dylib` drivers, test coverage, and packaging scripts.
-- `Vulkan_1.4.360(Core Profile)`
-  AVK143's parallel Vulkan source root. It currently provides a validated Mesa/KosmicKrisp prerequisite target and workflow contract for `Vulkan_1.4.3.framework`, `libvk*.dylib`, `NSVulkan_KHR`, and the CVK ABI; it does not yet provide a Vulkan runtime or ICD.
+- `Vulkan_API_SDK_1.4.354`
+  A separate Mesa KosmicKrisp Vulkan ICD source root, named for its verified
+  Mesa Vulkan-Headers/registry revision. It uses the standard Khronos
+  loader/ICD ABI rather than a macOS framework or custom AppKit ABI.
 - `docs/INSTALLATION.md`
   Live-install notes for developer machines, installer behavior, target paths, and update flow.
 - `docs/AO46MetalBackendPlan.md`

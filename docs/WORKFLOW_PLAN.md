@@ -163,7 +163,7 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
   order: finish one nearest low-dependency GL blocker, advance one higher-core
   capability backed by existing Mesa/KosmicKrisp machinery, and maintain the
   parallel AVK143 Vulkan plan in
-  [`Vulkan_1.4.360 (Core Profile)/README.md`](../Vulkan_1.4.360%20(Core%20Profile)/README.md).
+  [`Vulkan_API_SDK_1.4.354/README.md`](../Vulkan_API_SDK_1.4.354/README.md).
   This does not relax capability gates: each reported feature still needs a
   real implementation and regression coverage.
 - Each pass has one primary lane and runs targeted regression checks for every
