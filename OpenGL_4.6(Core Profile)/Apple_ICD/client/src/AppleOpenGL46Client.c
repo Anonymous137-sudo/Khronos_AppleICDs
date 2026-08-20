@@ -211,12 +211,12 @@ CGLError AO46ClientEnsureFramework(void)
 
     for (i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
         if (ao46_try_load_framework_candidate(candidates[i])) {
-            fprintf(stderr, "AO46 client: loaded framework driver from %s\n", g_framework.loaded_path);
+            fprintf(stderr, "AO46 legacy client: loaded framework runtime from %s\n", g_framework.loaded_path);
             return kCGLNoError;
         }
     }
 
-    fprintf(stderr, "AO46 client: failed to load OpenGL_4.6.framework\n");
+    fprintf(stderr, "AO46 client: failed to load an AO46 runtime candidate\n");
     return kCGLBadConnection;
 }
 

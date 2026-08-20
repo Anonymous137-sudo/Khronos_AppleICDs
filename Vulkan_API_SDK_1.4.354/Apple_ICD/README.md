@@ -67,6 +67,42 @@ machine it discovers their Homebrew prefixes automatically. No SIP/AuthRoot
 change, system framework replacement, or private Apple graphics API is part of
 this standard Vulkan ICD path.
 
+## Bootstrap Package
+
+`VulkanICD_KHRInstaller.pkg` is the source-bootstrap package for this standard
+ABI product. Build it from the repository root:
+
+```sh
+./build_VulkanICD_KHRInstaller.sh
+```
+
+The resulting `dist/VulkanICD_KHRInstaller.pkg` installs only its bootstrap
+commands/configuration, then clones or updates `Khronos_AppleICDs` below
+`/usr/local/src`, initializes the Mesa and vendor submodules, builds this ICD,
+and stages it below `/usr/local`:
+
+```text
+/usr/local/lib/avk143/libvulkan_kosmickrisp.dylib
+/usr/local/share/vulkan/icd.d/avk143_kosmickrisp_icd.aarch64.json
+```
+
+Rebuild the pinned source revision with:
+
+```sh
+/usr/local/bin/vulkanicd-khr-build
+```
+
+Fast-forward the repository/submodules, rebuild, and reinstall with:
+
+```sh
+/usr/local/bin/vulkanicd-khr-update
+```
+
+The package never replaces the Khronos loader, Metal, or a macOS framework. It
+also does not require SIP/AuthRoot changes. Its postinstall log is written to
+`/var/log/VulkanICD_KHRInstaller.log`; failures leave the source checkout and
+log available for inspection rather than claiming a successful driver install.
+
 ## Verification
 
 `AVK143ICDDispatchSmoke` verifies the standard ICD handshake directly:

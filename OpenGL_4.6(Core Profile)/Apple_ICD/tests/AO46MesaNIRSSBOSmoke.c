@@ -61,6 +61,22 @@ ao46_build_dynamic_ssbo_shader(void)
    return builder.shader;
 }
 
+static struct nir_shader *
+ao46_build_static_ssbo_atomic_shader(void)
+{
+   nir_builder builder = nir_builder_init_simple_shader(
+      MESA_SHADER_COMPUTE, &kk_nir_options, "ao46_static_ssbo_atomic_smoke");
+
+   builder.shader->info.workgroup_size[0] = 16;
+   builder.shader->info.workgroup_size[1] = 1;
+   builder.shader->info.workgroup_size[2] = 1;
+   (void)nir_ssbo_atomic(&builder, 32, nir_imm_int(&builder, 0),
+                         nir_imm_int(&builder, 0), nir_imm_int(&builder, 1),
+                         .atomic_op = nir_atomic_op_iadd,
+                         .access = ACCESS_ATOMIC | ACCESS_COHERENT);
+   return builder.shader;
+}
+
 int
 main(void)
 {
@@ -71,12 +87,15 @@ main(void)
    struct pipe_resource *sampler_table = NULL;
    struct pipe_resource *input = NULL;
    struct pipe_resource *output = NULL;
+   struct pipe_resource *atomic_counter = NULL;
    struct pipe_shader_buffer shader_buffers[4] = {{0}};
    struct pipe_fence_handle *fence = NULL;
    struct pipe_transfer *transfer = NULL;
    struct nir_shader *nir = NULL;
    struct nir_shader *dynamic_nir = NULL;
+   struct nir_shader *atomic_nir = NULL;
    void *compute_state = NULL;
+   void *atomic_compute_state = NULL;
    struct pipe_box readback_box = {
       .width = 32 * (int)sizeof(uint32_t),
       .height = 1,
@@ -111,10 +130,14 @@ main(void)
    sampler_table = screen ? screen->resource_create(screen, &buffer_template) : NULL;
    input = screen ? screen->resource_create(screen, &buffer_template) : NULL;
    output = screen ? screen->resource_create(screen, &buffer_template) : NULL;
+   atomic_counter = screen ? screen->resource_create(screen, &buffer_template)
+                           : NULL;
    nir = ao46_build_static_ssbo_shader();
    dynamic_nir = ao46_build_dynamic_ssbo_shader();
+   atomic_nir = ao46_build_static_ssbo_atomic_shader();
    if (!screen || !context || !root || !sampler_table || !input || !output ||
-       !nir || !dynamic_nir || !context->create_compute_state ||
+       !atomic_counter || !nir || !dynamic_nir || !atomic_nir ||
+       !context->create_compute_state ||
        !context->bind_compute_state || !context->delete_compute_state ||
        !context->set_shader_buffers || !context->launch_grid) {
       fputs("SSBO smoke Gallium callbacks were unavailable\n", stderr);
@@ -141,6 +164,17 @@ main(void)
    }
    if (!compute_state) {
       fputs("SSBO smoke could not lower static Mesa SSBO operations\n", stderr);
+      failed = 1;
+      goto out;
+   }
+   {
+      struct pipe_compute_state state = compute_template;
+
+      state.prog = atomic_nir;
+      atomic_compute_state = context->create_compute_state(context, &state);
+   }
+   if (!atomic_compute_state) {
+      fputs("SSBO smoke could not lower static Mesa SSBO atomics\n", stderr);
       failed = 1;
       goto out;
    }
@@ -203,6 +237,61 @@ main(void)
             break;
          }
       }
+      context->buffer_unmap(context, transfer);
+      transfer = NULL;
+   }
+
+   {
+      const uint32_t zero = 0;
+      struct pipe_shader_buffer atomic_buffers[3] = {
+         {
+            .buffer = root,
+            .buffer_size = root->width0,
+         },
+         {
+            .buffer = sampler_table,
+            .buffer_size = sampler_table->width0,
+         },
+         {
+            .buffer = atomic_counter,
+            .buffer_size = sizeof(zero),
+         },
+      };
+      const struct pipe_grid_info atomic_grid = {
+         .work_dim = 1,
+         .block = {16, 1, 1},
+         .grid = {2, 1, 1},
+      };
+
+      context->buffer_subdata(context, atomic_counter, 0, 0, sizeof(zero),
+                              &zero);
+      context->bind_compute_state(context, atomic_compute_state);
+      context->set_shader_buffers(context, MESA_SHADER_COMPUTE, 0,
+                                  ARRAY_SIZE(atomic_buffers), atomic_buffers,
+                                  UINT32_C(1) << 2);
+      context->set_shader_buffers(context, MESA_SHADER_COMPUTE, 3, 1, NULL, 0);
+      context->launch_grid(context, &atomic_grid);
+      context->flush(context, &fence, 0);
+      if (!fence || !screen->fence_finish(screen, context, fence, UINT64_MAX)) {
+         fputs("SSBO atomic dispatch did not complete\n", stderr);
+         failed = 1;
+         goto out;
+      }
+      screen->fence_reference(screen, &fence, NULL);
+   }
+   {
+      const uint32_t *counter = context->buffer_map(
+         context, atomic_counter, 0, PIPE_MAP_READ,
+         &(struct pipe_box){.width = sizeof(uint32_t), .height = 1, .depth = 1},
+         &transfer);
+
+      if (!counter || !transfer || *counter != 32) {
+         fputs("SSBO atomic counter mismatched\n", stderr);
+         failed = 1;
+         goto out;
+      }
+      context->buffer_unmap(context, transfer);
+      transfer = NULL;
    }
 
 out:
@@ -210,14 +299,20 @@ out:
       context->buffer_unmap(context, transfer);
    if (fence)
       screen->fence_reference(screen, &fence, NULL);
-   if (context && compute_state) {
+   if (context && (compute_state || atomic_compute_state)) {
       context->set_shader_buffers(context, MESA_SHADER_COMPUTE, 0,
                                   ARRAY_SIZE(shader_buffers), NULL, 0);
       context->bind_compute_state(context, NULL);
+   }
+   if (context && atomic_compute_state)
+      context->delete_compute_state(context, atomic_compute_state);
+   if (context && compute_state) {
       context->delete_compute_state(context, compute_state);
    }
+   ralloc_free(atomic_nir);
    ralloc_free(dynamic_nir);
    ralloc_free(nir);
+   pipe_resource_reference(&atomic_counter, NULL);
    pipe_resource_reference(&output, NULL);
    pipe_resource_reference(&input, NULL);
    pipe_resource_reference(&sampler_table, NULL);

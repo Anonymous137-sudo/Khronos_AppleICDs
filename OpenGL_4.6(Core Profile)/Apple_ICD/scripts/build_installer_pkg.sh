@@ -66,6 +66,8 @@ cat >"$payload_root/usr/local/share/OpenGLKHR_ICD/repository.conf" <<EOF
 OPENGLKHR_REPO_ROOT='/usr/local/src/Khronos_AppleICDs'
 OPENGLKHR_REPO_URL='$repo_url'
 OPENGLKHR_REPO_BRANCH='$repo_branch'
+OPENGLKHR_INSTALL_MODE='khronos'
+OPENGLKHR_KHRONOS_PREFIX='/usr/local'
 EOF
 
 pkgbuild \

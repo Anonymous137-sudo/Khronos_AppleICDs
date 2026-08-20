@@ -14,6 +14,7 @@ fi
 repo_root=${OPENGLKHR_REPO_ROOT:-/usr/local/src/Khronos_AppleICDs}
 repo_url=${OPENGLKHR_REPO_URL:-}
 repo_branch=${OPENGLKHR_REPO_BRANCH:-main}
+install_mode=${OPENGLKHR_INSTALL_MODE:-khronos}
 project_root="$repo_root/OpenGL_4.6(Core Profile)/Apple_ICD"
 
 if [ -z "$repo_url" ]; then
@@ -48,4 +49,5 @@ if [ ! -d "$project_root" ]; then
     exit 1
 fi
 
-exec "$project_root/scripts/build_source_install.sh"
+exec env OPENGLKHR_INSTALL_MODE="$install_mode" \
+    "$project_root/scripts/build_source_install.sh"

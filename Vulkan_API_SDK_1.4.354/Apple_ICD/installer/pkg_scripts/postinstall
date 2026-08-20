@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+log_file=/var/log/VulkanICD_KHRInstaller.log
+
+{
+    printf '[%s] VulkanICD_KHR postinstall starting\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    /usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap update
+    printf '[%s] VulkanICD_KHR postinstall complete\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+} >>"$log_file" 2>&1

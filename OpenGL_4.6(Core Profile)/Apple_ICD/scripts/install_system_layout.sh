@@ -44,12 +44,15 @@ ditto "$open_gl46_src" "$open_gl46_dst"
 ditto "$open_gl_src" "$open_gl_dst"
 
 rm -f \
-    "$usr_local_lib/libGL.dylib" \
-    "$usr_local_lib/libGL.1.dylib" \
+    "$usr_local_lib/libAO46LegacyGL.dylib" \
     "$usr_local_lib/libGLContext.dylib" \
     "$usr_local_lib/libGLICD.dylib" \
     "$usr_local_lib/libNSOpenGLContext.dylib" \
-    "$usr_local_lib/libgl2mtl.dylib"
+    "$usr_local_lib/libgl2mtl.dylib" \
+    "$usr_local_lib/libAO46Core.dylib" \
+    "$usr_local_lib/libAO46MesaMetalBackend.dylib" \
+    "$usr_local_lib/libAO46MTLGallium.dylib" \
+    "$usr_local_lib/libAO46AGXMetalAdapter.dylib"
 ditto "$lib_src" "$usr_local_lib"
 
 echo "installed OpenGLKHR ICD stack to $framework_root and $usr_local_lib"

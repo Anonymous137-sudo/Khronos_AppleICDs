@@ -1,0 +1,57 @@
+#!/bin/sh
+set -eu
+
+PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+mode=${1:-}
+config_file=${VULKANICD_KHR_CONFIG_FILE:-/usr/local/share/VulkanICD_KHR/repository.conf}
+
+if [ -r "$config_file" ]; then
+    # shellcheck disable=SC1090
+    . "$config_file"
+fi
+
+repo_root=${VULKANICD_KHR_REPO_ROOT:-/usr/local/src/Khronos_AppleICDs}
+repo_url=${VULKANICD_KHR_REPO_URL:-}
+repo_branch=${VULKANICD_KHR_REPO_BRANCH:-main}
+project_dir=${VULKANICD_KHR_PROJECT_DIR:-Vulkan_API_SDK_1.4.354/Apple_ICD}
+runtime_prefix=${VULKANICD_KHR_RUNTIME_PREFIX:-/usr/local}
+project_root="$repo_root/$project_dir"
+
+case "$mode" in
+    build|update)
+        ;;
+    *)
+        printf '%s\n' "usage: $0 <build|update>" >&2
+        exit 2
+        ;;
+esac
+
+if [ -z "$repo_url" ]; then
+    printf '%s\n' "missing VulkanICD_KHR repository URL; expected VULKANICD_KHR_REPO_URL in $config_file" >&2
+    exit 1
+fi
+
+mkdir -p "$(dirname -- "$repo_root")"
+
+if [ ! -d "$repo_root/.git" ]; then
+    git clone --branch "$repo_branch" --recurse-submodules "$repo_url" "$repo_root"
+elif [ "$mode" = update ]; then
+    git -C "$repo_root" remote set-url origin "$repo_url"
+    git -C "$repo_root" fetch origin "$repo_branch"
+    if ! git -C "$repo_root" checkout "$repo_branch"; then
+        git -C "$repo_root" checkout -b "$repo_branch" "origin/$repo_branch"
+    fi
+    git -C "$repo_root" pull --ff-only origin "$repo_branch"
+fi
+
+git -C "$repo_root" submodule sync --recursive
+git -C "$repo_root" submodule update --init --recursive
+
+if [ ! -x "$project_root/scripts/build_source_install.sh" ]; then
+    printf '%s\n' "missing VulkanICD_KHR source installer after clone/update: $project_root" >&2
+    exit 1
+fi
+
+exec env VULKANICD_KHR_RUNTIME_PREFIX="$runtime_prefix" \
+    "$project_root/scripts/build_source_install.sh"

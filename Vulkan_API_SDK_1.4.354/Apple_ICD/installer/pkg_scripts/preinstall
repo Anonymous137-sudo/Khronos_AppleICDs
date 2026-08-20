@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+printf '%s\n' "VulkanICD_KHRInstaller installs a standard user-space Vulkan ICD under /usr/local."
+printf '%s\n' "It does not replace Metal, a macOS framework, or Apple system files, and does not require SIP/AuthRoot changes."
+printf '%s\n' "The driver remains an in-development Mesa KosmicKrisp package; install only on a development system."

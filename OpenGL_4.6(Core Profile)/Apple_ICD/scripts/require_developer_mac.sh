@@ -40,7 +40,7 @@ case "$auth_root_status" in
 esac
 
 if [ "$sip_ok" -ne 1 ] || [ "$auth_root_ok" -ne 1 ]; then
-    echo "OpenGLKHR live install aborted: /System/Library/Frameworks and /usr/local/lib writes are only allowed for a developer mac with SIP and Authenticated Root disabled." >&2
+    echo "OpenGLKHR legacy-system install aborted: replacing /System/Library/Frameworks requires a developer mac with SIP and Authenticated Root disabled." >&2
     echo "Detected SIP status: $sip_status" >&2
     echo "Detected Authenticated Root status: $auth_root_status" >&2
     exit 1

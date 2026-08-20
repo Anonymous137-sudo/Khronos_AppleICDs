@@ -1,0 +1,96 @@
+#!/bin/sh
+set -eu
+
+usage() {
+    printf '%s\n' "usage: $0 [--output <VulkanICD_KHRInstaller.pkg>]"
+    exit 2
+}
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+project_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
+repo_root=$(CDPATH= cd -- "$project_root/../.." && pwd)
+pkg_output=${VULKANICD_KHR_PKG_OUTPUT:-"$repo_root/dist/VulkanICD_KHRInstaller.pkg"}
+pkg_identifier=${VULKANICD_KHR_PKG_IDENTIFIER:-"org.khronos.appleicds.vulkanicd-khrinstaller"}
+pkg_version=${VULKANICD_KHR_PKG_VERSION:-"1.4.354"}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --output)
+            [ "$#" -ge 2 ] || usage
+            pkg_output=$2
+            shift 2
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if ! command -v pkgbuild >/dev/null 2>&1; then
+    printf '%s\n' "pkgbuild is required to create VulkanICD_KHRInstaller.pkg" >&2
+    exit 1
+fi
+
+repo_branch=${VULKANICD_KHR_REPO_BRANCH:-$(git -C "$repo_root" rev-parse --abbrev-ref HEAD 2>/dev/null || printf '%s\n' main)}
+repo_url=${VULKANICD_KHR_REPO_URL:-$(git -C "$repo_root" remote get-url origin 2>/dev/null || true)}
+
+case "$repo_url" in
+    git@github.com:*)
+        repo_url=$(printf '%s\n' "$repo_url" | sed 's#^git@github.com:#https://github.com/#')
+        ;;
+    ssh://git@github.com/*)
+        repo_url=$(printf '%s\n' "$repo_url" | sed 's#^ssh://git@github.com/#https://github.com/#')
+        ;;
+esac
+
+case "$repo_url" in
+    https://github.com/*)
+        ;;
+    *)
+        printf '%s\n' "missing or unsupported repository origin URL; set VULKANICD_KHR_REPO_URL or configure a GitHub origin" >&2
+        exit 1
+        ;;
+esac
+
+if [ -e "$pkg_output" ]; then
+    printf '%s\n' "refusing to overwrite existing package: $pkg_output" >&2
+    exit 1
+fi
+
+package_root=$(mktemp -d "${TMPDIR:-/tmp}/vulkanicd-khr-pkg.XXXXXX")
+payload_root="$package_root/payload"
+pkg_scripts_root="$package_root/scripts"
+mkdir -p \
+    "$payload_root/usr/local/bin" \
+    "$payload_root/usr/local/libexec/VulkanICD_KHR" \
+    "$payload_root/usr/local/share/VulkanICD_KHR" \
+    "$pkg_scripts_root" \
+    "$(dirname -- "$pkg_output")"
+
+install -m 0755 "$project_root/installer/bin/vulkanicd-khr-build" \
+    "$payload_root/usr/local/bin/vulkanicd-khr-build"
+install -m 0755 "$project_root/installer/bin/vulkanicd-khr-update" \
+    "$payload_root/usr/local/bin/vulkanicd-khr-update"
+install -m 0755 "$project_root/installer/bin/vulkanicd-khr-bootstrap" \
+    "$payload_root/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap"
+install -m 0755 "$project_root/installer/pkg_scripts/preinstall" "$pkg_scripts_root/preinstall"
+install -m 0755 "$project_root/installer/pkg_scripts/postinstall" "$pkg_scripts_root/postinstall"
+
+cat >"$payload_root/usr/local/share/VulkanICD_KHR/repository.conf" <<EOF
+VULKANICD_KHR_REPO_ROOT='/usr/local/src/Khronos_AppleICDs'
+VULKANICD_KHR_REPO_URL='$repo_url'
+VULKANICD_KHR_REPO_BRANCH='$repo_branch'
+VULKANICD_KHR_PROJECT_DIR='Vulkan_API_SDK_1.4.354/Apple_ICD'
+VULKANICD_KHR_RUNTIME_PREFIX='/usr/local'
+VULKANICD_KHR_API_VERSION='1.4.354'
+EOF
+
+pkgbuild \
+    --root "$payload_root" \
+    --scripts "$pkg_scripts_root" \
+    --identifier "$pkg_identifier" \
+    --version "$pkg_version" \
+    --install-location / \
+    "$pkg_output"
+
+printf '%s\n' "built VulkanICD_KHRInstaller package at $pkg_output"

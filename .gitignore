@@ -6,3 +6,5 @@ OpenGL_4.6(Core Profile)/Apple_ICD/build-*/
 OpenGL_4.6(Core Profile)/build/
 OpenGL_4.6(Core Profile)/.vscode/
 .DS_Store
+__pycache__/
+*.py[cod]

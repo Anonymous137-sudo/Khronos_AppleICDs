@@ -102,4 +102,13 @@ if(BUILD_TESTING)
                 ENVIRONMENT "DYLD_LIBRARY_PATH=${AVK143_VULKAN_LOADER_DIR}")
         endif()
     endif()
+
+    find_program(AVK143_PKGBUILD_EXECUTABLE NAMES pkgbuild)
+    find_program(AVK143_PKGUTIL_EXECUTABLE NAMES pkgutil)
+    if(AVK143_PKGBUILD_EXECUTABLE AND AVK143_PKGUTIL_EXECUTABLE)
+        add_test(
+            NAME AVK143VulkanICDPackage
+            COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/tests/AVK143InstallerPackageSmoke.sh"
+                "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_vulkanicd_khrinstaller_pkg.sh")
+    endif()
 endif()

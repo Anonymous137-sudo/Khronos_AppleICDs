@@ -88,6 +88,40 @@ ao46_build_rgb32_fragment_shader(void)
    return builder.shader;
 }
 
+static struct nir_shader *
+ao46_build_rgb32_variant_fragment_shader(
+   enum AO46MesaRGB32BufferTextureKind kind)
+{
+   nir_builder builder = nir_builder_init_simple_shader(
+      MESA_SHADER_FRAGMENT, &kk_nir_options, "ao46_rgb32_variant_fragment");
+   const struct nir_io_semantics color = {
+      .location = FRAG_RESULT_DATA0,
+      .num_slots = 1,
+   };
+   nir_alu_type type = kind == AO46_MESA_RGB32_BUFFER_TEXTURE_FLOAT
+                          ? nir_type_float32
+                          : kind == AO46_MESA_RGB32_BUFFER_TEXTURE_UINT
+                               ? nir_type_uint32
+                               : nir_type_int32;
+   nir_def *texel = nir_txf(&builder, nir_imm_int(&builder, 0),
+                            .dim = GLSL_SAMPLER_DIM_BUF, .texture_index = 2,
+                            .dest_type = type);
+   nir_def *color_value = texel;
+
+   if (kind == AO46_MESA_RGB32_BUFFER_TEXTURE_UINT)
+      color_value = nir_fmul_imm(&builder, nir_u2f32(&builder, texel),
+                                 1.0f / 255.0f);
+   else if (kind == AO46_MESA_RGB32_BUFFER_TEXTURE_SINT)
+      color_value = nir_fmul_imm(&builder, nir_i2f32(&builder, texel),
+                                 1.0f / 255.0f);
+
+   nir_store_output(&builder, color_value, nir_imm_int(&builder, 0), .base = 0,
+                    .range = 1, .write_mask = 0xf,
+                    .src_type = nir_type_float32, .io_semantics = color);
+   builder.shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_DATA0);
+   return builder.shader;
+}
+
 int
 main(void)
 {
@@ -103,6 +137,8 @@ main(void)
       16, 192, 48,
       0, 0, 0,
    };
+   static const float rgb32_float_data[] = {0.25f, 0.5f, 0.75f};
+   static const int32_t rgb32_sint_data[] = {64, 128, 192};
    const struct pipe_resource color_template = {
       .target = PIPE_TEXTURE_2D,
       .format = PIPE_FORMAT_R8G8B8A8_UNORM,
@@ -127,6 +163,26 @@ main(void)
       .target = PIPE_BUFFER,
       .format = PIPE_FORMAT_R32G32B32_UINT,
       .width0 = sizeof(rgb32_data),
+      .height0 = 1,
+      .depth0 = 1,
+      .array_size = 1,
+      .usage = PIPE_USAGE_DEFAULT,
+      .bind = PIPE_BIND_SAMPLER_VIEW,
+   };
+   const struct pipe_resource rgb32_float_template = {
+      .target = PIPE_BUFFER,
+      .format = PIPE_FORMAT_R32G32B32_FLOAT,
+      .width0 = sizeof(rgb32_float_data),
+      .height0 = 1,
+      .depth0 = 1,
+      .array_size = 1,
+      .usage = PIPE_USAGE_DEFAULT,
+      .bind = PIPE_BIND_SAMPLER_VIEW,
+   };
+   const struct pipe_resource rgb32_sint_template = {
+      .target = PIPE_BUFFER,
+      .format = PIPE_FORMAT_R32G32B32_SINT,
+      .width0 = sizeof(rgb32_sint_data),
       .height0 = 1,
       .depth0 = 1,
       .array_size = 1,
@@ -206,19 +262,29 @@ main(void)
    uint32_t rgb32_binding_count = 0;
    struct AO46MetalAdapter adapter = {0};
    struct AO46MesaRenderPipeline pipeline = {0};
+   struct AO46MesaRenderPipeline float_pipeline = {0};
+   struct AO46MesaRenderPipeline sint_pipeline = {0};
    struct nir_shader *vertex_nir = NULL;
    struct nir_shader *fragment_nir = NULL;
+   struct nir_shader *float_vertex_nir = NULL;
+   struct nir_shader *float_fragment_nir = NULL;
+   struct nir_shader *sint_vertex_nir = NULL;
+   struct nir_shader *sint_fragment_nir = NULL;
    struct pipe_screen *screen = NULL;
    struct pipe_context *context = NULL;
    struct pipe_resource *color = NULL;
    struct pipe_resource *vertex_buffer = NULL;
    struct pipe_resource *rgb32_buffer = NULL;
+   struct pipe_resource *rgb32_float_buffer = NULL;
+   struct pipe_resource *rgb32_sint_buffer = NULL;
    struct pipe_resource *readback = NULL;
    struct pipe_surface *surface = NULL;
    void *vertex_elements = NULL;
    struct pipe_sampler_view *view = NULL;
    struct pipe_sampler_view *vertex_view = NULL;
    struct pipe_sampler_view *second_view = NULL;
+   struct pipe_sampler_view *float_view = NULL;
+   struct pipe_sampler_view *sint_view = NULL;
    struct pipe_sampler_view *undersized_view = NULL;
    struct pipe_sampler_view *rebound_view = NULL;
    struct pipe_fence_handle *fence = NULL;
@@ -286,9 +352,14 @@ main(void)
    color = screen ? screen->resource_create(screen, &color_template) : NULL;
    vertex_buffer = screen ? screen->resource_create(screen, &vertex_template) : NULL;
    rgb32_buffer = screen ? screen->resource_create(screen, &rgb32_template) : NULL;
+   rgb32_float_buffer =
+      screen ? screen->resource_create(screen, &rgb32_float_template) : NULL;
+   rgb32_sint_buffer =
+      screen ? screen->resource_create(screen, &rgb32_sint_template) : NULL;
    surface = AO46MetalGalliumSurfaceCreate(color);
    if (!screen || !context || !color || !vertex_buffer || !rgb32_buffer ||
-       !surface || !AO46MetalGalliumTextureGetTransferLayout(
+       !rgb32_float_buffer || !rgb32_sint_buffer || !surface ||
+       !AO46MetalGalliumTextureGetTransferLayout(
           color, color_box.width, color_box.height, &row_pitch, &readback_size) ||
        readback_size > UINT32_MAX) {
       fputs("RGB32 graphics smoke could not create Gallium resources\n", stderr);
@@ -307,6 +378,10 @@ main(void)
    context->buffer_subdata(context, vertex_buffer, 0, 0, sizeof(vertices), vertices);
    context->buffer_subdata(context, rgb32_buffer, 0, 0, sizeof(rgb32_data),
                            rgb32_data);
+   context->buffer_subdata(context, rgb32_float_buffer, 0, 0,
+                           sizeof(rgb32_float_data), rgb32_float_data);
+   context->buffer_subdata(context, rgb32_sint_buffer, 0, 0,
+                           sizeof(rgb32_sint_data), rgb32_sint_data);
 
    view_template.texture = rgb32_buffer;
    view_template.u.buf.size = 6 * sizeof(uint32_t);
@@ -317,7 +392,24 @@ main(void)
                                               &second_view_template);
    vertex_view = context->create_sampler_view(context, rgb32_buffer,
                                               &vertex_view_template);
-   if (!view || !second_view || !vertex_view) {
+   {
+      struct pipe_sampler_view float_view_template = view_template;
+      struct pipe_sampler_view sint_view_template = view_template;
+
+      float_view_template.format = PIPE_FORMAT_R32G32B32_FLOAT;
+      float_view_template.texture = rgb32_float_buffer;
+      float_view_template.u.buf.offset = 0;
+      float_view_template.u.buf.size = sizeof(rgb32_float_data);
+      sint_view_template.format = PIPE_FORMAT_R32G32B32_SINT;
+      sint_view_template.texture = rgb32_sint_buffer;
+      sint_view_template.u.buf.offset = 0;
+      sint_view_template.u.buf.size = sizeof(rgb32_sint_data);
+      float_view = context->create_sampler_view(context, rgb32_float_buffer,
+                                                &float_view_template);
+      sint_view = context->create_sampler_view(context, rgb32_sint_buffer,
+                                               &sint_view_template);
+   }
+   if (!view || !second_view || !vertex_view || !float_view || !sint_view) {
       fputs("RGB32 graphics smoke could not create stage sampler views\n",
             stderr);
       failed = 1;
@@ -328,6 +420,45 @@ main(void)
                               &second_view);
    context->set_sampler_views(context, MESA_SHADER_VERTEX, 3, 1, 0,
                               &vertex_view);
+
+   /* All three packed RGB32 view types must reach the Mesa MSL compiler. */
+   float_vertex_nir = ao46_build_vertex_shader();
+   float_fragment_nir = ao46_build_rgb32_variant_fragment_shader(
+      AO46_MESA_RGB32_BUFFER_TEXTURE_FLOAT);
+   context->set_sampler_views(context, MESA_SHADER_FRAGMENT, 2, 1, 0,
+                              &float_view);
+   if (!float_vertex_nir || !float_fragment_nir ||
+       !AO46MetalGalliumContextCreateRenderPipelineWithCurrentRGB32SamplerViews(
+          context, float_vertex_nir, float_fragment_nir,
+          AO46_METAL_TEXTURE_FORMAT_RGBA8_UNORM, &attribute, 1,
+          &float_pipeline) ||
+       float_pipeline.fragment_reflection.static_buffer_mask !=
+          (UINT16_C(1) << 2) ||
+       float_pipeline.fragment_reflection.static_buffer_bytes[2] !=
+          sizeof(rgb32_float_data)) {
+      fputs("RGB32 float buffer-view pipeline contract was unexpected\n", stderr);
+      failed = 1;
+      goto out;
+   }
+   sint_vertex_nir = ao46_build_vertex_shader();
+   sint_fragment_nir = ao46_build_rgb32_variant_fragment_shader(
+      AO46_MESA_RGB32_BUFFER_TEXTURE_SINT);
+   context->set_sampler_views(context, MESA_SHADER_FRAGMENT, 2, 1, 0,
+                              &sint_view);
+   if (!sint_vertex_nir || !sint_fragment_nir ||
+       !AO46MetalGalliumContextCreateRenderPipelineWithCurrentRGB32SamplerViews(
+          context, sint_vertex_nir, sint_fragment_nir,
+          AO46_METAL_TEXTURE_FORMAT_RGBA8_UNORM, &attribute, 1,
+          &sint_pipeline) ||
+       sint_pipeline.fragment_reflection.static_buffer_mask !=
+          (UINT16_C(1) << 2) ||
+       sint_pipeline.fragment_reflection.static_buffer_bytes[2] !=
+          sizeof(rgb32_sint_data)) {
+      fputs("RGB32 signed buffer-view pipeline contract was unexpected\n", stderr);
+      failed = 1;
+      goto out;
+   }
+   context->set_sampler_views(context, MESA_SHADER_FRAGMENT, 2, 1, 0, &view);
 
    if (!AO46MetalGalliumContextCreateRenderPipelineWithCurrentRGB32SamplerViews(
           context, vertex_nir, fragment_nir,
@@ -530,6 +661,10 @@ out:
    }
    if (rebound_view)
       pipe_sampler_view_reference(&rebound_view, NULL);
+   if (float_view)
+      pipe_sampler_view_reference(&float_view, NULL);
+   if (sint_view)
+      pipe_sampler_view_reference(&sint_view, NULL);
    if (second_view) {
       context->set_sampler_views(context, MESA_SHADER_FRAGMENT, 4, 0, 1, NULL);
       pipe_sampler_view_reference(&second_view, NULL);
@@ -544,6 +679,8 @@ out:
    }
    AO46MetalGalliumSurfaceDestroy(surface);
    pipe_resource_reference(&readback, NULL);
+   pipe_resource_reference(&rgb32_sint_buffer, NULL);
+   pipe_resource_reference(&rgb32_float_buffer, NULL);
    pipe_resource_reference(&rgb32_buffer, NULL);
    pipe_resource_reference(&vertex_buffer, NULL);
    pipe_resource_reference(&color, NULL);
@@ -551,7 +688,13 @@ out:
       context->destroy(context);
    if (screen)
       screen->destroy(screen);
+   AO46MesaRenderPipelineDestroy(&sint_pipeline);
+   AO46MesaRenderPipelineDestroy(&float_pipeline);
    AO46MesaRenderPipelineDestroy(&pipeline);
+   ralloc_free(sint_fragment_nir);
+   ralloc_free(sint_vertex_nir);
+   ralloc_free(float_fragment_nir);
+   ralloc_free(float_vertex_nir);
    ralloc_free(fragment_nir);
    ralloc_free(vertex_nir);
    AO46MetalAdapterDestroy(&adapter);

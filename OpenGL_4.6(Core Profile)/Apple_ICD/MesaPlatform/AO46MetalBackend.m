@@ -90,7 +90,7 @@ AO46MetalBackendAdapterIsReady(void)
 bool
 AO46MetalBackendCanPresentWindow(void)
 {
-   /* Presentation requires the same live Metal pipe_screen as CGL contexts. */
+   /* Presentation uses the frontend's live Metal pipe_screen without CGL state. */
    return (AO46MetalBackendContextBlockers() &
            (AO46_METAL_CONTEXT_BLOCKER_PIPE_CONTEXT |
             AO46_METAL_CONTEXT_BLOCKER_PRESENTATION)) == 0;

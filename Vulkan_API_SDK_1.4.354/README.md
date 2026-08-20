@@ -56,3 +56,27 @@ update must include the corresponding upstream Mesa generator support.
 
 See [Apple ICD assembly](Apple_ICD/README.md) for the build and direct ICD
 handshake workflow.
+
+## Installer
+
+Build the source-bootstrap package from the repository root:
+
+```sh
+./build_VulkanICD_KHRInstaller.sh
+```
+
+It writes `dist/VulkanICD_KHRInstaller.pkg`. The package clones or fast-forwards
+this repository and its source submodules, builds the Mesa KosmicKrisp ICD, and
+installs only these project-owned standard ABI paths:
+
+```text
+/usr/local/lib/avk143/libvulkan_kosmickrisp.dylib
+/usr/local/share/vulkan/icd.d/avk143_kosmickrisp_icd.aarch64.json
+/usr/local/bin/vulkanicd-khr-build
+/usr/local/bin/vulkanicd-khr-update
+```
+
+It does not install a framework, loader replacement, custom AppKit ABI, or
+private graphics component. The package performs no SIP/AuthRoot check because
+it does not replace Apple system files. A successful install is a development
+milestone, not a Vulkan CTS or conformance claim.

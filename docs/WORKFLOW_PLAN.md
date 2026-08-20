@@ -47,6 +47,25 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
 - The driver must not advertise full OpenGL 4.6 until required behavior passes deeper semantic and conformance coverage.
 - System replacement, installer behavior, and rollback safety remain first-class workstreams, not afterthoughts.
 
+## Frontend Split
+
+- `[x]` Legacy compatibility frontend: `OpenGL.framework`,
+  `OpenGL_4.6.framework`, CGL, NSOpenGL, and AO46-specific bridge libraries
+  remain a self-contained compatibility product.
+- `[x]` Standard Khronos frontend: Mesa registers the CGL-free `ao46mtl`
+  Gallium screen, its built-in EGL driver provides surfaceless pbuffer and
+  public Cocoa-window desktop OpenGL contexts, and Mesa produces one `libEGL.1.dylib` image with
+  `libEGL.dylib`/`libGL.dylib` aliases sharing one `glapi` host. The smoke
+  proves standard EGL 3.3-core pbuffer creation, Mesa state-tracker clear,
+  hardware readback, swap, and teardown; an opt-in WindowServer smoke covers
+  `EGL_WINDOW_BIT` presentation without framework, CGL, GLX, or a software
+  fallback.
+- `[x]` AO46 implementation freeze: the completed modern ABI is
+  surfaceless/pbuffer plus public Cocoa window presentation and remains fixed
+  at the audited GL 3.3 ceiling.
+  No AO46 framework, Metal Gallium, adapter, or standard-ABI feature changes
+  proceed until explicitly resumed after the AVK143 phase.
+
 ## Active Mesa Metal Backend Dashboard
 
 - `[~]` Mesa semantic and compiler reuse: Mesa OpenGL, state tracker, GLSL,

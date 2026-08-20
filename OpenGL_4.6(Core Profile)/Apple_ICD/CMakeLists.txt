@@ -467,21 +467,14 @@ target_link_libraries(AO46AGXMetalAdapter
 
 set_target_properties(AO46AGXMetalAdapter PROPERTIES
     OUTPUT_NAME "AO46AGXMetalAdapter"
+    BUILD_RPATH "@loader_path"
+    INSTALL_RPATH "@loader_path"
+    BUILD_WITH_INSTALL_RPATH TRUE
 )
 
 add_library(OpenGL46RuntimeObjects OBJECT
     runtime/src/AppleOpenGL46Runtime.c
     MesaPlatform/AO46MesaBridge.c
-    MesaPlatform/AO46MetalBackend.m
-    MesaPlatform/AO46MetalGalliumScreen.c
-    MesaPlatform/AO46MesaRGB32BufferTextureBinding.c
-    MesaPlatform/AO46MesaNIRBufferTexture.c
-    MesaPlatform/AO46MesaRGB32BufferTexturePipeline.c
-    MesaPlatform/AO46MesaPolyTessellation.c
-    MesaPlatform/AO46MesaPolyKernelCatalog.c
-    MesaPlatform/AO46MesaPolyKernelExecutor.c
-    MesaPlatform/AO46MesaMSLComputePipeline.c
-    MesaPlatform/AO46MesaMSLRenderPipeline.c
 )
 
 target_include_directories(OpenGL46RuntimeObjects
@@ -649,6 +642,15 @@ target_compile_definitions(AO46MesaVTN
 add_library(AO46MTLGallium SHARED
     GL2MTL/mtl_driver.m
     GL2MTL/mtl_shader_compiler.m
+    MesaPlatform/AO46MetalGalliumScreen.c
+    MesaPlatform/AO46MesaRGB32BufferTextureBinding.c
+    MesaPlatform/AO46MesaNIRBufferTexture.c
+    MesaPlatform/AO46MesaRGB32BufferTexturePipeline.c
+    MesaPlatform/AO46MesaPolyTessellation.c
+    MesaPlatform/AO46MesaPolyKernelCatalog.c
+    MesaPlatform/AO46MesaPolyKernelExecutor.c
+    MesaPlatform/AO46MesaMSLComputePipeline.c
+    MesaPlatform/AO46MesaMSLRenderPipeline.c
 )
 
 target_include_directories(AO46MTLGallium
@@ -676,6 +678,7 @@ target_link_libraries(AO46MTLGallium
         ${MESA_UTIL_LIB}
         ${MESA_UTIL_SIMD_LIB}
         ${MESA_UTIL_C11_LIB}
+        AO46MesaPolyKernelArtifacts
         "-lc++"
         "-framework Metal"
         "-framework QuartzCore"
@@ -683,22 +686,66 @@ target_link_libraries(AO46MTLGallium
         "-framework Foundation"
 )
 
-set_target_properties(AO46MTLGallium PROPERTIES OUTPUT_NAME "AO46MTLGallium")
+set_target_properties(AO46MTLGallium PROPERTIES
+    OUTPUT_NAME "AO46MTLGallium"
+    BUILD_RPATH "@loader_path"
+    INSTALL_RPATH "@loader_path"
+    BUILD_WITH_INSTALL_RPATH TRUE
+)
 add_dependencies(AO46MTLGallium AO46MesaUpstreamPortingArtifacts)
 
+# This is the shared hardware-facing layer.  It deliberately contains no CGL,
+# NSOpenGL, or framework ABI entry points, so Mesa's standard GL/EGL frontend
+# can consume the same Gallium screen without loading the legacy stack.
+add_library(AO46MesaMetalBackend SHARED
+    MesaPlatform/AO46MetalBackend.m
+    khronos/src/AO46MesaMetalBackendExport.c
+    khronos/src/AO46MesaMetalBackendWindow.m
+)
+
+target_include_directories(AO46MesaMetalBackend
+    PUBLIC
+        MesaPlatform
+        khronos/include
+        "${MESA_INCLUDE_DIRS}"
+)
+
+target_link_libraries(AO46MesaMetalBackend
+    PRIVATE
+        AO46AGXMetalAdapter
+        AO46MTLGallium
+        ${MESA_GALLIUM_AUX}
+        ${MESA_UTIL_LIB}
+        ${MESA_UTIL_SIMD_LIB}
+        ${MESA_UTIL_C11_LIB}
+        "-framework Foundation"
+        "-framework Metal"
+        "-framework QuartzCore"
+        "-framework AppKit"
+)
+
+target_compile_options(AO46MesaMetalBackend PRIVATE -fobjc-arc)
+
+set_target_properties(AO46MesaMetalBackend PROPERTIES
+    OUTPUT_NAME "AO46MesaMetalBackend"
+    BUILD_RPATH "@loader_path"
+    INSTALL_RPATH "@loader_path"
+    BUILD_WITH_INSTALL_RPATH TRUE
+)
+
 # -------------------------------------------------------------
-# 8. Main Framework (OpenGL_4.6.framework)
+# 8. Legacy Runtime + Framework Compatibility
 # -------------------------------------------------------------
-add_library(OpenGL_4_6 SHARED
-    framework/src/OpenGL46Framework.c
+# This CGL/NSOpenGL runtime belongs exclusively to the legacy framework path.
+# Standard Khronos GL/EGL clients use Mesa's own libGL/libEGL build, not this
+# library and not any CGL object.
+add_library(AO46Core SHARED
     "${MESA_ROOT}/src/mesa/glapi/glapi/libgl_public.c"
     "${GLAPI_PUBLIC_MAPI_HEADER}"
-    ${AO46_FRAMEWORK_PUBLIC_HEADERS}
-    ${AO46_FRAMEWORK_MODULEMAP}
     $<TARGET_OBJECTS:OpenGL46RuntimeObjects>
 )
 
-target_include_directories(OpenGL_4_6
+target_include_directories(AO46Core
     PRIVATE
         runtime/include
         MesaPlatform
@@ -706,13 +753,14 @@ target_include_directories(OpenGL_4_6
         "${MESA_INCLUDE_DIRS}"
 )
 
-target_compile_definitions(OpenGL_4_6
+target_compile_definitions(AO46Core
     PRIVATE
         ${MESA_COMPILE_DEFINITIONS}
 )
 
-target_link_libraries(OpenGL_4_6
+target_link_libraries(AO46Core
     PRIVATE
+        AO46MesaMetalBackend
         AO46AGXMetalAdapter
         AO46MTLGallium
         ${MESA_ST_MESA_LIB}
@@ -742,8 +790,34 @@ target_link_libraries(OpenGL_4_6
 )
 
 if(AO46_HAVE_MESA_LIBKK)
-    target_link_libraries(OpenGL_4_6 PRIVATE AO46MesaPolyKernelArtifacts)
+    target_link_libraries(AO46Core PRIVATE AO46MesaPolyKernelArtifacts)
 endif()
+
+set_target_properties(AO46Core PROPERTIES
+    OUTPUT_NAME "AO46Core"
+    BUILD_RPATH "@loader_path"
+    INSTALL_RPATH "@loader_path"
+)
+
+# The framework is retained only for legacy macOS applications that expect
+# CGL/NSOpenGL routing. It is not a dependency of the Khronos ABI path.
+add_library(OpenGL_4_6 SHARED
+    framework/src/OpenGL46Framework.c
+    ${AO46_FRAMEWORK_PUBLIC_HEADERS}
+    ${AO46_FRAMEWORK_MODULEMAP}
+)
+
+target_include_directories(OpenGL_4_6
+    PRIVATE
+        runtime/include
+        "${MESA_INCLUDE_DIRS}"
+)
+
+target_link_libraries(OpenGL_4_6 PRIVATE AO46Core)
+target_link_options(OpenGL_4_6 PRIVATE
+    "-Wl,-reexport_library,$<TARGET_FILE:AO46Core>"
+)
+add_dependencies(OpenGL_4_6 AO46Core)
 
 set_target_properties(OpenGL_4_6 PROPERTIES
     FRAMEWORK TRUE
@@ -751,6 +825,7 @@ set_target_properties(OpenGL_4_6 PROPERTIES
     OUTPUT_NAME "OpenGL_4.6"
     MACOSX_FRAMEWORK_IDENTIFIER "local.opengl46.driver"
     PUBLIC_HEADER "${AO46_FRAMEWORK_PUBLIC_HEADERS}"
+    INSTALL_RPATH "/usr/local/lib"
 )
 
 # -------------------------------------------------------------
@@ -769,6 +844,11 @@ target_include_directories(LibGLICDDriver
 )
 
 target_link_libraries(LibGLICDDriver PRIVATE OpenGL46FrameworkClient)  # we need to define this next
+set_target_properties(LibGLICDDriver PROPERTIES
+    OUTPUT_NAME "GLICD"
+    BUILD_RPATH "@loader_path"
+    INSTALL_RPATH "@loader_path"
+)
 
 # Note: We will keep AppleOpenGL46Client as a static library for the ICD to link against.
 
@@ -819,7 +899,7 @@ if(APPLE)
 endif()
 
 # -------------------------------------------------------------
-# 12. GLX Shims (libGL.dylib, libGLContext.dylib)
+# 12. Legacy User-Space Shims
 # -------------------------------------------------------------
 add_library(LibGLDriver SHARED
     drivers/src/libGL.c
@@ -834,10 +914,18 @@ target_include_directories(LibGLDriver
 )
 
 target_link_libraries(LibGLDriver PRIVATE LibGLICDDriver)
+target_link_libraries(LibGLDriver PRIVATE AO46Core)
+target_link_options(LibGLDriver PRIVATE
+    "-Wl,-reexport_library,$<TARGET_FILE:AO46Core>"
+)
+add_dependencies(LibGLDriver AO46Core)
 
 set_target_properties(LibGLDriver PROPERTIES
     PREFIX ""
-    OUTPUT_NAME "libGL"
+    # Reserve the standard libGL.dylib name for Mesa's Khronos ABI build.
+    OUTPUT_NAME "libAO46LegacyGL"
+    BUILD_RPATH "@loader_path"
+    INSTALL_RPATH "@loader_path"
 )
 
 add_library(LibGLContextDriver SHARED
@@ -894,6 +982,80 @@ if(BUILD_TESTING)
     enable_testing()
 
     add_test(
+        NAME AO46KhronosInstallModeSmoke
+        COMMAND sh "${ROOT_DIR}/tests/AO46KhronosInstallModeSmoke.sh"
+                   "${ROOT_DIR}/scripts/install_khronos_layout.sh"
+    )
+
+    add_test(
+        NAME AO46FrontendSplitAudit
+        COMMAND sh "${ROOT_DIR}/tests/AO46FrontendSplitAudit.sh"
+                   "${ROOT_DIR}/CMakeLists.txt"
+                   "${ROOT_DIR}/scripts/stage_khronos_layout.sh"
+                   "${ROOT_DIR}/scripts/stage_personal_layout.sh"
+                   "${ROOT_DIR}/scripts/build_mesa_khronos_frontend.sh"
+                   "${MESA_ROOT}"
+    )
+
+    add_test(
+        NAME AO46LegacyStageSmoke
+        COMMAND sh "${ROOT_DIR}/tests/AO46LegacyStageSmoke.sh"
+                   "${ROOT_DIR}/scripts/stage_personal_layout.sh"
+    )
+
+    add_executable(AO46MesaMetalBackendSmoke
+        tests/AO46MesaMetalBackendSmoke.c
+    )
+
+    target_include_directories(AO46MesaMetalBackendSmoke
+        PRIVATE
+            khronos/include
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_link_libraries(AO46MesaMetalBackendSmoke
+        PRIVATE
+            AO46MesaMetalBackend
+    )
+
+    add_test(
+        NAME AO46MesaMetalBackendSmoke
+        COMMAND $<TARGET_FILE:AO46MesaMetalBackendSmoke>
+    )
+
+    set_tests_properties(AO46MesaMetalBackendSmoke PROPERTIES
+        ENVIRONMENT "DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    add_executable(AO46MesaMetalBackendWindowSmoke
+        tests/AO46MesaMetalBackendWindowSmoke.m
+    )
+
+    target_include_directories(AO46MesaMetalBackendWindowSmoke
+        PRIVATE
+            khronos/include
+            "${MESA_INCLUDE_DIRS}"
+    )
+
+    target_compile_options(AO46MesaMetalBackendWindowSmoke PRIVATE -fobjc-arc)
+
+    target_link_libraries(AO46MesaMetalBackendWindowSmoke
+        PRIVATE
+            AO46MesaMetalBackend
+            "-framework Metal"
+            "-framework QuartzCore"
+    )
+
+    add_test(
+        NAME AO46MesaMetalBackendWindowSmoke
+        COMMAND $<TARGET_FILE:AO46MesaMetalBackendWindowSmoke>
+    )
+
+    set_tests_properties(AO46MesaMetalBackendWindowSmoke PROPERTIES
+        ENVIRONMENT "DYLD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    add_test(
         NAME AO46MesaReuseInventory
         COMMAND "${AO46_PYTHON_EXECUTABLE}"
             "${ROOT_DIR}/scripts/inventory_mesa_reuse.py"
@@ -931,6 +1093,10 @@ if(BUILD_TESTING)
     add_executable(AO46CGLShimCompatSmoke
         tests/AO46CGLShimCompatSmoke.c
     )
+
+    # The smoke dlopens the shim instead of linking it, so retain an explicit
+    # build dependency for target-specific test builds.
+    add_dependencies(AO46CGLShimCompatSmoke AppleOpenGLShim)
 
     add_test(
         NAME AO46CGLShimCompatSmoke
@@ -2307,6 +2473,7 @@ if(BUILD_TESTING)
     target_link_libraries(AO46RuntimeCompatSmoke
         PRIVATE
             OpenGL_4_6
+            AO46MesaMetalBackend
     )
 
     add_test(
@@ -2394,6 +2561,7 @@ if(BUILD_TESTING)
     target_link_libraries(AO46MesaProfileNegotiationSmoke
         PRIVATE
             OpenGL_4_6
+            AO46MesaMetalBackend
     )
 
     add_test(

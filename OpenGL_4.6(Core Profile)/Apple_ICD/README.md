@@ -1,16 +1,22 @@
 # OpenGL_4.6(Core Profile) / Apple_ICD
 
-This is the source tree for the `OpenGL_4.6(Core Profile)` stack, a third-party in-development macOS OpenGL core-profile framework project.
+This is the source tree for AO46, a third-party in-development macOS OpenGL
+project with separate legacy and standard-Khronos frontends.
 
-The public and system driver layers are `OpenGL.framework`,
-`OpenGL_4.6.framework`, `libGLICD.dylib`, and the user-space bridge dylibs.
+The legacy compatibility product consists of `OpenGL.framework`,
+`OpenGL_4.6.framework`, CGL, NSOpenGL, `libGLICD.dylib`, and AO46-specific
+user-space bridge dylibs. It is not the frontend for new portable OpenGL apps.
+
+The modern product is under [`khronos/`](khronos/). It uses Mesa-built standard
+`libGL.dylib` and `libEGL.dylib`, with AO46's CGL-free Metal Gallium backend
+installed beside them. It does not load the framework or legacy ICD/runtime.
 
 AO46's active backend direction is Mesa-to-Metal:
 
 - Mesa supplies OpenGL semantics, state tracking, GLSL, SPIR-V, NIR, and the
   reusable NIR-to-MSL compiler machinery.
-- AO46 supplies the macOS Metal execution layer, framework ABI, CGL/NSOpenGL,
-  drawable lifecycle, ICD, and user-space bridge integration.
+- AO46 supplies the shared macOS Metal execution layer and the separate legacy
+  framework/CGL/NSOpenGL compatibility path.
 - `GL2MTL` is archived development material, not the active semantic engine or
   a framework fallback.
 - `AO46AGXMac` and the direct AGX/UABI work are archived research. Their
@@ -24,7 +30,7 @@ compiler. The governing design is
 ## Layout
 
 - `framework/`
-  The real `OpenGL_4.6.framework` driver. This is the system-space OpenGL 4.6 core-profile entrypoint.
+  The real `OpenGL_4.6.framework` driver for the legacy compatibility product.
 - `backend/`
   Archived development backend interfaces; not part of the production runtime.
 - `GL2MTL/`
@@ -42,7 +48,11 @@ compiler. The governing design is
 - `shim/`
   The Apple-path loader that is meant to live at `OpenGL.framework/Versions/A/OpenGL` and hand off into `OpenGL_4.6.framework`.
 - `drivers/`
-  User-space bridge dylibs such as `libGL.dylib`, `libGLContext.dylib`, and `libNSOpenGLContext.dylib`.
+  Legacy user-space bridge dylibs such as `libAO46LegacyGL.dylib`,
+  `libGLContext.dylib`, and `libNSOpenGLContext.dylib`.
+- `khronos/`
+  Standard Mesa `libGL`/`libEGL` frontend contract and the CGL-free AO46 Metal
+  Gallium backend export used by its Mesa driver registration.
 - `scripts/`
   Helper scripts for building, staging, packaging, and live installation.
 
@@ -102,15 +112,21 @@ cmake -S "OpenGL_4.6(Core Profile)/Apple_ICD" -B "OpenGL_4.6(Core Profile)/Apple
 cmake --build "OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/build"
 ```
 
-## Live Install
+## Install Modes
 
-The GitHub-bootstrap installer flow builds from source on the machine and installs into:
+The default `khronos` installer mode installs Mesa's standard `libGL`/`libEGL`
+ABI under `/usr/local` and does not query SIP or Authenticated Root. It has a
+real Mesa AO46 Gallium driver-registration prerequisite and will fail rather
+than silently select the legacy framework or software rendering.
+
+The explicit `legacy-system` installer mode builds from source and installs:
 
 - `/System/Library/Frameworks/OpenGL.framework`
 - `/System/Library/Frameworks/OpenGL_4.6.framework`
 - `/usr/local/lib`
 
-Before a live install to `/`, the installer hard-checks that SIP and Authenticated Root are disabled, and prints the developer-machine warning intended for this in-development driver.
+Only `legacy-system` hard-checks that SIP and Authenticated Root are disabled,
+because it replaces protected system frameworks.
 
 ## Smoke Coverage
 
@@ -128,12 +144,18 @@ This tree includes runtime and bridge smoke harnesses:
   `PIPE_TEXTURE_2D` sampler views/states at sparse slots `1` and `3`, and
   verifies their combined sampled regions after Gallium fence retirement.
 - `tests/AO46MesaNIRSSBOSmoke.c`
-  Lowers static-index Mesa `load_ssbo` and `store_ssbo` operations through
-  Mesa's generic SSBO pass into AO46's direct `MTLBuffer` roots, then verifies
-  read/write output through Gallium fence-backed readback. Dynamic indexing,
-  robust size queries, atomics, barriers, and complete state-tracker SSBO
-  binding remain fail-closed, so this is groundwork rather than a GL 4.3
-  feature claim.
+  Lowers static-index Mesa `load_ssbo`, `store_ssbo`, and atomic operations
+  through Mesa's generic SSBO pass into AO46's direct `MTLBuffer` roots. It
+  verifies read/write output plus a 32-invocation atomic-add counter through
+  Gallium fence-backed readback. Dynamic indexing, robust size queries,
+  descriptor tables, cross-dispatch barrier semantics, and complete
+  state-tracker SSBO binding remain fail-closed, so this is groundwork rather
+  than a GL 4.3 feature claim.
+- `tests/AO46MesaNIRBufferTextureGraphicsSmoke.c`
+  Compiles static RGB32 `FLOAT`, `UINT`, and `SINT` `PIPE_BUFFER` sampler
+  views through the live Gallium sampler-state path. Its unsigned variant also
+  performs the existing fence-backed hardware draw/readback and binding-reuse
+  validation; generalized Mesa sampler views remain pending.
 - `tests/AO46MesaNIRUniformSmoke.c`
   Loads two fragment-color terms through Mesa NIR `UBO 0` and `UBO 1`, rejects
   missing or undersized bindings, maps nonzero UBO bindings to Metal buffers

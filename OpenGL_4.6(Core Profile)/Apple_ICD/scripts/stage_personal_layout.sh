@@ -32,9 +32,8 @@ fi
 ln -sfn A "$open_gl_framework_root/Versions/Current"
 ln -sfn Versions/Current/OpenGL "$open_gl_framework_root/OpenGL"
 
-if [ -f "$build_dir/libGL.dylib" ]; then
-    cp "$build_dir/libGL.dylib" "$usr_local_lib/libGL.dylib"
-    ln -sfn libGL.dylib "$usr_local_lib/libGL.1.dylib"
+if [ -f "$build_dir/libAO46LegacyGL.dylib" ]; then
+    cp "$build_dir/libAO46LegacyGL.dylib" "$usr_local_lib/libAO46LegacyGL.dylib"
 fi
 
 if [ -f "$build_dir/libGLContext.dylib" ]; then
@@ -48,5 +47,15 @@ fi
 if [ -f "$build_dir/libGLICD.dylib" ]; then
     cp "$build_dir/libGLICD.dylib" "$usr_local_lib/libGLICD.dylib"
 fi
+
+for private_runtime in \
+    libAO46Core.dylib \
+    libAO46MesaMetalBackend.dylib \
+    libAO46MTLGallium.dylib \
+    libAO46AGXMetalAdapter.dylib; do
+    if [ -f "$build_dir/$private_runtime" ]; then
+        cp "$build_dir/$private_runtime" "$usr_local_lib/$private_runtime"
+    fi
+done
 
 echo "staged OpenGL_4.6(Core Profile)/Apple_ICD layout at $stage_root"

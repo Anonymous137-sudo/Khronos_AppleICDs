@@ -1,8 +1,10 @@
 # AO46 Mesa Metal Backend Plan
 
-Status: active work-in-progress architecture. This is the governing delivery
-plan for AO46. It supersedes the direct AGX/UABI route as the active runtime
-strategy; the direct route and its captured evidence remain preserved research.
+Status: governing work-in-progress architecture. The standard Khronos ABI
+frontend is complete and frozen at its surfaceless/pbuffer GL 3.3 boundary
+while AVK143 is developed; this plan governs AO46 work when it resumes. It
+supersedes the direct AGX/UABI route as the active runtime strategy; the direct
+route and its captured evidence remain preserved research.
 
 ## Goal
 

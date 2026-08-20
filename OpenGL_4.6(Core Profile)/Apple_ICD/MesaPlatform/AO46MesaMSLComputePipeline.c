@@ -136,13 +136,13 @@ ao46_mesa_compute_lower_static_ssbo(nir_shader *nir)
             intrinsic = nir_instr_as_intrinsic(instr);
             switch (intrinsic->intrinsic) {
             case nir_intrinsic_load_ssbo:
+            case nir_intrinsic_ssbo_atomic:
+            case nir_intrinsic_ssbo_atomic_swap:
                index_src = 0;
                break;
             case nir_intrinsic_store_ssbo:
                index_src = 1;
                break;
-            case nir_intrinsic_ssbo_atomic:
-            case nir_intrinsic_ssbo_atomic_swap:
             case nir_intrinsic_get_ssbo_size:
             case nir_intrinsic_load_ssbo_address:
                return false;
