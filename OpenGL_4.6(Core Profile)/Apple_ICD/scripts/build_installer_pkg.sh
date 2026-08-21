@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 
+export COPYFILE_DISABLE=1
+
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 project_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 workspace_root=$(CDPATH= cd -- "$project_root/../.." && pwd)
@@ -21,7 +23,7 @@ repo_url=${OPENGLKHR_REPO_URL:-}
 output_dir=${1:-"$repo_root/dist"}
 payload_root="$project_root/artifacts/packages/payload"
 pkg_scripts_root="$project_root/artifacts/packages/pkg_scripts"
-pkg_output="$output_dir/OpenGLKHR_ICD_Installer.pkg"
+pkg_output="$output_dir/OpenGLKHR-Installer.pkg"
 pkg_identifier=${OPENGLKHR_PKG_IDENTIFIER:-"org.khronos.appleicds.openglkhr-icd-installer"}
 pkg_version=${OPENGLKHR_PKG_VERSION:-"0.1.0"}
 
@@ -69,6 +71,13 @@ OPENGLKHR_REPO_BRANCH='$repo_branch'
 OPENGLKHR_INSTALL_MODE='khronos'
 OPENGLKHR_KHRONOS_PREFIX='/usr/local'
 EOF
+
+# Finder metadata must never enter a distributable package payload.
+find "$payload_root" -name '._*' -type f -delete
+find "$payload_root" -name '.DS_Store' -type f -delete
+if command -v xattr >/dev/null 2>&1; then
+    xattr -rc "$payload_root" 2>/dev/null || true
+fi
 
 pkgbuild \
     --root "$payload_root" \

@@ -28,7 +28,7 @@ ID IOGPUMetalResource::initWithDevice_options_args_argsSize_
 
 {
   ID IVar1;
-  
+
   IVar1 = initWithDevice_remoteStorageResource_options_args_argsSize_
                     (param_1,param_3,0,param_4,param_5,param_6);
   return IVar1;
@@ -93,7 +93,7 @@ ID IOGPUMetalResource::initWithDevice_remoteStorageResource_options_args_argsSiz
   long unaff_x25;
   long lVar8;
   objc_super local_60;
-  
+
   if (param_3 == 0) {
     __IOGPUMetalResource_initWithDevice_remoteStorageResource_options_args_argsSize___cold_3();
 LAB_1a56c1a6c:
@@ -309,7 +309,7 @@ ID _IOGPUMetalResourcePoolCreatePooledResource(long param_1,undefined1 *param_2)
   undefined8 uVar6;
   ID IVar7;
   long *plVar8;
-  
+
   _os_unfair_lock_lock(param_1 + 0x28);
   uVar3 = *(undefined4 *)(param_1 + 0x58);
   IVar7 = *(ID *)(param_1 + 0x18);
@@ -405,7 +405,7 @@ long _IOGPUCommandQueueCreate(long param_1,long param_2,undefined4 param_3)
   undefined8 local_48;
   undefined8 local_40;
   long local_38;
-  
+
   local_38 = *DAT_1e598ebe0;
   local_60 = 0x10;
   uVar4 = *DAT_1e5910e88;
@@ -506,7 +506,7 @@ _IOGPUCommandQueueSubmitCommandBuffers
   ulong local_68;
   ulong uStack_60;
   long local_58;
-  
+
   local_58 = *DAT_1e598ebe0;
   uVar3 = 0xe00002c2;
   if ((param_1 != 0) && (lVar2 = _CFGetTypeID(), lVar2 == _kIOGPUCommandQueueID)) {
@@ -565,7 +565,7 @@ ulong _IOGPUResourceListAddResource(long param_1,long param_2,ushort param_3)
   ulong uVar3;
   ulong uVar4;
   uint uVar5;
-  
+
   uVar4 = (ulong)*(uint *)(param_2 + 0x10) * -0x61c8864680b583eb >>
           ((ulong)(uint)-*(int *)(param_1 + 0x1e8) & 0x3f);
   uVar5 = *(uint *)(*(long *)(param_1 + 0x1c8) + (uVar4 & 0xffffffff) * 4);
@@ -634,7 +634,7 @@ ID IOGPUMetalCommandBuffer::initWithQueue_retainedReferences_synchronousDebugMod
   long lVar8;
   undefined1 auVar9 [16];
   objc_super local_50;
-  
+
   uVar7 = (ulong)param_4;
   IVar4 = param_3;
   uVar3 = uVar7;
@@ -714,7 +714,7 @@ void IOGPUMetalCommandBuffer::fillCommandBufferArgs_commandQueue_
   code *local_58;
   undefined *puStack_50;
   ID local_48;
-  
+
   lVar4 = *(long *)(param_1 + (long)_storage);
   param_3->field0_0x0 =
        *(unsigned_int *)(*(long *)(lVar4 + 0x20) + (long)IOGPUMetalDeviceShmem::_shmemID);
@@ -777,7 +777,7 @@ void IOGPUMetalCommandBuffer::commit(ID param_1,SEL param_2)
   ID IVar1;
   objc_super local_40;
   objc_super local_30;
-  
+
   validate(param_1);
   if (*(char *)(param_1 + (long)*DAT_1e5924278) == '\x01') {
     local_30.super_class = (class_t *)PTR_IOGPUMetalCommandBuffer_1e6b19228;
@@ -868,7 +868,7 @@ ID IOGPUMetalCommandQueue::initWithDevice_descriptor_args_argsSize_
   long local_78;
   long lStack_70;
   long local_68;
-  
+
   auVar10._8_8_ = param_2;
   auVar10._0_8_ = param_1;
   local_68 = *DAT_1e598ebe0;
@@ -992,7 +992,7 @@ void IOGPUMetalCommandQueue::submitCommandBuffers_count_
   ulong uVar1;
   unsigned_long_long uVar2;
   ulong uVar3;
-  
+
   if (param_4 != 0) {
     uVar3 = 0;
     uVar2 = param_4;
@@ -1065,7 +1065,7 @@ void IOGPUMetalCommandQueue::_submitCommandBuffers_count_
   undefined4 local_80;
   undefined4 local_7c;
   long local_78;
-  
+
   local_78 = *DAT_1e598ebe0;
   IVar7 = objc_stub::cmdBufArgsSize(*(ID *)(param_1 + (long)_device));
   if (param_4 >> 0x20 == 0) {
@@ -1160,7 +1160,7 @@ ID IOGPUMetalBuffer::
 {
   ID IVar1;
   undefined4 in_stack_ffffffffffffffe8;
-  
+
   IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
                     (param_1,param_3,param_4,param_5,1,param_6,param_7,0,0,0,0,param_9,param_10,
                      param_11,in_stack_ffffffffffffffe8);
@@ -1188,7 +1188,7 @@ ID IOGPUMetalBuffer::
 {
   ID IVar1;
   undefined4 in_stack_ffffffffffffffe8;
-  
+
   IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
                     (param_1,param_3,param_4,param_5,1,param_6,param_7,param_8,0,0,0,param_9,
                      param_10,param_11,in_stack_ffffffffffffffe8);
@@ -1217,7 +1217,7 @@ ID IOGPUMetalBuffer::
 {
   ID IVar1;
   undefined4 in_stack_ffffffffffffffe8;
-  
+
   IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
                     (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,0,0,0,param_10,
                      param_11,param_12,in_stack_ffffffffffffffe8);
@@ -1246,7 +1246,7 @@ ID IOGPUMetalBuffer::
 {
   ID IVar1;
   undefined4 in_stack_ffffffffffffffe8;
-  
+
   IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
                     (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,param_10,0,0,param_11
                      ,param_12,param_13,in_stack_ffffffffffffffe8);
@@ -1275,7 +1275,7 @@ ID IOGPUMetalBuffer::
 {
   ID IVar1;
   undefined4 in_stack_ffffffffffffffe8;
-  
+
   IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
                     (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,param_10,param_11,0,
                      param_12,param_13,param_14,in_stack_ffffffffffffffe8);
@@ -1333,7 +1333,7 @@ ID IOGPUMetalBuffer::
   long lVar10;
   ulong uVar11;
   undefined4 uVar12;
-  
+
   (param_13->field0_0x0).field16_0x38.field1.field4_0x10[1] = 0;
   (param_13->field0_0x0).field16_0x38.field0.field0_0x0 = 0;
   (param_13->field0_0x0).field14_0x30 = 0;
@@ -1480,7 +1480,7 @@ void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSi
 
 {
   undefined8 extraout_x1;
-  
+
   _OUTLINED_FUNCTION_0();
   _MTLReportFailure(0,extraout_x1,0xd1,&cf_InvalidcacheMode_u);
   return;
@@ -1502,7 +1502,7 @@ void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSi
 
 {
   undefined8 extraout_x1;
-  
+
   _OUTLINED_FUNCTION_0();
   _MTLReportFailure(0,extraout_x1,0xdb,&cf_InvalidstorageMode_u);
   return;
@@ -1524,7 +1524,7 @@ void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSi
 
 {
   undefined8 extraout_x1;
-  
+
   _OUTLINED_FUNCTION_0();
   _MTLReportFailure(0,extraout_x1,0xe0,&cf_InvalidStorageMode_uforPlacementSparseBuffer);
   return;
@@ -1571,7 +1571,7 @@ initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_pla
 
 {
   ID IVar1;
-  
+
   IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)
                     (self,PTR_s_initWithDevice_pointer_length_al_1e6b16ea0);
   return IVar1;
@@ -1610,7 +1610,7 @@ ID IOGPUMetalBuffer::
   undefined4 uVar7;
   ID local_50;
   undefined *puStack_48;
-  
+
   (param_9->field0_0x0).field2_0x8 = 0;
   (param_9->field0_0x0).field3_0xa = 0;
   (param_9->field0_0x0).field4_0xc = 0;
@@ -1696,7 +1696,7 @@ _IOGPUMetalCommandBufferStoragePoolCreateStorage
   undefined8 uVar4;
   ulong uVar5;
   IOGPUMetalCommandBufferStorage *pIVar6;
-  
+
   _os_unfair_lock_lock(param_1 + 0x10);
   pIVar6 = *(IOGPUMetalCommandBufferStorage **)param_1;
   if (pIVar6 == (IOGPUMetalCommandBufferStorage *)0x0) {
@@ -1777,7 +1777,7 @@ _IOGPUMetalCommandBufferStorageCreateExt
   undefined8 uVar3;
   ulong uVar4;
   undefined4 uVar5;
-  
+
   pIVar2 = (IOGPUMetalCommandBufferStorage *)_malloc_type_calloc(0x3a0,1,0x10b0040d0c5b398);
   pIVar2->field0_0x0 = param_1;
   pIVar2->field25_0x320 = param_3;
@@ -1849,7 +1849,7 @@ _iogpuMetalCommandBufferStorageSetupShmems
   IOGPUSegmentKernelCommmandListHeader *pIVar4;
   long lVar5;
   char *pcVar6;
-  
+
   IVar2 = _IOGPUMetalDeviceShmemPoolCreateShmem(*(undefined8 *)param_2);
   uVar3 = 0;
   if (IVar2 != 0) {
@@ -1942,7 +1942,7 @@ void _IOGPUMetalCommandBufferStorageFinalizeShmemHeader(IOGPUMetalCommandBufferS
   undefined8 *puStack_88;
   undefined8 local_80;
   ID local_78;
-  
+
   uVar4 = DAT_1a56e3558;
   uVar3 = DAT_1a56e3548;
   pIVar8 = param_1->field26_0x328;
@@ -2042,7 +2042,7 @@ ID IOGPUMetalBuffer::
 {
   ID IVar1;
   undefined4 in_stack_ffffffffffffffe8;
-  
+
   IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
                     (param_1,param_3,param_4,param_5,1,param_6,param_7,param_8,0,0,0,param_9,
                      param_10,param_11,in_stack_ffffffffffffffe8);
@@ -2071,7 +2071,7 @@ ID IOGPUMetalBuffer::
 {
   ID IVar1;
   undefined4 in_stack_ffffffffffffffe8;
-  
+
   IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
                     (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,0,0,0,param_10,
                      param_11,param_12,in_stack_ffffffffffffffe8);
@@ -2100,7 +2100,7 @@ ID IOGPUMetalBuffer::
 {
   ID IVar1;
   undefined4 in_stack_ffffffffffffffe8;
-  
+
   IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
                     (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,param_10,0,0,param_11
                      ,param_12,param_13,in_stack_ffffffffffffffe8);
@@ -2129,7 +2129,7 @@ ID IOGPUMetalBuffer::
 {
   ID IVar1;
   undefined4 in_stack_ffffffffffffffe8;
-  
+
   IVar1 = initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_placementSparsePageSize_placementSparseResidencyBytes_args_argsSize_deallocator_
                     (param_1,param_3,param_4,param_5,1,param_7,param_8,param_9,param_10,param_11,0,
                      param_12,param_13,param_14,in_stack_ffffffffffffffe8);
@@ -2187,7 +2187,7 @@ ID IOGPUMetalBuffer::
   long lVar10;
   ulong uVar11;
   undefined4 uVar12;
-  
+
   (param_13->field0_0x0).field16_0x38.field1.field4_0x10[1] = 0;
   (param_13->field0_0x0).field16_0x38.field0.field0_0x0 = 0;
   (param_13->field0_0x0).field14_0x30 = 0;
@@ -2351,7 +2351,7 @@ ID IOGPUMetalBuffer::initWithDevice_iosurface_gpuAddress_args_argsSize_
   long lVar7;
   undefined8 uVar8;
   undefined4 uVar9;
-  
+
   (param_6->field0_0x0).field2_0x8 = 0;
   (param_6->field0_0x0).field3_0xa = 0;
   (param_6->field0_0x0).field4_0xc = 0;
@@ -2442,7 +2442,7 @@ ID IOGPUMetalBuffer::
   undefined4 uVar7;
   ID local_50;
   undefined *puStack_48;
-  
+
   (param_9->field0_0x0).field2_0x8 = 0;
   (param_9->field0_0x0).field3_0xa = 0;
   (param_9->field0_0x0).field4_0xc = 0;
@@ -2511,7 +2511,7 @@ unsigned_long_long IOGPUMetalHeap::gpuAddress(ID param_1,SEL param_2)
 
 {
   ID IVar1;
-  
+
   IVar1 = objc_stub::gpuAddress(*(ID *)(param_1 + (long)_resource));
   return IVar1;
 }
@@ -2549,7 +2549,7 @@ void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSi
 
 {
   undefined8 extraout_x1;
-  
+
   _OUTLINED_FUNCTION_0();
   _MTLReportFailure(0,extraout_x1,0xd1,&cf_InvalidcacheMode_u);
   return;
@@ -2571,7 +2571,7 @@ void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSi
 
 {
   undefined8 extraout_x1;
-  
+
   _OUTLINED_FUNCTION_0();
   _MTLReportFailure(0,extraout_x1,0xdb,&cf_InvalidstorageMode_u);
   return;
@@ -2593,7 +2593,7 @@ void __IOGPUMetalBuffer_initWithDevice_pointer_length_alignment_options_sysMemSi
 
 {
   undefined8 extraout_x1;
-  
+
   _OUTLINED_FUNCTION_0();
   _MTLReportFailure(0,extraout_x1,0xe0,&cf_InvalidStorageMode_uforPlacementSparseBuffer);
   return;
@@ -2640,7 +2640,7 @@ ID __objc_msgSend_stub objc_stub::gpuAddress(ID self,...)
 
 {
   ID IVar1;
-  
+
   IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)(self,PTR_s_gpuAddress_1e6b16d38);
   return IVar1;
 }
@@ -2659,7 +2659,7 @@ ID __objc_msgSend_stub objc_stub::initWithDevice_iosurface_gpuAddress_args_argsS
 
 {
   ID IVar1;
-  
+
   IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)
                     (self,PTR_s_initWithDevice_iosurface_gpuAddr_1e6b16e78);
   return IVar1;
@@ -2686,7 +2686,7 @@ initWithDevice_pointer_length_alignment_options_sysMemSize_gpuAddress_gpuTag_pla
 
 {
   ID IVar1;
-  
+
   IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)
                     (self,PTR_s_initWithDevice_pointer_length_al_1e6b16ea0);
   return IVar1;
@@ -2741,7 +2741,7 @@ ID __objc_msgSend_stub objc_stub::virtualAddress(ID self,...)
 
 {
   ID IVar1;
-  
+
   IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)(self,PTR_s_virtualAddress_1e6b17540);
   return IVar1;
 }
@@ -2780,7 +2780,7 @@ ID __objc_msgSend_stub objc_stub::resourceSize(ID self,...)
 
 {
   ID IVar1;
-  
+
   IVar1 = (*(code *)PTR__objc_msgSend_1edd2b878)(self,PTR_s_resourceSize_1e6b17280);
   return IVar1;
 }

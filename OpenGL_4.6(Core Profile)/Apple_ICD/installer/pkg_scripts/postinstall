@@ -6,6 +6,12 @@ log_file=/var/log/OpenGLKHR_ICD_Installer.log
 
 {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] OpenGLKHR ICD postinstall starting"
-    /usr/local/libexec/OpenGLKHR_ICD/openglkhr-icd-bootstrap update
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] OpenGLKHR ICD postinstall complete"
+    if /usr/local/libexec/OpenGLKHR_ICD/openglkhr-icd-bootstrap update; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] OpenGLKHR ICD postinstall complete"
+    else
+        status=$?
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] OpenGLKHR ICD source build failed (status $status)"
+        echo "The bootstrap tools were installed; rerun openglkhr-icd-update after fixing the dependency or network error."
+        exit "$status"
+    fi
 } >>"$log_file" 2>&1

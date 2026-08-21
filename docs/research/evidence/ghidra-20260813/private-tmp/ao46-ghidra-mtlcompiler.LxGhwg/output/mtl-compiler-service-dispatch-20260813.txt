@@ -18,7 +18,7 @@ undefined8 __thiscall MTLConnectionCtx::getService(MTLConnectionCtx *this)
 
 {
   undefined8 uVar1;
-  
+
   std::mutex::lock();
   uVar1 = *(undefined8 *)(this + 0x48);
   std::mutex::unlock();
@@ -43,7 +43,7 @@ undefined8 __thiscall MTLConnectionCtx::getDispatch(MTLConnectionCtx *this)
 
 {
   undefined8 uVar1;
-  
+
   std::mutex::lock();
   uVar1 = *(undefined8 *)(this + 0x40);
   std::mutex::unlock();
@@ -72,7 +72,7 @@ undefined8 _compileRequestMain(undefined4 *param_1)
   code *local_38;
   undefined *puStack_30;
   undefined4 *local_28;
-  
+
   local_48 = PTR___NSConcreteStackBlock_100008370;
   local_40 = DAT_100005a88;
   local_38 = ___compileRequestMain_block_invoke;
@@ -116,7 +116,7 @@ void MTLCompilerService::sendReply
   code *pcVar1;
   undefined8 uVar2;
   ulong unaff_x30;
-  
+
   if (*param_1 == (NSObject *)0x0) {
     return;
   }
@@ -225,7 +225,7 @@ void __thiscall MTLCompilerService::messageHandler(MTLCompilerService *this,NSOb
   MTLCompilerService *pMStack_78;
   NSObject *local_70;
   NSObject *local_68;
-  
+
   local_68 = param_1;
   pNVar1 = (NSObject *)_xpc_dictionary_create_reply(param_1);
   local_70 = pNVar1;
@@ -276,7 +276,7 @@ void __thiscall MTLCompilerService::messageHandler(MTLCompilerService *this,NSOb
                       MTLSandboxExtensionContainer::MTLCompilerSandboxExtensions();
             local_a0 = PTR___NSConcreteStackBlock_100008370;
             local_98 = DAT_100005a98;
-            local_90 = 
+            local_90 =
             ____ZN18MTLCompilerService14messageHandlerEPU24objcproto13OS_xpc_object8NSObject_block_invoke
             ;
             puStack_88 = &___block_descriptor_48_e8_32o_e5_v8__0l;
@@ -553,7 +553,7 @@ MTLCompilerService::getConnectionCtxInstance
   undefined1 auVar3 [16];
   ulonglong local_58 [2];
   ulonglong *local_48;
-  
+
   _pthread_mutex_lock((pthread_mutex_t *)(this + 0x4a8));
   if (param_2 < 0x40) {
     local_48 = local_58;
@@ -612,7 +612,7 @@ MTLCompilerService::assignContextToArray(MTLCompilerService *this,shared_ptr *pa
   ulong uVar4;
   long lVar5;
   ulong unaff_x30;
-  
+
   lVar3 = *(long *)param_1;
   uVar4 = *(ulong *)(lVar3 + 0x10);
   if (uVar4 < 0x40) {
@@ -663,7 +663,7 @@ MTLCompilerService::beginCompilation(MTLCompilerService *this,bool param_1)
   MTLCompilerService *pMVar1;
   uint uVar2;
   MTLCompilerService *pMVar3;
-  
+
   pMVar3 = this;
   if (*(long *)(this + 0x70) == 0) {
     if (*(MTLCompilerServiceTimer **)(this + 0x58) != (MTLCompilerServiceTimer *)0x0) {
@@ -712,7 +712,7 @@ MTLCompilerService::removeContextFromArray(MTLCompilerService *this,shared_ptr *
   shared_ptr *psVar3;
   __shared_weak_count *p_Var4;
   ulong unaff_x30;
-  
+
   if (*(ulong *)(*(long *)param_1 + 0x10) < 0x40) {
     pMVar1 = this + *(ulong *)(*(long *)param_1 + 0x10) * 0x10 + 0x78;
     p_Var4 = *(__shared_weak_count **)(pMVar1 + 8);
@@ -769,7 +769,7 @@ MTLCompilerService::endCompilation(MTLCompilerService *this,bool param_1)
   uint uVar4;
   long lVar5;
   ulong unaff_x30;
-  
+
   lVar5 = *(long *)(this + 0x70);
   *(long *)(this + 0x70) = lVar5 + -1;
   pMVar2 = this;

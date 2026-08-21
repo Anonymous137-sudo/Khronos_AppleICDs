@@ -346,7 +346,7 @@ OpenGL_4.6(Core Profile)/Apple_ICD/scripts/inventory_apple_agx_private_winsys.sh
 
 It records the active AGX bundle hash, dynamic-library dependencies, IOKit
 imports, procedural command-storage anchors, and selected private method names to
-`/private/tmp/ao46-apple-agx-private-winsys` by default. It reads metadata from
+`<TMPDIR>/ao46-apple-agx-private-winsys` by default. It reads metadata from
 the on-disk driver only. It does not copy a system binary, inject a process,
 call a private method, or submit work.
 

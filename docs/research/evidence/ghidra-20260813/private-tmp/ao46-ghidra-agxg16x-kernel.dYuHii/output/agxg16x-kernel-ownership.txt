@@ -40,7 +40,7 @@ AGXAccelerator::createRestrictedRangeMapping
 {
   long *plVar1;
   undefined8 uVar2;
-  
+
   if (*(int *)(this + 0xecd4) == 0) {
                     /* WARNING: Could not recover jumptable at 0xfffffe00089662d4. Too many branches
                         */
@@ -132,7 +132,7 @@ AGXCommandQueue::processSegmentKernelCommand
   undefined8 local_78;
   undefined8 local_70;
   undefined8 uStack_68;
-  
+
   if ((*(int *)(this + 0x450) == 5) && ((*(byte *)(*(long *)(this + 0x538) + 0x1af08) & 1) == 0)) {
     *(undefined4 *)(this + 0x528) = 0x108;
     return;
@@ -747,7 +747,7 @@ AGXCommandQueue::processComputeSetup
   undefined8 uStack_88;
   undefined8 uStack_80;
   undefined8 uStack_78;
-  
+
   uStack_c8 = 0;
   local_d0 = 0;
   uStack_b8 = 0;
@@ -1579,7 +1579,7 @@ void __thiscall AGXCommandQueue::setProtectionOptions(AGXCommandQueue *this,ulon
 {
   code *pcVar1;
   ulong unaff_x30;
-  
+
   if (((*(byte *)(*(long *)(this + 0x538) + 0xee94) & 1) != 0) &&
      (*(ulonglong *)(this + 0x550) != param_1)) {
     (**(code **)(**(long **)(this + 0x678) + 0x158))(*(long **)(this + 0x678),0,0);
@@ -1630,7 +1630,7 @@ AGXDeviceUserClient::invalidateICache(AGXDeviceUserClient *this,_AGXUSCICacheInv
   undefined8 local_30;
   uint local_28;
   undefined4 local_24;
-  
+
   lVar4 = func_0xfffffe000a7de79c(*(undefined8 *)(this + 0x120));
   if (*(uint *)param_1 < 3) {
     if (*(uint *)(lVar4 + 0x230) != 0xffffffff) {
@@ -1686,7 +1686,7 @@ AGXDeviceUserClient::getDeviceUserVARange
 
 {
   undefined8 uVar1;
-  
+
   uVar1 = _DAT_fffffe000712dc70;
   *(undefined8 *)(param_1 + 8) = _UNK_fffffe000712dc78;
   *(undefined8 *)param_1 = uVar1;
@@ -1755,7 +1755,7 @@ AGXSecureGart::createRestrictedRangeMapping
   ulong uVar1;
   undefined8 uVar2;
   long lVar3;
-  
+
   lVar3 = *(long *)(param_1 + 0x10);
   func_0xfffffe000b7a42bc(*(undefined8 *)(lVar3 + 0x115f8));
   func_0xfffffe000b7a42bc(*(undefined8 *)(lVar3 + 0x11600));
@@ -1799,7 +1799,7 @@ AGXSecureGart::getCodeGartRangeInfo(AGXSecureGart *this,ulonglong *param_1,ulong
   ulonglong uVar2;
   ulonglong uVar3;
   bool bVar4;
-  
+
   if (param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0) {
     uVar1 = 0x100000000;
     if (AGXUATMux::sARMCodeRangeSize == '\0') {
@@ -1836,7 +1836,7 @@ AGXSecureGart::allocate(AGXSecureGart *this,ulonglong param_1,ulonglong param_2,
 
 {
   undefined8 uVar1;
-  
+
   func_0xfffffe000a7e71e4();
   if ((1 << (ulong)(param_3 & 0x1f) & 0x9f80U) != 0) {
     func_0xfffffe000b7a132c(AGXGart::fSharedAllocatorLock);
@@ -1878,7 +1878,7 @@ AGXSecureGart::mapWithAddress
   ulong uVar6;
   long lVar7;
   char cVar8;
-  
+
   if ((((byte)this[0x358] & 1) == 0) && (*(int *)(this + 0x2cc) == 0)) {
     cVar8 = '\x02';
   }

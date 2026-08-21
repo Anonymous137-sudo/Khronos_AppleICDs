@@ -324,7 +324,7 @@ AGX::ComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::ComputeP
   undefined8 uStack_87;
   long local_78;
   undefined8 *puVar76;
-  
+
   piVar52 = (int *)0x0;
   local_78 = *(long *)PTR____stack_chk_guard_00878590;
   this_06 = (LinkInfo *)(this + 8);
@@ -5269,7 +5269,7 @@ AGX::ComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::finalize
   undefined8 uVar107;
   undefined8 uVar108;
   undefined8 uVar109;
-  
+
   std::mutex::lock();
   pPVar43 = *(ProgramBindingRemap **)(this + 0x260);
   if (pPVar43 == (ProgramBindingRemap *)0x0) goto LAB_00692f64;
@@ -6998,7 +6998,7 @@ void AGX::Heap<true>::allocateImpl(ulong param_1,IOGPUMetalResource **param_2)
   undefined8 *local_58;
   undefined8 local_50;
   undefined8 local_48;
-  
+
   puStack_d8 = &local_60;
   local_60 = 0;
   local_50 = DAT_00812c38;
@@ -7105,7 +7105,7 @@ void ____ZN3AGX4HeapILb1EE12allocateImplEmPPK18IOGPUMetalResource_block_invoke(l
   long local_50;
   long lStack_48;
   long local_40;
-  
+
   plVar23 = *(long **)(param_1 + 0x40);
   *(long *)(*(long *)(*(long *)(param_1 + 0x20) + 8) + 0x18) = *plVar23;
   lVar21 = *(long *)(param_1 + 0x20);
@@ -7454,7 +7454,7 @@ allocateCodeHeap(DynamicLibrary<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::
   undefined2 local_3a;
   undefined8 local_38;
   long local_28;
-  
+
   local_28 = *(long *)PTR____stack_chk_guard_00878590;
   _os_unfair_lock_lock(this + 0x480);
   iVar3 = *(int *)(this + 0x484);
@@ -7644,7 +7644,7 @@ deallocateCodeHeap(DynamicLibrary<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX
   undefined *puStack_38;
   long local_30;
   DynamicLibrary<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::ObjClasses> *pDStack_28;
-  
+
   _os_unfair_lock_lock(this + 0x480);
   iVar1 = *(int *)(this + 0x484);
   iVar2 = iVar1 + -1;
@@ -7796,7 +7796,7 @@ void AGX::ComputeUSCStateLoader<AGX::HAL200::Encoders,AGX::HAL200::Classes>::
   float fVar24;
   undefined8 uVar25;
   ushort local_52 [9];
-  
+
   *(undefined4 *)(ulong)param_4 = 3;
   uVar4 = param_3[0xf];
   uVar11 = param_3[7];
@@ -8013,7 +8013,7 @@ void AGXG16XFamilyCommandBuffer::fillCommandBufferArgs_commandQueue_
   ID IVar1;
   ID local_40;
   undefined *puStack_38;
-  
+
   IVar1 = objc_stub::deadline(param_1);
   *(ID *)((long)&param_3[1].field3_0xc + 4) = IVar1;
   IVar1 = objc_stub::deadline_namespace_id(param_1);
@@ -8095,7 +8095,7 @@ allocateCodeHeap(DynamicLibrary<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::
   undefined2 local_3a;
   undefined8 local_38;
   long local_28;
-  
+
   local_28 = *(long *)PTR____stack_chk_guard_00878590;
   _os_unfair_lock_lock(this + 0x480);
   iVar3 = *(int *)(this + 0x484);
@@ -8285,7 +8285,7 @@ deallocateCodeHeap(DynamicLibrary<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX
   undefined *puStack_38;
   long local_30;
   DynamicLibrary<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::ObjClasses> *pDStack_28;
-  
+
   _os_unfair_lock_lock(this + 0x480);
   iVar1 = *(int *)(this + 0x484);
   iVar2 = iVar1 + -1;
@@ -8429,7 +8429,7 @@ deallocateCodeHeap(DynamicLibrary<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX
   undefined *puStack_38;
   long local_30;
   DynamicLibrary<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::ObjClasses> *pDStack_28;
-  
+
   _os_unfair_lock_lock(this + 0x480);
   iVar1 = *(int *)(this + 0x484);
   iVar2 = iVar1 + -1;
@@ -8620,7 +8620,7 @@ void ____ZN3AGX4HeapILb1EE14deallocateImplERKNS1_10AllocationE_block_invoke(long
   ulong uVar8;
   long *plVar9;
   ulong unaff_x30;
-  
+
   plVar9 = *(long **)(*(long *)(param_1 + 0x28) + 0x18);
   if ((char)plVar9[0x26] != '\x01') {
     puVar6 = (ulong *)(*(long *)(*(long *)(param_1 + 0x28) + 8) -
@@ -8686,7 +8686,7 @@ void ____ZN3AGX4HeapILb0EE14deallocateImplERKNS1_10AllocationE_block_invoke(long
   ulong uVar8;
   long *plVar9;
   ulong unaff_x30;
-  
+
   plVar9 = *(long **)(*(long *)(param_1 + 0x28) + 0x18);
   if ((char)plVar9[0x26] != '\x01') {
     puVar6 = *(ulong **)(*(long *)(param_1 + 0x28) + 0x28);
@@ -8766,7 +8766,7 @@ void AGX::DynamicLoader<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::
   uchar *puVar9;
   uint *puVar10;
   uint auStack_98 [14];
-  
+
   if (*(int *)(param_1 + 0x28) == -1) {
     uVar8 = *(int *)(param_1 + 0xf0) + 7U & 0xfffffff8;
     if (uVar8 == 0) {
@@ -9192,7 +9192,7 @@ createComputeProgramVariant
   ID local_98;
   undefined8 **ppuStack_90;
   long local_88;
-  
+
   local_88 = *(long *)PTR____stack_chk_guard_00878590;
   puStack_410 = &local_418;
   local_418 = 0;
@@ -9520,7 +9520,7 @@ createComputeProgramVariant
         if ((uVar26 & 0x330003) != 0) {
           local_290 = PTR___NSConcreteStackBlock_00878588;
           local_288 = DAT_00812c40;
-          local_280 = 
+          local_280 =
           ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE27createComputeProgramVariantEP28MTLComputePipelineDescriptorP19AGXG16XFamilyDevicemP26AGXG16XFamilyBinaryArchivePKNS_17UserShaderFactoryIS2_S3_S4_E17ArchiveLookupInfoEP7NSArrayPNS1_14ComputeProgramEPU27objcproto16OS_dispatch_data8NSObjectbPU27objcproto16MTL4CompilerTask11objc_objectU13block_pointerFvPNS1_21ComputeProgramVariantE13ReflectionKeyP19NSMutableDictionary16MTLCompilerErrorP8NSStringE_block_invoke_2
           ;
           local_278 = &
@@ -9640,7 +9640,7 @@ LAB_00218bf4:
   local_510 = param_10;
   local_230 = PTR___NSConcreteStackBlock_00878588;
   local_228 = DAT_00812c58;
-  local_220 = 
+  local_220 =
   ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE27createComputeProgramVariantEP28MTLComputePipelineDescriptorP19AGXG16XFamilyDevicemP26AGXG16XFamilyBinaryArchivePKNS_17UserShaderFactoryIS2_S3_S4_E17ArchiveLookupInfoEP7NSArrayPNS1_14ComputeProgramEPU27objcproto16OS_dispatch_data8NSObjectbPU27objcproto16MTL4CompilerTask11objc_objectU13block_pointerFvPNS1_21ComputeProgramVariantE13ReflectionKeyP19NSMutableDictionary16MTLCompilerErrorP8NSStringE_block_invoke
   ;
   local_218 = &
@@ -9668,7 +9668,7 @@ LAB_00218bf4:
   local_137 = local_110;
   local_568 = PTR___NSConcreteStackBlock_00878588;
   local_560 = DAT_00812c40;
-  local_558 = 
+  local_558 =
   ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE27createComputeProgramVariantEP28MTLComputePipelineDescriptorP19AGXG16XFamilyDevicemP26AGXG16XFamilyBinaryArchivePKNS_17UserShaderFactoryIS2_S3_S4_E17ArchiveLookupInfoEP7NSArrayPNS1_14ComputeProgramEPU27objcproto16OS_dispatch_data8NSObjectbPU27objcproto16MTL4CompilerTask11objc_objectU13block_pointerFvPNS1_21ComputeProgramVariantE13ReflectionKeyP19NSMutableDictionary16MTLCompilerErrorP8NSStringE_block_invoke_394
   ;
   puStack_550 = &
@@ -9692,7 +9692,7 @@ LAB_00218bf4:
   else {
     local_3e8 = PTR___NSConcreteStackBlock_00878588;
     local_3e0 = dVar6;
-    local_3d8 = 
+    local_3d8 =
     ____ZN3AGX17UserShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE20compileFunction_ImplINS_17ComputeProgramKeyEEEvRKT_P29MTLCompileFunctionRequestDataRKNS5_21DriverRequestDataImplILb1EEEU13block_pointerFvRK20AGCDeserializedReplyRKNS_28CompileFunctionReplyMetadataERKNS5_19DriverReplyDataImplILb1EEEE_block_invoke
     ;
     puStack_3d0 = &
@@ -9703,7 +9703,7 @@ LAB_00218bf4:
       pIVar28 = *(ID **)this;
       local_3c0 = (undefined8 *)PTR___NSConcreteStackBlock_00878588;
       local_3b8 = dVar6;
-      local_3b0 = 
+      local_3b0 =
       ____ZN3AGX8Compiler14compileProgramINS_17ComputeProgramKeyE20AGCDeserializedReplyEEvRKT_P29MTLCompileFunctionRequestDataPU27objcproto16MTL4CompilerTask11objc_objectU13block_pointerFvRKT0_RKNS_28CompileFunctionReplyMetadataEE_block_invoke
       ;
       local_3a8 = &
@@ -9880,7 +9880,7 @@ LAB_00218bf4:
 LAB_00219464:
   local_388 = PTR___NSConcreteStackBlock_00878588;
   local_380 = DAT_00812c58;
-  local_378 = 
+  local_378 =
   ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE27createComputeProgramVariantEP28MTLComputePipelineDescriptorP19AGXG16XFamilyDevicemP26AGXG16XFamilyBinaryArchivePKNS_17UserShaderFactoryIS2_S3_S4_E17ArchiveLookupInfoEP7NSArrayPNS1_14ComputeProgramEPU27objcproto16OS_dispatch_data8NSObjectbPU27objcproto16MTL4CompilerTask11objc_objectU13block_pointerFvPNS1_21ComputeProgramVariantE13ReflectionKeyP19NSMutableDictionary16MTLCompilerErrorP8NSStringE_block_invoke_3
   ;
   local_370 = &___block_descriptor_248_e8_32b40r64c29_ZTSN3AGX17ComputeProgramKeyE_e5_v8__0l;
@@ -10042,7 +10042,7 @@ ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjCl
   undefined1 local_78;
   undefined1 local_77;
   undefined1 local_76;
-  
+
   lVar26 = *(long *)(param_1 + 0x40);
   uVar10 = _objc_alloc_init(PTR__OBJC_CLASS___NSMutableDictionary_00878608);
   *(undefined8 *)(*(long *)(*(long *)(param_1 + 0x38) + 8) + 0x28) = uVar10;
@@ -10231,7 +10231,7 @@ LAB_00219d38:
     uStack_278 = *(undefined8 *)(local_280 + AGXG16XFamilyDevice::_impl);
     local_2a0 = PTR___NSConcreteStackBlock_00878588;
     local_298 = DAT_00812c40;
-    local_290 = 
+    local_290 =
     ____ZN3AGX6DeviceINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE37createFastIntegerDivideBufferIfNeededEP19AGXG16XFamilyDevice_block_invoke
     ;
     puStack_288 = &___block_descriptor_48_e8_32o_e5_v8__0l;
@@ -10323,7 +10323,7 @@ void ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10
   ID IVar3;
   undefined8 uVar4;
   undefined8 *puVar5;
-  
+
   lVar2 = (**(code **)(*(long *)(param_1 + 0x20) + 0x10))();
   if (lVar2 != 0 &&
       (vector<AGX::SamplerStateEncoderGen4_1<AGX::HAL200::TextureFormatTable>::SamplerStateFields*,std::allocator<AGX::SamplerStateEncoderGen4_1<AGX::HAL200::TextureFormatTable>::SamplerStateFields*>>
@@ -10372,7 +10372,7 @@ void ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10
 {
   code *pcVar1;
   ulong unaff_x30;
-  
+
   AGX::
   Program<AGX::HAL200::ComputeProgramVariant,AGX::ComputeProgramKey,AGX::HAL200::IndirectArgumentLayout,AGXG16XFamilyIndirectArgumentBufferLayout>
   ::signalPending(*(undefined8 *)(param_1 + 0x28),*(undefined8 *)(param_1 + 0x30),param_3,
@@ -10435,7 +10435,7 @@ void ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10
   undefined8 uStack_60;
   undefined8 uStack_58;
   long local_48;
-  
+
   plVar2 = &local_a0;
   local_48 = *(long *)PTR____stack_chk_guard_00878590;
   uStack_7e = 0;
@@ -10538,7 +10538,7 @@ void AGX::BlitUSCStateLoader<AGX::HAL200::Encoders,AGX::HAL200::Classes>::
   long lVar5;
   long lVar6;
   long lVar7;
-  
+
   lVar6 = (ulong)(uint)((*(int **)(param_2 + 0x700))[2] - **(int **)(param_2 + 0x700)) + 0x3f;
   lVar5 = *(long *)(param_1 + 0xd8);
   uVar3 = lVar5 + lVar6;
@@ -10724,7 +10724,7 @@ void AGX::BlitUSCStateLoader<AGX::HAL200::Encoders,AGX::HAL200::Classes>::
   undefined1 uStack_8b;
   undefined8 uStack_8a;
   long local_78;
-  
+
   uVar21 = (ulong)param_5;
   local_78 = *(long *)PTR____stack_chk_guard_00878590;
   iVar7 = *(int *)(param_3 + 0xc64);
@@ -11276,7 +11276,7 @@ void AGX::BlitUSCStateLoader<AGX::HAL200::Encoders,AGX::HAL200::Classes>::
   undefined *puVar2;
   long lVar3;
   uint uVar4;
-  
+
   puVar2 = PTR__OBJC_IVAR___IOGPUMetalResource__res_00878110;
   uVar4 = *(uint *)(param_2 + 0x850);
   do {
@@ -11312,7 +11312,7 @@ AGX::HAL200::ComputeProgramVariant::~ComputeProgramVariant(ComputeProgramVariant
   code *pcVar1;
   undefined8 uVar2;
   ulong unaff_x30;
-  
+
   uVar2 = ComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::~ComputeProgramVariant
                     ((ComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes> *)this);
   if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
@@ -11408,7 +11408,7 @@ void ____ZN3AGX6DeviceINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE32find
   ulong local_70;
   undefined8 uStack_68;
   ulong local_60;
-  
+
   if (param_3 != 0) {
     pPVar4 = (ProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::BlitComputeArgumentTable,false,false,AGX::NoCombinedUserDriverArgumentTable>
               *)"UnknownErrorCode";
@@ -11595,7 +11595,7 @@ void ____ZN3AGX6DeviceINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE32find
   ulong local_70;
   undefined8 uStack_68;
   ulong local_60;
-  
+
   if (param_3 != 0) {
     pPVar4 = (ProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::BlitComputeArgumentTable,false,false,AGX::NoCombinedUserDriverArgumentTable>
               *)"UnknownErrorCode";
@@ -11782,7 +11782,7 @@ void ____ZN3AGX6DeviceINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE32find
   ulong local_70;
   undefined8 uStack_68;
   ulong local_60;
-  
+
   if (param_3 != 0) {
     pPVar4 = (ProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::BlitComputeArgumentTable,false,false,AGX::NoCombinedUserDriverArgumentTable>
               *)"UnknownErrorCode";
@@ -11924,7 +11924,7 @@ AGX::ComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::~Compute
   code *pcVar1;
   undefined8 uVar2;
   ulong unaff_x30;
-  
+
   uVar2 = ~ComputeProgramVariant(this);
   if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
                     /* WARNING: Does not return */
@@ -11965,7 +11965,7 @@ AGX::ComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::~Compute
   code *pcVar2;
   void *pvVar3;
   ulong unaff_x30;
-  
+
   *(undefined ***)this = &PTR__ComputeProgramVariant_00887d70;
   *(undefined8 *)(this + 0x1018) = 0;
   std::mutex::~mutex((mutex *)(this + 0x1020));
@@ -12343,7 +12343,7 @@ AGX::ComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::ComputeP
   undefined8 uStack_87;
   long local_78;
   undefined8 *puVar76;
-  
+
   piVar52 = (int *)0x0;
   local_78 = *(long *)PTR____stack_chk_guard_00878590;
   this_06 = (LinkInfo *)(this + 8);
@@ -17192,7 +17192,7 @@ void AGX::
   char cVar41;
   byte bVar42;
   byte bVar43;
-  
+
   uVar4 = 0;
   if (*(long *)(param_1 + 1000) != 0) {
     uVar4 = (int)LZCOUNT(*(long *)(param_1 + 1000)) * -8 + 0x200U >> 2;
@@ -17396,7 +17396,7 @@ AGX::HAL200::BlitComputeProgramVariant::~BlitComputeProgramVariant(BlitComputePr
   code *pcVar1;
   undefined8 uVar2;
   ulong unaff_x30;
-  
+
   *(undefined ***)this = &PTR__BlitComputeProgramVariant_008880c0;
   ProgramVariantESLState<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::UserObjectArgumentTableLayout,true,8ul>
   ::~ProgramVariantESLState
@@ -17437,7 +17437,7 @@ AGX::BlitComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::
   code *pcVar1;
   undefined8 uVar2;
   ulong unaff_x30;
-  
+
   *(undefined ***)this = &PTR__BlitComputeProgramVariant_008880c0;
   ProgramVariantESLState<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::UserObjectArgumentTableLayout,true,8ul>
   ::~ProgramVariantESLState
@@ -17476,7 +17476,7 @@ AGX::BlitComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::
 {
   code *pcVar1;
   ulong unaff_x30;
-  
+
   *(undefined ***)this = &PTR__BlitComputeProgramVariant_008880c0;
   ProgramVariantESLState<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::UserObjectArgumentTableLayout,true,8ul>
   ::~ProgramVariantESLState
@@ -17511,7 +17511,7 @@ AGX::HAL200::BlitComputeProgramVariant::~BlitComputeProgramVariant(BlitComputePr
 {
   code *pcVar1;
   ulong unaff_x30;
-  
+
   *(undefined ***)this = &PTR__BlitComputeProgramVariant_008880c0;
   ProgramVariantESLState<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::UserObjectArgumentTableLayout,true,8ul>
   ::~ProgramVariantESLState
@@ -17571,7 +17571,7 @@ ProgramVariantESLState<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::U
   uint uVar11;
   ulong uVar12;
   long lVar13;
-  
+
   ProgramVariantESLState<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::HAL200::BlitComputeArgumentTable,false,8ul>
   ::ProgramVariantESLState();
   lVar13 = 0x310;

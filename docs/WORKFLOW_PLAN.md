@@ -92,14 +92,17 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
   triangle lists now consume retained framebuffer and vertex-buffer state.
   Direct draws carry base-instance/count state and static per-instance vertex
   divisors. Supported-core Mesa state-tracker contexts now use the promoted
-  driver; GL 4.6 capability, general graphics state, and window presentation
-  remain.
+  driver; GL 4.6 capability admission, general graphics state, and window
+  presentation remain.
 - `[~]` Metal resources and pipelines: `RGBA8`/`BGRA8` renderable 2D textures,
   color surfaces, aligned staging upload/readback, and Mesa-generated
   vertex/fragment render pipelines with interleaved `float4` position plus
   `float2` UV inputs and a vertex-to-fragment varying are wired. A bounded
   two-source `RGBA8` texture sampler smoke verifies four distinct combined
-  regions through sparse public Metal texture/sampler slots `1` and `3`.
+  regions through sparse public Metal texture/sampler slots `1` and `3`; a
+  separate vertex-stage source at slot `2` verifies non-mipmapped repeat plus
+  linear sampling. This narrow sampler contract supports nearest/linear and
+  clamp-to-edge/repeat only.
   A second graphics smoke reads constant-offset ranges from Mesa `UBO 0` and
   `UBO 1`, retaining their `PIPE_BIND_CONSTANT_BUFFER` resources at Metal
   buffer `0` and buffer `16`. Missing or undersized bindings are rejected.
@@ -130,11 +133,14 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
   command records remain CPU-visible/prevalidated, and texture/sampler-bearing
   pipelines remain outside the ICB-count path.
   Direct indexed/non-indexed draws also emit native instance count/base-instance
-  parameters and bind static per-instance vertex divisors. GPU-driven
-  GPU-generated multi-record command batches and general state-tracker binding
-  remain. A single shader-writable indexed record can execute directly without
-  a CPU map, and TCS/TES state objects are now bound and validated against the
-  bounded Mesa Poly plan.
+  parameters and bind static per-instance vertex divisors. A separate
+  attribute-free two-record GPU-authored indexed sequence verifies distinct
+  base-instance values through Mesa-generated MSL and fence readback. This is
+  bounded shader-draw-parameter groundwork, not general draw-parameter
+  admission. General GPU-authored multi-record command batches and general
+  state-tracker binding remain. A single shader-writable indexed record can
+  execute directly without a CPU map, and TCS/TES state objects are now bound
+  and validated against the bounded Mesa Poly plan.
 - `[~]` Framework and ICD: the router, framework, CGL/NSOpenGL bridge, client,
   ICD, user-space libraries, generated dispatch, and smoke harnesses exist;
   they still need a live Mesa Metal screen and real capability reporting.
@@ -723,7 +729,11 @@ backend, framework/ICD integration, CTS failures, and macOS specialization.
     unbounded batches, transform-feedback drawing, general patches/adjacency,
     conditional rendering, general vertex formats/sparse attributes, and
     broader draw validation. A bounded GPU-produced indirect-count path exists
-    only for prevalidated ICB command records.
+    only for prevalidated ICB command records. A separate attribute-free
+    `uint32` indexed path now accepts `1..64` GPU-authored fixed-stride records
+    without a CPU map; a two-record smoke carries distinct base-instance values
+    through generated MSL. Neither capability is treated as general indirect
+    drawing or shader-draw-parameter admission.
 
 15. `Required` Tessellation pipeline
     Scope: not implemented yet.
@@ -757,13 +767,21 @@ backend, framework/ICD integration, CTS failures, and macOS specialization.
     Scope: `glFlush` and `glFinish` are the current baseline.
     Still required: sync objects, waits, timeouts, resource visibility guarantees, memory barriers, texture/SSBO/image/atomic barriers, and Metal fence/shared-event translation.
 
-23. `Required` Compute shaders
-    Scope: not implemented yet.
-    Required: compute compile/link path, dispatch, work-group semantics, shared memory, barriers, indirect dispatch, and full Metal compute-pipeline translation.
+23. `Partial` Compute shaders
+    Scope: Mesa NIR compute state, static direct-buffer roots, full-workgroup
+    dispatch, atomic add/exchange, bounded indirect dispatch, and Metal
+    fence-backed readback are exercised through the AO46 Gallium screen.
+    Still required: general compute state-tracker admission, variable work
+    groups, shared memory, barriers, images, and broad indirect dispatch.
 
-24. `Required` Shader Storage Buffer Objects
-    Scope: not implemented yet.
-    Required: SSBO bindings, reflection, `std430` layout, unsized arrays, qualifiers, barriers, atomics, and backend storage-buffer translation.
+24. `Partial` Shader Storage Buffer Objects
+    Scope: Mesa static-index `load_ssbo`, `store_ssbo`, atomic-add, and
+    atomic-exchange paths lower to direct Metal buffer roots. Atomic exchange
+    return values are verified after a fence. `set_shader_buffers` verifies
+    live ranges, writable state, nonzero offsets, and sparse slot updates.
+    Still required: dynamic indexing, `std430` coverage, unsized arrays,
+    qualifiers, size queries, barriers, descriptor tables, and complete
+    state-tracker binding.
 
 25. `Required` Image load/store
     Scope: not implemented yet.

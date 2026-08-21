@@ -49,6 +49,21 @@ ao46_build_mesa_vertex_shader(void)
    nir_def *uv_value = nir_load_input(
       &builder, 2, 32, nir_imm_int(&builder, 0), .base = 1, .range = 1,
       .dest_type = nir_type_float32, .io_semantics = uv_attribute);
+   nir_def *vertex_sample = nir_tex(
+      &builder,
+      nir_vec2(&builder, nir_imm_float(&builder, 1.5f),
+               nir_imm_float(&builder, 0.0f)),
+      .texture_index = 2, .sampler_index = 2, .dim = GLSL_SAMPLER_DIM_2D,
+      .dest_type = nir_type_float32);
+   nir_def *vertex_offset = nir_fsub(
+      &builder, nir_channel(&builder, vertex_sample, 0),
+      nir_imm_float(&builder, 32.0f / 255.0f));
+
+   /* Keep the sampled offset observable while preserving the fullscreen triangle. */
+   position_value = nir_fadd(
+      &builder, position_value,
+      nir_vec4(&builder, vertex_offset, nir_imm_float(&builder, 0.0f),
+               nir_imm_float(&builder, 0.0f), nir_imm_float(&builder, 0.0f)));
 
    nir_store_output(&builder, position_value, nir_imm_int(&builder, 0),
                     .base = 0, .range = 1, .write_mask = 0xf,
@@ -225,6 +240,16 @@ main(void)
       .compare_mode = PIPE_TEX_COMPARE_NONE,
       .max_anisotropy = 1,
    };
+   const struct pipe_sampler_state vertex_sampler_template = {
+      .wrap_s = PIPE_TEX_WRAP_REPEAT,
+      .wrap_t = PIPE_TEX_WRAP_REPEAT,
+      .wrap_r = PIPE_TEX_WRAP_REPEAT,
+      .min_img_filter = PIPE_TEX_FILTER_LINEAR,
+      .min_mip_filter = PIPE_TEX_MIPFILTER_NONE,
+      .mag_img_filter = PIPE_TEX_FILTER_LINEAR,
+      .compare_mode = PIPE_TEX_COMPARE_NONE,
+      .max_anisotropy = 1,
+   };
    struct AO46MetalAdapter adapter = {0};
    struct AO46MesaRenderPipeline pipeline = {0};
    struct nir_shader *vertex_nir = NULL;
@@ -233,17 +258,18 @@ main(void)
    struct pipe_context *context = NULL;
    struct pipe_resource *source_one = NULL;
    struct pipe_resource *source_three = NULL;
+   struct pipe_resource *source_vertex = NULL;
    struct pipe_resource *target = NULL;
    struct pipe_resource *vertex_buffer = NULL;
    struct pipe_resource *upload_buffer = NULL;
    struct pipe_resource *readback = NULL;
    struct pipe_surface *target_surface = NULL;
-   struct pipe_sampler_view *sampler_views[2] = {0};
+   struct pipe_sampler_view *sampler_views[3] = {0};
    struct pipe_fence_handle *fence = NULL;
    struct pipe_transfer *transfer = NULL;
    struct pipe_box texture_box = {.width = 8, .height = 8, .depth = 1};
    struct pipe_box readback_box = {.height = 1, .depth = 1};
-   void *samplers[2] = {0};
+   void *samplers[3] = {0};
    void *no_sampler = NULL;
    uint8_t *upload = NULL;
    size_t row_pitch = 0;
@@ -282,12 +308,22 @@ main(void)
        !strstr(pipeline.fragment_msl_source, "sampler sampler_3 [[sampler(3)]]") ||
        !strstr(pipeline.fragment_msl_source, "tex_1.sample(sampler_1") ||
        !strstr(pipeline.fragment_msl_source, "tex_3.sample(sampler_3") ||
+       !strstr(pipeline.vertex_msl_source,
+               "texture2d<float> tex_2 [[texture(2)]]") ||
+       !strstr(pipeline.vertex_msl_source, "sampler sampler_2 [[sampler(2)]]") ||
+       !strstr(pipeline.vertex_msl_source, "tex_2.sample(sampler_2") ||
        !strstr(pipeline.vertex_msl_source, "attrib_01 [[attribute(1)]]") ||
        !strstr(pipeline.vertex_msl_source, "vary_00 [[user(vary_00)]]") ||
        !strstr(pipeline.fragment_msl_source, "vary_00 [[user(vary_00)]]") ||
        strstr(pipeline.fragment_msl_source, "sampler_table.handles") ||
+       pipeline.vertex_reflection.static_texture_mask != UINT64_C(0x4) ||
+       pipeline.vertex_reflection.static_sampler_mask != UINT64_C(0x4) ||
        pipeline.fragment_reflection.static_texture_mask != UINT64_C(0xa) ||
-       pipeline.fragment_reflection.static_sampler_mask != UINT64_C(0xa)) {
+       pipeline.fragment_reflection.static_sampler_mask != UINT64_C(0xa) ||
+       pipeline.metal_pipeline.static_vertex_texture_mask != UINT64_C(0x4) ||
+       pipeline.metal_pipeline.static_fragment_texture_mask != UINT64_C(0xa) ||
+       pipeline.metal_pipeline.static_vertex_sampler_mask != UINT64_C(0x4) ||
+       pipeline.metal_pipeline.static_fragment_sampler_mask != UINT64_C(0xa)) {
       fputs("Mesa static texture/sampler ABI was unexpected\n", stderr);
       failed = 1;
       goto out;
@@ -298,10 +334,12 @@ main(void)
                     : NULL;
    source_one = screen ? screen->resource_create(screen, &texture_template) : NULL;
    source_three = screen ? screen->resource_create(screen, &texture_template) : NULL;
+   source_vertex = screen ? screen->resource_create(screen, &texture_template) : NULL;
    target = screen ? screen->resource_create(screen, &texture_template) : NULL;
    vertex_buffer = screen ? screen->resource_create(screen, &vertex_template) : NULL;
    target_surface = AO46MetalGalliumSurfaceCreate(target);
-   if (!screen || !context || !source_one || !source_three || !target ||
+   if (!screen || !context || !source_one || !source_three || !source_vertex ||
+       !target ||
        !vertex_buffer ||
        !target_surface || !AO46MetalGalliumTextureGetTransferLayout(
           target, texture_box.width, texture_box.height, &row_pitch,
@@ -351,10 +389,27 @@ main(void)
    }
    screen->fence_reference(screen, &fence, NULL);
 
+   /* A vertex-only sampler makes filter/address behavior observable in geometry. */
+   ao46_fill_texture_quadrants(upload, row_pitch, texture_template.width0,
+                               texture_template.height0,
+                               ao46_texture_slot_one_quadrants);
+   context->buffer_subdata(context, upload_buffer, 0, 0, transfer_size, upload);
+   if (!AO46MetalGalliumTextureUpload(
+          context, source_vertex, 0, 0, texture_template.width0,
+          texture_template.height0, upload_buffer, 0, row_pitch, &fence) ||
+       !fence || !screen->fence_finish(screen, context, fence, UINT64_MAX)) {
+      fputs("Mesa vertex-sampler texture upload did not complete\n", stderr);
+      failed = 1;
+      goto out;
+   }
+   screen->fence_reference(screen, &fence, NULL);
+
    samplers[0] = context->create_sampler_state(context, &sampler_template);
    samplers[1] = context->create_sampler_state(context, &sampler_template);
-   if (!samplers[0] || !samplers[1]) {
-      fputs("Mesa texture smoke could not create nearest-clamp samplers\n", stderr);
+   samplers[2] =
+      context->create_sampler_state(context, &vertex_sampler_template);
+   if (!samplers[0] || !samplers[1] || !samplers[2]) {
+      fputs("Mesa texture smoke could not create bounded sampler states\n", stderr);
       failed = 1;
       goto out;
    }
@@ -362,6 +417,8 @@ main(void)
                                 &samplers[0]);
    context->bind_sampler_states(context, MESA_SHADER_FRAGMENT, 3, 1,
                                 &samplers[1]);
+   context->bind_sampler_states(context, MESA_SHADER_VERTEX, 2, 1,
+                                &samplers[2]);
 
    struct pipe_sampler_view sampler_view_template = {
       .format = source_one->format,
@@ -383,7 +440,10 @@ main(void)
    sampler_view_template.texture = source_three;
    sampler_views[1] = context->create_sampler_view(context, source_three,
                                                     &sampler_view_template);
-   if (!sampler_views[0] || !sampler_views[1]) {
+   sampler_view_template.texture = source_vertex;
+   sampler_views[2] = context->create_sampler_view(context, source_vertex,
+                                                    &sampler_view_template);
+   if (!sampler_views[0] || !sampler_views[1] || !sampler_views[2]) {
       fputs("Mesa texture smoke could not create sampler views\n", stderr);
       failed = 1;
       goto out;
@@ -392,14 +452,31 @@ main(void)
                               &sampler_views[0]);
    context->set_sampler_views(context, MESA_SHADER_FRAGMENT, 3, 1, 0,
                               &sampler_views[1]);
+   context->set_sampler_views(context, MESA_SHADER_VERTEX, 2, 1, 0,
+                              &sampler_views[2]);
 
    context->buffer_subdata(context, vertex_buffer, 0, 0, sizeof(vertices),
                            vertices);
    struct AO46MesaVertexBinding bound_vertex = vertex_binding;
    bound_vertex.resource = vertex_buffer;
-   if (!AO46MesaRenderPipelineDrawTriangle(
+   context->set_sampler_views(context, MESA_SHADER_VERTEX, 2, 0, 1, NULL);
+   if (AO46MesaRenderPipelineDrawTriangle(
           &pipeline, context, target_surface, &bound_vertex, 1, &fence) ||
-       !fence || !screen->fence_finish(screen, context, fence, UINT64_MAX)) {
+       fence) {
+      fputs("Mesa texture draw accepted a missing vertex-stage repeat sampler view\n",
+            stderr);
+      failed = 1;
+      goto out;
+   }
+   context->set_sampler_views(context, MESA_SHADER_VERTEX, 2, 1, 0,
+                              &sampler_views[2]);
+   if (!AO46MesaRenderPipelineDrawTriangle(
+          &pipeline, context, target_surface, &bound_vertex, 1, &fence)) {
+      fputs("Mesa multi-slot texture draw did not submit\n", stderr);
+      failed = 1;
+      goto out;
+   }
+   if (!fence || !screen->fence_finish(screen, context, fence, UINT64_MAX)) {
       fputs("Mesa multi-slot texture draw did not complete\n", stderr);
       failed = 1;
       goto out;
@@ -440,19 +517,27 @@ out:
       screen->fence_reference(screen, &fence, NULL);
    for (unsigned i = 0; i < ARRAY_SIZE(sampler_views); ++i) {
       if (sampler_views[i]) {
-         const unsigned slot = i == 0 ? 1 : 3;
+         const unsigned slot = i == 0 ? 1 : i == 1 ? 3 : 2;
 
-         context->set_sampler_views(context, MESA_SHADER_FRAGMENT, slot, 0, 1,
-                                    NULL);
+         if (i < 2)
+            context->set_sampler_views(context, MESA_SHADER_FRAGMENT, slot, 0,
+                                       1, NULL);
+         else
+            context->set_sampler_views(context, MESA_SHADER_VERTEX, slot, 0, 1,
+                                       NULL);
          pipe_sampler_view_reference(&sampler_views[i], NULL);
       }
    }
    for (unsigned i = 0; i < ARRAY_SIZE(samplers); ++i) {
       if (samplers[i]) {
-         const unsigned slot = i == 0 ? 1 : 3;
+         const unsigned slot = i == 0 ? 1 : i == 1 ? 3 : 2;
 
-         context->bind_sampler_states(context, MESA_SHADER_FRAGMENT, slot, 1,
-                                      &no_sampler);
+         if (i < 2)
+            context->bind_sampler_states(context, MESA_SHADER_FRAGMENT, slot,
+                                         1, &no_sampler);
+         else
+            context->bind_sampler_states(context, MESA_SHADER_VERTEX, slot, 1,
+                                         &no_sampler);
          context->delete_sampler_state(context, samplers[i]);
       }
    }
@@ -461,6 +546,7 @@ out:
    pipe_resource_reference(&upload_buffer, NULL);
    pipe_resource_reference(&vertex_buffer, NULL);
    pipe_resource_reference(&target, NULL);
+   pipe_resource_reference(&source_vertex, NULL);
    pipe_resource_reference(&source_three, NULL);
    pipe_resource_reference(&source_one, NULL);
    if (context)

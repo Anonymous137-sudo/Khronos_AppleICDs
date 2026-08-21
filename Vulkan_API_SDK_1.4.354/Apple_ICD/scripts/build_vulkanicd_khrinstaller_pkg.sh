@@ -1,8 +1,10 @@
 #!/bin/sh
 set -eu
 
+export COPYFILE_DISABLE=1
+
 usage() {
-    printf '%s\n' "usage: $0 [--output <VulkanICD_KHRInstaller.pkg>]"
+    printf '%s\n' "usage: $0 [--output <VulkanICD-KHR-Installer.pkg>]"
     exit 2
 }
 
@@ -10,7 +12,7 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 project_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 repo_root=$(git -C "$project_root" rev-parse --show-toplevel 2>/dev/null || true)
 if [ -z "$repo_root" ]; then
-    printf '%s\n' "unable to locate the Git root for VulkanICD_KHRInstaller.pkg" >&2
+    printf '%s\n' "unable to locate the Git root for VulkanICD-KHR-Installer.pkg" >&2
     exit 1
 fi
 
@@ -24,7 +26,7 @@ case "$project_root" in
         ;;
 esac
 
-pkg_output=${VULKANICD_KHR_PKG_OUTPUT:-"$repo_root/dist/VulkanICD_KHRInstaller.pkg"}
+pkg_output=${VULKANICD_KHR_PKG_OUTPUT:-"$repo_root/dist/VulkanICD-KHR-Installer.pkg"}
 pkg_identifier=${VULKANICD_KHR_PKG_IDENTIFIER:-"org.khronos.appleicds.vulkanicd-khrinstaller"}
 pkg_version=${VULKANICD_KHR_PKG_VERSION:-"1.4.354"}
 release_label=${VULKANICD_KHR_RELEASE_LABEL:-"cts-qualified-1.4.3.2-20260821"}
@@ -43,7 +45,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 if ! command -v pkgbuild >/dev/null 2>&1; then
-    printf '%s\n' "pkgbuild is required to create VulkanICD_KHRInstaller.pkg" >&2
+    printf '%s\n' "pkgbuild is required to create VulkanICD-KHR-Installer.pkg" >&2
     exit 1
 fi
 
@@ -102,6 +104,13 @@ VULKANICD_KHR_API_VERSION='1.4.354'
 VULKANICD_KHR_RELEASE_LABEL='$release_label'
 EOF
 
+# Finder metadata must never enter a distributable package payload.
+find "$payload_root" -name '._*' -type f -delete
+find "$payload_root" -name '.DS_Store' -type f -delete
+if command -v xattr >/dev/null 2>&1; then
+    xattr -rc "$payload_root" 2>/dev/null || true
+fi
+
 pkgbuild \
     --root "$payload_root" \
     --scripts "$pkg_scripts_root" \
@@ -110,4 +119,4 @@ pkgbuild \
     --install-location / \
     "$pkg_output"
 
-printf '%s\n' "built VulkanICD_KHRInstaller package at $pkg_output"
+printf '%s\n' "built VulkanICD-KHR-Installer package at $pkg_output"

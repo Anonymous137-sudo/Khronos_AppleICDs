@@ -111,6 +111,7 @@ struct AO46MetalGalliumContext {
    unsigned vertex_buffer_count;
    struct pipe_constant_buffer
       constant_buffers[MESA_SHADER_STAGES][AO46_METAL_MAX_UNIFORM_BINDINGS];
+   void *vertex_samplers[AO46_METAL_MAX_STATIC_BINDINGS];
    void *fragment_samplers[AO46_METAL_MAX_STATIC_BINDINGS];
    struct pipe_sampler_view *vertex_sampler_views[AO46_METAL_MAX_STATIC_BINDINGS];
    struct pipe_sampler_view *fragment_sampler_views[AO46_METAL_MAX_STATIC_BINDINGS];
@@ -1841,16 +1842,12 @@ ao46_metal_gallium_draw_vbo(
                                              &indirect_resource))
          return;
 
-      /*
-       * A shader-writable command buffer may contain a Mesa-produced single
-       * indexed record. Metal consumes it directly, so the driver must not
-       * map it just to reconstruct the already-GPU-owned arguments.
-       */
+      /* Mesa-authored indirect records stay GPU-resident through submission. */
       indirect_gpu_generated =
          !indirect_resource->buffer.cpu_mapping ||
          (indirect->buffer->bind & PIPE_BIND_SHADER_BUFFER) != 0;
       if (indirect_gpu_generated &&
-          (indirect->draw_count != 1 || indirect->indirect_draw_count ||
+          (indirect->indirect_draw_count ||
            info->index_size != sizeof(uint32_t)))
          return;
       if (!indirect_gpu_generated && !indirect_resource->buffer.cpu_mapping)
@@ -2100,11 +2097,17 @@ static bool
 ao46_metal_gallium_sampler_state_is_supported(
    const struct pipe_sampler_state *state)
 {
-   return state && state->wrap_s == PIPE_TEX_WRAP_CLAMP_TO_EDGE &&
-          state->wrap_t == PIPE_TEX_WRAP_CLAMP_TO_EDGE &&
-          state->wrap_r == PIPE_TEX_WRAP_CLAMP_TO_EDGE &&
-          state->min_img_filter == PIPE_TEX_FILTER_NEAREST &&
-          state->mag_img_filter == PIPE_TEX_FILTER_NEAREST &&
+   return state &&
+          (state->wrap_s == PIPE_TEX_WRAP_CLAMP_TO_EDGE ||
+           state->wrap_s == PIPE_TEX_WRAP_REPEAT) &&
+          (state->wrap_t == PIPE_TEX_WRAP_CLAMP_TO_EDGE ||
+           state->wrap_t == PIPE_TEX_WRAP_REPEAT) &&
+          (state->wrap_r == PIPE_TEX_WRAP_CLAMP_TO_EDGE ||
+           state->wrap_r == PIPE_TEX_WRAP_REPEAT) &&
+          (state->min_img_filter == PIPE_TEX_FILTER_NEAREST ||
+           state->min_img_filter == PIPE_TEX_FILTER_LINEAR) &&
+          (state->mag_img_filter == PIPE_TEX_FILTER_NEAREST ||
+           state->mag_img_filter == PIPE_TEX_FILTER_LINEAR) &&
           state->min_mip_filter == PIPE_TEX_MIPFILTER_NONE &&
           state->compare_mode == PIPE_TEX_COMPARE_NONE &&
           !state->unnormalized_coords && state->max_anisotropy <= 1 &&
@@ -2118,15 +2121,31 @@ ao46_metal_gallium_create_sampler_state(
 {
    struct AO46MetalGalliumSamplerState *sampler_state;
    const struct AO46MetalGalliumScreen *screen;
+   const struct AO46MetalSamplerDescriptor descriptor = {
+      .min_filter = state && state->min_img_filter == PIPE_TEX_FILTER_LINEAR
+                        ? AO46_METAL_SAMPLER_FILTER_LINEAR
+                        : AO46_METAL_SAMPLER_FILTER_NEAREST,
+      .mag_filter = state && state->mag_img_filter == PIPE_TEX_FILTER_LINEAR
+                        ? AO46_METAL_SAMPLER_FILTER_LINEAR
+                        : AO46_METAL_SAMPLER_FILTER_NEAREST,
+      .address_s = state && state->wrap_s == PIPE_TEX_WRAP_REPEAT
+                     ? AO46_METAL_SAMPLER_ADDRESS_REPEAT
+                     : AO46_METAL_SAMPLER_ADDRESS_CLAMP_TO_EDGE,
+      .address_t = state && state->wrap_t == PIPE_TEX_WRAP_REPEAT
+                     ? AO46_METAL_SAMPLER_ADDRESS_REPEAT
+                     : AO46_METAL_SAMPLER_ADDRESS_CLAMP_TO_EDGE,
+      .address_r = state && state->wrap_r == PIPE_TEX_WRAP_REPEAT
+                     ? AO46_METAL_SAMPLER_ADDRESS_REPEAT
+                     : AO46_METAL_SAMPLER_ADDRESS_CLAMP_TO_EDGE,
+   };
 
    if (!context || !ao46_metal_gallium_sampler_state_is_supported(state))
       return NULL;
 
    screen = ao46_metal_gallium_screen(context->screen);
    sampler_state = calloc(1, sizeof(*sampler_state));
-   if (!sampler_state ||
-       !AO46MetalSamplerCreateNearestClamp(screen->adapter,
-                                           &sampler_state->sampler)) {
+   if (!sampler_state || !AO46MetalSamplerCreate(screen->adapter, &descriptor,
+                                                  &sampler_state->sampler)) {
       free(sampler_state);
       return NULL;
    }
@@ -2140,14 +2159,19 @@ ao46_metal_gallium_bind_sampler_states(
    unsigned num_samplers, void **samplers)
 {
    struct AO46MetalGalliumContext *ao46_context;
+   void **stage_samplers;
 
-   if (!context || shader != MESA_SHADER_FRAGMENT ||
+   if (!context || (shader != MESA_SHADER_VERTEX &&
+                    shader != MESA_SHADER_FRAGMENT) ||
        start_slot > AO46_METAL_MAX_STATIC_BINDINGS ||
        num_samplers > AO46_METAL_MAX_STATIC_BINDINGS - start_slot ||
        (num_samplers != 0 && !samplers))
       return;
 
    ao46_context = ao46_metal_gallium_context(context);
+   stage_samplers = shader == MESA_SHADER_VERTEX
+                       ? ao46_context->vertex_samplers
+                       : ao46_context->fragment_samplers;
    for (unsigned i = 0; i < num_samplers; ++i) {
       struct AO46MetalGalliumSamplerState *state = samplers[i];
 
@@ -2155,7 +2179,7 @@ ao46_metal_gallium_bind_sampler_states(
          return;
    }
    for (unsigned i = 0; i < num_samplers; ++i)
-      ao46_context->fragment_samplers[start_slot + i] = samplers[i];
+      stage_samplers[start_slot + i] = samplers[i];
 }
 
 static void
@@ -2170,6 +2194,8 @@ ao46_metal_gallium_delete_sampler_state(struct pipe_context *context,
 
    ao46_context = ao46_metal_gallium_context(context);
    for (unsigned i = 0; i < AO46_METAL_MAX_STATIC_BINDINGS; ++i) {
+      if (ao46_context->vertex_samplers[i] == sampler_state)
+         ao46_context->vertex_samplers[i] = NULL;
       if (ao46_context->fragment_samplers[i] == sampler_state)
          ao46_context->fragment_samplers[i] = NULL;
    }
@@ -2291,8 +2317,6 @@ ao46_metal_gallium_set_sampler_views(
 
       if (views[i] &&
           (!views[i]->texture || views[i]->context != context ||
-           (shader == MESA_SHADER_VERTEX &&
-            views[i]->texture->target != PIPE_BUFFER) ||
            !ao46_metal_gallium_sampler_view_is_supported(views[i]->texture,
                                                           views[i]) ||
            (views[i]->texture->target == PIPE_BUFFER
@@ -3020,6 +3044,72 @@ AO46MetalGalliumRenderTriangle(
       vertex_binding_count, out_fence);
 }
 
+/*
+ * The classic encoder binds one resource list to both stages. When a Mesa
+ * shader uses a slot in both stages, require the exact same live object rather
+ * than silently replacing one stage's state with the other.
+ */
+static bool
+ao46_metal_gallium_select_sampler_view(
+   const struct AO46MetalGalliumContext *context,
+   const struct AO46MetalRenderPipeline *pipeline, unsigned index,
+   struct pipe_sampler_view **out_view)
+{
+   const uint64_t bit = UINT64_C(1) << index;
+   const bool vertex_uses = (pipeline->static_vertex_texture_mask & bit) != 0;
+   bool fragment_uses = (pipeline->static_fragment_texture_mask & bit) != 0;
+   struct pipe_sampler_view *vertex_view;
+   struct pipe_sampler_view *fragment_view;
+
+   if (!context || !pipeline || !out_view || index >= AO46_METAL_MAX_STATIC_BINDINGS)
+      return false;
+
+   /* Pipelines created before stage masks existed retain fragment-only behavior. */
+   if (!vertex_uses && !fragment_uses && (pipeline->static_texture_mask & bit))
+      fragment_uses = true;
+   if (!vertex_uses && !fragment_uses)
+      return false;
+
+   vertex_view = context->vertex_sampler_views[index];
+   fragment_view = context->fragment_sampler_views[index];
+   if ((vertex_uses && !vertex_view) || (fragment_uses && !fragment_view) ||
+       (vertex_uses && fragment_uses && vertex_view != fragment_view))
+      return false;
+
+   *out_view = vertex_uses ? vertex_view : fragment_view;
+   return true;
+}
+
+static bool
+ao46_metal_gallium_select_sampler_state(
+   const struct AO46MetalGalliumContext *context,
+   const struct AO46MetalRenderPipeline *pipeline, unsigned index,
+   struct AO46MetalGalliumSamplerState **out_state)
+{
+   const uint64_t bit = UINT64_C(1) << index;
+   const bool vertex_uses = (pipeline->static_vertex_sampler_mask & bit) != 0;
+   bool fragment_uses = (pipeline->static_fragment_sampler_mask & bit) != 0;
+   struct AO46MetalGalliumSamplerState *vertex_state;
+   struct AO46MetalGalliumSamplerState *fragment_state;
+
+   if (!context || !pipeline || !out_state || index >= AO46_METAL_MAX_STATIC_BINDINGS)
+      return false;
+
+   if (!vertex_uses && !fragment_uses && (pipeline->static_sampler_mask & bit))
+      fragment_uses = true;
+   if (!vertex_uses && !fragment_uses)
+      return false;
+
+   vertex_state = context->vertex_samplers[index];
+   fragment_state = context->fragment_samplers[index];
+   if ((vertex_uses && !vertex_state) || (fragment_uses && !fragment_state) ||
+       (vertex_uses && fragment_uses && vertex_state != fragment_state))
+      return false;
+
+   *out_state = vertex_uses ? vertex_state : fragment_state;
+   return true;
+}
+
 static bool
 ao46_metal_gallium_render_triangle(
    struct pipe_context *context, const struct AO46MetalRenderPipeline *pipeline,
@@ -3241,11 +3331,12 @@ ao46_metal_gallium_render_triangle(
       const uint64_t bit = UINT64_C(1) << index;
 
       if (pipeline->static_texture_mask & bit) {
-         struct pipe_sampler_view *view =
-            ao46_context->fragment_sampler_views[index];
+         struct pipe_sampler_view *view;
          struct AO46MetalGalliumResource *texture_resource;
 
-         if (!view || !view->texture || view->texture == destination->texture ||
+         if (!ao46_metal_gallium_select_sampler_view(ao46_context, pipeline, index,
+                                                     &view) ||
+             !view->texture || view->texture == destination->texture ||
              !ao46_metal_gallium_sampler_view_is_supported(view->texture, view) ||
              !ao46_metal_gallium_texture_resource(view->texture,
                                                   &texture_resource))
@@ -3306,10 +3397,11 @@ ao46_metal_gallium_render_triangle(
       }
 
       if (pipeline->static_sampler_mask & bit) {
-         struct AO46MetalGalliumSamplerState *sampler_state =
-            ao46_context->fragment_samplers[index];
+         struct AO46MetalGalliumSamplerState *sampler_state;
 
-         if (!sampler_state ||
+         if (!ao46_metal_gallium_select_sampler_state(ao46_context, pipeline,
+                                                      index, &sampler_state) ||
+             !sampler_state ||
              !AO46MetalSamplerIsCurrent(&sampler_state->sampler))
             return false;
 

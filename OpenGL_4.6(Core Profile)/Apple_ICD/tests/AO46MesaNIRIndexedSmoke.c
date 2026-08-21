@@ -84,11 +84,11 @@ ao46_build_indirect_count_compute_shader(void)
    return builder.shader;
 }
 
-/* Mesa NIR writes one indexed-indirect record that the CPU never maps. */
+/* Mesa NIR writes two indexed-indirect records that the CPU never maps. */
 static struct nir_shader *
 ao46_build_gpu_indirect_compute_shader(void)
 {
-   static const uint32_t arguments[] = {3, 1, 0, 0, 0};
+   static const uint32_t arguments[] = {3, 1, 0, 0, 0, 3, 1, 0, 3, 1};
    nir_builder builder = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, &kk_nir_options, "ao46_gpu_indirect_producer");
    nir_def *root;
@@ -115,18 +115,69 @@ ao46_build_mesa_procedural_vertex_shader(void)
       .location = VARYING_SLOT_POS,
       .num_slots = 1,
    };
+   struct nir_io_semantics draw_color = {
+      .location = VARYING_SLOT_VAR0,
+      .num_slots = 1,
+   };
    nir_def *vertex_id = nir_load_vertex_id(&builder);
+   nir_def *base_instance = nir_load_base_instance(&builder);
    nir_def *first = nir_imm_vec4(&builder, -1.0f, -1.0f, 0.0f, 1.0f);
-   nir_def *second = nir_imm_vec4(&builder, 3.0f, -1.0f, 0.0f, 1.0f);
-   nir_def *third = nir_imm_vec4(&builder, -1.0f, 3.0f, 0.0f, 1.0f);
+   nir_def *second = nir_imm_vec4(&builder, 1.0f, -1.0f, 0.0f, 1.0f);
+   nir_def *third = nir_imm_vec4(&builder, -1.0f, 1.0f, 0.0f, 1.0f);
+   nir_def *fourth = nir_imm_vec4(&builder, 1.0f, -1.0f, 0.0f, 1.0f);
+   nir_def *fifth = nir_imm_vec4(&builder, 1.0f, 1.0f, 0.0f, 1.0f);
+   nir_def *sixth = nir_imm_vec4(&builder, -1.0f, 1.0f, 0.0f, 1.0f);
    nir_def *position_value = nir_bcsel(
       &builder, nir_ieq_imm(&builder, vertex_id, 0), first,
-      nir_bcsel(&builder, nir_ieq_imm(&builder, vertex_id, 1), second, third));
+      nir_bcsel(
+         &builder, nir_ieq_imm(&builder, vertex_id, 1), second,
+         nir_bcsel(
+            &builder, nir_ieq_imm(&builder, vertex_id, 2), third,
+            nir_bcsel(
+               &builder, nir_ieq_imm(&builder, vertex_id, 3), fourth,
+               nir_bcsel(&builder, nir_ieq_imm(&builder, vertex_id, 4), fifth,
+                         sixth)))));
+   nir_def *color_value = nir_bcsel(
+      &builder, nir_ieq_imm(&builder, base_instance, 0),
+      nir_imm_vec4(&builder, 0.0f, 0.5f, 0.0f, 1.0f),
+      nir_imm_vec4(&builder, 0.0f, 0.0f, 0.5f, 1.0f));
 
    nir_store_output(&builder, position_value, nir_imm_int(&builder, 0),
                     .base = 0, .range = 1, .write_mask = 0xf,
                     .src_type = nir_type_float32, .io_semantics = position);
-   builder.shader->info.outputs_written |= BITFIELD64_BIT(VARYING_SLOT_POS);
+   nir_store_output(&builder, color_value, nir_imm_int(&builder, 0), .base = 0,
+                    .range = 1, .write_mask = 0xf,
+                    .src_type = nir_type_float32, .io_semantics = draw_color);
+   builder.shader->info.outputs_written |=
+      BITFIELD64_BIT(VARYING_SLOT_POS) | BITFIELD64_BIT(VARYING_SLOT_VAR0);
+   return builder.shader;
+}
+
+/* Each GPU-authored indirect record supplies its own base-instance value. */
+static struct nir_shader *
+ao46_build_mesa_gpu_indirect_fragment_shader(void)
+{
+   nir_builder builder = nir_builder_init_simple_shader(
+      MESA_SHADER_FRAGMENT, &kk_nir_options, "ao46_gpu_indirect_fragment_smoke");
+   struct nir_io_semantics color = {
+      .location = FRAG_RESULT_DATA0,
+      .num_slots = 1,
+   };
+   struct nir_io_semantics draw_color = {
+      .location = VARYING_SLOT_VAR0,
+      .num_slots = 1,
+   };
+   nir_def *barycentric = nir_load_barycentric_pixel(
+      &builder, 32, .interp_mode = INTERP_MODE_SMOOTH);
+   nir_def *color_value = nir_load_interpolated_input(
+      &builder, 4, 32, barycentric, nir_imm_int(&builder, 0), .base = 0,
+      .dest_type = nir_type_float32, .io_semantics = draw_color);
+
+   nir_store_output(&builder, color_value, nir_imm_int(&builder, 0), .base = 0,
+                    .range = 1, .write_mask = 0xf,
+                    .src_type = nir_type_float32, .io_semantics = color);
+   builder.shader->info.inputs_read |= BITFIELD64_BIT(VARYING_SLOT_VAR0);
+   builder.shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_DATA0);
    return builder.shader;
 }
 
@@ -250,7 +301,7 @@ main(void)
    const struct pipe_resource gpu_indirect_template = {
       .target = PIPE_BUFFER,
       .format = PIPE_FORMAT_R8_UNORM,
-      .width0 = 5 * sizeof(uint32_t),
+      .width0 = 2 * 5 * sizeof(uint32_t),
       .height0 = 1,
       .depth0 = 1,
       .array_size = 1,
@@ -365,6 +416,9 @@ main(void)
    };
    struct pipe_box color_box = {.width = 8, .height = 8, .depth = 1};
    struct pipe_box readback_box = {.height = 1, .depth = 1};
+   union pipe_color_union gpu_indirect_clear = {
+      .f = {0.0f, 0.0f, 0.0f, 1.0f},
+   };
    size_t row_pitch = 0;
    size_t readback_size = 0;
    int failed = 0;
@@ -645,7 +699,7 @@ main(void)
    indirect_info.indirect_draw_count_offset = 0;
 
    gpu_indirect_vertex_nir = ao46_build_mesa_procedural_vertex_shader();
-   gpu_indirect_fragment_nir = ao46_build_mesa_indexed_fragment_shader();
+   gpu_indirect_fragment_nir = ao46_build_mesa_gpu_indirect_fragment_shader();
    gpu_indirect_compute_nir = ao46_build_gpu_indirect_compute_shader();
    if (!gpu_indirect_vertex_nir || !gpu_indirect_fragment_nir ||
        !gpu_indirect_compute_nir ||
@@ -657,6 +711,15 @@ main(void)
           &adapter, gpu_indirect_compute_nir,
           &gpu_indirect_compute_pipeline)) {
       fputs("Mesa GPU indirect pipelines could not be created\n", stderr);
+      failed = 1;
+      goto out;
+   }
+   if (!strstr(gpu_indirect_pipeline.vertex_msl_source,
+               "gl_BaseInstance [[base_instance]]") ||
+       !strstr(gpu_indirect_pipeline.vertex_msl_source, "vary_00 [[user(vary_00)]]") ||
+       !strstr(gpu_indirect_pipeline.fragment_msl_source,
+               "vary_00 [[user(vary_00)]]")) {
+      fputs("Mesa GPU indirect base-instance ABI was unexpected\n", stderr);
       failed = 1;
       goto out;
    }
@@ -683,14 +746,25 @@ main(void)
    context->bind_vertex_elements_state(context, NULL);
    context->set_vertex_buffers(context, 0, NULL);
    indirect_info.buffer = gpu_indirect_buffer;
-   indirect_info.draw_count = 1;
+   indirect_info.draw_count = 2;
    indirect_info.stride = 5 * sizeof(uint32_t);
+   /* Each record covers one half; both must execute to overwrite this clear. */
+   context->clear_render_target(context, surface, &gpu_indirect_clear, 0, 0,
+                                color_template.width0, color_template.height0,
+                                false);
+   context->flush(context, &fence, 0);
+   if (!fence || !screen->fence_finish(screen, context, fence, UINT64_MAX)) {
+      fputs("Mesa GPU indirect clear did not complete\n", stderr);
+      failed = 1;
+      goto out;
+   }
+   screen->fence_reference(screen, &fence, NULL);
    context->flush(context, &previous_fence, 0);
    context->draw_vbo(context, &indirect_draw, 0, &indirect_info, NULL, 1);
    context->flush(context, &fence, 0);
    if (!fence || fence == previous_fence ||
        !screen->fence_finish(screen, context, fence, UINT64_MAX)) {
-      fputs("Mesa GPU-authored indirect record did not complete\n", stderr);
+      fputs("Mesa GPU-authored indirect record sequence did not complete\n", stderr);
       failed = 1;
       goto out;
    }
@@ -717,16 +791,33 @@ main(void)
       goto out;
    }
 
-   for (unsigned y = 0; y < color_template.height0 && !failed; ++y) {
+   {
+      uint32_t green_pixels = 0;
+      uint32_t blue_pixels = 0;
+
+      for (unsigned y = 0; y < color_template.height0 && !failed; ++y) {
       for (unsigned x = 0; x < color_template.width0; ++x) {
          const uint8_t *pixel = pixels + (size_t)y * row_pitch + x * 4;
 
-         if (pixel[0] != 0x40 || pixel[1] != 0x80 || pixel[2] != 0xbf ||
-             pixel[3] != 0xff) {
-            fputs("Mesa-generated indexed fragment output mismatched\n", stderr);
+         if (pixel[0] == 0x00 && pixel[1] == 0x80 && pixel[2] == 0x00 &&
+             pixel[3] == 0xff) {
+            ++green_pixels;
+         } else if (pixel[0] == 0x00 && pixel[1] == 0x00 &&
+                    pixel[2] == 0x80 && pixel[3] == 0xff) {
+            ++blue_pixels;
+         } else {
+            fputs("Mesa GPU indirect base-instance output mismatched\n", stderr);
             failed = 1;
             break;
          }
+      }
+   }
+      if (!failed && (green_pixels == 0 || blue_pixels == 0 ||
+                      green_pixels + blue_pixels !=
+                         color_template.width0 * color_template.height0)) {
+         fputs("Mesa GPU indirect records did not preserve base instances\n",
+               stderr);
+         failed = 1;
       }
    }
 

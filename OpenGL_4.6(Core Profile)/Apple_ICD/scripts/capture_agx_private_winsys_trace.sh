@@ -40,7 +40,7 @@ case "$trace_target" in
 esac
 
 PATH="/opt/homebrew/opt/llvm/bin:/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/flex/bin:/usr/local/opt/llvm/bin:/usr/local/opt/bison/bin:/usr/local/opt/flex/bin:$PATH"
-PKG_CONFIG_PATH="${OPENGLKHR_PKG_CONFIG_PATH:-/private/tmp/mesa-asahi-prefix/lib/pkgconfig:/opt/homebrew/share/pkgconfig:/opt/homebrew/lib/pkgconfig}${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+PKG_CONFIG_PATH="${OPENGLKHR_PKG_CONFIG_PATH:-${TMPDIR:-/tmp}/mesa-asahi-prefix/lib/pkgconfig:/opt/homebrew/share/pkgconfig:/opt/homebrew/lib/pkgconfig}${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 export PATH PKG_CONFIG_PATH
 
 ninja -C "$mesa_build_dir" "src/asahi/lib/$trace_target" src/asahi/lib/libwrap.dylib

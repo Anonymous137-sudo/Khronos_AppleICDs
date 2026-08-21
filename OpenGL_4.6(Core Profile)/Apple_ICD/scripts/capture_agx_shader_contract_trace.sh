@@ -21,7 +21,7 @@ signpost_capture=${AGX_SHADER_CONTRACT_ENABLE_SIGNPOSTS:-0}
 agx_bundle=${AGX_SHADER_CONTRACT_BUNDLE:-/System/Library/Extensions/AGXMetalG16X.bundle/Contents/MacOS/AGXMetalG16X}
 
 PATH="/opt/homebrew/opt/llvm/bin:/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/flex/bin:/usr/local/opt/llvm/bin:/usr/local/opt/bison/bin:/usr/local/opt/flex/bin:$PATH"
-PKG_CONFIG_PATH="${OPENGLKHR_PKG_CONFIG_PATH:-/private/tmp/mesa-asahi-prefix/lib/pkgconfig:/opt/homebrew/share/pkgconfig:/opt/homebrew/lib/pkgconfig}${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+PKG_CONFIG_PATH="${OPENGLKHR_PKG_CONFIG_PATH:-${TMPDIR:-/tmp}/mesa-asahi-prefix/lib/pkgconfig:/opt/homebrew/share/pkgconfig:/opt/homebrew/lib/pkgconfig}${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 export PATH PKG_CONFIG_PATH
 
 case "$workload" in

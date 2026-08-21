@@ -76,7 +76,7 @@ Build the source-bootstrap installer from the repository root:
 ./build_VulkanICD_KHRInstaller.sh
 ```
 
-It produces `dist/VulkanICD_KHRInstaller.pkg`. The package clones or updates
+It produces `dist/VulkanICD-KHR-Installer.pkg`. The package clones or updates
 the project source and installs only project-owned standard ABI paths under
 `/usr/local`; it never replaces the system Vulkan loader, Metal, a macOS
 framework, or Apple graphics components. The package API version remains

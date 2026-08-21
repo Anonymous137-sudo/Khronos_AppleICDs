@@ -71,11 +71,11 @@ corresponding KosmicKrisp artifact directory. AVK143 deliberately does not
 assume another project's checkout or build-directory name:
 
 ```sh
-cmake -S "Vulkan_1.4.360(Core Profile)" -B /private/tmp/avk143-prerequisites \
+cmake -S "Vulkan_1.4.360(Core Profile)" -B <TMPDIR>/avk143-prerequisites \
   -DAVK143_MESA_ROOT=/path/to/mesa \
   -DAVK143_MESA_BUILD_DIR=/path/to/mesa/build-avk143-kosmickrisp-arm64
-cmake --build /private/tmp/avk143-prerequisites
-ctest --test-dir /private/tmp/avk143-prerequisites --output-on-failure
+cmake --build <TMPDIR>/avk143-prerequisites
+ctest --test-dir <TMPDIR>/avk143-prerequisites --output-on-failure
 ```
 
 ## Planned Layout

@@ -95,12 +95,16 @@ Right now this subproject is an early in-development driver:
   interleaved vertex-buffer triangle Metal render pipeline, including one
   vertex-to-fragment varying and fenced color-texture readback. The bootstrap
   has bounded `RGBA8`/`BGRA8` 2D texture allocation, aligned staging
-  upload/readback, and color-surface clear. It additionally verifies a static
-  fragment NIR texture sum driven by a vertex-buffer UV varying, through sparse
-  public Metal `texture(1)`/`sampler(1)` and `texture(3)`/`sampler(3)`
-  arguments plus immutable nearest/clamp Gallium sampler views. This is not yet
-  a broad OpenGL feature claim. The current state tracker reaches an audited
-  OpenGL 3.3 core ceiling, while GL 4.6 requests continue to fail closed.
+  upload/readback, and color-surface clear. It additionally verifies static
+  Mesa NIR `PIPE_TEXTURE_2D` sampling in both graphics stages: a vertex-stage
+  `texture(2)`/`sampler(2)` binding and fragment-stage sparse
+  `texture(1)`/`sampler(1)` plus `texture(3)`/`sampler(3)` bindings use
+  bounded non-mipmapped Gallium sampler states. `nearest`/`linear` filtering
+  and `clamp-to-edge`/`repeat` addressing map directly to public Metal; a slot
+  shared by both stages must retain the same view and sampler or the draw fails
+  closed. This is not yet a broad OpenGL feature claim. The current state
+  tracker reaches an audited OpenGL 3.3 core ceiling, while GL 4.6 requests
+  continue to fail closed.
 - direct AGX device-profile, BO, queue, submission, and shader-residency work
   is retained as research evidence rather than treated as the active blocker
   for the Metal backend
@@ -140,14 +144,18 @@ This tree includes runtime and bridge smoke harnesses:
   Covers the higher-level `libNSOpenGLContext.dylib` bridge.
 - `tests/AO46MesaNIRTextureSmoke.c`
   Uploads two four-quadrant `RGBA8` textures from a Gallium buffer, carries
-  UVs through Mesa NIR vertex/fragment stages, binds constrained
-  `PIPE_TEXTURE_2D` sampler views/states at sparse slots `1` and `3`, and
-  verifies their combined sampled regions after Gallium fence retirement.
+  UVs through Mesa NIR vertex/fragment stages, exercises a vertex-stage
+  repeat-plus-linear sample at sparse slot `2`, binds nearest/clamp
+  fragment-stage `PIPE_TEXTURE_2D` views/states at sparse slots `1` and `3`,
+  and verifies the combined sampled regions after Gallium fence retirement. A
+  missing vertex-stage view is rejected before command encoding.
 - `tests/AO46MesaNIRSSBOSmoke.c`
   Lowers static-index Mesa `load_ssbo`, `store_ssbo`, and atomic operations
   through Mesa's generic SSBO pass into AO46's direct `MTLBuffer` roots. It
-  verifies read/write output plus a 32-invocation atomic-add counter through
-  Gallium fence-backed readback. Dynamic indexing, robust size queries,
+  verifies a nonzero writable range, a sparse slot-3 rebound range, a
+  32-invocation atomic-add counter, and a serialized atomic exchange with its
+  returned values through Gallium fence-backed readback. Dynamic indexing,
+  robust size queries,
   descriptor tables, cross-dispatch barrier semantics, and complete
   state-tracker SSBO binding remain fail-closed, so this is groundwork rather
   than a GL 4.3 feature claim.
@@ -182,16 +190,22 @@ This tree includes runtime and bridge smoke harnesses:
   records remain CPU-visible and prevalidated. Mesa poly tessellation additionally produces
   one bounded GPU-resident indexed-draw record after its TCS/count/prefix/emit
   stages; AO46 submits that record directly to Metal without a CPU readback.
+  A separate attribute-free GPU-authored two-record sequence carries distinct
+  base-instance values into Mesa-generated vertex/fragment MSL and verifies
+  both outputs after readback; it is groundwork for, not an implementation of,
+  general shader-draw-parameter support.
   The plan selects Mesa libkk's triangle, quad, or isoline kernel and the
   adapter derives the matching native triangle/line/point output topology from
   finalized Mesa TES state.
   Direct indexed/
   non-indexed draws also carry instance count and base instance to Metal and
-  support static per-instance vertex divisors. A single shader-writable indexed
-  argument record can also execute directly without a CPU map. The patch path
-  owns TCS/TES NIR state objects and requires both to match the Mesa Poly plan.
-  GPU-generated multi-record batches, generic tessellation-stage execution,
-  and general Gallium graphics state remain outside this bounded path.
+  support static per-instance vertex divisors. A bounded `1..64` sequence of
+  shader-writable `uint32` indexed argument records can also execute directly
+  without a CPU map; the smoke draws complementary halves from two records, so
+  both records are required for its verified output. The patch path owns
+  TCS/TES NIR state objects and requires both to match the Mesa Poly plan.
+  Unbounded GPU-generated batches, generic tessellation-stage execution, and
+  general Gallium graphics state remain outside this bounded path.
 
 Run the smoke sweep with:
 

@@ -24,7 +24,7 @@
     "share/vulkan/icd.d/kosmickrisp_mesa_icd.aarch64.json": "c11b9141509859419c70c6dd6884c241782bf7daf31bdcdd484a957f3a6214bc"
   },
   "release_assets": {
-    "VulkanICD_KHRInstaller-1.4.354-cts-qualified-1.4.3.2-20260821.pkg": "f3f24b90be1b9bd8fd20fa1dffc55ea231e5d6c1fdc6f0bdfec4792143233ad8",
+    "VulkanICD-KHR-Installer.pkg": "874020336ebc30e0e1c2409acc893fdc4046fcf2838af102abba571ad89ae5cd",
     "avk143-vulkan-api-sdk-1.4.354-macos-arm64-runtime.tar.gz": "53123fa05a47d10776236b0c08fa36e0fe6b1580edbabe8afa672e8788047633",
     "avk143-vulkan-cts-1.4.3.2-final-881906-qpa.tar.gz": "e552261f2ef15f0d792d14b39f81d3125c73be51008140079b2a72127ce0d5db",
     "avk143-vulkan-cts-qualified-1.4.3.2-20260821-evidence.tar.gz": "71c63b4ecee8ea441d4776ee75ecde527874596c71197fc981b94c5a38e4572c",

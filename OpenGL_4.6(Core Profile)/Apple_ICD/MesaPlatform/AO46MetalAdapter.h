@@ -102,7 +102,29 @@ struct AO46MetalTexture {
    enum AO46MetalTextureFormat format;
 };
 
-/* Bounded sampler slices are currently immutable: nearest + clamp-to-edge. */
+/*
+ * The Gallium bridge intentionally exposes only the non-mipmapped sampler
+ * subset it can bind directly through public Metal today. More sampler state
+ * belongs above this adapter, where Mesa owns the API semantics.
+ */
+enum AO46MetalSamplerFilter {
+   AO46_METAL_SAMPLER_FILTER_NEAREST,
+   AO46_METAL_SAMPLER_FILTER_LINEAR,
+};
+
+enum AO46MetalSamplerAddressMode {
+   AO46_METAL_SAMPLER_ADDRESS_CLAMP_TO_EDGE,
+   AO46_METAL_SAMPLER_ADDRESS_REPEAT,
+};
+
+struct AO46MetalSamplerDescriptor {
+   enum AO46MetalSamplerFilter min_filter;
+   enum AO46MetalSamplerFilter mag_filter;
+   enum AO46MetalSamplerAddressMode address_s;
+   enum AO46MetalSamplerAddressMode address_t;
+   enum AO46MetalSamplerAddressMode address_r;
+};
+
 struct AO46MetalSampler {
    const struct AO46MetalAdapter *adapter;
    void *native_sampler;
@@ -137,6 +159,11 @@ struct AO46MetalRenderPipeline {
    bool supports_indirect_command_buffers;
    uint64_t static_texture_mask;
    uint64_t static_sampler_mask;
+   /* Stage masks preserve Mesa bindings when a slot is used by one stage only. */
+   uint64_t static_vertex_texture_mask;
+   uint64_t static_fragment_texture_mask;
+   uint64_t static_vertex_sampler_mask;
+   uint64_t static_fragment_sampler_mask;
    uint16_t static_vertex_buffer_mask;
    size_t static_vertex_buffer_bytes[AO46_METAL_MAX_STATIC_BUFFER_BINDINGS];
    /* Direct fragment MTLBuffer slots emitted by KosmicKrisp. */
@@ -281,6 +308,10 @@ bool AO46MetalTextureImportIOSurface(
 void AO46MetalTextureDestroy(struct AO46MetalTexture *texture);
 bool AO46MetalTextureIsCurrent(const struct AO46MetalTexture *texture);
 
+bool AO46MetalSamplerCreate(const struct AO46MetalAdapter *adapter,
+                            const struct AO46MetalSamplerDescriptor *descriptor,
+                            struct AO46MetalSampler *out_sampler);
+/* Kept as the stable helper for existing callers that use the original slice. */
 bool AO46MetalSamplerCreateNearestClamp(const struct AO46MetalAdapter *adapter,
                                         struct AO46MetalSampler *out_sampler);
 void AO46MetalSamplerDestroy(struct AO46MetalSampler *sampler);

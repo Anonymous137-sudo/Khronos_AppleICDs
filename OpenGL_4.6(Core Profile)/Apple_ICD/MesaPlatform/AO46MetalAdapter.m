@@ -237,6 +237,10 @@ ao46_metal_render_pipeline_is_empty(
        pipeline->color_format != AO46_METAL_TEXTURE_FORMAT_RGBA8_UNORM ||
        pipeline->supports_indirect_command_buffers ||
        pipeline->static_texture_mask != 0 || pipeline->static_sampler_mask != 0 ||
+       pipeline->static_vertex_texture_mask != 0 ||
+       pipeline->static_fragment_texture_mask != 0 ||
+       pipeline->static_vertex_sampler_mask != 0 ||
+       pipeline->static_fragment_sampler_mask != 0 ||
        pipeline->static_vertex_buffer_mask != 0 ||
        pipeline->static_fragment_buffer_mask != 0 ||
        pipeline->uniform_mask != 0 || pipeline->vertex_attribute_count != 0)
@@ -563,11 +567,9 @@ ao46_metal_indirect_binding_is_valid(
       return false;
 
    /*
-    * Mesa poly owns this one record and generates both its count and first
-    * index in a prevalidated heap. Do not map it on the CPU between the count
-    * kernel and TES: that would turn GPU tessellation into a synchronization
-    * point. It is only admitted for attribute-free TES pipelines by the
-    * caller, so no untrusted index can select a vertex-buffer range.
+    * Mesa-owned compute work may author a bounded sequence of indexed records.
+    * Keep the sequence GPU-resident: the caller admits only attribute-free
+    * pipelines, so no indirect record can select a vertex-buffer range.
     */
    if (indirect_binding->gpu_generated) {
       const size_t argument_size =
@@ -577,13 +579,18 @@ ao46_metal_indirect_binding_is_valid(
                                         : argument_size;
       const size_t maximum_index_bytes =
          (size_t)indirect_binding->maximum_index_count * sizeof(uint32_t);
+      size_t required_size;
 
-      if (!index_binding || indirect_binding->draw_count != 1 ||
+      if (!index_binding ||
           (indirect_binding->stride &&
            indirect_binding->stride != argument_size) ||
           argument_stride != argument_size ||
+          indirect_binding->draw_count - 1 >
+             (SIZE_MAX - argument_size) / argument_stride ||
           indirect_binding->offset > indirect_binding->buffer->length ||
-          argument_size >
+          (required_size =
+              (size_t)(indirect_binding->draw_count - 1) * argument_stride +
+              argument_size) >
              indirect_binding->buffer->length - indirect_binding->offset ||
           !AO46MetalBufferIsCurrent(index_binding->buffer) ||
           index_binding->buffer->adapter != adapter ||
@@ -1608,26 +1615,75 @@ AO46MetalTextureIsCurrent(const struct AO46MetalTexture *texture)
           native_texture.pixelFormat == ao46_metal_pixel_format(texture->format);
 }
 
+static bool
+ao46_metal_sampler_filter(enum AO46MetalSamplerFilter filter,
+                          MTLSamplerMinMagFilter *out_filter)
+{
+   if (!out_filter)
+      return false;
+
+   switch (filter) {
+   case AO46_METAL_SAMPLER_FILTER_NEAREST:
+      *out_filter = MTLSamplerMinMagFilterNearest;
+      return true;
+   case AO46_METAL_SAMPLER_FILTER_LINEAR:
+      *out_filter = MTLSamplerMinMagFilterLinear;
+      return true;
+   default:
+      return false;
+   }
+}
+
+static bool
+ao46_metal_sampler_address_mode(enum AO46MetalSamplerAddressMode address_mode,
+                                MTLSamplerAddressMode *out_address_mode)
+{
+   if (!out_address_mode)
+      return false;
+
+   switch (address_mode) {
+   case AO46_METAL_SAMPLER_ADDRESS_CLAMP_TO_EDGE:
+      *out_address_mode = MTLSamplerAddressModeClampToEdge;
+      return true;
+   case AO46_METAL_SAMPLER_ADDRESS_REPEAT:
+      *out_address_mode = MTLSamplerAddressModeRepeat;
+      return true;
+   default:
+      return false;
+   }
+}
+
 bool
-AO46MetalSamplerCreateNearestClamp(const struct AO46MetalAdapter *adapter,
-                                   struct AO46MetalSampler *out_sampler)
+AO46MetalSamplerCreate(const struct AO46MetalAdapter *adapter,
+                       const struct AO46MetalSamplerDescriptor *descriptor,
+                       struct AO46MetalSampler *out_sampler)
 {
    __block bool created = false;
+   MTLSamplerMinMagFilter min_filter;
+   MTLSamplerMinMagFilter mag_filter;
+   MTLSamplerAddressMode address_s;
+   MTLSamplerAddressMode address_t;
+   MTLSamplerAddressMode address_r;
 
-   if (!AO46MetalAdapterIsCurrent(adapter) || !out_sampler ||
-       !ao46_metal_sampler_is_empty(out_sampler))
+   if (!AO46MetalAdapterIsCurrent(adapter) || !descriptor || !out_sampler ||
+       !ao46_metal_sampler_is_empty(out_sampler) ||
+       !ao46_metal_sampler_filter(descriptor->min_filter, &min_filter) ||
+       !ao46_metal_sampler_filter(descriptor->mag_filter, &mag_filter) ||
+       !ao46_metal_sampler_address_mode(descriptor->address_s, &address_s) ||
+       !ao46_metal_sampler_address_mode(descriptor->address_t, &address_t) ||
+       !ao46_metal_sampler_address_mode(descriptor->address_r, &address_r))
       return false;
 
    @autoreleasepool {
       MTLSamplerDescriptor *descriptor = [[MTLSamplerDescriptor alloc] init];
       id<MTLSamplerState> native_sampler;
 
-      descriptor.minFilter = MTLSamplerMinMagFilterNearest;
-      descriptor.magFilter = MTLSamplerMinMagFilterNearest;
+      descriptor.minFilter = min_filter;
+      descriptor.magFilter = mag_filter;
       descriptor.mipFilter = MTLSamplerMipFilterNotMipmapped;
-      descriptor.sAddressMode = MTLSamplerAddressModeClampToEdge;
-      descriptor.tAddressMode = MTLSamplerAddressModeClampToEdge;
-      descriptor.rAddressMode = MTLSamplerAddressModeClampToEdge;
+      descriptor.sAddressMode = address_s;
+      descriptor.tAddressMode = address_t;
+      descriptor.rAddressMode = address_r;
       descriptor.maxAnisotropy = 1;
       native_sampler = [(__bridge id<MTLDevice>)adapter->device
          newSamplerStateWithDescriptor:descriptor];
@@ -1641,6 +1697,21 @@ AO46MetalSamplerCreateNearestClamp(const struct AO46MetalAdapter *adapter,
    }
 
    return created;
+}
+
+bool
+AO46MetalSamplerCreateNearestClamp(const struct AO46MetalAdapter *adapter,
+                                   struct AO46MetalSampler *out_sampler)
+{
+   static const struct AO46MetalSamplerDescriptor descriptor = {
+      .min_filter = AO46_METAL_SAMPLER_FILTER_NEAREST,
+      .mag_filter = AO46_METAL_SAMPLER_FILTER_NEAREST,
+      .address_s = AO46_METAL_SAMPLER_ADDRESS_CLAMP_TO_EDGE,
+      .address_t = AO46_METAL_SAMPLER_ADDRESS_CLAMP_TO_EDGE,
+      .address_r = AO46_METAL_SAMPLER_ADDRESS_CLAMP_TO_EDGE,
+   };
+
+   return AO46MetalSamplerCreate(adapter, &descriptor, out_sampler);
 }
 
 void
@@ -2796,9 +2867,11 @@ AO46MetalRenderSubmitWithStaticVertexBuffers(
          return false;
    }
 
-   /* KK MTL4 tables carry Mesa buffer, texture, and sampler resource bindings. */
+   /* MTL4 tables lack AO46's stage-specific texture/sampler binding coverage. */
    if (AO46MetalAdapterSupportsMTL4Submission(adapter) &&
        pipeline->uses_mtl4_compiler && !indirect_binding &&
+       pipeline->static_vertex_texture_mask == 0 &&
+       pipeline->static_vertex_sampler_mask == 0 &&
        !(index_binding && index_binding->primitive_restart)) {
       if (ao46_metal_mtl4_render_submit(
              adapter, pipeline, color_target, uniform_bindings,

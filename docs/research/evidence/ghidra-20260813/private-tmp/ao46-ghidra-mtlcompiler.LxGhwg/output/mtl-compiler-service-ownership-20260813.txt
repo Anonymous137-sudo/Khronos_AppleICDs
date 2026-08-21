@@ -22,7 +22,7 @@ undefined8 _compileRequestMain(undefined4 *param_1)
   code *local_38;
   undefined *puStack_30;
   undefined4 *local_28;
-  
+
   local_48 = PTR___NSConcreteStackBlock_100008370;
   local_40 = DAT_100005a88;
   local_38 = ___compileRequestMain_block_invoke;
@@ -66,7 +66,7 @@ void MTLCompilerService::sendReply
   code *pcVar1;
   undefined8 uVar2;
   ulong unaff_x30;
-  
+
   if (*param_1 == (NSObject *)0x0) {
     return;
   }
@@ -175,7 +175,7 @@ void __thiscall MTLCompilerService::messageHandler(MTLCompilerService *this,NSOb
   MTLCompilerService *pMStack_78;
   NSObject *local_70;
   NSObject *local_68;
-  
+
   local_68 = param_1;
   pNVar1 = (NSObject *)_xpc_dictionary_create_reply(param_1);
   local_70 = pNVar1;
@@ -226,7 +226,7 @@ void __thiscall MTLCompilerService::messageHandler(MTLCompilerService *this,NSOb
                       MTLSandboxExtensionContainer::MTLCompilerSandboxExtensions();
             local_a0 = PTR___NSConcreteStackBlock_100008370;
             local_98 = DAT_100005a98;
-            local_90 = 
+            local_90 =
             ____ZN18MTLCompilerService14messageHandlerEPU24objcproto13OS_xpc_object8NSObject_block_invoke
             ;
             puStack_88 = &___block_descriptor_48_e8_32o_e5_v8__0l;

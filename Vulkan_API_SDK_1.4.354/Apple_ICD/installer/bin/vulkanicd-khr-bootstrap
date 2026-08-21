@@ -18,6 +18,11 @@ project_dir=${VULKANICD_KHR_PROJECT_DIR:-Khronos_AppleICDs/Vulkan_API_SDK_1.4.35
 runtime_prefix=${VULKANICD_KHR_RUNTIME_PREFIX:-/usr/local}
 project_root="$repo_root/$project_dir"
 
+if ! command -v git >/dev/null 2>&1; then
+    printf '%s\n' "VulkanICD_KHR installer requires git to bootstrap the source repository" >&2
+    exit 1
+fi
+
 case "$mode" in
     build|update)
         ;;
@@ -43,6 +48,11 @@ elif [ "$mode" = update ]; then
         git -C "$repo_root" checkout -b "$repo_branch" "origin/$repo_branch"
     fi
     git -C "$repo_root" pull --ff-only origin "$repo_branch"
+fi
+
+if [ ! -d "$repo_root/.git" ]; then
+    printf '%s\n' "VulkanICD_KHR repository bootstrap did not produce a Git checkout: $repo_root" >&2
+    exit 1
 fi
 
 git -C "$repo_root" submodule sync --recursive

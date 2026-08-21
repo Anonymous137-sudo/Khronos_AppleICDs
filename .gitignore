@@ -5,6 +5,15 @@ OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/packages/
 OpenGL_4.6(Core Profile)/Apple_ICD/build-*/
 OpenGL_4.6(Core Profile)/build/
 OpenGL_4.6(Core Profile)/.vscode/
+OpenGL_4.6(Core Profile)/Apple_ICD/build/
+OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/CMakeConfigureLog.yaml
+**/DartConfiguration.tcl
+**/compile_commands.json
+**/.git/logs/
+**/.git/index.lock
 .DS_Store
 __pycache__/
 *.py[cod]

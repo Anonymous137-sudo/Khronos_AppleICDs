@@ -23,7 +23,7 @@ IOGPUDeviceUserClient::s_new_resource
   ulong uVar3;
   IOGPUNewResourceReturnData *pIVar4;
   undefined1 auVar5 [16];
-  
+
   pIVar4 = *(IOGPUNewResourceReturnData **)(param_3 + 0x58);
   plVar1 = *(long **)(param_3 + 0x40);
   if (plVar1 == (long *)0x0) {
@@ -83,7 +83,7 @@ IOGPUDeviceUserClient::new_resource
 {
   undefined8 uVar1;
   undefined8 uVar2;
-  
+
   uVar1 = func_0xfffffe000b7f109c
                     (*(undefined8 *)(*(long *)(*(long *)(this + 0x120) + 0x48) + 0x318));
   uVar2 = IOGPUDevice::new_resource(*(IOGPUDevice **)(this + 0x120),param_1,param_2,param_3,param_4)
@@ -111,7 +111,7 @@ undefined8 __thiscall IOGPUDeviceUserClient::deviceUserClientStart(IOGPUDeviceUs
   long *plVar2;
   long lVar3;
   undefined8 uVar4;
-  
+
   plVar2 = (long *)(**(code **)(**(long **)(this + 0xf8) + 0x890))
                              (*(long **)(this + 0xf8),this + 0x118);
   *(long **)(this + 0x108) = plVar2;
@@ -175,7 +175,7 @@ ulong IOGPUDeviceUserClient::externalMethod
 {
   uint uVar1;
   ulong uVar2;
-  
+
   uVar1 = 0xe00002c2;
   if ((*(byte *)((ulong)param_1 + 0x100) & 1) == 0) {
     uVar1 = 0xe00002d8;
@@ -227,7 +227,7 @@ IOGPUDeviceUserClient::s_new_command_queue
   void *extraout_x1_00;
   undefined8 uVar5;
   ulong *puVar6;
-  
+
   uVar5 = *(undefined8 *)(param_3 + 0x30);
   puVar6 = *(ulong **)(param_3 + 0x58);
   uVar2 = *(uint *)(*(long *)(*(long *)(param_1 + 0x120) + 0x88) + 0x30);
@@ -335,7 +335,7 @@ IOGPUDeviceUserClient::s_submit_command_buffers
   uint *puVar10;
   undefined8 uVar11;
   uint local_54;
-  
+
   uVar11 = 0xe00002c2;
   plVar5 = *(long **)(param_3 + 0x40);
   if (plVar5 == (long *)0x0) {
@@ -467,7 +467,7 @@ IOGPUDevice::new_resource
   IOGPUMemoryMap *this_01;
   long local_70;
   long local_68;
-  
+
   uVar19 = 0xe00002c2;
   if (param_3 < 0x58) {
     return 0xe00002c2;
@@ -822,7 +822,7 @@ undefined8 __thiscall IOGPUDevice::isRestrictedClient(IOGPUDevice *this)
   ulong uVar2;
   undefined8 uVar3;
   ulong unaff_x30;
-  
+
   uVar2 = doesEntitlementExist(this,"com.apple.private.gpu-restricted");
   if ((uVar2 & 1) != 0) {
     return 1;
@@ -850,7 +850,7 @@ void __thiscall IOGPUDevice::createUserGPUTask(IOGPUDevice *this,task *param_1)
 
 {
   undefined8 *puVar1;
-  
+
   puVar1 = (undefined8 *)(**(long **)(this + 0x48) + 0x928);
                     /* WARNING: Could not recover jumptable at 0xfffffe000a7de4f4. Too many branches
                         */
@@ -876,7 +876,7 @@ IOGPUResource::initialize(IOGPUDevice *param_1,IOGPUNewResourceArgs *param_2,ulo
 {
   IOGPUEvent *pIVar1;
   uint uVar2;
-  
+
   if (param_3 != 0) {
     *(undefined4 *)(param_1 + 0x80) = *(undefined4 *)(param_3 + 8);
     param_1[0x84] = *(IOGPUDevice *)(param_3 + 0x13);
@@ -944,7 +944,7 @@ IOGPUResource::newResourceWithOptions
   uint uVar16;
   long local_78;
   undefined8 local_68;
-  
+
   if (((param_2 == (IOGPUDevice *)0x0) || (param_4 == 0)) || (((byte)param_2[0x40] >> 1 & 1) != 0))
   {
     if (0xf < param_4) {
@@ -1154,7 +1154,7 @@ long * IOGPUResource::newResourceWithClientAddressRanges
   uint uVar15;
   ulong uVar16;
   task *ptVar17;
-  
+
   if (*(long *)(param_4 + 0x18) != 0) {
     func_0xfffffe000bee8f38
               (&DAT_fffffe00079dac50,PTR_DAT_fffffe00084689a0,0x11,
@@ -1314,7 +1314,7 @@ IOGPUResource::mapAtAddressLength
   uint uVar1;
   undefined8 uVar2;
   long lVar3;
-  
+
   uVar2 = IOGPUClientSharedMachine::getGPUTask(*(IOGPUClientSharedMachine **)(this + 0x68));
   if (((uint)param_1 >> 4 & 1) == 0) {
     uVar1 = *(uint *)(this + 0x10) & 0xf;
@@ -1381,7 +1381,7 @@ undefined8 __thiscall IOGPUMemoryMap::allocGPUVirtualAddress(IOGPUMemoryMap *thi
   long lVar1;
   ulong uVar2;
   undefined8 uVar3;
-  
+
   if ((*(ushort *)(this + 0x10) & 1) == 0) {
     lVar1 = (**(code **)(**(long **)(this + 0x20) + 0x148))(*(long **)(this + 0x20),this);
     uVar3 = 0;

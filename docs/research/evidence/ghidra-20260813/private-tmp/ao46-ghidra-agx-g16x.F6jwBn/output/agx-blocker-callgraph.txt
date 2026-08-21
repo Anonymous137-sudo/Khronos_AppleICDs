@@ -324,7 +324,7 @@ AGX::ComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::ComputeP
   undefined8 uStack_87;
   long local_78;
   undefined8 *puVar76;
-  
+
   piVar52 = (int *)0x0;
   local_78 = *(long *)PTR____stack_chk_guard_00878590;
   this_06 = (LinkInfo *)(this + 8);
@@ -5269,7 +5269,7 @@ AGX::ComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::finalize
   undefined8 uVar107;
   undefined8 uVar108;
   undefined8 uVar109;
-  
+
   std::mutex::lock();
   pPVar43 = *(ProgramBindingRemap **)(this + 0x260);
   if (pPVar43 == (ProgramBindingRemap *)0x0) goto LAB_00692f64;
@@ -6998,7 +6998,7 @@ void AGX::Heap<true>::allocateImpl(ulong param_1,IOGPUMetalResource **param_2)
   undefined8 *local_58;
   undefined8 local_50;
   undefined8 local_48;
-  
+
   puStack_d8 = &local_60;
   local_60 = 0;
   local_50 = DAT_00812c38;
@@ -7105,7 +7105,7 @@ void ____ZN3AGX4HeapILb1EE12allocateImplEmPPK18IOGPUMetalResource_block_invoke(l
   long local_50;
   long lStack_48;
   long local_40;
-  
+
   plVar23 = *(long **)(param_1 + 0x40);
   *(long *)(*(long *)(*(long *)(param_1 + 0x20) + 8) + 0x18) = *plVar23;
   lVar21 = *(long *)(param_1 + 0x20);
@@ -7454,7 +7454,7 @@ allocateCodeHeap(DynamicLibrary<AGX::HAL200::Encoders,AGX::HAL200::Classes,AGX::
   undefined2 local_3a;
   undefined8 local_38;
   long local_28;
-  
+
   local_28 = *(long *)PTR____stack_chk_guard_00878590;
   _os_unfair_lock_lock(this + 0x480);
   iVar3 = *(int *)(this + 0x484);
@@ -7654,7 +7654,7 @@ void AGX::ComputeUSCStateLoader<AGX::HAL200::Encoders,AGX::HAL200::Classes>::
   float fVar24;
   undefined8 uVar25;
   ushort local_52 [9];
-  
+
   *(undefined4 *)(ulong)param_4 = 3;
   uVar4 = param_3[0xf];
   uVar11 = param_3[7];
@@ -7871,7 +7871,7 @@ void AGXG16XFamilyCommandBuffer::fillCommandBufferArgs_commandQueue_
   ID IVar1;
   ID local_40;
   undefined *puStack_38;
-  
+
   IVar1 = objc_stub::deadline(param_1);
   *(ID *)((long)&param_3[1].field3_0xc + 4) = IVar1;
   IVar1 = objc_stub::deadline_namespace_id(param_1);

@@ -5,7 +5,7 @@ return 0
 AO46_AGX_QUEUE_LIFECYCLE_TRACE create-producer-queue
 Selector 7, 2D03, 2D03
 AGX_CALL selector=7 scalar_in=0 struct_in=1040 scalar_out_capacity=0 struct_out_capacity=16
-2D03: SET_API(/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/mesa/build-ao46-asahi-arm64/src/asahi/lib/asahi_macos_queue_lifecycle_trace)
+2D03: SET_API(<USER_HOME>/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/mesa/build-ao46-asahi-arm64/src/asahi/lib/asahi_macos_queue_lifecycle_trace)
 AGX_RESULT selector=7 status=0 scalar_out=0 struct_out=16
  struct
 000000  01 00 00 00 00 00 00 00 09 3C 50 6B 07 00 00 00  | .........<Pk....
@@ -32,7 +32,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
 000040  00 00 00 00 00 00 00 00 00 00 02 00 00 00 00 00  | ................
 000050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
-000060  C8 0A 8B 10 01 00 00 00 
+000060  C8 0A 8B 10 01 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=3 gpu=10000018000 cpu=1025ac000 size=20000 attributes=0 storage=0x470 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -46,7 +46,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 C0 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  90 15 8B 10 01 00 00 00 
+000060  90 15 8B 10 01 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=4 gpu=10000018000 cpu=0 size=20000 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -60,7 +60,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 C2 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  90 15 8B 10 01 00 00 00 
+000060  90 15 8B 10 01 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=5 gpu=10000018200 cpu=0 size=1fe00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -74,7 +74,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 C4 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  C8 9C C5 C4 0A 00 00 00 
+000060  C8 9C C5 C4 0A 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=6 gpu=10000018400 cpu=0 size=1fc00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -88,7 +88,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 C5 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  20 A2 C5 C4 0A 00 00 00 
+000060  20 A2 C5 C4 0A 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=7 gpu=10000018500 cpu=0 size=1fb00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -102,7 +102,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 C7 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  40 A5 C5 C4 0A 00 00 00 
+000060  40 A5 C5 C4 0A 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=8 gpu=10000018700 cpu=0 size=1f900 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -116,7 +116,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 C8 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  60 A8 C5 C4 0A 00 00 00 
+000060  60 A8 C5 C4 0A 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=9 gpu=10000018800 cpu=0 size=1f800 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -130,7 +130,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 C9 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  80 AB C5 C4 0A 00 00 00 
+000060  80 AB C5 C4 0A 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=10 gpu=10000018900 cpu=0 size=1f700 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -144,7 +144,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 D9 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  A0 AE C5 C4 0A 00 00 00 
+000060  A0 AE C5 C4 0A 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=11 gpu=10000019900 cpu=0 size=1e700 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -158,7 +158,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 DA 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  A8 B1 C5 C4 0A 00 00 00 
+000060  A8 B1 C5 C4 0A 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=12 gpu=10000019a00 cpu=0 size=1e600 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -172,7 +172,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 DB 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  B0 B4 C5 C4 0A 00 00 00 
+000060  B0 B4 C5 C4 0A 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=13 gpu=10000019b00 cpu=0 size=1e500 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -186,7 +186,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 DC 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  B8 B7 C5 C4 0A 00 00 00 
+000060  B8 B7 C5 C4 0A 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=14 gpu=10000019c00 cpu=0 size=1e400 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -200,7 +200,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 E4 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  C0 BA C5 C4 0A 00 00 00 
+000060  C0 BA C5 C4 0A 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=15 gpu=1000001a400 cpu=0 size=1dc00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -214,7 +214,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 *
 000040  00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 00  | ................
 000050  00 00 00 00 00 00 00 00 00 00 00 08 18 00 00 00  | ................
-000060  00 00 00 00 00 00 00 00 
+000060  00 00 00 00 00 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=16 gpu=10000040000 cpu=1025cc000 size=10000 attributes=0 storage=0x430 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=1
@@ -228,7 +228,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 *
 000040  00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 00  | ................
 000050  00 00 00 00 00 00 00 00 00 00 00 38 18 00 00 00  | ...........8....
-000060  00 00 00 00 00 00 00 00 
+000060  00 00 00 00 00 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=17 gpu=0 cpu=1025dc000 size=10000 attributes=0 storage=0x8430 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=1
@@ -242,7 +242,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 E5 5A 02 01 00 00 00  | ..........Z.....
 000040  00 C0 5A 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..Z.............
 000050  03 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  C8 0A 8B 10 01 00 00 00 
+000060  C8 0A 8B 10 01 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=18 gpu=1000001a500 cpu=0 size=1db00 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -256,7 +256,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
 000040  00 00 00 00 00 00 00 00 00 00 02 00 00 00 00 00  | ................
 000050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
-000060  C8 0A 8B 10 01 00 00 00 
+000060  C8 0A 8B 10 01 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=19 gpu=10000058000 cpu=1025ec000 size=20000 attributes=0 storage=0x470 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -270,7 +270,7 @@ AGX_CALL selector=9 scalar_in=0 struct_in=104 scalar_out_capacity=0 struct_out_c
 000030  00 00 00 00 00 00 00 00 00 C0 5E 02 01 00 00 00  | ..........^.....
 000040  00 C0 5E 02 01 00 00 00 00 00 02 00 00 00 00 00  | ..^.............
 000050  13 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00  | ................
-000060  C8 0A 8B 10 01 00 00 00 
+000060  C8 0A 8B 10 01 00 00 00
 AGX_RESULT selector=9 status=0 scalar_out=0 struct_out=88
 MODERN_ALLOCATE_MEM handle=20 gpu=10000058000 cpu=0 size=20000 attributes=80 storage=0xc30 write_combined=0 private=0 reused=0
 MODERN_ALLOCATE_REQUEST size_units_candidate=2
@@ -278,7 +278,7 @@ MODERN_ALLOCATE_REQUEST bytes=8000000000000000010001000100000001010001300c000000
 AO46_AGX_QUEUE_LIFECYCLE_TRACE create-consumer-queue
 Selector 7, 2D03, 2D03
 AGX_CALL selector=7 scalar_in=0 struct_in=1040 scalar_out_capacity=0 struct_out_capacity=16
-2D03: SET_API(/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/mesa/build-ao46-asahi-arm64/src/asahi/lib/asahi_macos_queue_lifecycle_trace)
+2D03: SET_API(<USER_HOME>/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/mesa/build-ao46-asahi-arm64/src/asahi/lib/asahi_macos_queue_lifecycle_trace)
 AGX_RESULT selector=7 status=0 scalar_out=0 struct_out=16
  struct
 000000  02 00 00 00 00 00 00 00 1E 3C 50 6B 07 00 00 00  | .........<Pk....

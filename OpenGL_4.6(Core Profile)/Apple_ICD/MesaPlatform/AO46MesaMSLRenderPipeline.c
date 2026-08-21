@@ -469,8 +469,6 @@ AO46MesaRenderPipelineCreateWithStageStaticBufferRequirements(
                                        fragment_static_buffer_mask,
                                        &fragment_reflection, &fragment_source,
                                        &fragment_entrypoint) ||
-       vertex_reflection.static_texture_mask != 0 ||
-       vertex_reflection.static_sampler_mask != 0 ||
        !ao46_mesa_apply_static_buffer_requirements(
           &vertex_reflection, vertex_static_buffer_mask,
           vertex_requirements, vertex_requirement_count) ||
@@ -517,6 +515,14 @@ AO46MesaRenderPipelineCreateWithStageStaticBufferRequirements(
       .fragment_reflection = fragment_reflection,
       .vertex_attribute_count = (uint32_t)vertex_attribute_count,
    };
+   out_pipeline->metal_pipeline.static_vertex_texture_mask =
+      vertex_reflection.static_texture_mask;
+   out_pipeline->metal_pipeline.static_fragment_texture_mask =
+      fragment_reflection.static_texture_mask;
+   out_pipeline->metal_pipeline.static_vertex_sampler_mask =
+      vertex_reflection.static_sampler_mask;
+   out_pipeline->metal_pipeline.static_fragment_sampler_mask =
+      fragment_reflection.static_sampler_mask;
    if (vertex_attribute_count != 0)
       memcpy(out_pipeline->vertex_attributes, vertex_attributes,
              vertex_attribute_count * sizeof(*vertex_attributes));

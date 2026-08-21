@@ -8,7 +8,7 @@ fi
 
 builder=$1
 root=$(mktemp -d "${TMPDIR:-/tmp}/avk143-installer-smoke.XXXXXX")
-pkg="$root/VulkanICD_KHRInstaller.pkg"
+pkg="$root/VulkanICD-KHR-Installer.pkg"
 expanded="$root/expanded"
 
 "$builder" --output "$pkg"

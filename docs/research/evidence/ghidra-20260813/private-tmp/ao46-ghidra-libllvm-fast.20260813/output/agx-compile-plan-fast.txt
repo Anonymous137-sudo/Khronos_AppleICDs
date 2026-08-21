@@ -18,7 +18,7 @@ void __ZN4llvm3AGX14AGXCompilePlan20collectConfigurationERNS0_14CompileRequestE
   long lVar3;
   long *plVar4;
   undefined8 *puVar5;
-  
+
   plVar4 = *(long **)*param_1;
   lVar3 = plVar4[1];
   if (((lVar3 != 0) || (lVar3 = *plVar4, lVar3 != 0)) || (lVar3 = plVar4[2], lVar3 != 0)) {
@@ -84,7 +84,7 @@ void __ZN4llvm3AGX14AGXCompilePlan7executeERNS0_14CompileRequestE
   byte bStack_68;
   undefined2 uStack_60;
   long lStack_58;
-  
+
   lStack_58 = *plRam000000028f6ec2f0;
   plVar14 = (long *)((long *)*param_3)[1];
   if (*(long *)*param_3 != 0) {
@@ -210,7 +210,7 @@ void __ZN4llvm3AGX11AGXCompiler17createCompilePlanENS0_12PipelineTypeENS0_8Optim
   long lVar4;
   undefined8 uStack_30;
   undefined8 uStack_28;
-  
+
   lVar4 = *param_2;
   lVar1 = 8;
   if (param_7 != 1) {
@@ -308,7 +308,7 @@ bool __ZN4llvm3AGX15AGXAssemblePlan7executeERNS0_14CompileRequestERNS0_12Compile
   long *aplStack_60 [2];
   byte bStack_50;
   long lStack_48;
-  
+
   lStack_48 = *plRam000000028f6ec2f0;
   func_0x0002451f03cc(param_2);
   _AfterColour(&pcStack_e0);

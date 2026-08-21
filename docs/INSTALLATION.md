@@ -60,7 +60,7 @@ To install the diagnostic independently, without rebuilding the standard ABI:
 ## Vulkan ICD Mode
 
 Vulkan is a separate standard Khronos ICD product, not a framework or an
-Apple-specific ABI. `VulkanICD_KHRInstaller.pkg` builds Mesa's KosmicKrisp
+Apple-specific ABI. `VulkanICD-KHR-Installer.pkg` builds Mesa's KosmicKrisp
 driver from the repository checkout and installs only project-owned paths:
 
 ```text

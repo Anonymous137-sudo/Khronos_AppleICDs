@@ -196,7 +196,7 @@ createComputeProgramVariant
   ID local_98;
   undefined8 **ppuStack_90;
   long local_88;
-  
+
   local_88 = *(long *)PTR____stack_chk_guard_00878590;
   puStack_410 = &local_418;
   local_418 = 0;
@@ -524,7 +524,7 @@ createComputeProgramVariant
         if ((uVar26 & 0x330003) != 0) {
           local_290 = PTR___NSConcreteStackBlock_00878588;
           local_288 = DAT_00812c40;
-          local_280 = 
+          local_280 =
           ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE27createComputeProgramVariantEP28MTLComputePipelineDescriptorP19AGXG16XFamilyDevicemP26AGXG16XFamilyBinaryArchivePKNS_17UserShaderFactoryIS2_S3_S4_E17ArchiveLookupInfoEP7NSArrayPNS1_14ComputeProgramEPU27objcproto16OS_dispatch_data8NSObjectbPU27objcproto16MTL4CompilerTask11objc_objectU13block_pointerFvPNS1_21ComputeProgramVariantE13ReflectionKeyP19NSMutableDictionary16MTLCompilerErrorP8NSStringE_block_invoke_2
           ;
           local_278 = &
@@ -644,7 +644,7 @@ LAB_00218bf4:
   local_510 = param_10;
   local_230 = PTR___NSConcreteStackBlock_00878588;
   local_228 = DAT_00812c58;
-  local_220 = 
+  local_220 =
   ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE27createComputeProgramVariantEP28MTLComputePipelineDescriptorP19AGXG16XFamilyDevicemP26AGXG16XFamilyBinaryArchivePKNS_17UserShaderFactoryIS2_S3_S4_E17ArchiveLookupInfoEP7NSArrayPNS1_14ComputeProgramEPU27objcproto16OS_dispatch_data8NSObjectbPU27objcproto16MTL4CompilerTask11objc_objectU13block_pointerFvPNS1_21ComputeProgramVariantE13ReflectionKeyP19NSMutableDictionary16MTLCompilerErrorP8NSStringE_block_invoke
   ;
   local_218 = &
@@ -672,7 +672,7 @@ LAB_00218bf4:
   local_137 = local_110;
   local_568 = PTR___NSConcreteStackBlock_00878588;
   local_560 = DAT_00812c40;
-  local_558 = 
+  local_558 =
   ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE27createComputeProgramVariantEP28MTLComputePipelineDescriptorP19AGXG16XFamilyDevicemP26AGXG16XFamilyBinaryArchivePKNS_17UserShaderFactoryIS2_S3_S4_E17ArchiveLookupInfoEP7NSArrayPNS1_14ComputeProgramEPU27objcproto16OS_dispatch_data8NSObjectbPU27objcproto16MTL4CompilerTask11objc_objectU13block_pointerFvPNS1_21ComputeProgramVariantE13ReflectionKeyP19NSMutableDictionary16MTLCompilerErrorP8NSStringE_block_invoke_394
   ;
   puStack_550 = &
@@ -696,7 +696,7 @@ LAB_00218bf4:
   else {
     local_3e8 = PTR___NSConcreteStackBlock_00878588;
     local_3e0 = dVar6;
-    local_3d8 = 
+    local_3d8 =
     ____ZN3AGX17UserShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE20compileFunction_ImplINS_17ComputeProgramKeyEEEvRKT_P29MTLCompileFunctionRequestDataRKNS5_21DriverRequestDataImplILb1EEEU13block_pointerFvRK20AGCDeserializedReplyRKNS_28CompileFunctionReplyMetadataERKNS5_19DriverReplyDataImplILb1EEEE_block_invoke
     ;
     puStack_3d0 = &
@@ -707,7 +707,7 @@ LAB_00218bf4:
       pIVar28 = *(ID **)this;
       local_3c0 = (undefined8 *)PTR___NSConcreteStackBlock_00878588;
       local_3b8 = dVar6;
-      local_3b0 = 
+      local_3b0 =
       ____ZN3AGX8Compiler14compileProgramINS_17ComputeProgramKeyE20AGCDeserializedReplyEEvRKT_P29MTLCompileFunctionRequestDataPU27objcproto16MTL4CompilerTask11objc_objectU13block_pointerFvRKT0_RKNS_28CompileFunctionReplyMetadataEE_block_invoke
       ;
       local_3a8 = &
@@ -884,7 +884,7 @@ LAB_00218bf4:
 LAB_00219464:
   local_388 = PTR___NSConcreteStackBlock_00878588;
   local_380 = DAT_00812c58;
-  local_378 = 
+  local_378 =
   ____ZN3AGX23UserCommonShaderFactoryINS_6HAL2008EncodersENS1_7ClassesENS1_10ObjClassesEE27createComputeProgramVariantEP28MTLComputePipelineDescriptorP19AGXG16XFamilyDevicemP26AGXG16XFamilyBinaryArchivePKNS_17UserShaderFactoryIS2_S3_S4_E17ArchiveLookupInfoEP7NSArrayPNS1_14ComputeProgramEPU27objcproto16OS_dispatch_data8NSObjectbPU27objcproto16MTL4CompilerTask11objc_objectU13block_pointerFvPNS1_21ComputeProgramVariantE13ReflectionKeyP19NSMutableDictionary16MTLCompilerErrorP8NSStringE_block_invoke_3
   ;
   local_370 = &___block_descriptor_248_e8_32b40r64c29_ZTSN3AGX17ComputeProgramKeyE_e5_v8__0l;
@@ -975,7 +975,7 @@ void AGX::ComputePipeline<AGX::HAL200::ObjClasses,AGX::HAL200::Classes,AGX::HAL2
   undefined8 *puVar8;
   undefined8 *puVar9;
   uint uVar10;
-  
+
   puVar4 = PTR__OBJC_IVAR___IOGPUMetalResource__res_00878110;
   lVar6 = *(long *)(param_1 + 0x18);
   uVar10 = *(uint *)(lVar6 + 0xac8);
@@ -1274,7 +1274,7 @@ AGX::ComputeProgramVariant<AGX::HAL200::Encoders,AGX::HAL200::Classes>::ComputeP
   undefined8 uStack_87;
   long local_78;
   undefined8 *puVar76;
-  
+
   piVar52 = (int *)0x0;
   local_78 = *(long *)PTR____stack_chk_guard_00878590;
   this_06 = (LinkInfo *)(this + 8);
@@ -6092,7 +6092,7 @@ void AGX::Heap<true>::allocateImpl(ulong param_1,IOGPUMetalResource **param_2)
   undefined8 *local_58;
   undefined8 local_50;
   undefined8 local_48;
-  
+
   puStack_d8 = &local_60;
   local_60 = 0;
   local_50 = DAT_00812c38;
@@ -6184,7 +6184,7 @@ void ____ZN3AGX4HeapILb1EE12allocateImplEmPPK18IOGPUMetalResource_block_invoke(l
   long local_50;
   long lStack_48;
   long local_40;
-  
+
   plVar23 = *(long **)(param_1 + 0x40);
   *(long *)(*(long *)(*(long *)(param_1 + 0x20) + 8) + 0x18) = *plVar23;
   lVar21 = *(long *)(param_1 + 0x20);
@@ -6480,7 +6480,7 @@ void AGXG16XFamilyCommandBuffer::fillCommandBufferArgs_commandQueue_
   ID IVar1;
   ID local_40;
   undefined *puStack_38;
-  
+
   IVar1 = objc_stub::deadline(param_1);
   *(ID *)((long)&param_3[1].field3_0xc + 4) = IVar1;
   IVar1 = objc_stub::deadline_namespace_id(param_1);

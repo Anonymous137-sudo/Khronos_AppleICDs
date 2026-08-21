@@ -69,7 +69,7 @@ AGXAccelerator::createRestrictedRangeMapping
 {
   long *plVar1;
   undefined8 uVar2;
-  
+
   if (*(int *)(this + 0xecd4) == 0) {
                     /* WARNING: Could not recover jumptable at 0xfffffe00089662d4. Too many branches
                         */
@@ -109,7 +109,7 @@ AGXDeviceUserClient::getTargetAndMethodForIndex
 {
   undefined1 *puVar1;
   long lVar2;
-  
+
   *param_1 = (IOService *)this;
   if (param_2 - 0x100 < 0x13) {
     lVar2 = (ulong)(param_2 - 0x100) * 0x30;
@@ -205,7 +205,7 @@ AGXCommandQueue::processSegmentKernelCommand
   undefined8 local_78;
   undefined8 local_70;
   undefined8 uStack_68;
-  
+
   if ((*(int *)(this + 0x450) == 5) && ((*(byte *)(*(long *)(this + 0x538) + 0x1af08) & 1) == 0)) {
     *(undefined4 *)(this + 0x528) = 0x108;
     return;
@@ -824,7 +824,7 @@ AGXCommandQueue::processComputeSetup
   undefined8 uStack_88;
   undefined8 uStack_80;
   undefined8 uStack_78;
-  
+
   uStack_c8 = 0;
   local_d0 = 0;
   uStack_b8 = 0;
@@ -1659,7 +1659,7 @@ void __thiscall AGXCommandQueue::setProtectionOptions(AGXCommandQueue *this,ulon
 {
   code *pcVar1;
   ulong unaff_x30;
-  
+
   if (((*(byte *)(*(long *)(this + 0x538) + 0xee94) & 1) != 0) &&
      (*(ulonglong *)(this + 0x550) != param_1)) {
     (**(code **)(**(long **)(this + 0x678) + 0x158))(*(long **)(this + 0x678),0,0);
@@ -1713,7 +1713,7 @@ AGXDeviceUserClient::invalidateICache(AGXDeviceUserClient *this,_AGXUSCICacheInv
   undefined8 local_30;
   uint local_28;
   undefined4 local_24;
-  
+
   lVar4 = func_0xfffffe000a7de79c(*(undefined8 *)(this + 0x120));
   if (*(uint *)param_1 < 3) {
     if (*(uint *)(lVar4 + 0x230) != 0xffffffff) {
@@ -1772,7 +1772,7 @@ AGXDeviceUserClient::getDeviceUserVARange
 
 {
   undefined8 uVar1;
-  
+
   uVar1 = _DAT_fffffe000712dc70;
   *(undefined8 *)(param_1 + 8) = _UNK_fffffe000712dc78;
   *(undefined8 *)param_1 = uVar1;
@@ -1855,7 +1855,7 @@ long __thiscall AGXGart::allocate(AGXGart *this,ulonglong param_1,ulonglong para
   ulong uVar5;
   ulong uVar6;
   long local_48;
-  
+
   func_0xfffffe000a7e71e4();
   local_48 = 0;
   if (param_3 - 0xd < 2) {
@@ -1924,7 +1924,7 @@ long __thiscall AGXGart::allocate(AGXGart *this,IOGPUMemoryMap *param_1)
   ulong uVar10;
   ulong uVar11;
   ulong local_48;
-  
+
   func_0xfffffe000a7e71e4();
   if ((*(ushort *)(param_1 + 0x10) >> 6 & 1) == 0) {
     uVar10 = 0;
@@ -2041,7 +2041,7 @@ AGXResource::initialize
   uint uVar33;
   ulong uVar34;
   ulong uVar35;
-  
+
   if ((param_2 != (IOGPUNewResourceArgs *)0x0) && (param_3 < 0x68)) {
     return 0;
   }
@@ -2582,7 +2582,7 @@ ulong AGXResource::getMappingOptions(IOGPUNewResourceArgs *param_1,ulonglong par
   uint uVar10;
   ulong uVar11;
   undefined8 uVar12;
-  
+
   uVar6 = (**(code **)(PTR_DAT_fffffe0007e9e4f0 + 0x160))();
   IVar2 = param_1[0x10];
   if (param_2 == 0) {
@@ -2765,7 +2765,7 @@ long * AGXResource::newKernelResource
   long lVar3;
   ulong uVar4;
   undefined8 local_48;
-  
+
   local_48 = 0;
   plVar2 = (long *)func_0xfffffe000a7ca88c
                              (param_1,param_2,0,param_3,*(uint *)(param_1 + 0x18e00) | 99,&local_48)
@@ -2883,7 +2883,7 @@ AGXInternalResource::initInner
   long *plVar4;
   undefined8 uVar5;
   undefined8 uVar6;
-  
+
   lVar3 = func_0xfffffe000bf13528();
   *(long *)(this + 0x40) = lVar3;
   if ((lVar3 == 0) || (iVar2 = (**(code **)(PTR_DAT_fffffe0007e9e4e0 + 0xb8))(this), iVar2 == 0)) {
@@ -2963,7 +2963,7 @@ undefined8 AGXInternalResource::makeFWMapping(long param_1,int param_2,int param
   undefined8 uVar3;
   undefined8 uVar4;
   ulong unaff_x30;
-  
+
   if (param_3 == 0) {
     plVar2 = *(long **)(param_1 + 0x50);
     if (plVar2 != (long *)0x0) goto LAB_fffffe00089e9730;
@@ -3091,7 +3091,7 @@ undefined8 __thiscall AGXInternalResource::prepareMappings(AGXInternalResource *
 
 {
   int iVar1;
-  
+
   if ((*(long *)(this + 0x50) == 0) || (iVar1 = func_0xfffffe000a7f56f4(), iVar1 == 0)) {
     if ((*(long *)(this + 0x58) == 0) || (iVar1 = func_0xfffffe000a7f56f4(), iVar1 == 0)) {
       func_0xfffffe000b7a132c(*(undefined8 *)(this + 0x40));
@@ -3134,7 +3134,7 @@ AGXTAChannel::init(AGXCommandQueue *param_1,AGXWorkQueue *param_2,int param_3,in
   undefined8 in_x5;
   long lVar4;
   undefined4 uVar5;
-  
+
   uVar2 = AGXChannel::init((AGXChannel *)param_1,param_2,param_3,param_4,param_5,in_x5,0);
   *(undefined4 *)(param_1 + 0x20c) = 0;
   lVar4 = *(long *)(param_2 + 0x538);
@@ -3203,7 +3203,7 @@ AGXSecureGart::createRestrictedRangeMapping
   ulong uVar1;
   undefined8 uVar2;
   long lVar3;
-  
+
   lVar3 = *(long *)(param_1 + 0x10);
   func_0xfffffe000b7a42bc(*(undefined8 *)(lVar3 + 0x115f8));
   func_0xfffffe000b7a42bc(*(undefined8 *)(lVar3 + 0x11600));
@@ -3250,7 +3250,7 @@ AGXSecureGart::getCodeGartRangeInfo(AGXSecureGart *this,ulonglong *param_1,ulong
   ulonglong uVar2;
   ulonglong uVar3;
   bool bVar4;
-  
+
   if (param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0) {
     uVar1 = 0x100000000;
     if (AGXUATMux::sARMCodeRangeSize == '\0') {
@@ -3290,7 +3290,7 @@ AGXSecureGart::allocate(AGXSecureGart *this,ulonglong param_1,ulonglong param_2,
 
 {
   undefined8 uVar1;
-  
+
   func_0xfffffe000a7e71e4();
   if ((1 << (ulong)(param_3 & 0x1f) & 0x9f80U) != 0) {
     func_0xfffffe000b7a132c(AGXGart::fSharedAllocatorLock);
@@ -3335,7 +3335,7 @@ AGXSecureGart::mapWithAddress
   ulong uVar6;
   long lVar7;
   char cVar8;
-  
+
   if ((((byte)this[0x358] & 1) == 0) && (*(int *)(this + 0x2cc) == 0)) {
     cVar8 = '\x02';
   }
@@ -3431,7 +3431,7 @@ AGXSecureMemoryMap::commitIntoGPUPageTable(AGXSecureMemoryMap *this,ulonglong pa
   long *plVar2;
   long lVar3;
   ulong uVar4;
-  
+
   plVar2 = (long *)func_0xfffffe000be9c88c(*(undefined8 *)(this + 0x18),&AGXAllocation::gMetaClass);
   if (plVar2 == (long *)0x0) {
     lVar3 = func_0xfffffe000be9c88c
@@ -3509,7 +3509,7 @@ AGXUnifiedAddressTranslator::doMap
   long local_90;
   long local_88;
   long local_68;
-  
+
   commitUnmaps(this);
   func_0xfffffe000b7a132c(*(undefined8 *)(this + 0x150));
   uVar4 = (**(code **)(*(long *)this + 0x1b0))(this,param_2,param_3);
@@ -3632,7 +3632,7 @@ AGXUnifiedAddressTranslator::createMappingInAperture
   long *plVar2;
   ulong unaff_x30;
   undefined8 local_38;
-  
+
   plVar2 = *(long **)((ulong)param_1 + 0x170);
   if (plVar2 == (long *)0x0) {
     if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
@@ -3676,7 +3676,7 @@ AGXAccelerator::createRestrictedRangeMapping
 {
   long *plVar1;
   undefined8 uVar2;
-  
+
   if (*(int *)(this + 0xecd4) == 0) {
                     /* WARNING: Could not recover jumptable at 0xfffffe00089662d4. Too many branches
                         */
@@ -3738,7 +3738,7 @@ AGXSecureGart::createRestrictedRangeMapping
   ulong uVar1;
   undefined8 uVar2;
   long lVar3;
-  
+
   lVar3 = *(long *)(param_1 + 0x10);
   func_0xfffffe000b7a42bc(*(undefined8 *)(lVar3 + 0x115f8));
   func_0xfffffe000b7a42bc(*(undefined8 *)(lVar3 + 0x11600));
@@ -3810,7 +3810,7 @@ AGXSecureGart::getCodeGartRangeInfo(AGXSecureGart *this,ulonglong *param_1,ulong
   ulonglong uVar2;
   ulonglong uVar3;
   bool bVar4;
-  
+
   if (param_1 != (ulonglong *)0x0 && param_2 != (ulonglong *)0x0) {
     uVar1 = 0x100000000;
     if (AGXUATMux::sARMCodeRangeSize == '\0') {
@@ -3862,7 +3862,7 @@ AGXUnifiedAddressTranslator::createMappingInAperture
   long *plVar2;
   ulong unaff_x30;
   undefined8 local_38;
-  
+
   plVar2 = *(long **)((ulong)param_1 + 0x170);
   if (plVar2 == (long *)0x0) {
     if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
@@ -3928,7 +3928,7 @@ AGXDeviceUserClient::getTargetAndMethodForIndex
 {
   undefined1 *puVar1;
   long lVar2;
-  
+
   *param_1 = (IOService *)this;
   if (param_2 - 0x100 < 0x13) {
     lVar2 = (ulong)(param_2 - 0x100) * 0x30;
@@ -3986,7 +3986,7 @@ long * AGXResource::newKernelResource
   long lVar3;
   ulong uVar4;
   undefined8 local_48;
-  
+
   local_48 = 0;
   plVar2 = (long *)func_0xfffffe000a7ca88c
                              (param_1,param_2,0,param_3,*(uint *)(param_1 + 0x18e00) | 99,&local_48)
@@ -4036,7 +4036,7 @@ void __thiscall AGXUSCPrivMemPoolUMA::~AGXUSCPrivMemPoolUMA(AGXUSCPrivMemPoolUMA
 {
   code *pcVar1;
   ulong unaff_x30;
-  
+
   func_0xfffffe000a7c4c08();
   if (((unaff_x30 ^ unaff_x30 << 1) >> 0x3e & 1) != 0) {
                     /* WARNING: Does not return */
@@ -4088,7 +4088,7 @@ void __thiscall AGXCommandQueue::setProtectionOptions(AGXCommandQueue *this,ulon
 {
   code *pcVar1;
   ulong unaff_x30;
-  
+
   if (((*(byte *)(*(long *)(this + 0x538) + 0xee94) & 1) != 0) &&
      (*(ulonglong *)(this + 0x550) != param_1)) {
     (**(code **)(**(long **)(this + 0x678) + 0x158))(*(long **)(this + 0x678),0,0);

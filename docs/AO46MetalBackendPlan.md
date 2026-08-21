@@ -165,12 +165,17 @@ progress.
   map to private `MTLTexture` objects. AO46 creates color surfaces, encodes
   full-surface clears and one bounded fullscreen-triangle render pass, copies
   them to aligned staging buffers, and validates both channel layouts through
-  Gallium fences. The current fragment path additionally supports one or more
-  static texture slots with matching immutable nearest/clamp sampler views;
-  each maps to a public `MTLTexture` and `MTLSamplerState` and stays retained
-  through fence completion. An aligned shared `MTLBuffer` can upload one
-  bounded texture region with a native blit before sampling. Dynamic handles,
-  other sampler behavior, vertex sampling, depth, mipmaps, and multisampling
+  Gallium fences. The current path additionally supports static texture slots
+  with bounded non-mipmapped sampler views: nearest or linear filtering and
+  clamp-to-edge or repeat addressing each map to a public `MTLTexture` and
+  `MTLSamplerState` retained through fence completion. An aligned shared
+  `MTLBuffer` can upload one bounded texture region with a native blit before
+  sampling. Stage-aware static binding admits those constrained 2D views in
+  either the vertex or fragment stage; a slot shared by both stages must hold
+  the same live view and sampler. Vertex texture/sampler pipelines use the
+  classic public Metal encoder until the MTL4 table path has equivalent
+  stage-aware coverage.
+  Dynamic handles, other sampler behavior, depth, mipmaps, and multisampling
   remain fail-closed.
 - `[x]` The MTL4 transfer path now performs buffer blits plus texture upload,
   clear, readback, and texture-to-texture copies through KosmicKrisp bridge
@@ -227,12 +232,15 @@ progress.
   and pre-MTL4 fallback encoders; MTL4 PSOs never cross into those encoders.
 - `[x]` AO46's KosmicKrisp integration can optionally lower static NIR sampler
   indices to public MSL `sampler(N)` parameters, avoiding an attempt to write
-  opaque sampler handles into a Metal buffer. The fragment texture smoke uses
-  Mesa-generated sparse `texture(1)`/`sampler(1)` and
-  `texture(3)`/`sampler(3)` bindings end to end. Its UVs are `float2` data
-  from a real vertex buffer, interpolated through `VARYING_SLOT_VAR0`, rather
-  than a fixed fragment coordinate; both sampled textures contribute distinct
-  regions to the fence-read output.
+  opaque sampler handles into a Metal buffer. Per-stage reflection preserves
+  vertex and fragment texture/sampler masks. The texture smoke requires a
+  vertex-stage `texture(1)`/`sampler(1)` sample plus Mesa-generated fragment
+  sparse `texture(1)`/`sampler(1)` and `texture(3)`/`sampler(3)` bindings end
+  to end. Its UVs are `float2` data from a real vertex buffer, interpolated
+  through `VARYING_SLOT_VAR0`, rather than a fixed fragment coordinate; both
+  sampled textures contribute distinct regions to the fence-read output. A
+  shared slot must bind the same Gallium view/state in both stages, and a
+  missing required stage binding fails closed before submission.
 - `[x]` Constant-offset Mesa `load_ubo` operations for bindings `0..15` are
   reflected as an exact required binding mask and per-UBO byte range. Binding
   `0` uses Metal buffer `0`; bindings `1..15` use Metal buffers `16..30` so
@@ -302,11 +310,16 @@ progress.
   accepts one GPU-produced indexed descriptor only when its static generated
   heap capacity and attribute-free TES pipeline have been validated. Direct indexed/non-indexed
   draws carry native instance-count and base-instance values, while static
-  vertex descriptors can step per instance. One Mesa-produced, shader-writable
-  `uint32` indexed indirect record is also submitted directly without a CPU
-  map, independent of the tessellation package. GPU-generated multi-record
-  batches, unbounded batches, texture/sampler-bearing ICB count pipelines, and
-  general state-tracker `draw_vbo` remain unsupported.
+  vertex descriptors can step per instance. A bounded `1..64` sequence of
+  Mesa-produced, shader-writable `uint32` indexed indirect records is also
+  submitted directly without a CPU map, independent of the tessellation
+  package. A separate two-record, attribute-free smoke proves that GPU-authored
+  base-instance values are preserved through Mesa-generated vertex and
+  fragment MSL: it produces distinct green and blue regions after one native
+  indirect execution. This is bounded groundwork for shader draw parameters,
+  not general `ARB_shader_draw_parameters` admission. Unbounded batches,
+  texture/sampler-bearing ICB count pipelines, and general state-tracker
+  `draw_vbo` remain unsupported.
 - `[~]` Compute dispatch and one bounded vertex-buffer triangle are verified
   through Gallium fence-backed readback. The graphics pipeline validates that
   fragment-stage inputs were produced by the vertex stage. RGB32 buffer-texture
@@ -330,7 +343,9 @@ progress.
   pointer root at bindings `2..15` before MSL generation. A smoke uses
   independent read-only input and writable output roots at `2` and `3`, so
   live Gallium ranges and the writable mask, rather than the root ABI alone,
-  determine submission access.
+  determine submission access. It verifies a nonzero writable range and then
+  sparsely rebinds only slot `3` to a second nonzero output range without
+  disturbing the other live SSBO roots.
   dispatch contract now carries the callback's writable bit into classic Metal
   resource-usage declarations; legacy direct callers retain conservative
   read/write declarations until converted. A conservative Gallium

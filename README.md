@@ -103,7 +103,7 @@ Build the standard source-bootstrap installer:
 ./build_VulkanICD_KHRInstaller.sh
 ```
 
-It produces `dist/VulkanICD_KHRInstaller.pkg`. The installer builds project
+It produces `dist/VulkanICD-KHR-Installer.pkg`. The installer builds project
 source and installs only project-owned standard ABI files under `/usr/local`.
 It does not replace the Vulkan loader, Metal, a macOS framework, or Apple
 system files; SIP/AuthRoot changes are not required.

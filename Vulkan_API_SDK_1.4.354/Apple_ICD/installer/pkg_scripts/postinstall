@@ -6,6 +6,12 @@ log_file=/var/log/VulkanICD_KHRInstaller.log
 
 {
     printf '[%s] VulkanICD_KHR postinstall starting\n' "$(date '+%Y-%m-%d %H:%M:%S')"
-    /usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap update
-    printf '[%s] VulkanICD_KHR postinstall complete\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    if /usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap update; then
+        printf '[%s] VulkanICD_KHR postinstall complete\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    else
+        status=$?
+        printf '[%s] VulkanICD_KHR source build failed (status %s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$status"
+        printf '%s\n' "The bootstrap tools were installed; rerun vulkanicd-khr-update after fixing the dependency or network error."
+        exit "$status"
+    fi
 } >>"$log_file" 2>&1

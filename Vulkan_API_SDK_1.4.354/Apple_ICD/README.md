@@ -69,14 +69,14 @@ this standard Vulkan ICD path.
 
 ## Bootstrap Package
 
-`VulkanICD_KHRInstaller.pkg` is the source-bootstrap package for this standard
+`VulkanICD-KHR-Installer.pkg` is the source-bootstrap package for this standard
 ABI product. Build it from the repository root:
 
 ```sh
 ./build_VulkanICD_KHRInstaller.sh
 ```
 
-The resulting `dist/VulkanICD_KHRInstaller.pkg` installs only its bootstrap
+The resulting `dist/VulkanICD-KHR-Installer.pkg` installs only its bootstrap
 commands/configuration, then clones or updates this repository below
 `/usr/local/src/Khronos_AppleICDs`, initializes the Mesa and vendor submodules,
 builds this ICD from its recorded repository-relative project path, and stages

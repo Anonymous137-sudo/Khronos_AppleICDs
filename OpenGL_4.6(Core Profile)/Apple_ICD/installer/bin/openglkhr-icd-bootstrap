@@ -17,6 +17,11 @@ repo_branch=${OPENGLKHR_REPO_BRANCH:-main}
 install_mode=${OPENGLKHR_INSTALL_MODE:-khronos}
 project_root="$repo_root/OpenGL_4.6(Core Profile)/Apple_ICD"
 
+if ! command -v git >/dev/null 2>&1; then
+    echo "OpenGLKHR installer requires git to bootstrap the source repository" >&2
+    exit 1
+fi
+
 if [ -z "$repo_url" ]; then
     echo "missing OpenGLKHR repository URL; expected OPENGLKHR_REPO_URL in $config_file" >&2
     exit 1
@@ -34,14 +39,17 @@ case "$mode" in
 esac
 
 if [ ! -d "$repo_root/.git" ]; then
-    git clone --branch "$repo_branch" "$repo_url" "$repo_root"
-elif [ "$mode" = "update" ]; then
+    git clone --recurse-submodules --branch "$repo_branch" "$repo_url" "$repo_root"
+else
     git -C "$repo_root" remote set-url origin "$repo_url"
-    git -C "$repo_root" fetch origin "$repo_branch"
-    if ! git -C "$repo_root" checkout "$repo_branch"; then
-        git -C "$repo_root" checkout -b "$repo_branch" "origin/$repo_branch"
+    if [ "$mode" = "update" ]; then
+        git -C "$repo_root" fetch origin "$repo_branch"
+        if ! git -C "$repo_root" checkout "$repo_branch"; then
+            git -C "$repo_root" checkout -b "$repo_branch" "origin/$repo_branch"
+        fi
+        git -C "$repo_root" pull --ff-only origin "$repo_branch"
     fi
-    git -C "$repo_root" pull --ff-only origin "$repo_branch"
+    git -C "$repo_root" submodule update --init --recursive
 fi
 
 if [ ! -d "$project_root" ]; then

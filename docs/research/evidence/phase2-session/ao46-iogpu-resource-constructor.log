@@ -1,14 +1,14 @@
-(lldb) target create "/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/phase2-session/AppleAGXResourceConstructorControl"
-Current executable set to '/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/phase2-session/AppleAGXResourceConstructorControl' (arm64).
+(lldb) target create "<USER_HOME>/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/phase2-session/AppleAGXResourceConstructorControl"
+Current executable set to '<USER_HOME>/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/phase2-session/AppleAGXResourceConstructorControl' (arm64).
 (lldb) breakpoint set --name ao46_resource_constructor_capture_ready
 Breakpoint 1: where = AppleAGXResourceConstructorControl`ao46_resource_constructor_capture_ready, address = 0x0000000100001348
 (lldb) run
-Process 4638 launched: '/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/phase2-session/AppleAGXResourceConstructorControl' (arm64)
+Process 4638 launched: '<USER_HOME>/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/phase2-session/AppleAGXResourceConstructorControl' (arm64)
 Process 4638 stopped
 * thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
     frame #0: 0x0000000100001348 AppleAGXResourceConstructorControl`ao46_resource_constructor_capture_ready
 AppleAGXResourceConstructorControl`ao46_resource_constructor_capture_ready:
-->  0x100001348 <+0>: ret    
+->  0x100001348 <+0>: ret
 
 AppleAGXResourceConstructorControl`main:
     0x10000134c <+0>: stp    x28, x27, [sp, #-0x20]!
@@ -29,7 +29,7 @@ Breakpoint 4: where = IOGPU`IOGPUResourceGetGPUVirtualAddress, address = 0x00000
 Breakpoint 5: where = IOGPU`IOGPUResourceGetGPUVirtualAddressLength, address = 0x00000001a8a3ca38
 (lldb) breakpoint set --name IOConnectCallMethod
 Breakpoint 6: where = IOKit`IOConnectCallMethod, address = 0x0000000187bc0cd4
-(lldb) command script import '/Users/gitanshchakravarty/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/scripts/iogpu_resource_constructor_capture.py'
+(lldb) command script import '<USER_HOME>/MGL/Khronos_AppleICDs/OpenGL_4.6(Core Profile)/Apple_ICD/scripts/iogpu_resource_constructor_capture.py'
 (lldb) breakpoint command add -F iogpu_resource_constructor_capture.capture_resource_constructor 2
 (lldb) breakpoint command add -F iogpu_resource_constructor_capture.capture_resource_release 3
 (lldb) breakpoint command add -F iogpu_resource_constructor_capture.capture_resource_gpu_virtual_address 4

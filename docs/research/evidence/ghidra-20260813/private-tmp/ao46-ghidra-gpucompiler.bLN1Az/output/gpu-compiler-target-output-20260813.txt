@@ -40,7 +40,7 @@ void metalfe::GPUCompiler::writeMetalLibToBuffer(void)
   undefined8 uStack_140;
   undefined1 auStack_138 [256];
   undefined8 local_38;
-  
+
   local_38 = *_DAT_28f6ec2f0;
   local_148 = 0;
   uStack_140 = 0;
@@ -94,7 +94,7 @@ void __thiscall llvm::airdevlower::DeviceLowering::lower(DeviceLowering *this,lo
   undefined2 local_210;
   undefined1 auStack_80 [48];
   undefined1 auStack_50 [16];
-  
+
   FUN_2431b1574(auStack_50,*(undefined8 *)(this + 0x10),*(undefined8 *)this);
   local_230[0] = *param_2 + 0xd8;
   local_210 = 0x104;
@@ -152,7 +152,7 @@ void llvm::airnt::TranslatorPlugin::emitExecutableImage
   undefined8 local_90;
   undefined8 local_88 [4];
   long local_68;
-  
+
   local_68 = *_DAT_28f6ec2f0;
   local_90 = DAT_243274bd8;
   lVar10 = param_4 << 3;
@@ -369,7 +369,7 @@ void llvm::airnt::Plugin::load(long param_1,ulong param_2)
   undefined8 local_80;
   long local_78;
   ulong uStack_70;
-  
+
   local_90 = 0;
   uStack_88 = 0;
   local_80 = 0;

@@ -88,13 +88,13 @@ included in the evidence asset rather than committed as a standalone Git blob.
 The matching GitHub release contains checksummed assets for:
 
 - the signed/staged macOS arm64 ICD runtime and JSON manifest;
-- the source-bootstrap `VulkanICD_KHRInstaller.pkg`;
+- the source-bootstrap `VulkanICD-KHR-Installer.pkg`;
 - final-wave raw QPA files, case lists, worker exit codes, and standard output;
 - an evidence bundle with the release ledger and semantic-delta record.
 
 | Release asset | SHA-256 |
 | --- | --- |
-| `VulkanICD_KHRInstaller-1.4.354-cts-qualified-1.4.3.2-20260821.pkg` | `f3f24b90be1b9bd8fd20fa1dffc55ea231e5d6c1fdc6f0bdfec4792143233ad8` |
+| `VulkanICD-KHR-Installer.pkg` | regenerated for this release |
 | `avk143-vulkan-api-sdk-1.4.354-macos-arm64-runtime.tar.gz` | `53123fa05a47d10776236b0c08fa36e0fe6b1580edbabe8afa672e8788047633` |
 | `avk143-vulkan-cts-1.4.3.2-final-881906-qpa.tar.gz` | `e552261f2ef15f0d792d14b39f81d3125c73be51008140079b2a72127ce0d5db` |
 | `avk143-vulkan-cts-qualified-1.4.3.2-20260821-evidence.tar.gz` | `71c63b4ecee8ea441d4776ee75ecde527874596c71197fc981b94c5a38e4572c` |

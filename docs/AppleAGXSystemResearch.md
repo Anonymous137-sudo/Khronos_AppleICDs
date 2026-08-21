@@ -97,7 +97,7 @@ OpenGL_4.6(Core Profile)/Apple_ICD/scripts/inventory_apple_agx_stack.sh
 
 The script writes a host profile, loaded-module snapshot, IOKit registry
 snapshot, Mach-O dependencies, code-signing metadata, hashes, and a limited
-set of relevant identifiers to `/private/tmp/ao46-apple-agx-research` by
+set of relevant identifiers to `<TMPDIR>/ao46-apple-agx-research` by
 default. Set `AO46_APPLE_AGX_RESEARCH_DIR` to choose another output location.
 
 It now also records the whole-stack scope in `stack-scope.txt` and produces
