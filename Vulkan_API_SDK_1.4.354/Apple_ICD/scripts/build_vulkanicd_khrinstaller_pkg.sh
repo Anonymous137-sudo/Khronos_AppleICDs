@@ -95,6 +95,8 @@ install -m 0755 "$project_root/installer/bin/vulkanicd-khr-build-local" \
     "$payload_root/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-build-local"
 install -m 0755 "$project_root/scripts/build-avk143-icd.sh" \
     "$payload_root/usr/local/libexec/VulkanICD_KHR/build-avk143-icd.sh"
+install -m 0755 "$project_root/scripts/build-avk143-vulkan-tools.sh" \
+    "$payload_root/usr/local/libexec/VulkanICD_KHR/build-avk143-vulkan-tools.sh"
 install -m 0755 "$project_root/installer/bin/vulkanicd-khr-bootstrap" \
     "$payload_root/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap"
 install -m 0755 "$project_root/installer/pkg_scripts/preinstall" "$pkg_scripts_root/preinstall"

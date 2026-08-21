@@ -31,6 +31,11 @@ fi
 mkdir -p "$(dirname -- "$runtime_library")" "$manifest_dir"
 install -m 755 "$source_library" "$runtime_library"
 install -m 755 "$source_spirv" "$runtime_spirv"
+
+if [ "${AVK143_INSTALL_VULKAN_TOOLS:-1}" = 1 ]; then
+    AVK143_RUNTIME_PREFIX="$runtime_prefix" \
+        /usr/local/libexec/VulkanICD_KHR/build-avk143-vulkan-tools.sh
+fi
 cat >"$manifest" <<EOF
 {
     "file_format_version": "1.0.1",

@@ -80,8 +80,14 @@ prefix with:
 ```
 
 The package installs the ICD, its bundled SPIR-V runtime, manifest, and
-bootstrap helpers. It does not install the Khronos loader or `vulkaninfo`;
-those remain separate system/developer tools.
+bootstrap helpers. The postinstall build also assembles the Khronos Loader,
+`vulkaninfo`, `vkcube`, checked-in Vulkan headers/pkg-config metadata, and the
+Khronos validation layer when explicitly enabled. `vkvia` is installed
+when the selected Vulkan-Tools revision provides that target; current upstream
+revisions may not contain it, and the live log reports that explicitly. Set
+`AVK143_INSTALL_VULKAN_TOOLS=0` for a minimal/offline install. Validation
+layers are optional and disabled by default; enable them with
+`AVK143_BUILD_VALIDATION_LAYERS=1`.
 
 ## Bootstrap Package
 

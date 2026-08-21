@@ -18,14 +18,14 @@ for file in "$icd" "$spirv" "$manifest"; do
     fi
 done
 
-deps=$(otool -L "$icd")
+deps=$(otool -L "$icd" | tail -n +2)
 printf '%s\n' "$deps" | grep -q '@rpath/libSPIRV-Tools.dylib'
 if printf '%s\n' "$deps" | grep -Eq '/opt/homebrew|/Users/|/private/|/usr/local/src|build/AVK143'; then
     printf '%s\n' 'runtime-neutrality smoke failed: ICD has a host-specific dependency path' >&2
     exit 1
 fi
 
-spirv_deps=$(otool -L "$spirv")
+spirv_deps=$(otool -L "$spirv" | tail -n +2)
 if printf '%s\n' "$spirv_deps" | grep -Eq '/opt/homebrew|/Users/|/private/|/usr/local/src|build/AVK143'; then
     printf '%s\n' 'runtime-neutrality smoke failed: SPIR-V runtime has a host-specific dependency path' >&2
     exit 1

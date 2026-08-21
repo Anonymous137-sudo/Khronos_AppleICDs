@@ -31,6 +31,7 @@ grep -qx './usr/local/bin/vulkanicd-khr-log' "$root/payload-files.txt"
 grep -qx './usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap' "$root/payload-files.txt"
 grep -qx './usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-build-local' "$root/payload-files.txt"
 grep -qx './usr/local/libexec/VulkanICD_KHR/build-avk143-icd.sh' "$root/payload-files.txt"
+grep -qx './usr/local/libexec/VulkanICD_KHR/build-avk143-vulkan-tools.sh' "$root/payload-files.txt"
 grep -qx './usr/local/share/VulkanICD_KHR/repository.conf' "$root/payload-files.txt"
 
 pkgutil --expand "$pkg" "$expanded"
@@ -43,6 +44,7 @@ gzip -dc "$expanded/Payload" | (cd "$payload" && cpio -idm --quiet)
 grep -q 'vulkanicd-khr-build-local' \
     "$payload/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap"
 sh -n "$payload/usr/local/libexec/VulkanICD_KHR/build-avk143-icd.sh"
+sh -n "$payload/usr/local/libexec/VulkanICD_KHR/build-avk143-vulkan-tools.sh"
 sh -n "$payload/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-build-local"
 
 printf '%s\n' "AVK143 VulkanICD_KHR installer package smoke passed"
