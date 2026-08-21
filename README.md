@@ -1,191 +1,166 @@
 # Khronos_AppleICDs
 
-`Khronos_AppleICDs` is a third-party work-in-progress OpenGL driver project
-for macOS. It has two intentionally separate OpenGL frontend products.
+`Khronos_AppleICDs` is a macOS graphics-driver integration project built around
+existing Mesa and KosmicKrisp machinery. It contains two independent products:
 
-- **Legacy macOS compatibility:** `OpenGL.framework`,
-  `OpenGL_4.6.framework`, CGL, and NSOpenGL remain an optional compatibility
-  path for applications that explicitly require Apple-style interfaces.
-- **Modern Khronos ABI:** Mesa-produced `libGL.dylib` and `libEGL.dylib` are
-  the user-space frontend for portable OpenGL applications. This path does not
-  load the framework, CGL, NSOpenGL, `libAO46Core.dylib`, or `libGLICD.dylib`.
+- **Vulkan:** a standard Khronos-loader ICD assembled from Mesa KosmicKrisp and
+  public Metal for Apple Silicon macOS.
+- **OpenGL:** the resumed AO46 workstream, with a standard Mesa EGL/OpenGL ABI
+  path plus a separate, optional Apple-style framework compatibility path.
 
-Both frontend products target the same lower AO46 Metal Gallium backend without
-sharing frontend objects or installation names.
+The products share research and build infrastructure, but they do not share
+application-facing ABIs, loaders, or installation names.
 
-The active direction reuses Mesa's OpenGL core, state tracker, GLSL, SPIR-V,
-NIR, and NIR-to-MSL compiler machinery. `AO46MTLGallium` is the single
-Mesa-facing Gallium driver, while `AO46AGXMetalAdapter` owns the lower Metal
-execution boundary: device/queue, resources, pipelines, fences, and drawables.
-AO46 owns the legacy framework ABI, CGL/NSOpenGL and its compatibility
-libraries, plus the Metal Gallium backend used by Mesa's standard ABI build.
+## Current Status
 
-AO46 does not hand-write a second OpenGL semantic engine or a separate
-GLSL-to-Metal compiler. The prior `GL2MTL/mtl_driver.m` implementation is the
-audited migration baseline for `AO46MTLGallium`, not a fallback backend. The
-historical direct AGX/UABI work is retained as research, including its raw
-evidence; it informs profile policy and diagnostics but is not an active
-runtime submission path or a conformance claim. See [the active Mesa Metal backend
-plan](docs/AO46MetalBackendPlan.md).
+| Product | Current state | Important boundary |
+| --- | --- | --- |
+| **Vulkan API SDK 1.4.354** | Published engineering release, qualified with `vulkan-cts-1.4.3.2` evidence. | Not Khronos certified; `VkConformanceVersion` is `{ 0, 0, 0, 0 }`. |
+| **AO46 standard OpenGL/EGL** | Active Mesa Metal Gallium development, with verified standard EGL/OpenGL 3.3-core smoke coverage. | Not an OpenGL 4.6 or CTS-conformance claim. |
+| **AO46 legacy framework path** | Experimental compatibility product for software requiring CGL/NSOpenGL/framework-style interfaces. | Separate from the standard EGL/OpenGL ABI and developer-machine only. |
 
-## Repository Layout
+## Vulkan Release
 
-- `OpenGL_4.6(Core Profile)/Apple_ICD`
-  Main source tree for the legacy framework compatibility product, the shared
-  Mesa Metal backend, the standard Khronos/Mesa frontend contract, test
-  coverage, and packaging scripts.
-- `Vulkan_API_SDK_1.4.354`
-  A separate Mesa KosmicKrisp Vulkan ICD source root, named for its verified
-  Mesa Vulkan-Headers/registry revision. It uses the standard Khronos
-  loader/ICD ABI rather than a macOS framework or custom AppKit ABI, and has a
-  source-bootstrap `VulkanICD_KHRInstaller.pkg` for `/usr/local` deployment.
-- `docs/INSTALLATION.md`
-  Live-install notes for developer machines, installer behavior, target paths, and update flow.
-- `docs/AO46MetalBackendPlan.md`
-  Governing Mesa-to-Metal backend plan, ownership boundary, and CTS delivery
-  order.
-- `docs/WORKFLOW_PLAN.md`
-  Active workflow, implementation rules, CTS milestones, and archived direct
-  AGX research dashboard.
-- `docs/research/evidence/`
-  Checksummed direct-AGX research evidence, trace logs, Ghidra reports, and
-  project-owned analysis metadata.
-- `dist/`
-  Locally built `OpenGLKHR_ICD_Installer.pkg` and
-  `VulkanICD_KHRInstaller.pkg` outputs.
+The current release is [Vulkan API SDK 1.4.354 - CTS-qualified 1.4.3.2
+(engineering)](https://github.com/Anonymous137-sudo/Khronos_AppleICDs/releases/tag/vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821).
 
-## Frontend Builds
-
-Build the **legacy framework compatibility** product with:
-
-```bash
-cmake -S "OpenGL_4.6(Core Profile)/Apple_ICD" -B "OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/build"
-cmake --build "OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/build"
-ctest --test-dir "OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/build" --output-on-failure
-```
-
-Repo-local browsable artifacts are written under:
+It provides a standard Vulkan ICD route:
 
 ```text
-OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/build
-OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/stage
+Vulkan application
+  -> Khronos Vulkan Loader and vk* ABI
+  -> Mesa KosmicKrisp ICD
+  -> Mesa Vulkan runtime, VTN, NIR, and Metal execution
+  -> Apple GPU driver
 ```
 
-The standard Khronos product is built through Mesa's registered `ao46mtl`
-Gallium target and its built-in EGL pbuffer/Cocoa-window driver. `libGL.dylib`
-and `libEGL.dylib` are aliases to one Mesa `libEGL.1.dylib` image, so they
-share the same `glapi` dispatch state. Standard `EGL_WINDOW_BIT` surfaces use a
-public `CAMetalLayer`, `NSView`, or `NSWindow`, while the backend performs the
-Metal copy/present and resize/loss lifecycle without linking CGL or NSOpenGL.
-The build contract is documented in
-[`khronos/README.md`](<OpenGL_4.6(Core Profile)/Apple_ICD/khronos/README.md>).
-The installer will not substitute CGL, Mesa's Apple GLX bridge, or a software
-renderer to make this path appear complete.
+The published evidence includes the staged macOS arm64 runtime, ICD JSON
+manifest, source-bootstrap installer, raw final-wave QPAs, case list, worker
+output, exit codes, semantic-delta record, and SHA-256 checksums.
 
-Passing the current smoke suite validates a real standard-EGL pbuffer context,
-Mesa state-tracker clear/readback, and teardown through the shared Metal
-Gallium backend. The opt-in window smoke validates the same EGL context path
-through a public Cocoa drawable when a live WindowServer session is available.
-The practical capability level is still OpenGL 3.3 core, not OpenGL 4.6 or CTS
-conformance.
+The final 881,906-case CTS wave recorded:
 
-## Vulkan ICD
+| Outcome | Count |
+| --- | ---: |
+| Pass | 257,266 |
+| NotSupported | 624,638 |
+| Fail | 0 |
+| QualityWarning | 2 |
 
-`Vulkan_API_SDK_1.4.354` is a separate standard Vulkan ICD product. It builds
-Mesa's KosmicKrisp driver against the checked-in Vulkan-Headers/registry
-revision 1.4.354 and exposes it through the Khronos loader's ordinary `vk*` /
-JSON-ICD contract. It does not provide a `.framework`, `CVK`,
-`NSVulkan_KHR`, custom loader, or private AGX submission path.
+The two `QualityWarning` outcomes are retained as warnings in the raw QPAs and
+documented in the release record. They are not relabeled as passes. The
+release label's `1.4.3.2` component identifies the CTS suite revision, not an
+official Vulkan conformance version.
 
-The current engineering release is
-`vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821`. It provides the full
-local 2,858,036-case `dEQP-VK` inventory ledger in staged release evidence. Its
-final 881,906-case wave completed with 257,266 passes, 624,638 correctly
-feature-gated `NotSupported` results, zero failures, and two retained
-early-fragment `QualityWarning` results. Raw QPAs, worker output, the runtime
-binary, manifest, and installer are published as GitHub release assets; the
-source record is [Vulkan API SDK 1.4.354/RELEASES](Vulkan_API_SDK_1.4.354/RELEASES/).
+Read the [Vulkan release record](Vulkan_API_SDK_1.4.354/RELEASES/CTS_QUALIFIED_1.4.3.2_20260821.md),
+[semantic delta](Vulkan_API_SDK_1.4.354/RELEASES/SEMANTIC_DELTA.md), and
+[Vulkan build/ICD guide](Vulkan_API_SDK_1.4.354/Apple_ICD/README.md).
 
-This is an engineering qualification release, not a Khronos certification.
-The ICD retains `VkConformanceVersion = { 0, 0, 0, 0 }`; `1.4.3.2` identifies
-the CTS suite revision in the release label, never an official conformance
-version. The semantic corrections that made capability reporting and Metal
-lowering match the tested behavior are documented in the release record.
+## AO46 OpenGL
 
-The temporary AO46 implementation freeze is now lifted. Vulkan's standard ICD
-release remains independent while AO46 resumes Metal Gallium completion and
-OpenGL CTS work.
+AO46 uses Mesa as the OpenGL semantic engine. Mesa owns OpenGL state,
+validation, GLSL, SPIR-V, NIR, and capability logic; AO46 provides macOS
+integration and the Metal execution boundary.
 
-Build the package with:
+```text
+Modern OpenGL application
+  -> Mesa libGL.dylib / libEGL.dylib
+  -> Mesa OpenGL core and state tracker
+  -> AO46MTLGallium
+  -> AO46AGXMetalAdapter
+  -> public Metal and Apple GPU driver
+```
 
-```bash
+The modern path is CGL-free and uses the standard Khronos ABI. It supports
+surfaceless/pbuffer contexts and public Cocoa window drawables through
+`CAMetalLayer`, `NSView`, or `NSWindow`. Current hardware smoke coverage proves
+EGL context creation, Mesa state-tracker rendering, Metal readback, swap, and
+teardown at the audited **OpenGL 3.3 core** ceiling.
+
+The legacy path remains distinct:
+
+```text
+Legacy macOS application
+  -> OpenGL.framework / OpenGL_4.6.framework compatibility path
+  -> CGL / NSOpenGL / AO46 compatibility libraries
+  -> AO46 Metal Gallium backend
+```
+
+It exists only for applications that explicitly require Apple-style OpenGL
+interfaces. It is not the runtime dependency of the standard EGL/OpenGL path.
+
+AO46 work resumed after the Vulkan release. See the [active Mesa Metal backend
+plan](docs/AO46MetalBackendPlan.md), [resume record](docs/AO46_FRONTEND_FREEZE.md),
+and [workflow dashboard](docs/WORKFLOW_PLAN.md).
+
+## Quick Start
+
+### Vulkan ICD
+
+Build the standard source-bootstrap installer:
+
+```sh
 ./build_VulkanICD_KHRInstaller.sh
 ```
 
-It creates `dist/VulkanICD_KHRInstaller.pkg`. Installation builds source and
-stages only project-owned standard ABI files under `/usr/local`, including the
-KosmicKrisp ICD dylib, ICD JSON manifest, and build/update commands. It does
-not replace Apple system files and does not require SIP/AuthRoot to be disabled.
+It produces `dist/VulkanICD_KHRInstaller.pkg`. The installer builds project
+source and installs only project-owned standard ABI files under `/usr/local`.
+It does not replace the Vulkan loader, Metal, a macOS framework, or Apple
+system files; SIP/AuthRoot changes are not required.
 
-## Installer
+For local source staging instead of installation:
 
-Build the GitHub-bootstrap installer package with:
+```sh
+"Vulkan_API_SDK_1.4.354/Apple_ICD/scripts/build-avk143-icd.sh"
+export VK_DRIVER_FILES="$(pwd)/Vulkan_API_SDK_1.4.354/build/AVK143/prefix/share/vulkan/icd.d/kosmickrisp_mesa_icd.aarch64.json"
+```
 
-```bash
+### AO46 Standard OpenGL/EGL
+
+The standard Khronos frontend builds through Mesa's registered `ao46mtl`
+Gallium target. Its detailed build and runtime contract is in
+[the AO46 Khronos frontend guide](<OpenGL_4.6(Core Profile)/Apple_ICD/khronos/README.md>).
+
+The compatibility-framework product is separate and intentionally opt-in:
+
+```sh
 ./build_OpenGLKHR_ICD_Installer.sh
 ```
 
-The generated package is written to:
+Use `legacy-system` only on a developer machine that intentionally accepts the
+framework compatibility experiment. It is not necessary for Vulkan or the
+standard EGL/OpenGL ABI.
 
-```text
-dist/OpenGLKHR_ICD_Installer.pkg
-```
+## Repository Map
 
-The installer clones or updates this repository into:
+| Path | Purpose |
+| --- | --- |
+| `Vulkan_API_SDK_1.4.354/` | Standard Mesa KosmicKrisp Vulkan ICD, release records, installer, and CTS tooling. |
+| `OpenGL_4.6(Core Profile)/Apple_ICD/` | AO46 framework compatibility code, Mesa Metal Gallium integration, standard EGL/OpenGL frontend, tests, and packaging. |
+| `docs/` | Architecture, installation, workflow, research evidence, and project decisions. |
+| `dEQP-VK-cases.xml` | Committed Vulkan CTS inventory catalog used by the release ledger. |
+| `dist/` | Locally generated installer packages; release packages are attached to GitHub Releases. |
 
-```text
-/usr/local/src/Khronos_AppleICDs
-```
+Mesa and MoltenVK are pinned as source submodules. Generated build trees,
+shader caches, QPA logs, and other host-specific artifacts are deliberately
+kept out of Git and published as checksummed release assets when relevant.
 
-The installer is a developer-only WIP mechanism. Do not treat a successful
-install as proof of system-wide application compatibility or OpenGL 4.6
-conformance; staged CTS is an explicit project milestone.
+## What This Project Does Not Claim
 
-The default `khronos` installation mode installs only the standard ABI under
-`/usr/local` and never replaces Apple system files:
+- Vulkan conformance certification or a nonzero `VkConformanceVersion`.
+- OpenGL 4.6 completeness, an OpenGL CTS result, or a general system-wide
+  replacement for Apple's deprecated OpenGL implementation.
+- A custom Vulkan loader, `CVK`, `NSVulkan_KHR`, or a Vulkan framework.
+- A private Apple AGX submission path in the active runtime.
 
-```text
-/usr/local/lib/libGL.dylib
-/usr/local/lib/libEGL.dylib
-/usr/local/lib/libEGL.1.dylib
-/usr/local/lib/openglkhr/
-/usr/local/include/{GL,EGL,KHR}
-```
+The historic direct-AGX/UABI investigation remains project research. It informs
+diagnostics and performance analysis; it is not an active submission backend.
 
-This mode does not query SIP or Authenticated Root. The optional
-`legacy-system` mode replaces the framework compatibility paths below and is
-the only mode protected by the developer-machine gate:
+## Documentation
 
-```text
-/System/Library/Frameworks/OpenGL.framework
-/System/Library/Frameworks/OpenGL_4.6.framework
-/usr/local/lib/libAO46LegacyGL.dylib
-```
-
-For rebuilds after install:
-
-```bash
-/usr/local/bin/openglkhr-icd-build
-```
-
-For pulling newer commits and reinstalling:
-
-```bash
-/usr/local/bin/openglkhr-icd-update
-```
-
-To choose the protected legacy compatibility install explicitly:
-
-```bash
-OPENGLKHR_INSTALL_MODE=legacy-system /usr/local/bin/openglkhr-icd-build
-```
+- [Vulkan API SDK 1.4.354](Vulkan_API_SDK_1.4.354/README.md)
+- [Vulkan release evidence](Vulkan_API_SDK_1.4.354/RELEASES/README.md)
+- [Installer and deployment guide](docs/INSTALLATION.md)
+- [AO46 Metal backend plan](docs/AO46MetalBackendPlan.md)
+- [Project workflow plan](docs/WORKFLOW_PLAN.md)
+- [Mesa/Metal reuse inventory](docs/MesaMetalReuseInventory.md)
