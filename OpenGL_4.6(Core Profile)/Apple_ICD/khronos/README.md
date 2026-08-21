@@ -93,3 +93,11 @@ It can also be installed independently, without the AO46 Mesa-driver build:
 such as XQuartz or MacPorts and a running X server (`DISPLAY`), and reports the
 GLX stack it opens. It does not create an EGL context and is not evidence that
 the separate AO46 Mesa/EGL frontend is installed or selected.
+
+The OpenGL source installer follows its build in
+`/var/log/OpenGLKHR_ICD_Installer.log`. Run `openglkhr-icd-log` in another
+Terminal window, or `openglkhr-icd-log --once` after the build. `glxinfo` is
+enabled by default; on a machine without X11 development packages, use
+`OPENGLKHR_BUILD_GLXINFO=0 openglkhr-icd-update` to install the core GL/EGL
+stack without that optional diagnostic, then install XQuartz and run
+`scripts/install_glxinfo_macos.sh` separately.

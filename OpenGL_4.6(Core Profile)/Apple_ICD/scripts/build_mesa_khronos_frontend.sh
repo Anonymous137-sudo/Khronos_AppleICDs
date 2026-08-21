@@ -47,7 +47,7 @@ fi
 # Do not enable Mesa's Darwin GLX target here. It loads Apple's legacy
 # OpenGL.framework/CGL implementation and would merge the two frontend
 # products. AO46's built-in EGL driver and libGL alias share Mesa glapi.
-meson setup "$mesa_build_dir" "$mesa_root" --wipe \
+meson setup --wipe "$mesa_build_dir" "$mesa_root" \
     --prefix "$mesa_install_prefix" \
     -Dopengl=true \
     -Degl=enabled \
@@ -56,6 +56,8 @@ meson setup "$mesa_build_dir" "$mesa_root" --wipe \
     -Dgles2=disabled \
     -Dglvnd=disabled \
     -Dgallium-drivers="$driver" \
+    -Dvulkan-drivers= \
+    -Dtools= \
     -Dplatforms=macos \
     -Dao46mtl-backend-path="$backend_dir" \
     -Dao46mtl-include-path="$backend_include_dir"

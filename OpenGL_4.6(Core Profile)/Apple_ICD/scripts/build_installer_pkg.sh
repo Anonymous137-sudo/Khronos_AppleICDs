@@ -59,6 +59,7 @@ mkdir -p \
 
 install -m 0755 "$project_root/installer/bin/openglkhr-icd-build" "$payload_root/usr/local/bin/openglkhr-icd-build"
 install -m 0755 "$project_root/installer/bin/openglkhr-icd-update" "$payload_root/usr/local/bin/openglkhr-icd-update"
+install -m 0755 "$project_root/installer/bin/openglkhr-icd-log" "$payload_root/usr/local/bin/openglkhr-icd-log"
 install -m 0755 "$project_root/installer/bin/openglkhr-icd-bootstrap" \
     "$payload_root/usr/local/libexec/OpenGLKHR_ICD/openglkhr-icd-bootstrap"
 install -m 0755 "$project_root/installer/pkg_scripts/preinstall" "$pkg_scripts_root/preinstall"

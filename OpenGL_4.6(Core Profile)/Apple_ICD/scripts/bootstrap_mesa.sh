@@ -68,6 +68,14 @@ fi
 
 PATH="$mesa_python_root/bin:$PATH"
 
+# The standard Khronos GL/EGL build configures Mesa separately for the AO46
+# Gallium target. Do not preconfigure the shared build directory with the
+# Asahi/Vulkan bootstrap graph, which can retain unrelated KosmicKrisp targets.
+if [ "${OPENGLKHR_BOOTSTRAP_ONLY:-0}" = 1 ]; then
+    echo "Mesa Python build prerequisites are ready; skipping the Asahi/Vulkan bootstrap graph"
+    exit 0
+fi
+
 if [ -n "${OPENGLKHR_MESA_WIPE:-}" ]; then
     rm -rf "$mesa_build_dir"
 fi

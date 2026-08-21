@@ -3,15 +3,29 @@ set -eu
 
 PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 log_file=/var/log/OpenGLKHR_ICD_Installer.log
+live_log=/usr/local/bin/openglkhr-icd-log
 
-{
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] OpenGLKHR ICD postinstall starting"
-    if /usr/local/libexec/OpenGLKHR_ICD/openglkhr-icd-bootstrap update; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] OpenGLKHR ICD postinstall complete"
-    else
-        status=$?
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] OpenGLKHR ICD source build failed (status $status)"
-        echo "The bootstrap tools were installed; rerun openglkhr-icd-update after fixing the dependency or network error."
-        exit "$status"
-    fi
-} >>"$log_file" 2>&1
+mkdir -p "$(dirname -- "$log_file")"
+printf '[%s] OpenGLKHR ICD postinstall starting; live log: %s\n' \
+    "$(date '+%Y-%m-%d %H:%M:%S')" "$live_log" | tee -a "$log_file"
+
+fifo=$(mktemp -u "${TMPDIR:-/tmp}/openglkhr-icd-log.XXXXXX")
+mkfifo "$fifo"
+trap 'rm -f "$fifo"' EXIT HUP INT TERM
+tee -a "$log_file" <"$fifo" &
+tee_pid=$!
+if /usr/local/libexec/OpenGLKHR_ICD/openglkhr-icd-bootstrap update >"$fifo" 2>&1; then
+    status=0
+else
+    status=$?
+fi
+wait "$tee_pid" || true
+
+if [ "$status" -eq 0 ]; then
+    printf '[%s] OpenGLKHR ICD postinstall complete\n' "$(date '+%Y-%m-%d %H:%M:%S')" | tee -a "$log_file"
+else
+    printf '[%s] OpenGLKHR source build failed (status %s)\n' \
+        "$(date '+%Y-%m-%d %H:%M:%S')" "$status" | tee -a "$log_file"
+    printf '%s\n' "The bootstrap tools were installed; inspect $log_file or run openglkhr-icd-log, then rerun openglkhr-icd-update." | tee -a "$log_file"
+    exit "$status"
+fi

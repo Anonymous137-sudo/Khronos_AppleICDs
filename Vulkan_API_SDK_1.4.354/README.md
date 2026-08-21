@@ -89,8 +89,11 @@ At install time the ICD and its bundled SPIR-V Tools runtime are placed in
 `/usr/local/share/vulkan/icd.d`. The default postinstall also builds the
 Khronos Loader, `vulkaninfo`, `vkcube`, and Vulkan headers/pkg-config metadata.
 `vkvia` is installed when provided by the selected Vulkan-Tools revision.
-Validation layers are optional and disabled by default; enable them with
-`AVK143_BUILD_VALIDATION_LAYERS=1`. Each component is emitted into the live
+The Khronos validation layer is built by default. The builder provisions the
+matching Vulkan Utility Libraries, SPIR-V-Headers, and SPIRV-Tools revisions
+in its isolated build tree, so it does not link against a developer's
+Homebrew or MacPorts installation. Set `AVK143_BUILD_VALIDATION_LAYERS=0` for
+a minimal runtime-only build. Each component is emitted into the live
 installer log.
 
 The postinstall build provisions an isolated Python environment when the

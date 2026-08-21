@@ -11,10 +11,12 @@ loader_url=${AVK143_LOADER_REPO_URL:-https://github.com/KhronosGroup/Vulkan-Load
 tools_url=${AVK143_TOOLS_REPO_URL:-https://github.com/KhronosGroup/Vulkan-Tools.git}
 headers_url=${AVK143_HEADERS_REPO_URL:-https://github.com/KhronosGroup/Vulkan-Headers.git}
 layers_url=${AVK143_LAYERS_REPO_URL:-https://github.com/KhronosGroup/Vulkan-ValidationLayers.git}
+utility_url=${AVK143_UTILITY_REPO_URL:-https://github.com/KhronosGroup/Vulkan-Utility-Libraries.git}
 loader_branch=${AVK143_LOADER_BRANCH:-main}
 tools_branch=${AVK143_TOOLS_BRANCH:-main}
 headers_branch=${AVK143_HEADERS_BRANCH:-main}
 layers_branch=${AVK143_LAYERS_BRANCH:-main}
+utility_branch=${AVK143_UTILITY_BRANCH:-main}
 
 for command in git cmake; do
     command -v "$command" >/dev/null 2>&1 || {
@@ -40,9 +42,13 @@ mkdir -p "$build_root"
 clone_or_update "$loader_url" "$loader_branch" "$loader_root"
 clone_or_update "$tools_url" "$tools_branch" "$tools_root"
 clone_or_update "$headers_url" "$headers_branch" "$headers_root"
-if [ "${AVK143_BUILD_VALIDATION_LAYERS:-0}" = 1 ]; then
+if [ "${AVK143_BUILD_VALIDATION_LAYERS:-1}" = 1 ]; then
     layers_root="$build_root/Vulkan-ValidationLayers"
     clone_or_update "$layers_url" "$layers_branch" "$layers_root"
+    utility_root=${AVK143_UTILITY_ROOT:-"$build_root/Vulkan-Utility-Libraries"}
+    if [ ! -d "$utility_root/.git" ]; then
+        clone_or_update "$utility_url" "$utility_branch" "$utility_root"
+    fi
 fi
 
 loader_build="$build_root/loader-build"
@@ -51,6 +57,8 @@ loader_prefix="$build_root/loader-prefix"
 tools_prefix="$build_root/tools-prefix"
 headers_build="$build_root/headers-build"
 headers_prefix="$build_root/headers-prefix"
+utility_build="$build_root/utility-build"
+utility_prefix=${AVK143_UTILITY_PREFIX:-"$build_root/utility-prefix"}
 
 cmake -S "$headers_root" -B "$headers_build" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
@@ -79,17 +87,32 @@ cmake -S "$tools_root" -B "$tools_build" -G Ninja \
     -DBUILD_TESTS=OFF
 cmake --build "$tools_build" --target vulkaninfo vkcube
 
-if [ "${AVK143_BUILD_VALIDATION_LAYERS:-0}" = 1 ]; then
+if [ "${AVK143_BUILD_VALIDATION_LAYERS:-1}" = 1 ]; then
+    cmake -S "$utility_root" -B "$utility_build" -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX="$utility_prefix" \
+        -DCMAKE_PREFIX_PATH="$headers_prefix" \
+        -DBUILD_TESTS=OFF
+    cmake --build "$utility_build"
+    cmake --install "$utility_build"
+
     layers_build="$build_root/layers-build"
     layers_prefix="$build_root/layers-prefix"
+    spirv_headers_prefix="$layers_root/external/SPIRV-Headers/build/install"
+    spirv_tools_prefix="$layers_root/external/SPIRV-Tools/build/install"
     cmake -S "$layers_root" -B "$layers_build" -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX="$layers_prefix" \
-        -DCMAKE_PREFIX_PATH="$headers_prefix;$loader_prefix" \
+        -DCMAKE_PREFIX_PATH="$headers_prefix;$loader_prefix;$utility_prefix;$spirv_headers_prefix;$spirv_tools_prefix" \
+        -DSPIRV_HEADERS_INSTALL_DIR="$spirv_headers_prefix" \
+        -DSPIRV_TOOLS_INSTALL_DIR="$spirv_tools_prefix" \
         -DBUILD_TESTS=OFF \
         -DBUILD_WERROR=OFF \
-        -DUPDATE_DEPS=OFF
-    cmake --build "$layers_build" --target VkLayer_khronos_validation
+        -DUPDATE_DEPS=ON \
+        -DUPDATE_DEPS_DIR="$layers_root/external"
+    # Current ValidationLayers exposes the module as `vvl`; its install
+    # artifact remains libVkLayer_khronos_validation.dylib.
+    cmake --build "$layers_build" --target vvl
     cmake --install "$layers_build"
 fi
 
@@ -122,13 +145,16 @@ else
     printf '%s\n' 'AVK143 vkvia: unavailable in the selected Khronos Vulkan-Tools revision'
 fi
 
-if [ "${AVK143_BUILD_VALIDATION_LAYERS:-0}" = 1 ]; then
+if [ "${AVK143_BUILD_VALIDATION_LAYERS:-1}" = 1 ]; then
     layer_library=$(find "$layers_prefix" -type f -name 'libVkLayer_khronos_validation*.dylib' -print -quit)
     [ -n "$layer_library" ] || {
         printf '%s\n' 'AVK143 validation layer build produced no dylib' >&2
         exit 1
     }
     install -m 755 "$layer_library" "$runtime_lib/libVkLayer_khronos_validation.dylib"
+    strip -S "$runtime_lib/libVkLayer_khronos_validation.dylib" 2>/dev/null || true
+    install_name_tool -add_rpath '@loader_path' \
+        "$runtime_lib/libVkLayer_khronos_validation.dylib" 2>/dev/null || true
     layer_manifest=$(find "$layers_prefix" -type f -name 'VkLayer_khronos_validation.json' -print -quit)
     if [ -n "$layer_manifest" ]; then
         mkdir -p "$runtime_prefix/share/vulkan/explicit_layer.d"
@@ -151,9 +177,9 @@ fi
 printf '%s\n' "AVK143 Vulkan Loader installed: $runtime_lib/libvulkan.1.dylib"
 printf '%s\n' "AVK143 Vulkan-Tools installed: $runtime_bin/vulkaninfo $runtime_bin/vkcube"
 printf '%s\n' "AVK143 Vulkan headers installed: $runtime_prefix/include/vulkan"
-if [ "${AVK143_BUILD_VALIDATION_LAYERS:-0}" != 1 ]; then
-    printf '%s\n' 'AVK143 validation layer: optional and disabled (set AVK143_BUILD_VALIDATION_LAYERS=1)'
+if [ "${AVK143_BUILD_VALIDATION_LAYERS:-1}" != 1 ]; then
+    printf '%s\n' 'AVK143 validation layer: disabled (set AVK143_BUILD_VALIDATION_LAYERS=1 to enable)'
 fi
-if [ "${AVK143_BUILD_VALIDATION_LAYERS:-0}" = 1 ]; then
+if [ "${AVK143_BUILD_VALIDATION_LAYERS:-1}" = 1 ]; then
     printf '%s\n' "AVK143 validation layer installed: $runtime_lib/libVkLayer_khronos_validation.dylib"
 fi
