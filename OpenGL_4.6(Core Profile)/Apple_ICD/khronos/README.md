@@ -101,3 +101,10 @@ enabled by default; on a machine without X11 development packages, use
 `OPENGLKHR_BUILD_GLXINFO=0 openglkhr-icd-update` to install the core GL/EGL
 stack without that optional diagnostic, then install XQuartz and run
 `scripts/install_glxinfo_macos.sh` separately.
+
+The source installer uses `/opt/X11` when its XQuartz `x11.pc` and `gl.pc`
+files are present. The checked-in `XQuartz/` directory is source material for
+the X server and is not rebuilt as part of the OpenGL installer. AO46's Mesa
+and KosmicKrisp artifacts are produced by one unified Meson build before the
+framework is configured, so the NIR archive and the KosmicKrisp NIR-to-MSL
+compiler always come from the same Mesa configuration.

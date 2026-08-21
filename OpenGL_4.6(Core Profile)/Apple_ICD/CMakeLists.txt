@@ -338,6 +338,16 @@ set_target_properties(AO46MesaMSLCompiler PROPERTIES
     IMPORTED_LOCATION "${AO46_MESA_KOSMICKRISP_COMPILER_LIB}"
 )
 target_link_libraries(AO46MesaMSLCompiler INTERFACE ${MESA_BLAKE3_LIB})
+# The compiler archive is built from Mesa's NIR sources. Keep its archive
+# dependencies attached to the imported target so static-link ordering cannot
+# accidentally select a different NIR build or leave nir_* unresolved.
+target_link_libraries(AO46MesaMSLCompiler INTERFACE
+    ${MESA_NIR_LIB}
+    ${MESA_COMPILER_LIB}
+    ${MESA_UTIL_LIB}
+    ${MESA_UTIL_SIMD_LIB}
+    ${MESA_UTIL_C11_LIB}
+)
 
 # These archives retain the full upstream feature implementation for bounded
 # AO46 ports. Neither is linked into the OpenGL framework: libkk is a Vulkan

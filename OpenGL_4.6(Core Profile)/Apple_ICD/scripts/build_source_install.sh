@@ -7,7 +7,7 @@ project_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 build_dir=${OPENGLKHR_BUILD_DIR:-"$project_root/artifacts/build"}
-mesa_build_dir=${OPENGLKHR_MESA_BUILD_DIR:-"$project_root/../mesa/build-ao46-asahi-arm64"}
+mesa_build_dir=${OPENGLKHR_MESA_BUILD_DIR:-"$project_root/../mesa/build-ao46-kosmickrisp-arm64"}
 mesa_khronos_build_dir=${OPENGLKHR_KHRONOS_MESA_BUILD_DIR:-"$project_root/artifacts/mesa-khronos-build"}
 mesa_khronos_prefix=${OPENGLKHR_KHRONOS_MESA_PREFIX:-"$project_root/artifacts/mesa-khronos-prefix"}
 mesa_demos_source_dir=${OPENGLKHR_MESA_DEMOS_SOURCE_DIR:-"$project_root/artifacts/mesa-demos-source"}
@@ -40,6 +40,7 @@ fi
 
 if [ "$install_mode" = khronos ]; then
     OPENGLKHR_BOOTSTRAP_ONLY=1 "$script_dir/bootstrap_mesa.sh"
+    "$script_dir/build_mesa_ao46_unified.sh" "$project_root/../mesa" "$mesa_build_dir"
 else
     "$script_dir/bootstrap_mesa.sh"
 fi

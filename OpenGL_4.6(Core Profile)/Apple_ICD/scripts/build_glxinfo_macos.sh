@@ -12,6 +12,16 @@ output_dir=$3
 upstream_url=${OPENGLKHR_MESA_DEMOS_URL:-https://gitlab.freedesktop.org/mesa/demos.git}
 revision=${OPENGLKHR_MESA_DEMOS_REVISION:-10418e7636cdd9595dda18c3d78a562d7248f734}
 
+# XQuartz installs a complete X11/GL development prefix under /opt/X11. Keep
+# it ahead of other pkg-config providers so glxinfo is linked consistently to
+# the XQuartz client libraries instead of an unrelated MacPorts installation.
+if [ -f /opt/X11/lib/pkgconfig/x11.pc ] && [ -f /opt/X11/lib/pkgconfig/gl.pc ]; then
+    PKG_CONFIG_PATH="/opt/X11/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    CPPFLAGS="-I/opt/X11/include${CPPFLAGS:+ $CPPFLAGS}"
+    LDFLAGS="-L/opt/X11/lib${LDFLAGS:+ $LDFLAGS}"
+    export PKG_CONFIG_PATH CPPFLAGS LDFLAGS
+fi
+
 if ! command -v git >/dev/null 2>&1; then
     echo "git is required to fetch the upstream Mesa Demos glxinfo source" >&2
     exit 1

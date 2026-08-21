@@ -72,7 +72,7 @@ PATH="$mesa_python_root/bin:$PATH"
 # Gallium target. Do not preconfigure the shared build directory with the
 # Asahi/Vulkan bootstrap graph, which can retain unrelated KosmicKrisp targets.
 if [ "${OPENGLKHR_BOOTSTRAP_ONLY:-0}" = 1 ]; then
-    echo "Mesa Python build prerequisites are ready; skipping the Asahi/Vulkan bootstrap graph"
+    echo "Mesa Python build prerequisites are ready; skipping the Mesa artifact bootstrap graph"
     exit 0
 fi
 
