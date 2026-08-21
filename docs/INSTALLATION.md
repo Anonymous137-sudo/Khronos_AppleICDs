@@ -102,6 +102,13 @@ snapshot. If the Installer service cannot see the interactive user's Python
 modules, the builder provisions an isolated environment containing Mesa's
 `Mako`, `PyYAML`, and `packaging` dependencies.
 
+Installer.app cannot embed a terminal inside a `.pkg` summary window. For a
+visible install-time stream, run
+`Vulkan_API_SDK_1.4.354/Apple_ICD/installer/install_vulkanicd_khr_live.command`
+from Finder or Terminal beside the package; it invokes Apple's verbose
+`installer -verboseR` command and keeps the postinstall output in the same
+terminal.
+
 The active package is named for the verified Mesa Vulkan-Headers/registry
 revision 1.4.354. Its current engineering release is
 `vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821`: the final 881,906-case

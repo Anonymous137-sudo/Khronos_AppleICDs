@@ -95,6 +95,13 @@ with:
 
 Use `vulkanicd-khr-log --once` for a non-following snapshot.
 
+For a genuinely visible install-time stream, place the package beside
+`Apple_ICD/installer/install_vulkanicd_khr_live.command` and double-click the
+`.command` file, or invoke it from Terminal. It runs Apple's `installer`
+utility with `-verboseR` in the foreground, which is the supported way to see
+package-script output live. Installer.app itself does not provide an embedded
+terminal for package scripts.
+
 ## Current Capability Policy
 
 - `[x]` Standard loader discovery, instance/device enumeration, compute,
