@@ -27,6 +27,7 @@ The default staged output is accessible in `build/AVK143/prefix`:
 
 ```text
 prefix/lib/libvulkan_kosmickrisp.dylib
+prefix/lib/avk143/libSPIRV-Tools.dylib
 prefix/share/vulkan/icd.d/kosmickrisp_mesa_icd.aarch64.json
 ```
 
@@ -66,6 +67,21 @@ LLVM, libclc, SPIR-V Tools, and the SPIR-V LLVM translator. On this developer
 machine it discovers their Homebrew prefixes automatically. No SIP/AuthRoot
 change, system framework replacement, or private Apple graphics API is part of
 this standard Vulkan ICD path.
+
+The installed runtime bundles the required SPIR-V Tools dylib beside the ICD
+and rewrites both Mach-O load paths to `@loader_path`/`@rpath`. Release output
+is stripped of debug sections so developer source paths do not enter the
+installed binary. Run the neutrality check against a staged or installed
+prefix with:
+
+```sh
+"Vulkan_API_SDK_1.4.354/Apple_ICD/tests/AVK143RuntimeNeutralitySmoke.sh" \
+  Vulkan_API_SDK_1.4.354/build/AVK143/runtime
+```
+
+The package installs the ICD, its bundled SPIR-V runtime, manifest, and
+bootstrap helpers. It does not install the Khronos loader or `vulkaninfo`;
+those remain separate system/developer tools.
 
 ## Bootstrap Package
 

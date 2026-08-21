@@ -106,6 +106,27 @@ if [ ! -f "$icd_library" ] || [ ! -f "$icd_manifest" ]; then
    exit 1
 fi
 
+# The build-tree install name and Homebrew SPIR-V Tools path must not escape
+# into an installed ICD. Keep the small required SPIR-V runtime beside the
+# ICD and make the pair relocatable within the AVK143 runtime directory.
+spirv_library="$spirv_tools_prefix/lib/libSPIRV-Tools.dylib"
+private_lib_dir="$prefix/lib/avk143"
+private_spirv_library="$private_lib_dir/libSPIRV-Tools.dylib"
+if [ ! -f "$spirv_library" ]; then
+   printf '%s\n' "AVK143 SPIR-V Tools runtime is missing: $spirv_library" >&2
+   exit 1
+fi
+mkdir -p "$private_lib_dir"
+install -m 755 "$spirv_library" "$private_spirv_library"
+install_name_tool -id '@rpath/libSPIRV-Tools.dylib' "$private_spirv_library"
+install_name_tool -id '/usr/local/lib/avk143/libvulkan_kosmickrisp.dylib' "$icd_library"
+install_name_tool -change "$spirv_library" '@rpath/libSPIRV-Tools.dylib' "$icd_library"
+install_name_tool -add_rpath '@loader_path' "$icd_library" 2>/dev/null || true
+
+# Release binaries must not carry compiler/debug source paths.
+strip -S "$icd_library" 2>/dev/null || true
+
 printf '%s\n' "AVK143 ICD library: $icd_library"
 printf '%s\n' "AVK143 ICD manifest: $icd_manifest"
+printf '%s\n' "AVK143 private SPIR-V runtime: $private_spirv_library"
 printf '%s\n' "Use with: VK_DRIVER_FILES=$icd_manifest <Vulkan application>"

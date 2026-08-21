@@ -60,6 +60,7 @@ The staged standard-ABI artifacts are:
 
 ```text
 build/AVK143/prefix/lib/libvulkan_kosmickrisp.dylib
+build/AVK143/prefix/lib/avk143/libSPIRV-Tools.dylib
 build/AVK143/prefix/share/vulkan/icd.d/kosmickrisp_mesa_icd.aarch64.json
 ```
 
@@ -82,6 +83,12 @@ the project source and installs only project-owned standard ABI paths under
 framework, or Apple graphics components. The package API version remains
 `1.4.354`; its separate release label is
 `cts-qualified-1.4.3.2-20260821`.
+
+At install time the ICD and its bundled SPIR-V Tools runtime are placed in
+`/usr/local/lib/avk143`; the ICD manifest is placed in
+`/usr/local/share/vulkan/icd.d`. The installer does not install a Vulkan
+loader or command-line tools such as `vulkaninfo`, so loader discovery must be
+verified separately when those tools are present.
 
 The postinstall build provisions an isolated Python environment when the
 root Installer service cannot see the interactive user's `Mako`, `PyYAML`, or
