@@ -3,15 +3,29 @@ set -eu
 
 PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 log_file=/var/log/VulkanICD_KHRInstaller.log
+live_log=/usr/local/bin/vulkanicd-khr-log
 
-{
-    printf '[%s] VulkanICD_KHR postinstall starting\n' "$(date '+%Y-%m-%d %H:%M:%S')"
-    if /usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap update; then
-        printf '[%s] VulkanICD_KHR postinstall complete\n' "$(date '+%Y-%m-%d %H:%M:%S')"
-    else
-        status=$?
-        printf '[%s] VulkanICD_KHR source build failed (status %s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$status"
-        printf '%s\n' "The bootstrap tools were installed; rerun vulkanicd-khr-update after fixing the dependency or network error."
-        exit "$status"
-    fi
-} >>"$log_file" 2>&1
+mkdir -p "$(dirname -- "$log_file")"
+printf '[%s] VulkanICD_KHR postinstall starting; live log: %s\n' \
+    "$(date '+%Y-%m-%d %H:%M:%S')" "$live_log" | tee -a "$log_file"
+
+fifo=$(mktemp -u "${TMPDIR:-/tmp}/vulkanicd-khr-log.XXXXXX")
+mkfifo "$fifo"
+trap 'rm -f "$fifo"' EXIT HUP INT TERM
+tee -a "$log_file" <"$fifo" &
+tee_pid=$!
+if /usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap update >"$fifo" 2>&1; then
+    status=0
+else
+    status=$?
+fi
+wait "$tee_pid" || true
+
+if [ "$status" -eq 0 ]; then
+    printf '[%s] VulkanICD_KHR postinstall complete\n' "$(date '+%Y-%m-%d %H:%M:%S')" | tee -a "$log_file"
+else
+    printf '[%s] VulkanICD_KHR source build failed (status %s)\n' \
+        "$(date '+%Y-%m-%d %H:%M:%S')" "$status" | tee -a "$log_file"
+    printf '%s\n' "The bootstrap tools were installed; inspect $log_file or run vulkanicd-khr-log, then rerun vulkanicd-khr-update." | tee -a "$log_file"
+    exit "$status"
+fi

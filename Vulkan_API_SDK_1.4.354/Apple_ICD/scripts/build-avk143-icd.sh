@@ -13,6 +13,44 @@ if [ ! -f "$mesa_root/meson.build" ]; then
    exit 1
 fi
 
+# Installer scripts run as root, so user-site Python modules are not reliable.
+python_candidate=${AVK143_PYTHON:-}
+if [ -z "$python_candidate" ]; then
+   for candidate in \
+      /usr/local/bin/python3.13 \
+      /Library/Frameworks/Python.framework/Versions/3.13/bin/python3 \
+      /opt/homebrew/bin/python3.13 \
+      /opt/homebrew/bin/python3 \
+      /usr/bin/python3; do
+      if [ -x "$candidate" ]; then
+         python_candidate=$candidate
+         break
+      fi
+   done
+fi
+if [ -z "$python_candidate" ]; then
+   python_candidate=$(command -v python3 || true)
+fi
+if [ -z "$python_candidate" ]; then
+   printf '%s\n' 'AVK143 requires Python 3.10 or newer to build Mesa' >&2
+   exit 1
+fi
+
+python_venv=${AVK143_PYTHON_VENV:-"$project_root/build/avk143-python"}
+if ! "$python_candidate" -c 'import mako, yaml, packaging' >/dev/null 2>&1; then
+   printf '%s\n' "AVK143 Python modules are missing; preparing isolated environment: $python_venv"
+   if [ ! -x "$python_venv/bin/python" ]; then
+      mkdir -p "$(dirname -- "$python_venv")"
+      "$python_candidate" -m venv "$python_venv"
+   fi
+   "$python_venv/bin/python" -m pip install \
+      --disable-pip-version-check --no-input Mako PyYAML packaging
+   python_candidate="$python_venv/bin/python"
+fi
+export AVK143_PYTHON="$python_candidate"
+export PATH="$(dirname -- "$python_candidate"):$PATH"
+printf '%s\n' "AVK143 Python: $python_candidate"
+
 if command -v brew >/dev/null 2>&1; then
    llvm_prefix=${AVK143_LLVM_PREFIX:-"$(brew --prefix llvm)"}
    libclc_prefix=${AVK143_LIBCLC_PREFIX:-"$(brew --prefix libclc)"}

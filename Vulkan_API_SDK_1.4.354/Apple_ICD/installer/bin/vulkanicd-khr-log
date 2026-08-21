@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+log_file=${VULKANICD_KHR_LOG_FILE:-/var/log/VulkanICD_KHRInstaller.log}
+if [ ! -e "$log_file" ]; then
+    printf '%s\n' "VulkanICD_KHR log does not exist yet: $log_file" >&2
+    exit 1
+fi
+
+if [ "${1:-}" = "--once" ]; then
+    cat "$log_file"
+else
+    printf '%s\n' "Following $log_file (Ctrl-C to stop)" >&2
+    exec tail -f "$log_file"
+fi

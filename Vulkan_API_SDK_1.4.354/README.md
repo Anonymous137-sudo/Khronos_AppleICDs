@@ -83,6 +83,18 @@ framework, or Apple graphics components. The package API version remains
 `1.4.354`; its separate release label is
 `cts-qualified-1.4.3.2-20260821`.
 
+The postinstall build provisions an isolated Python environment when the
+root Installer service cannot see the interactive user's `Mako`, `PyYAML`, or
+`packaging` modules. Progress is streamed to the Installer log and retained
+at `/var/log/VulkanICD_KHRInstaller.log`. After installation, follow it live
+with:
+
+```sh
+/usr/local/bin/vulkanicd-khr-log
+```
+
+Use `vulkanicd-khr-log --once` for a non-following snapshot.
+
 ## Current Capability Policy
 
 - `[x]` Standard loader discovery, instance/device enumeration, compute,

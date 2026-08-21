@@ -68,6 +68,7 @@ driver from the repository checkout and installs only project-owned paths:
 /usr/local/share/vulkan/icd.d/avk143_kosmickrisp_icd.aarch64.json
 /usr/local/bin/vulkanicd-khr-build
 /usr/local/bin/vulkanicd-khr-update
+/usr/local/bin/vulkanicd-khr-log
 ```
 
 Build the package from the repository root:
@@ -93,6 +94,13 @@ Fast-forward the repository and its source submodules before rebuilding with:
 ```bash
 /usr/local/bin/vulkanicd-khr-update
 ```
+
+The package postinstall streams source-build progress and keeps the complete
+log at `/var/log/VulkanICD_KHRInstaller.log`. Follow it live with
+`/usr/local/bin/vulkanicd-khr-log`; use `vulkanicd-khr-log --once` for a
+snapshot. If the Installer service cannot see the interactive user's Python
+modules, the builder provisions an isolated environment containing Mesa's
+`Mako`, `PyYAML`, and `packaging` dependencies.
 
 The active package is named for the verified Mesa Vulkan-Headers/registry
 revision 1.4.354. Its current engineering release is

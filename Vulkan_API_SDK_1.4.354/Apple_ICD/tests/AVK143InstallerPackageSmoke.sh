@@ -27,6 +27,7 @@ test -f "$pkg"
 pkgutil --payload-files "$pkg" > "$root/payload-files.txt"
 grep -qx './usr/local/bin/vulkanicd-khr-build' "$root/payload-files.txt"
 grep -qx './usr/local/bin/vulkanicd-khr-update' "$root/payload-files.txt"
+grep -qx './usr/local/bin/vulkanicd-khr-log' "$root/payload-files.txt"
 grep -qx './usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap' "$root/payload-files.txt"
 grep -qx './usr/local/share/VulkanICD_KHR/repository.conf' "$root/payload-files.txt"
 

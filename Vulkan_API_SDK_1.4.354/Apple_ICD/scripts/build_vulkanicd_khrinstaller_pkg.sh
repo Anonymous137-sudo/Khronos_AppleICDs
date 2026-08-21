@@ -89,6 +89,8 @@ install -m 0755 "$project_root/installer/bin/vulkanicd-khr-build" \
     "$payload_root/usr/local/bin/vulkanicd-khr-build"
 install -m 0755 "$project_root/installer/bin/vulkanicd-khr-update" \
     "$payload_root/usr/local/bin/vulkanicd-khr-update"
+install -m 0755 "$project_root/installer/bin/vulkanicd-khr-log" \
+    "$payload_root/usr/local/bin/vulkanicd-khr-log"
 install -m 0755 "$project_root/installer/bin/vulkanicd-khr-bootstrap" \
     "$payload_root/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap"
 install -m 0755 "$project_root/installer/pkg_scripts/preinstall" "$pkg_scripts_root/preinstall"
