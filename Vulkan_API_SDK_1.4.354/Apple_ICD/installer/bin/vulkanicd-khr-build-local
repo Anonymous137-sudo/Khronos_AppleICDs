@@ -1,0 +1,41 @@
+#!/bin/sh
+set -eu
+
+runtime_prefix=${VULKANICD_KHR_RUNTIME_PREFIX:-/usr/local}
+repo_root=${VULKANICD_KHR_REPO_ROOT:-/usr/local/src/Khronos_AppleICDs}
+project_dir=${VULKANICD_KHR_PROJECT_DIR:-Vulkan_API_SDK_1.4.354/Apple_ICD}
+project_root="$repo_root/$project_dir"
+mesa_root="$repo_root/Vulkan_API_SDK_1.4.354/mesa"
+build_root="$repo_root/Vulkan_API_SDK_1.4.354/build"
+stage_root="$build_root/AVK143"
+
+export AVK143_MESA_ROOT="$mesa_root"
+export AVK143_MESA_BUILD_DIR="$build_root/mesa-kosmickrisp-arm64-v1.4.354"
+export AVK143_STAGE_DIR="$stage_root"
+export AVK143_PYTHON_VENV="$build_root/avk143-python"
+
+/usr/local/libexec/VulkanICD_KHR/build-avk143-icd.sh
+
+source_library="$stage_root/prefix/lib/libvulkan_kosmickrisp.dylib"
+runtime_library="$runtime_prefix/lib/avk143/libvulkan_kosmickrisp.dylib"
+manifest_dir="$runtime_prefix/share/vulkan/icd.d"
+manifest="$manifest_dir/avk143_kosmickrisp_icd.aarch64.json"
+
+if [ ! -f "$source_library" ]; then
+    printf '%s\n' "AVK143 staged ICD is missing: $source_library" >&2
+    exit 1
+fi
+
+mkdir -p "$(dirname -- "$runtime_library")" "$manifest_dir"
+install -m 755 "$source_library" "$runtime_library"
+cat >"$manifest" <<EOF
+{
+    "file_format_version": "1.0.1",
+    "ICD": {
+        "library_path": "$runtime_library",
+        "api_version": "1.4.354"
+    }
+}
+EOF
+printf '%s\n' "AVK143 runtime staged at: $runtime_prefix"
+printf '%s\n' "AVK143 loader manifest: $manifest"

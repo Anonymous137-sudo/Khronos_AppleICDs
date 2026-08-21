@@ -58,6 +58,10 @@ fi
 git -C "$repo_root" submodule sync --recursive
 git -C "$repo_root" submodule update --init --recursive
 
+if [ -x /usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-build-local ]; then
+    exec /usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-build-local
+fi
+
 if [ ! -x "$project_root/scripts/build_source_install.sh" ]; then
     printf '%s\n' "missing VulkanICD_KHR source installer after clone/update: $project_root" >&2
     exit 1
