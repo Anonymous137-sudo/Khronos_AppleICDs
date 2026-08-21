@@ -95,11 +95,13 @@ Fast-forward the repository and its source submodules before rebuilding with:
 ```
 
 The active package is named for the verified Mesa Vulkan-Headers/registry
-revision 1.4.354. The staged ICD has passed an initial Vulkan CTS 1.4.3.2 slice
-(six compute cases and an offscreen triangle). The first info sweep still has
-two extension-enumeration failures for `VK_KHR_surface_maintenance1` and
-`VK_KHR_maintenance9`, so this remains a development package and is not a
-Vulkan CTS conformance claim.
+revision 1.4.354. Its current engineering release is
+`vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821`: the final 881,906-case
+CTS wave reports 257,266 `Pass`, 624,638 `NotSupported`, zero `Fail`, and two
+retained `QualityWarning` results. Download the checksummed QPA, runtime, and
+installer evidence from the GitHub release. This is not a Vulkan CTS
+conformance claim and `VkConformanceVersion` remains zero until Khronos
+certifies a submitted implementation.
 
 ## Legacy Framework Mode
 

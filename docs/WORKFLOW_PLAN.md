@@ -60,11 +60,11 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
   hardware readback, swap, and teardown; an opt-in WindowServer smoke covers
   `EGL_WINDOW_BIT` presentation without framework, CGL, GLX, or a software
   fallback.
-- `[x]` AO46 implementation freeze: the completed modern ABI is
-  surfaceless/pbuffer plus public Cocoa window presentation and remains fixed
-  at the audited GL 3.3 ceiling.
-  No AO46 framework, Metal Gallium, adapter, or standard-ABI feature changes
-  proceed until explicitly resumed after the AVK143 phase.
+- `[x]` AO46 implementation resumed after the
+  `vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821` engineering release.
+  The completed modern ABI remains surfaceless/pbuffer plus public Cocoa window
+  presentation at the audited GL 3.3 ceiling; the next work is Gallium feature
+  expansion and staged OpenGL CTS without reopening that ABI boundary.
 
 ## Active Mesa Metal Backend Dashboard
 

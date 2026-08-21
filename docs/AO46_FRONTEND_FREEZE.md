@@ -1,6 +1,8 @@
-# AO46 Standard ABI Freeze Record
+# AO46 Standard ABI Resume Record
 
-**Status:** complete and frozen by project direction while AVK143 is matured.
+**Status:** the temporary freeze ended on 2026-08-21 after the AVK143 Vulkan
+engineering release. AO46 Metal Gallium, adapter, framework, and standard ABI
+work may resume from this recorded boundary.
 
 ## Completed Modern Frontend
 
@@ -31,7 +33,7 @@
 
 ## Explicit Boundary
 
-The frozen modern product supports surfaceless pbuffers plus public Cocoa
+The modern product supports surfaceless pbuffers plus public Cocoa
 window surfaces. `eglCreateWindowSurface` accepts a platform-native public
 `CAMetalLayer`, `NSView`, or `NSWindow`; it does not provide Wayland or X11
 surfaces. Its honest current capability ceiling remains the already audited
@@ -43,10 +45,10 @@ path. It may share lower AO46 Metal libraries, but its objects, loader names,
 and protected-system installer path are not dependencies of the standard
 Khronos ABI.
 
-## Freeze Rule
+## Resume Rule
 
-No further AO46 Gallium, adapter, framework, or standard-ABI feature work is
-scheduled until the project explicitly returns from the AVK143 Vulkan phase.
-When work resumes, the next modern-frontend items are expanded Gallium
-capabilities and staged CTS. They must not reopen the completed ABI boundary or
-add a CGL/GLX fallback.
+The AVK143 release has explicitly returned the project to the AO46 phase. The
+next modern-frontend items are expanded Gallium capabilities and staged CTS.
+They must not reopen the completed standard ABI boundary or add a CGL/GLX
+fallback. Legacy framework/CGL/NSOpenGL compatibility remains a separate
+product and must not be mixed into the standard EGL/OpenGL execution path.

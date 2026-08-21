@@ -1,8 +1,8 @@
 # AO46 Mesa Metal Backend Plan
 
 Status: governing work-in-progress architecture. The standard Khronos ABI
-frontend is complete and frozen at its surfaceless/pbuffer GL 3.3 boundary
-while AVK143 is developed; this plan governs AO46 work when it resumes. It
+frontend is complete at its surfaceless/pbuffer GL 3.3 boundary, and AO46 work
+resumed on 2026-08-21 after the AVK143 Vulkan engineering release. This plan
 supersedes the direct AGX/UABI route as the active runtime strategy; the direct
 route and its captured evidence remain preserved research.
 
