@@ -7,9 +7,19 @@ if [ "$#" -ne 1 ]; then
 fi
 
 builder=$1
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
 root=$(mktemp -d "${TMPDIR:-/tmp}/avk143-installer-smoke.XXXXXX")
 pkg="$root/VulkanICD-KHR-Installer.pkg"
 expanded="$root/expanded"
+
+# Installer scripts run as root without the developer's SSH configuration.
+# Keep recursive source bootstrap reachable with anonymous HTTPS.
+if git -C "$repo_root" config -f "$repo_root/.gitmodules" --get-regexp '\.url$' |
+    grep -Eq '(^|[[:space:]])(git@|ssh://)'; then
+    printf '%s\n' 'installer smoke failed: a submodule still uses an SSH URL' >&2
+    exit 1
+fi
 
 "$builder" --output "$pkg"
 test -f "$pkg"

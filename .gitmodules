@@ -1,9 +1,9 @@
 [submodule "OpenGL_4.6(Core Profile)/mesa"]
 	path = OpenGL_4.6(Core Profile)/mesa
-	url = git@github.com:Anonymous137-sudo/AO46Mesa.git
+	url = https://github.com/Anonymous137-sudo/AO46Mesa.git
 [submodule "Vulkan_API_SDK_1.4.354/mesa"]
 	path = Vulkan_API_SDK_1.4.354/mesa
-	url = git@github.com:Anonymous137-sudo/AO46Mesa.git
+	url = https://github.com/Anonymous137-sudo/AO46Mesa.git
 [submodule "Vulkan_API_SDK_1.4.354/Apple_ICD/vendor/MoltenVK"]
 	path = Vulkan_API_SDK_1.4.354/Apple_ICD/vendor/MoltenVK
 	url = https://github.com/KhronosGroup/MoltenVK.git
