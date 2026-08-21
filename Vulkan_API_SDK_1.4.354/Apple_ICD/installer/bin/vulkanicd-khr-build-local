@@ -34,6 +34,7 @@ install -m 755 "$source_spirv" "$runtime_spirv"
 
 if [ "${AVK143_INSTALL_VULKAN_TOOLS:-1}" = 1 ]; then
     AVK143_RUNTIME_PREFIX="$runtime_prefix" \
+    AVK143_TOOLS_BUILD_ROOT="$build_root/VulkanTools" \
         /usr/local/libexec/VulkanICD_KHR/build-avk143-vulkan-tools.sh
 fi
 cat >"$manifest" <<EOF

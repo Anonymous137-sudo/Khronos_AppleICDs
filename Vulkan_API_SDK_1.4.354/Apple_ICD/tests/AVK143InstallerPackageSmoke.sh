@@ -45,6 +45,7 @@ grep -q 'vulkanicd-khr-build-local' \
     "$payload/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-bootstrap"
 sh -n "$payload/usr/local/libexec/VulkanICD_KHR/build-avk143-icd.sh"
 sh -n "$payload/usr/local/libexec/VulkanICD_KHR/build-avk143-vulkan-tools.sh"
+grep -q 'AVK143_TOOLS_BUILD_ROOT=' "$payload/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-build-local"
 sh -n "$payload/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-build-local"
 
 printf '%s\n' "AVK143 VulkanICD_KHR installer package smoke passed"

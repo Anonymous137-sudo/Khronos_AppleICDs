@@ -28,8 +28,8 @@ esac
 
 pkg_output=${VULKANICD_KHR_PKG_OUTPUT:-"$repo_root/dist/VulkanICD-KHR-Installer.pkg"}
 pkg_identifier=${VULKANICD_KHR_PKG_IDENTIFIER:-"org.khronos.appleicds.vulkanicd-khrinstaller"}
-pkg_version=${VULKANICD_KHR_PKG_VERSION:-"1.4.354"}
-release_label=${VULKANICD_KHR_RELEASE_LABEL:-"cts-qualified-1.4.3.2-20260821"}
+pkg_version=${VULKANICD_KHR_PKG_VERSION:-"1.4.354.9"}
+release_label=${VULKANICD_KHR_RELEASE_LABEL:-"installer-fix-r9-20260822"}
 
 while [ "$#" -gt 0 ]; do
     case "$1" in

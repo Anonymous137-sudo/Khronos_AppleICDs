@@ -2,7 +2,23 @@
 set -eu
 
 runtime_prefix=${AVK143_RUNTIME_PREFIX:-/usr/local}
-build_root=${AVK143_TOOLS_BUILD_ROOT:-"$(CDPATH= cd -- "$(dirname -- "$0")/../../build" && pwd)/VulkanTools"}
+if [ -n "${AVK143_TOOLS_BUILD_ROOT:-}" ]; then
+    build_root=$AVK143_TOOLS_BUILD_ROOT
+else
+    # In the source tree this resolves to <project>/build/VulkanTools. The
+    # installed package runs from /usr/local/libexec, so use the configured
+    # repository checkout rather than assuming the source-tree relative path.
+    tools_script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+    case "$tools_script_dir" in
+        */Apple_ICD/scripts)
+            build_root=$(CDPATH= cd -- "$tools_script_dir/../../build" && pwd)/VulkanTools
+            ;;
+        *)
+            repo_root=${VULKANICD_KHR_REPO_ROOT:-/usr/local/src/Khronos_AppleICDs}
+            build_root="$repo_root/Vulkan_API_SDK_1.4.354/build/VulkanTools"
+            ;;
+    esac
+fi
 loader_root="$build_root/Vulkan-Loader"
 tools_root="$build_root/Vulkan-Tools"
 headers_root="$build_root/Vulkan-Headers"
