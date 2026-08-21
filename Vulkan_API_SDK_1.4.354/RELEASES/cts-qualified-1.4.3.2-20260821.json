@@ -1,0 +1,38 @@
+{
+  "release_id": "vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821",
+  "release_date": "2026-08-21",
+  "target": "macOS arm64 / Apple Silicon",
+  "runtime_api_header_package": "1.4.354",
+  "cts_suite_revision": "vulkan-cts-1.4.3.2",
+  "vulkan_conformance_version": [0, 0, 0, 0],
+  "certification_status": "not Khronos certified",
+  "source_revisions": {
+    "mesa_kosmickrisp": "4bdd6173e129e893b43ed4e11c8da3c853e48b53",
+    "moltenvk_vendor_reference": "f9a1e964bf2e247c97def4f77636346c0fe0ded2"
+  },
+  "final_wave": {
+    "case_count": 881906,
+    "pass": 257266,
+    "not_supported": 624638,
+    "fail": 0,
+    "quality_warning": 2
+  },
+  "cts_inventory_case_count": 2858036,
+  "cts_inventory_xml_sha256": "c99040eb95c89f9ba959fd4bceaf17990ff7e0325f902748bf6f5188129cd147",
+  "runtime_artifacts": {
+    "lib/libvulkan_kosmickrisp.dylib": "b0e3e6f20c216f0ed34dbbad94e0d2d8e09d80fa481716a777f20ceb21f8e1ec",
+    "share/vulkan/icd.d/kosmickrisp_mesa_icd.aarch64.json": "c11b9141509859419c70c6dd6884c241782bf7daf31bdcdd484a957f3a6214bc"
+  },
+  "release_assets": {
+    "VulkanICD_KHRInstaller-1.4.354-cts-qualified-1.4.3.2-20260821.pkg": "f3f24b90be1b9bd8fd20fa1dffc55ea231e5d6c1fdc6f0bdfec4792143233ad8",
+    "avk143-vulkan-api-sdk-1.4.354-macos-arm64-runtime.tar.gz": "53123fa05a47d10776236b0c08fa36e0fe6b1580edbabe8afa672e8788047633",
+    "avk143-vulkan-cts-1.4.3.2-final-881906-qpa.tar.gz": "e552261f2ef15f0d792d14b39f81d3125c73be51008140079b2a72127ce0d5db",
+    "avk143-vulkan-cts-qualified-1.4.3.2-20260821-evidence.tar.gz": "71c63b4ecee8ea441d4776ee75ecde527874596c71197fc981b94c5a38e4572c",
+    "SHA256SUMS.txt": "f8eeed94aa2c750580abbbff3d06eed0437cf6f55f7407620de7ea86ba694342"
+  },
+  "local_cache": {
+    "shadercache.bin_sha256": "cb7177f28614875d314d242cf91f8d2a85ca308bd1f3e83ee784941056e2eea9",
+    "published": false,
+    "reason": "machine-local, nonportable cache artifact"
+  }
+}

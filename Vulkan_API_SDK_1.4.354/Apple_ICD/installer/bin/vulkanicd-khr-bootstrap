@@ -14,7 +14,7 @@ fi
 repo_root=${VULKANICD_KHR_REPO_ROOT:-/usr/local/src/Khronos_AppleICDs}
 repo_url=${VULKANICD_KHR_REPO_URL:-}
 repo_branch=${VULKANICD_KHR_REPO_BRANCH:-main}
-project_dir=${VULKANICD_KHR_PROJECT_DIR:-Vulkan_API_SDK_1.4.354/Apple_ICD}
+project_dir=${VULKANICD_KHR_PROJECT_DIR:-Khronos_AppleICDs/Vulkan_API_SDK_1.4.354/Apple_ICD}
 runtime_prefix=${VULKANICD_KHR_RUNTIME_PREFIX:-/usr/local}
 project_root="$repo_root/$project_dir"
 

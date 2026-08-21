@@ -97,17 +97,24 @@ revision 1.4.354 and exposes it through the Khronos loader's ordinary `vk*` /
 JSON-ICD contract. It does not provide a `.framework`, `CVK`,
 `NSVulkan_KHR`, custom loader, or private AGX submission path.
 
-The assembled driver has passed direct ICD dispatch, standard-loader instance
-and physical-device discovery, `vulkaninfo` runtime discovery, and a Vulkan
-compute/descriptor/fence/readback smoke on the Apple GPU. It has also passed an
-initial official Vulkan CTS 1.4.3.2 execution slice: six compute cases covering
-storage descriptors, shared memory, barriers, and image access, plus an
-offscreen render-pass triangle. The first `dEQP-VK.info.*` sweep passed 16 of
-19 cases; it exposed two extension-enumeration compatibility failures
-(`VK_KHR_surface_maintenance1` and `VK_KHR_maintenance9`) and one expected
-single-device `NotSupported` result. This is useful qualification evidence, not
-a Vulkan CTS/conformance claim; broader feature, WSI, and regression groups
-remain required.
+The current engineering release is
+`vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821`. It provides the full
+local 2,858,036-case `dEQP-VK` inventory ledger in staged release evidence. Its
+final 881,906-case wave completed with 257,266 passes, 624,638 correctly
+feature-gated `NotSupported` results, zero failures, and two retained
+early-fragment `QualityWarning` results. Raw QPAs, worker output, the runtime
+binary, manifest, and installer are published as GitHub release assets; the
+source record is [Vulkan API SDK 1.4.354/RELEASES](Vulkan_API_SDK_1.4.354/RELEASES/).
+
+This is an engineering qualification release, not a Khronos certification.
+The ICD retains `VkConformanceVersion = { 0, 0, 0, 0 }`; `1.4.3.2` identifies
+the CTS suite revision in the release label, never an official conformance
+version. The semantic corrections that made capability reporting and Metal
+lowering match the tested behavior are documented in the release record.
+
+The temporary AO46 implementation freeze is now lifted. Vulkan's standard ICD
+release remains independent while AO46 resumes Metal Gallium completion and
+OpenGL CTS work.
 
 Build the package with:
 

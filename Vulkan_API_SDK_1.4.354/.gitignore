@@ -2,6 +2,12 @@
 /build/AVK143/
 /build/mesa-kosmickrisp-arm64/
 /build/mesa-kosmickrisp-arm64-v1.4.354/
+# Disposable local Vulkan CTS checkout, loader, build, and result artifacts.
+/build/cts/
+# CTS QPA logs and shader caches are published as checksummed release assets,
+# not as ordinary Git blobs. They are host- and toolchain-specific artifacts.
+/TestResults.qpa
+/shadercache.bin
 .DS_Store
 __pycache__/
 *.py[cod]

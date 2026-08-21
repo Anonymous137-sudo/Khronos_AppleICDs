@@ -77,9 +77,10 @@ ABI product. Build it from the repository root:
 ```
 
 The resulting `dist/VulkanICD_KHRInstaller.pkg` installs only its bootstrap
-commands/configuration, then clones or updates `Khronos_AppleICDs` below
-`/usr/local/src`, initializes the Mesa and vendor submodules, builds this ICD,
-and stages it below `/usr/local`:
+commands/configuration, then clones or updates this repository below
+`/usr/local/src/Khronos_AppleICDs`, initializes the Mesa and vendor submodules,
+builds this ICD from its recorded repository-relative project path, and stages
+it below `/usr/local`:
 
 ```text
 /usr/local/lib/avk143/libvulkan_kosmickrisp.dylib
@@ -118,16 +119,74 @@ the staged JSON manifest for loader discovery and device-level validation.
 `AVK143LoaderInstanceSmoke` is also built when CMake receives both
 `AVK143_VULKAN_LOADER` and `AVK143_KOSMICKRISP_MANIFEST`. It uses the standard
 loader to create a Vulkan 1.4 instance through the staged manifest and requires
-at least one physical device to pass. Standard Loader and `vulkaninfo`
-qualification passed on this checkout. An initial official Vulkan CTS 1.4.3.2
-slice also passed six compute workloads and one offscreen render-pass triangle
-through the same loader/ICD setup. The first `dEQP-VK.info.*` sweep has two
-tracked extension-enumeration failures (`VK_KHR_surface_maintenance1` and
-`VK_KHR_maintenance9`), so CTS remains an active qualification track rather
-than a conformance claim.
+at least one physical device to pass. The Mesa 1.4.354 header snapshot and the
+runtime API version match. Standard Loader and `vulkaninfo` qualification passed
+on this checkout. Focused `shaderFloatControls2` coverage and the broader CTS
+campaign are now recorded in the current engineering release: the final
+881,906-case wave has zero failures, two retained `QualityWarning` results, and
+capability-gated unsupported cases remain `NotSupported`. See the current
+release record for the complete, checksummed ledger. CTS is qualification
+evidence, not a conformance claim.
 
 When `glslc` is available, `AVK143ComputeSmoke` is added as a fourth test. It
 compiles a tiny SPIR-V compute shader and verifies a host-visible storage buffer
 write after descriptor binding, pipeline creation, `vkQueueSubmit2`, a fence,
 and readback. This is a real Mesa/Kosmickrisp workload smoke, not a custom
 Vulkan implementation.
+
+## Full CTS Campaign
+
+`scripts/run-avk143-vulkan-cts.sh` runs the official non-experimental
+`dEQP-VK` root groups against the staged ICD. It writes a QPA log and standard
+output per group, marks only successful groups complete, and resumes at root
+group boundaries on the next invocation. A full campaign contains 2,858,036
+cases in the Vulkan CTS 1.4.3.2 inventory, so it is intentionally a long-running
+qualification job rather than a single foreground smoke command.
+
+### Current Release Evidence
+
+The `vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821` engineering
+release includes the source-controlled ledger in
+[`../RELEASES/CTS_QUALIFIED_1.4.3.2_20260821.md`](../RELEASES/CTS_QUALIFIED_1.4.3.2_20260821.md)
+and raw final-wave QPAs as GitHub release assets. The final eight-worker wave
+covered 881,906 cases: 257,266 `Pass`, 624,638 `NotSupported`, zero `Fail`, and
+two `QualityWarning` results. The two warnings are retained as QPA warnings,
+not changed into passes, because the reported early-fragment sample-mask
+ordering is permitted but nonpreferred on the public Metal path.
+
+This evidence does not change `VkConformanceVersion`, which remains zero until
+Khronos certifies a submitted implementation. The `1.4.3.2` release component
+is the CTS suite revision, while the runtime/header package is Vulkan API SDK
+1.4.354.
+
+After the local CTS harness has been built under `build/cts`, the runner
+automatically uses its `VK-GL-CTS` checkout and Khronos Loader prefix:
+
+```sh
+"Vulkan_API_SDK_1.4.354/Apple_ICD/scripts/run-avk143-vulkan-cts.sh"
+```
+
+Set `AVK143_CTS_ROOT`, `AVK143_CTS_BINARY`, or `AVK143_VULKAN_LOADER_DIR` only
+when qualifying against an external toolchain. Use `AVK143_CTS_GROUPS="info
+compute"` to rerun selected groups while fixing a failure, and set
+`AVK143_CTS_RESULTS_DIR` to keep separate campaigns. The runner never treats
+`NotSupported` as a pass for a feature claim; QPA outcomes remain the source of
+truth for qualification.
+
+### Early-Fragment Quality Preflight
+
+Each new CTS wave runs `qualify-avk143-early-fragment-quality.sh` before root
+groups by default. It records a four-case targeted qualification for static
+sample masking with early fragment tests: the two core cases report the
+Vulkan-permitted `QualityWarning` ordering, while their
+`VK_KHR_maintenance5` counterparts must pass according to the physical-device
+properties exposed by the ICD. This prevents a later driver change from turning
+the known ordering into a silent regression, false capability report, failure,
+or crash.
+
+The two core outcomes remain in the raw CTS QPA as `QualityWarning`; the runner
+does not relabel them as passes. They are tracked as qualified rather than
+unresolved because Metal exposes no public fixed-function sample-mask state and
+the CTS itself defines this ordering as allowed but nonpreferred. Set
+`AVK143_CTS_QUALIFY_EARLY_FRAGMENT=0` only for focused bring-up where that
+preflight is intentionally not applicable.

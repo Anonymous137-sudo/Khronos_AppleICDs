@@ -8,10 +8,26 @@ usage() {
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 project_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
-repo_root=$(CDPATH= cd -- "$project_root/../.." && pwd)
+repo_root=$(git -C "$project_root" rev-parse --show-toplevel 2>/dev/null || true)
+if [ -z "$repo_root" ]; then
+    printf '%s\n' "unable to locate the Git root for VulkanICD_KHRInstaller.pkg" >&2
+    exit 1
+fi
+
+case "$project_root" in
+    "$repo_root"/*)
+        project_dir=${project_root#"$repo_root"/}
+        ;;
+    *)
+        printf '%s\n' "Vulkan ICD project is outside its Git root: $project_root" >&2
+        exit 1
+        ;;
+esac
+
 pkg_output=${VULKANICD_KHR_PKG_OUTPUT:-"$repo_root/dist/VulkanICD_KHRInstaller.pkg"}
 pkg_identifier=${VULKANICD_KHR_PKG_IDENTIFIER:-"org.khronos.appleicds.vulkanicd-khrinstaller"}
 pkg_version=${VULKANICD_KHR_PKG_VERSION:-"1.4.354"}
+release_label=${VULKANICD_KHR_RELEASE_LABEL:-"cts-qualified-1.4.3.2-20260821"}
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -80,9 +96,10 @@ cat >"$payload_root/usr/local/share/VulkanICD_KHR/repository.conf" <<EOF
 VULKANICD_KHR_REPO_ROOT='/usr/local/src/Khronos_AppleICDs'
 VULKANICD_KHR_REPO_URL='$repo_url'
 VULKANICD_KHR_REPO_BRANCH='$repo_branch'
-VULKANICD_KHR_PROJECT_DIR='Vulkan_API_SDK_1.4.354/Apple_ICD'
+VULKANICD_KHR_PROJECT_DIR='$project_dir'
 VULKANICD_KHR_RUNTIME_PREFIX='/usr/local'
 VULKANICD_KHR_API_VERSION='1.4.354'
+VULKANICD_KHR_RELEASE_LABEL='$release_label'
 EOF
 
 pkgbuild \
