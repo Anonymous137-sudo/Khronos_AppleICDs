@@ -88,7 +88,9 @@ At install time the ICD and its bundled SPIR-V Tools runtime are placed in
 `/usr/local/lib/avk143`; the ICD manifest is placed in
 `/usr/local/share/vulkan/icd.d`. The default postinstall also builds the
 Khronos Loader, `vulkaninfo`, `vkcube`, and Vulkan headers/pkg-config metadata.
-`vkvia` is installed when provided by the selected Vulkan-Tools revision.
+The `vkcube` terminal command launches its complete macOS app bundle so the
+storyboard, CAMetalLayer view, and window resources remain available. `vkvia`
+is installed when provided by the selected Vulkan-Tools revision.
 The Khronos validation layer is built by default. The builder provisions the
 matching Vulkan Utility Libraries, SPIR-V-Headers, and SPIRV-Tools revisions
 in its isolated build tree, so it does not link against a developer's

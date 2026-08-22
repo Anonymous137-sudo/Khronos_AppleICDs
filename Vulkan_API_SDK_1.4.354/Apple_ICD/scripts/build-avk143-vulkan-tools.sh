@@ -147,12 +147,38 @@ if [ -d "$loader_prefix/loader/vulkan.framework" ]; then
 fi
 
 for tool in vulkaninfo vkcube; do
+    if [ "$tool" = vkcube ] && [ -d "$tools_build/cube/macOS/cube/vkcube.app" ]; then
+        # On macOS vkcube is a storyboard-backed application bundle. Copying
+        # only Contents/MacOS/vkcube loses the window resources and leaves an
+        # AppKit event loop with nothing to display.
+        cube_app="$runtime_prefix/libexec/VulkanICD_KHR/vkcube.app"
+        rm -rf "$cube_app"
+        mkdir -p "$(dirname -- "$cube_app")"
+        cp -R "$tools_build/cube/macOS/cube/vkcube.app" "$cube_app"
+        app_binary="$cube_app/Contents/MacOS/vkcube"
+        app_frameworks="$cube_app/Contents/Frameworks"
+        mkdir -p "$app_frameworks"
+        install -m 755 "$runtime_lib/libvulkan.1.dylib" \
+            "$app_frameworks/libvulkan.1.dylib"
+        install_name_tool -delete_rpath "$loader_prefix/lib" "$app_binary" 2>/dev/null || true
+        install_name_tool -add_rpath '@executable_path/../Frameworks' \
+            "$app_binary" 2>/dev/null || true
+        strip -S "$app_binary" 2>/dev/null || true
+        continue
+    fi
     tool_path=$(find "$tools_build" -type f -perm -111 -name "$tool" -print -quit)
     [ -n "$tool_path" ] || { printf '%s\n' "AVK143 Vulkan-Tools build produced no $tool" >&2; exit 1; }
     install -m 755 "$tool_path" "$runtime_bin/$tool"
     strip -S "$runtime_bin/$tool" 2>/dev/null || true
+    install_name_tool -delete_rpath "$loader_prefix/lib" "$runtime_bin/$tool" 2>/dev/null || true
 done
-install_name_tool -add_rpath '@loader_path/../lib' "$runtime_bin/vkcube" 2>/dev/null || true
+# Keep the command-line tool name useful while preserving the bundle required
+# by AppKit. `open -W` keeps the terminal command alive until the window exits.
+cat >"$runtime_bin/vkcube" <<EOF
+#!/bin/sh
+exec /usr/bin/open -W -n '$runtime_prefix/libexec/VulkanICD_KHR/vkcube.app' --args "\$@"
+EOF
+chmod 755 "$runtime_bin/vkcube"
 if find "$tools_build" -type f -perm -111 -name vkvia -print -quit | grep -q .; then
     tool_path=$(find "$tools_build" -type f -perm -111 -name vkvia -print -quit)
     install -m 755 "$tool_path" "$runtime_bin/vkvia"

@@ -84,7 +84,10 @@ bootstrap helpers. The postinstall build also assembles the Khronos Loader,
 `vulkaninfo`, `vkcube`, checked-in Vulkan headers/pkg-config metadata, and the
 Khronos validation layer. The validation build also provisions matching
 Vulkan Utility Libraries, SPIR-V-Headers, and SPIRV-Tools sources rather than
-using host package-manager paths. `vkvia` is installed when the selected
+using host package-manager paths. On macOS, `vkcube` remains a complete
+storyboard-backed application bundle under `/usr/local/libexec/VulkanICD_KHR`;
+the `/usr/local/bin/vkcube` command launches that bundle and forwards its
+arguments. `vkvia` is installed when the selected
 Vulkan-Tools revision provides that target; current upstream revisions may not
 contain it, and the live log reports that explicitly. Set
 `AVK143_INSTALL_VULKAN_TOOLS=0` for a minimal/offline install. Validation

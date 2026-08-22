@@ -48,4 +48,9 @@ sh -n "$payload/usr/local/libexec/VulkanICD_KHR/build-avk143-vulkan-tools.sh"
 grep -q 'AVK143_TOOLS_BUILD_ROOT=' "$payload/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-build-local"
 sh -n "$payload/usr/local/libexec/VulkanICD_KHR/vulkanicd-khr-build-local"
 
+# macOS vkcube must remain a bundle: extracting its executable loses the
+# storyboard and produces a silent AppKit event loop with no visible window.
+grep -q 'vkcube.app' "$payload/usr/local/libexec/VulkanICD_KHR/build-avk143-vulkan-tools.sh"
+grep -q '/usr/bin/open -W -n' "$payload/usr/local/libexec/VulkanICD_KHR/build-avk143-vulkan-tools.sh"
+
 printf '%s\n' "AVK143 VulkanICD_KHR installer package smoke passed"
