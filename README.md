@@ -15,7 +15,7 @@ application-facing ABIs, loaders, or installation names.
 
 | Product | Current state | Important boundary |
 | --- | --- | --- |
-| **Vulkan API SDK 1.4.354** | Published engineering release plus a CTS 1.4.6.2 engineering prerelease candidate. | Not Khronos certified; `VkConformanceVersion` is `{ 0, 0, 0, 0 }`. |
+| **Vulkan API SDK 1.4.354** | Published engineering release plus an experimental CTS 1.4.6.2 developer prerelease. | Not Khronos certified; `VkConformanceVersion` is `{ 0, 0, 0, 0 }`. |
 | **AO46 standard OpenGL/EGL** | Active Mesa Metal Gallium development. The Mesa-selected engineering ceiling has risen from OpenGL 3.3 to OpenGL 4.1. | OpenGL CTS remains pending; this is not an OpenGL 4.6 or conformance claim. |
 | **AO46 legacy framework path** | Experimental compatibility product for software requiring CGL/NSOpenGL/framework-style interfaces. | Separate from the standard EGL/OpenGL ABI and developer-machine only. |
 
@@ -24,7 +24,7 @@ application-facing ABIs, loaders, or installation names.
 The stable engineering release is [Vulkan API SDK 1.4.354 - CTS-qualified 1.4.3.2
 (engineering)](https://github.com/Anonymous137-sudo/Khronos_AppleICDs/releases/tag/vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821).
 
-The current developer prerelease updates both Mesa downstreams to upstream
+The [current developer prerelease](https://github.com/Anonymous137-sudo/Khronos_AppleICDs/releases/tag/vulkan-1.4.354-preview-cts-1.4.6.2-20260824) updates both Mesa downstreams to upstream
 `4641f0094f2`, packages a machine-neutral prebuilt Vulkan runtime, and records
 the CTS 1.4.6.2 admission results. Six Vulkan Memory Model cases still fail,
 so the full 3,230,231-case campaign was not admitted and this is not a CTS or
