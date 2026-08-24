@@ -17,7 +17,9 @@ main(void)
            "blend=%d attrib=%d instancing=%d bit-encoding=%d rgb10=%d "
            "timer=%d packed-vertex=%d swizzle=%d\n"
            "AO46 Mesa GL4.0 gates: blend=%d indirect=%d shader5=%d fp64=%d "
-           "sample=%d tess=%d rgb32=%d cube-array=%d lod=%d tf2=%d tf3=%d\n",
+           "sample=%d tess=%d rgb32=%d cube-array=%d lod=%d tf2=%d tf3=%d\n"
+           "AO46 Mesa modern gates: GL4.3-SSBO=%d GL4.5-clip-control=%d "
+           "GL4.6-indirect-parameters=%d\n",
            audit.core_version / 10, audit.core_version % 10,
            audit.glsl_version, audit.gl33_blend_func_extended,
            audit.gl33_explicit_attrib_location, audit.gl33_instanced_arrays,
@@ -29,8 +31,16 @@ main(void)
            audit.gl40_tessellation_shader,
            audit.gl40_texture_buffer_object_rgb32,
            audit.gl40_texture_cube_map_array, audit.gl40_texture_query_lod,
-           audit.gl40_transform_feedback2, audit.gl40_transform_feedback3);
+           audit.gl40_transform_feedback2, audit.gl40_transform_feedback3,
+           audit.gl43_shader_storage_buffer_object,
+           audit.gl45_clip_control,
+           audit.gl46_indirect_parameters);
 
-    /* GL 3.3 is the verified baseline after u_vbuf packed-input fallback. */
-    return audit.core_version == 33 ? 0 : 1;
+    /* Mesa selects GL 4.0 only when every required extension gate is live. */
+    return audit.core_version >= 40 &&
+           audit.gl40_tessellation_shader &&
+           audit.gl40_texture_buffer_object_rgb32 &&
+           audit.gl43_shader_storage_buffer_object &&
+           audit.gl45_clip_control &&
+           audit.gl46_indirect_parameters ? 0 : 1;
 }

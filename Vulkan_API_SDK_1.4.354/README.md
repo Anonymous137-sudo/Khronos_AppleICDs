@@ -16,10 +16,24 @@ Vulkan application
 
 ## 2026-08-21 Engineering Release
 
-`vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821` is the current
+`vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821` is the latest published
 engineering-qualification release. It is built from Mesa's checked-in Vulkan
-Headers/registry revision **1.4.354** and qualified with
-`vulkan-cts-1.4.3.2`.
+Headers/registry revision **1.4.354** and was qualified with
+`vulkan-cts-1.4.3.2`. Active development testing now targets
+`vulkan-cts-1.4.6.2`; that new wave does not rewrite historical release
+evidence.
+
+The first 1.4.6.2 bring-up is recorded in
+[`RELEASES/CTS_1.4.6.2_BRINGUP_20260822.md`](RELEASES/CTS_1.4.6.2_BRINGUP_20260822.md).
+It preserves a newly detected mandatory-feature failure rather than treating
+the newer suite as equivalent to the older passing campaign.
+
+The commit-ready version-2 draft, capability audit, complete post-sync change
+ledger, output manifest, and release blockers are recorded in
+[`RELEASES/V2_CTS_1.4.6.2_DRAFT_20260822.md`](RELEASES/V2_CTS_1.4.6.2_DRAFT_20260822.md).
+It restores current Mesa extension declarations that the older 1.4.3.2 branch
+had suppressed, while explicitly refusing to advertise the still-failing
+Vulkan Memory Model as a way to manufacture an `info` pass.
 
 The 2,858,036-case local `dEQP-VK` inventory was exercised in resumable,
 capability-gated waves. The final 881,906-case wave completed with **257,266
@@ -27,6 +41,20 @@ Pass**, **624,638 NotSupported**, **0 Fail**, and **2 QualityWarning** results.
 The raw QPAs, case lists, output, and exit codes are release assets; the
 source-controlled [release record](RELEASES/CTS_QUALIFIED_1.4.3.2_20260821.md)
 contains the full ledger, binary hashes, and the two warning names.
+
+## 2026-08-24 Developer Prerelease
+
+The current developer prerelease rebases AVK143 onto Mesa upstream
+`4641f0094f2` with downstream head `4dad9a83b9`, and validates the assembled
+runtime against Vulkan CTS 1.4.6.2 admission gates. Six memory-model semantic
+cases fail, so the complete 3,230,231-case campaign remains blocked. This is
+not a CTS-qualified or Khronos-certified release; `VkConformanceVersion`
+remains `{0, 0, 0, 0}`. See the [exact prerelease record](RELEASES/PRE_RELEASE_CTS_1.4.6.2_20260824.md).
+
+The accompanying `Vulkan-1.4.354-Preview.pkg` is a prebuilt, machine-neutral
+runtime package. Its expanded payload was checked for build paths and tested
+in isolation with `vulkaninfo`; it discovered KosmicKrisp on Apple M4 Pro and
+reported Vulkan 1.4.359.
 
 This is not a Khronos certification or a conformant-product claim. The ICD
 truthfully keeps `VkConformanceVersion` at `{ 0, 0, 0, 0 }`; `1.4.3.2` in the

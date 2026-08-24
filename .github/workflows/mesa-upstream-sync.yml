@@ -1,0 +1,121 @@
+name: Mesa downstream synchronization
+
+on:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Synchronization operation
+        required: true
+        default: prepare
+        type: choice
+        options:
+          - check
+          - prepare
+          - pointers
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  mesa-candidates:
+    if: ${{ github.event_name == 'schedule' || inputs.operation != 'pointers' }}
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        product: [opengl, vulkan]
+    env:
+      GH_TOKEN: ${{ secrets.AO46_MESA_TOKEN }}
+      MESA_FORK_URL: https://x-access-token:${{ secrets.AO46_MESA_TOKEN }}@github.com/Anonymous137-sudo/AO46Mesa.git
+      MESA_SYNC_OUTPUT_DIR: ${{ github.workspace }}/artifacts/mesa-sync
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Require downstream-fork credentials
+        run: test -n "$GH_TOKEN"
+
+      - name: Check or prepare protected candidate
+        id: sync
+        shell: bash
+        run: |
+          operation="${{ inputs.operation || 'prepare' }}"
+          if [[ "$operation" == "check" ]]; then
+            ./scripts/mesa-downstream-sync.sh check "${{ matrix.product }}"
+          else
+            ./scripts/mesa-downstream-sync.sh prepare "${{ matrix.product }}" --push
+          fi
+          cat "artifacts/mesa-sync/${{ matrix.product }}/metadata.env" >> "$GITHUB_OUTPUT"
+
+      - name: Open downstream review pull request
+        if: ${{ steps.sync.outputs.status == 'prepared' }}
+        shell: bash
+        run: |
+          existing=$(gh pr list \
+            --repo Anonymous137-sudo/AO46Mesa \
+            --head "${{ steps.sync.outputs.candidate_branch }}" \
+            --base "${{ steps.sync.outputs.downstream_branch }}" \
+            --json number --jq '.[0].number // empty')
+          if [[ -z "$existing" ]]; then
+            gh pr create \
+              --repo Anonymous137-sudo/AO46Mesa \
+              --base "${{ steps.sync.outputs.downstream_branch }}" \
+              --head "${{ steps.sync.outputs.candidate_branch }}" \
+              --title "mesa: synchronize ${{ matrix.product }} downstream" \
+              --body-file "artifacts/mesa-sync/${{ matrix.product }}/report.md"
+          fi
+
+      - name: Preserve reports and downstream patches
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mesa-sync-${{ matrix.product }}-${{ github.run_id }}
+          path: artifacts/mesa-sync/${{ matrix.product }}
+          if-no-files-found: error
+
+  parent-pointers:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'pointers' }}
+    runs-on: macos-15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      MESA_POINTER_REPORT: ${{ github.workspace }}/artifacts/mesa-sync/pointer-report.md
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Refresh reviewed stable pointers
+        id: pointers
+        shell: bash
+        run: |
+          ./scripts/mesa-refresh-pointers.sh | tee pointer-output.txt
+          changed=$(awk -F= '/^mesa_pointers_changed=/{print $2}' pointer-output.txt)
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+
+      - name: Commit pointer update
+        if: ${{ steps.pointers.outputs.changed == 'true' }}
+        shell: bash
+        run: |
+          branch="automation/mesa-pointer-refresh-${GITHUB_RUN_ID}"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git switch -c "$branch"
+          git commit -m "chore: refresh reviewed Mesa downstream pointers"
+          git push origin "$branch"
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "chore: refresh reviewed Mesa downstream pointers" \
+            --body-file "$MESA_POINTER_REPORT"
+
+      - name: Preserve pointer report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mesa-pointer-refresh-${{ github.run_id }}
+          path: artifacts/mesa-sync/pointer-report.md
+          if-no-files-found: error

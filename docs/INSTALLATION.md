@@ -42,8 +42,10 @@ and stages that path rather than silently replacing it with CGL, Mesa's Apple
 GLX bridge, or a software renderer. Standard EGL window surfaces accept public
 `CAMetalLayer`, `NSView`, or `NSWindow` handles, retain resources until the
 Metal presentation copy completes, and rebuild after a drawable size/loss
-transition. The current capability remains the audited OpenGL 3.3-core subset;
-this is not a GL 4.x claim or CTS conformance.
+transition. The original standard-ABI smoke used an OpenGL 3.3-core context;
+the current Mesa-selected engineering ceiling has since risen to OpenGL 4.1
+core. OpenGL CTS remains pending, so this is not an OpenGL 4.6 or conformance
+claim.
 
 The installer also builds upstream Mesa Demos `glxinfo` when X11/GLX development
 packages are available. `glxinfo` is an X11/GLX terminal diagnostic, not an EGL

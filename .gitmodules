@@ -1,9 +1,17 @@
 [submodule "OpenGL_4.6(Core Profile)/mesa"]
 	path = OpenGL_4.6(Core Profile)/mesa
 	url = https://github.com/Anonymous137-sudo/AO46Mesa.git
+	branch = ao46-opengl
 [submodule "Vulkan_API_SDK_1.4.354/mesa"]
 	path = Vulkan_API_SDK_1.4.354/mesa
 	url = https://github.com/Anonymous137-sudo/AO46Mesa.git
+	branch = avk143-vulkan-mainline
 [submodule "Vulkan_API_SDK_1.4.354/Apple_ICD/vendor/MoltenVK"]
 	path = Vulkan_API_SDK_1.4.354/Apple_ICD/vendor/MoltenVK
 	url = https://github.com/KhronosGroup/MoltenVK.git
+[submodule "Vulkan_API_SDK_1.4.354/Apple_ICD/stdvkabi_khr/Vulkan-Headers"]
+	path = Vulkan_API_SDK_1.4.354/Apple_ICD/stdvkabi_khr/Vulkan-Headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "Vulkan_API_SDK_1.4.354/Apple_ICD/Client/Vulkan-Loader"]
+	path = Vulkan_API_SDK_1.4.354/Apple_ICD/Client/Vulkan-Loader
+	url = https://github.com/KhronosGroup/Vulkan-Loader.git

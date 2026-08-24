@@ -85,7 +85,9 @@ AO46MesaNIRCollectRGB32BufferTextureSlots(const struct nir_shader *nir,
 struct AO46MesaRGB32BufferTextureLowering {
    const struct AO46MesaRGB32BufferTextureBinding *bindings;
    uint32_t binding_count;
-   uint16_t lowered_binding_mask;
+   uint32_t lowered_texture_mask;
+   unsigned address_table_binding;
+   bool use_address_table;
 };
 
 static const struct AO46MesaRGB32BufferTextureBinding *
@@ -175,8 +177,18 @@ ao46_mesa_lower_rgb32_buffer_texture(nir_builder *builder, nir_instr *instr,
 
    builder->cursor = nir_before_instr(instr);
    coord = nir_u2u32(builder, coord_src);
-   root = nir_load_buffer_ptr_kk(builder, 1, 64,
-                                 .binding = binding->buffer_binding);
+   if (lowering->use_address_table) {
+      nir_def *table = nir_load_buffer_ptr_kk(
+         builder, 1, 64, .binding = lowering->address_table_binding);
+      nir_def *entry = nir_iadd_imm(
+         builder, table, binding->texture_index * sizeof(uint64_t));
+      root = nir_load_global(builder, 1, 64, entry,
+                             .align_mul = sizeof(uint64_t),
+                             .access = ACCESS_NON_WRITEABLE);
+   } else {
+      root = nir_load_buffer_ptr_kk(builder, 1, 64,
+                                    .binding = binding->buffer_binding);
+   }
    address = nir_iadd(
       builder, root,
       nir_u2u64(builder, nir_imul_imm(builder, coord, 3 * sizeof(uint32_t))));
@@ -201,7 +213,34 @@ ao46_mesa_lower_rgb32_buffer_texture(nir_builder *builder, nir_instr *instr,
 
    nir_def_rewrite_uses(&tex->def, in_bounds);
    nir_instr_remove(&tex->instr);
-   lowering->lowered_binding_mask |= UINT16_C(1) << binding->buffer_binding;
+   lowering->lowered_texture_mask |= UINT32_C(1) << binding->texture_index;
+   return true;
+}
+
+static bool
+ao46_mesa_rgb32_texture_mask(
+   const struct AO46MesaRGB32BufferTextureBinding *bindings,
+   uint32_t binding_count, uint32_t *out_mask)
+{
+   uint32_t mask = 0;
+
+   if (!bindings || binding_count == 0 || !out_mask)
+      return false;
+
+   for (uint32_t i = 0; i < binding_count; ++i) {
+      const struct AO46MesaRGB32BufferTextureBinding *binding = &bindings[i];
+      uint32_t bit;
+
+      if (!AO46MesaRGB32BufferTextureBindingIsValid(binding) ||
+          binding->texture_index >= 32)
+         return false;
+      bit = UINT32_C(1) << binding->texture_index;
+      if (mask & bit)
+         return false;
+      mask |= bit;
+   }
+
+   *out_mask = mask;
    return true;
 }
 
@@ -216,13 +255,42 @@ AO46MesaNIRLowerRGB32BufferTextures(
       .binding_count = binding_count,
    };
    uint16_t required_mask;
+   uint32_t required_texture_mask;
    bool progress;
 
    if (!nir || !AO46MesaRGB32BufferTextureBindingsMask(bindings, binding_count,
-                                                         &required_mask))
+                                                         &required_mask) ||
+       !ao46_mesa_rgb32_texture_mask(bindings, binding_count,
+                                     &required_texture_mask))
       return false;
 
    progress = nir_shader_instructions_pass(
       nir, ao46_mesa_lower_rgb32_buffer_texture, nir_metadata_none, &lowering);
-   return progress && lowering.lowered_binding_mask == required_mask;
+   return progress && required_mask != 0 &&
+          lowering.lowered_texture_mask == required_texture_mask;
+}
+
+bool
+AO46MesaNIRLowerRGB32BufferTexturesWithAddressTable(
+   struct nir_shader *nir,
+   const struct AO46MesaRGB32BufferTextureBinding *bindings,
+   uint32_t binding_count, unsigned address_table_binding)
+{
+   struct AO46MesaRGB32BufferTextureLowering lowering = {
+      .bindings = bindings,
+      .binding_count = binding_count,
+      .address_table_binding = address_table_binding,
+      .use_address_table = true,
+   };
+   uint32_t required_texture_mask;
+   bool progress;
+
+   if (!nir || address_table_binding < 2 || address_table_binding >= 16 ||
+       !ao46_mesa_rgb32_texture_mask(bindings, binding_count,
+                                     &required_texture_mask))
+      return false;
+
+   progress = nir_shader_instructions_pass(
+      nir, ao46_mesa_lower_rgb32_buffer_texture, nir_metadata_none, &lowering);
+   return progress && lowering.lowered_texture_mask == required_texture_mask;
 }

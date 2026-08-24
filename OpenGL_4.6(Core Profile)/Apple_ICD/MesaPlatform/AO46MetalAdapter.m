@@ -2303,6 +2303,7 @@ AO46MetalComputePipelineCreate(
       mtl_library *library = shared && shared->_compiler
                                 ? mtl_new_library(
                                      shared->_compiler, msl_source,
+                                     MTL_LANGUAGE_VERSION_4_0,
                                      MTL_MATH_MODE_FAST,
                                      MTL_MATH_FLOATING_POINT_FUNCTIONS_FAST)
                                 : NULL;
@@ -2466,6 +2467,7 @@ AO46MetalRenderPipelineCreateWithStaticVertexBuffers(
          (__bridge AO46MetalMTL4SharedState *)adapter->mtl4_shared_state;
       mtl_library *vertex_library = shared && shared->_compiler
          ? mtl_new_library(shared->_compiler, vertex_msl_source,
+                           MTL_LANGUAGE_VERSION_4_0,
                            MTL_MATH_MODE_FAST,
                            MTL_MATH_FLOATING_POINT_FUNCTIONS_FAST)
          : NULL;
@@ -2474,6 +2476,7 @@ AO46MetalRenderPipelineCreateWithStaticVertexBuffers(
          : NULL;
       mtl_library *fragment_library = vertex_function
          ? mtl_new_library(shared->_compiler, fragment_msl_source,
+                           MTL_LANGUAGE_VERSION_4_0,
                            MTL_MATH_MODE_FAST,
                            MTL_MATH_FLOATING_POINT_FUNCTIONS_FAST)
          : NULL;
@@ -2998,7 +3001,7 @@ AO46MetalRenderSubmitWithStaticVertexBuffers(
       }
 
       render_pass.colorAttachments[0].texture = texture;
-      render_pass.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+      render_pass.colorAttachments[0].loadAction = MTLLoadActionLoad;
       render_pass.colorAttachments[0].storeAction = MTLStoreActionStore;
       id<MTLRenderCommandEncoder> encoder =
          command_buffer ? [command_buffer renderCommandEncoderWithDescriptor:render_pass]
@@ -3473,7 +3476,7 @@ ao46_metal_mtl4_render_submit(
    mtl_render_pass_attachment_descriptor_set_texture(
       color_attachment, (mtl_texture *)color_target->native_texture);
    mtl_render_pass_attachment_descriptor_set_load_action(
-      color_attachment, MTL_LOAD_ACTION_DONT_CARE);
+      color_attachment, MTL_LOAD_ACTION_LOAD);
    mtl_render_pass_attachment_descriptor_set_store_action(
       color_attachment, MTL_STORE_ACTION_STORE);
    mtl_render_pass_descriptor_set_render_target_width(render_pass,
@@ -3566,8 +3569,8 @@ fail:
    return false;
 }
 
-bool
-AO46MetalComputeSubmit(
+static bool
+ao46_metal_compute_submit_internal(
    const struct AO46MetalAdapter *adapter,
    const struct AO46MetalComputePipeline *pipeline,
    const struct AO46MetalBufferBinding *bindings, size_t binding_count,
@@ -3575,7 +3578,7 @@ AO46MetalComputeSubmit(
    uint32_t threads_per_threadgroup_width,
    uint32_t threads_per_threadgroup_height,
    uint32_t threads_per_threadgroup_depth,
-   struct AO46MetalSubmission *out_submission)
+   struct AO46MetalSubmission *out_submission, bool allow_mtl4)
 {
    __block bool submitted = false;
 
@@ -3603,7 +3606,7 @@ AO46MetalComputeSubmit(
       return false;
 
    /* MTL4 owns this lifecycle when its compiler PSO and address ABI are live. */
-   if (AO46MetalAdapterSupportsMTL4Submission(adapter) &&
+   if (allow_mtl4 && AO46MetalAdapterSupportsMTL4Submission(adapter) &&
        pipeline->uses_mtl4_compiler &&
        ao46_metal_mtl4_compute_submit(
           adapter, pipeline, bindings, binding_count, grid_width, grid_height,
@@ -3652,6 +3655,42 @@ AO46MetalComputeSubmit(
    }
 
    return submitted;
+}
+
+bool
+AO46MetalComputeSubmit(
+   const struct AO46MetalAdapter *adapter,
+   const struct AO46MetalComputePipeline *pipeline,
+   const struct AO46MetalBufferBinding *bindings, size_t binding_count,
+   uint32_t grid_width, uint32_t grid_height, uint32_t grid_depth,
+   uint32_t threads_per_threadgroup_width,
+   uint32_t threads_per_threadgroup_height,
+   uint32_t threads_per_threadgroup_depth,
+   struct AO46MetalSubmission *out_submission)
+{
+   return ao46_metal_compute_submit_internal(
+      adapter, pipeline, bindings, binding_count, grid_width, grid_height,
+      grid_depth, threads_per_threadgroup_width,
+      threads_per_threadgroup_height, threads_per_threadgroup_depth,
+      out_submission, true);
+}
+
+bool
+AO46MetalComputeSubmitClassic(
+   const struct AO46MetalAdapter *adapter,
+   const struct AO46MetalComputePipeline *pipeline,
+   const struct AO46MetalBufferBinding *bindings, size_t binding_count,
+   uint32_t grid_width, uint32_t grid_height, uint32_t grid_depth,
+   uint32_t threads_per_threadgroup_width,
+   uint32_t threads_per_threadgroup_height,
+   uint32_t threads_per_threadgroup_depth,
+   struct AO46MetalSubmission *out_submission)
+{
+   return ao46_metal_compute_submit_internal(
+      adapter, pipeline, bindings, binding_count, grid_width, grid_height,
+      grid_depth, threads_per_threadgroup_width,
+      threads_per_threadgroup_height, threads_per_threadgroup_depth,
+      out_submission, false);
 }
 
 bool

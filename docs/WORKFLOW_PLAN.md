@@ -63,8 +63,9 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
 - `[x]` AO46 implementation resumed after the
   `vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821` engineering release.
   The completed modern ABI remains surfaceless/pbuffer plus public Cocoa window
-  presentation at the audited GL 3.3 ceiling; the next work is Gallium feature
-  expansion and staged OpenGL CTS without reopening that ABI boundary.
+  presentation. Gallium feature work has since raised the Mesa-selected
+  engineering ceiling from GL 3.3 to GL 4.1; staged OpenGL CTS remains pending
+  and must not reopen that ABI boundary.
 
 ## Active Mesa Metal Backend Dashboard
 
@@ -82,7 +83,7 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
   borrows the adapter-owned Metal device/queue rather than creating a second
   pair; lifecycle smoke coverage proves the identity and teardown contract.
   The framework selects this driver for supported-core CGL admission. Mesa
-  currently realizes it as core 3.3, so GL 4.6 and window presentation remain
+  currently realizes it as core 4.1, raised from the earlier 3.3 milestone, so GL 4.6 remains
   profile-gated until their missing capabilities are complete.
 - `[~]` Mesa Metal screen and context: AO46 has a Metal-backed `pipe_screen`
   and graphics-capable `pipe_context` with buffer and bounded 2D color

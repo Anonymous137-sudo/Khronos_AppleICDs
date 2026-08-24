@@ -1,0 +1,74 @@
+{
+  "release_id": "vulkan-api-sdk-1.4.354-v2-cts-1.4.6.2-20260822",
+  "release_date": "2026-08-22",
+  "status": "experimental developer prerelease; full CTS blocked",
+  "certification_status": "not Khronos certified",
+  "vulkan_conformance_version": [0, 0, 0, 0],
+  "target": {
+    "os": "macOS 26.5.2 build 25F84",
+    "architecture": "arm64",
+    "soc": "Apple M4 Pro",
+    "gpu_cores": 20,
+    "metal": "Metal 4"
+  },
+  "source_revisions": {
+    "mesa_upstream_base": "4641f0094f29752f2774e5c0cbfc75d5c76a2f26",
+    "mesa_avk_committed_head": "4dad9a83b94761f08f745e9b52cbe9817b28299e",
+    "mesa_pre_sync_backup": "4bdd6173e129e893b43ed4e11c8da3c853e48b53",
+    "vulkan_headers": "01393c3df0e5285b54ee6527466513f9e614be94",
+    "vulkan_loader": "92f42301839b406b7d47d92b279db8f8744d8dcf"
+  },
+  "cts": {
+    "suite": "vulkan-cts-1.4.6.2",
+    "archive_sha256": "b2d9dc779a534b83b18db3f780486db58a7e796ec1a0ce3698c66039938a590a",
+    "deqp_vk_sha256": "666b8693f7f9e4d64c15c6cdb35607898bed52f6f1a0b177c6dc692d21fd7592",
+    "surface": "fbo-hidden",
+    "upstream_info": {"pass": 20, "not_supported": 1, "fail": 0, "warning": 0},
+    "upstream_memory_model": {"pass": 3266, "not_supported": 14028, "fail": 6, "warning": 0},
+    "v2_info": {"pass": 19, "not_supported": 1, "fail": 1, "warning": 0},
+    "restored_extension_api_tests": {"pass": 12, "not_supported": 0, "fail": 0, "warning": 0},
+    "maintenance_semantic_samples": {"pass": 2, "not_supported": 2, "fail": 0, "warning": 0},
+    "mega_mustpass": {
+      "status": "not launched; admission gates incomplete",
+      "case_count": 3230231,
+      "phases": [807558, 807558, 807558, 807557],
+      "chunk_size": 1000
+    }
+  },
+  "capability_policy": {
+    "restored_extensions": [
+      "VK_KHR_maintenance9",
+      "VK_KHR_maintenance10",
+      "VK_KHR_shader_fma",
+      "VK_KHR_shader_untyped_pointers",
+      "VK_KHR_unified_image_layouts",
+      "VK_KHR_surface_maintenance1",
+      "VK_EXT_surface_maintenance1",
+      "VK_KHR_swapchain_maintenance1",
+      "VK_EXT_swapchain_maintenance1"
+    ],
+    "intentionally_unadvertised": [
+      "VK_KHR_vulkan_memory_model",
+      "vulkanMemoryModel",
+      "vulkanMemoryModelDeviceScope",
+      "vulkanMemoryModelAvailabilityVisibilityChains"
+    ],
+    "reason": "memory-model semantic CTS failures; no extension is suppressed merely because an older CTS does not recognize it"
+  },
+  "runtime_artifacts": {
+    "lib/avk143/libvulkan_kosmickrisp.dylib": "bac43689f719f870f35181e7185094d72046cc23a618cc06e5ee45737731dfaa",
+    "share/vulkan/icd.d/avk143_kosmickrisp_icd.aarch64.json": "44a11ca70ac0978fdd90b2b78c461867d97c70713d3824c101cf34370ea9ce94"
+  },
+  "release_assets": {
+    "installer_pkg_sha256": "1405b83de9ecbdad4c59506b8e176d43407ab238624c524cf198103a01d5daa9",
+    "runtime_archive_sha256": null,
+    "cts_evidence_archive_sha256": "a0f618e13c42021eb92314e7a3a5b18dcf5ec653004a94511266d2660e076583"
+  },
+  "release_blockers": [
+    "mandatory vulkanMemoryModel feature disabled",
+    "mandatory vulkanMemoryModelDeviceScope feature disabled",
+    "focused memory-model group not repeatably clean",
+    "four-phase CTS 1.4.6.2 mustpass campaign incomplete",
+    "full official CTS 1.4.6.2 qualification and Khronos submission incomplete"
+  ]
+}

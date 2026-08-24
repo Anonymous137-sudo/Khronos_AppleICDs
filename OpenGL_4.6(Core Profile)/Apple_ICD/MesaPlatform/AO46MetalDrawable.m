@@ -154,12 +154,12 @@ AO46MetalDrawablePresent(struct AO46MetalDrawable *drawable,
       mtl_command_queue_signal_drawable(
          (mtl_command_queue *)drawable->adapter->mtl4_queue,
          drawable->native_drawable);
-      mtl_drawable_present(drawable->native_drawable);
+      [(__bridge id<MTLDrawable>)drawable->native_drawable present];
       return true;
    }
 
    if (!AO46MetalSubmissionWait((struct AO46MetalSubmission *)submission))
       return false;
-   mtl_drawable_present(drawable->native_drawable);
+   [(__bridge id<MTLDrawable>)drawable->native_drawable present];
    return true;
 }

@@ -122,6 +122,7 @@ install_name_tool -id '@rpath/libSPIRV-Tools.dylib' "$private_spirv_library"
 install_name_tool -id '/usr/local/lib/avk143/libvulkan_kosmickrisp.dylib' "$icd_library"
 install_name_tool -change "$spirv_library" '@rpath/libSPIRV-Tools.dylib' "$icd_library"
 install_name_tool -add_rpath '@loader_path' "$icd_library" 2>/dev/null || true
+install_name_tool -add_rpath '@loader_path/avk143' "$icd_library" 2>/dev/null || true
 
 # Release binaries must not carry compiler/debug source paths.
 strip -S "$icd_library" 2>/dev/null || true

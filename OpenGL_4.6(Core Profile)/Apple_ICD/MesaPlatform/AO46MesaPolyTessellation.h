@@ -79,3 +79,11 @@ bool AO46MesaPolyTessellationPlanMatchesTES(
 bool AO46MesaPolyTessellationLower(struct nir_shader *tcs,
                                    struct nir_shader *tes,
                                    unsigned parameter_buffer_binding);
+
+/* Lowers Mesa's software VS prepass and the TCS gl_in package together. */
+bool AO46MesaPolyVertexTessellationLower(
+   struct nir_shader *vs, struct nir_shader *tcs, struct nir_shader *tes,
+   unsigned vertex_parameter_buffer_binding,
+   unsigned tessellation_parameter_buffer_binding,
+   uint64_t vertex_outputs, int32_t first_vertex, uint32_t base_instance,
+   uint32_t index_size);

@@ -4,6 +4,7 @@
 #import <AppKit/NSWindow.h>
 #import <Foundation/Foundation.h>
 #import <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "pipe/p_context.h"
@@ -17,16 +18,27 @@
 #include "util/u_math.h"
 #include "util/u_debug.h"
 #include "util/u_hash_table.h"
+#include "util/ralloc.h"
 #include "util/blend.h"
 #include "util/u_framebuffer.h"
 #include "util/u_upload_mgr.h"
 #include "state_tracker/st_context.h"
 #include "nir/nir.h"
+#include "nir/nir_builder.h"
 #include "compiler/shader_enums.h"
 #include "compiler/glsl_types.h"
 
 #include "mtl_pub.h"
 #include "AO46MTLGallium.h"
+#include "AO46MesaMSLComputePipeline.h"
+#include "AO46MesaMSLRenderPipeline.h"
+#include "AO46MesaNIRBufferTexture.h"
+#include "AO46MesaNIRVertexInput.h"
+#include "AO46MesaPolyKernelCatalog.h"
+#include "AO46MesaPolyKernelExecutor.h"
+#include "AO46MesaPolyTessellation.h"
+#include "poly/nir/poly_nir.h"
+#include "poly/tessellator.h"
 
 #define AO46_MAX_SAMPLERS 16  /* Conservative graphics-stage sampler budget */
 #define AO46_MAX_SHADER_BUFFERS 8
@@ -34,7 +46,12 @@
 #define AO46_BUFFER_SLOT_CONST0 0
 #define AO46_BUFFER_SLOT_SAMPLER_TABLE 1
 #define AO46_BUFFER_SLOT_PER_DRAW 2
-#define AO46_BUFFER_SLOT_VERTEX_BASE 3
+#define AO46_BUFFER_SLOT_SHADER_BUFFER_BASE 2
+#define AO46_BUFFER_SLOT_RGB32_ADDRESS_TABLE 10
+#define AO46_BUFFER_SLOT_DRAW_PARAMETERS AO46_MESA_DRAW_PARAMETER_BINDING
+#define AO46_BUFFER_SLOT_STREAM_OUTPUT_DESCRIPTORS \
+    AO46_MESA_STREAM_OUTPUT_DESCRIPTOR_BINDING
+#define AO46_BUFFER_SLOT_VERTEX_BASE 16
 #ifndef MAX_IMAGE_UNITS
 #define MAX_IMAGE_UNITS 8  /* GL_MAX_IMAGE_UNITS */
 #endif
@@ -389,6 +406,14 @@ ao46_metal_buffer_texture_format_supported(enum pipe_format format)
     }
 
     return ao46_metal_pixel_format(format) != MTLPixelFormatInvalid;
+}
+
+static bool
+ao46_metal_rgb32_buffer_texture_format(enum pipe_format format)
+{
+    return format == PIPE_FORMAT_R32G32B32_FLOAT ||
+           format == PIPE_FORMAT_R32G32B32_UINT ||
+           format == PIPE_FORMAT_R32G32B32_SINT;
 }
 
 static id<MTLTexture>
@@ -868,20 +893,11 @@ ao46_metal_framebuffer_equal(const struct pipe_framebuffer_state *a,
 static unsigned
 ao46_metal_bytes_per_pixel(enum pipe_format format)
 {
-    switch (format) {
-        case PIPE_FORMAT_B8G8R8A8_UNORM:
-        case PIPE_FORMAT_B8G8R8A8_SRGB:
-        case PIPE_FORMAT_R8G8B8A8_UNORM:
-        case PIPE_FORMAT_R8G8B8A8_SRGB:
-        case PIPE_FORMAT_Z32_FLOAT:
-            return 4;
-        case PIPE_FORMAT_Z24_UNORM_S8_UINT:
-            return 4;
-        case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
-            return 8;
-        default:
-            return 0;
+    if (format == PIPE_FORMAT_NONE || util_format_is_compressed(format)) {
+        return 0;
     }
+
+    return util_format_get_blocksize(format);
 }
 
 static bool
@@ -1436,6 +1452,13 @@ ao46_metal_resource_create(struct pipe_screen *screen,
                 FREE(res);
                 return NULL;
             }
+            if (AO46MetalAdapterIsCurrent(&g_mtl_adapter) &&
+                !AO46MetalAdapterTrackExternalAllocation(
+                    &g_mtl_adapter, (__bridge void *)res->mtl_buffer)) {
+                [res->mtl_buffer release];
+                FREE(res);
+                return NULL;
+            }
             break;
         }
         case PIPE_TEXTURE_2D:
@@ -1471,6 +1494,13 @@ ao46_metal_resource_create(struct pipe_screen *screen,
                 FREE(res);
                 return NULL;
             }
+            if (AO46MetalAdapterIsCurrent(&g_mtl_adapter) &&
+                !AO46MetalAdapterTrackExternalAllocation(
+                    &g_mtl_adapter, (__bridge void *)res->mtl_texture)) {
+                [res->mtl_texture release];
+                FREE(res);
+                return NULL;
+            }
             break;
         }
         default:
@@ -1486,6 +1516,16 @@ ao46_metal_resource_destroy(struct pipe_screen *screen,
                             struct pipe_resource *res)
 {
     struct ao46_metal_resource *mr = ao46_metal_resource(res);
+    if (AO46MetalAdapterIsCurrent(&g_mtl_adapter)) {
+        if (mr->mtl_buffer) {
+            AO46MetalAdapterUntrackExternalAllocation(
+                &g_mtl_adapter, (__bridge void *)mr->mtl_buffer);
+        }
+        if (mr->mtl_texture) {
+            AO46MetalAdapterUntrackExternalAllocation(
+                &g_mtl_adapter, (__bridge void *)mr->mtl_texture);
+        }
+    }
     [mr->mtl_buffer release];
     [mr->mtl_texture release];
     mr->mtl_buffer = nil;
@@ -1629,6 +1669,10 @@ struct ao46_metal_shader {
     struct nir_shader *nir;
     uint32_t static_sample_mask;
     uint32_t workgroup_size[3];
+    struct pipe_stream_output_info stream_output;
+    bool uses_draw_id;
+    bool uses_draw_parameters;
+    uint16_t image_mask;
 };
 
 struct ao46_metal_shader_buffer_binding {
@@ -1642,6 +1686,47 @@ struct ao46_metal_shader_buffer_binding {
 struct ao46_metal_stream_output_target {
     struct pipe_stream_output_target base;
     unsigned write_offset;
+    unsigned vertex_stride;
+};
+
+struct ao46_metal_query {
+    unsigned type;
+    unsigned index;
+    bool active;
+    bool ended;
+    struct pipe_query_data_so_statistics start;
+    struct pipe_query_data_so_statistics result;
+};
+
+struct ao46_metal_poly_package_layout {
+    size_t root_offset;
+    size_t count_root_offset;
+    size_t sampler_table_offset;
+    size_t vertex_parameters_offset;
+    size_t vertex_input_root_offset;
+    size_t vertex_input_root_size;
+    size_t vertex_outputs_offset;
+    size_t vertex_outputs_bytes;
+    size_t parameters_offset;
+    size_t heap_offset;
+    size_t heap_data_offset;
+    size_t heap_data_bytes;
+    size_t counts_offset;
+    size_t draws_offset;
+    size_t factors_offset;
+    size_t coord_allocs_offset;
+    size_t package_bytes;
+};
+
+struct ao46_metal_poly_runtime {
+    struct AO46MesaComputePipeline vs_pipeline;
+    struct AO46MesaComputePipeline tcs_pipeline;
+    struct AO46MesaRenderPipeline render_pipeline;
+    struct AO46MesaPolyKernelExecutor kernel_executor;
+    struct AO46MesaPolyTessellationPlan plan;
+    struct AO46MetalGalliumPolyTessellationDraw draw;
+    struct AO46MetalGalliumPolyTessellationSequence sequence;
+    struct pipe_resource *package;
 };
 
 struct ao46_metal_context {
@@ -1656,6 +1741,8 @@ struct ao46_metal_context {
     MTLRenderPassDescriptor *render_pass;
     id<MTLRenderCommandEncoder> render_encoder;
     id<MTLComputeCommandEncoder> compute_encoder;
+    id<MTLBuffer> rgb32_address_tables[MESA_SHADER_STAGES];
+    id<MTLTexture> image_binding_textures[MESA_SHADER_STAGES][AO46_MAX_IMAGE_UNITS];
     id<MTLRenderPipelineState> pipeline_state;
     uint64_t pipeline_key;
     bool render_pass_started;
@@ -1679,6 +1766,13 @@ struct ao46_metal_context {
     struct ao46_metal_shader *tes_shader;
     struct ao46_metal_shader *fs_shader;
     struct ao46_metal_shader *cs_shader;
+    float tess_outer_level[4];
+    float tess_inner_level[2];
+    bool tess_state_set;
+    uint8_t patch_vertices;
+    const struct AO46MetalRenderPipeline *poly_render_pipeline;
+    struct AO46MetalGalliumPolyTessellationDraw poly_tess_draw;
+    struct AO46MetalGalliumPolyTessellationSequence poly_tess_sequence;
     struct pipe_constant_buffer const_buffers[MESA_SHADER_STAGES];
     id<MTLBuffer> const_buffer_mtl[MESA_SHADER_STAGES];
     bool const_buffer_dirty[MESA_SHADER_STAGES];
@@ -1688,6 +1782,8 @@ struct ao46_metal_context {
     unsigned stream_output_offsets[PIPE_MAX_SO_BUFFERS];
     unsigned num_stream_output_targets;
     enum mesa_prim stream_output_prim;
+    struct pipe_query_data_so_statistics so_stats[PIPE_MAX_VERTEX_STREAMS];
+    bool active_query_state;
     struct pipe_image_view image_views[MESA_SHADER_STAGES][AO46_MAX_IMAGE_UNITS];
     uint num_image_views[MESA_SHADER_STAGES];
     struct pipe_sampler_view *sampler_views[MESA_SHADER_STAGES][AO46_MAX_SAMPLERS];
@@ -2680,6 +2776,55 @@ ao46_metal_trim_image_count(struct ao46_metal_context *mc,
     mc->num_image_views[shader] = (uint)count;
 }
 
+static bool
+ao46_metal_nir_uses_draw_parameters(const struct nir_shader *nir,
+                                    bool *out_uses_draw_id)
+{
+    bool uses_parameters = false;
+
+    if (out_uses_draw_id) {
+        *out_uses_draw_id = false;
+    }
+    if (!nir) {
+        return false;
+    }
+    nir_foreach_function_impl(impl, nir) {
+        nir_foreach_block(block, impl) {
+            nir_foreach_instr(instr, block) {
+                if (instr->type == nir_instr_type_intrinsic) {
+                    nir_intrinsic_op op =
+                        nir_instr_as_intrinsic(instr)->intrinsic;
+                    if (op == nir_intrinsic_load_draw_id ||
+                        op == nir_intrinsic_load_base_vertex ||
+                        op == nir_intrinsic_load_base_instance) {
+                        uses_parameters = true;
+                        if (op == nir_intrinsic_load_draw_id && out_uses_draw_id) {
+                            *out_uses_draw_id = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return uses_parameters;
+}
+
+static uint16_t
+ao46_metal_nir_image_mask(const struct nir_shader *nir)
+{
+    uint16_t mask = 0;
+
+    if (!nir) {
+        return 0;
+    }
+    nir_foreach_variable_with_modes(variable, nir, nir_var_image) {
+        if (variable->data.binding < AO46_MAX_IMAGE_UNITS) {
+            mask |= UINT16_C(1) << variable->data.binding;
+        }
+    }
+    return mask;
+}
+
 /* ----------------------------------------------------------------------
  * Shader creation (NIR -> MTLFunction)
  * ---------------------------------------------------------------------- */
@@ -2712,6 +2857,10 @@ ao46_metal_create_shader_state(const struct pipe_shader_state *shader)
     }
     ms->function = func;
     ms->nir = nir;
+    ms->stream_output = shader->stream_output;
+    ms->uses_draw_parameters =
+        ao46_metal_nir_uses_draw_parameters(nir, &ms->uses_draw_id);
+    ms->image_mask = ao46_metal_nir_image_mask(nir);
     return ms;
 }
 
@@ -2834,7 +2983,17 @@ ao46_metal_create_tcs_state(struct pipe_context *ctx,
                             const struct pipe_shader_state *shader)
 {
     (void)ctx;
-    return ao46_metal_create_shader_state(shader);
+    if (!shader || shader->type != PIPE_SHADER_IR_NIR || !shader->ir.nir ||
+        shader->ir.nir->info.stage != MESA_SHADER_TESS_CTRL) {
+        return NULL;
+    }
+
+    struct ao46_metal_shader *state = CALLOC_STRUCT(ao46_metal_shader);
+    if (!state) {
+        return NULL;
+    }
+    state->nir = shader->ir.nir;
+    return state;
 }
 
 static void
@@ -2855,7 +3014,17 @@ ao46_metal_create_tes_state(struct pipe_context *ctx,
                             const struct pipe_shader_state *shader)
 {
     (void)ctx;
-    return ao46_metal_create_shader_state(shader);
+    if (!shader || shader->type != PIPE_SHADER_IR_NIR || !shader->ir.nir ||
+        shader->ir.nir->info.stage != MESA_SHADER_TESS_EVAL) {
+        return NULL;
+    }
+
+    struct ao46_metal_shader *state = CALLOC_STRUCT(ao46_metal_shader);
+    if (!state) {
+        return NULL;
+    }
+    state->nir = shader->ir.nir;
+    return state;
 }
 
 static void
@@ -2869,6 +3038,37 @@ ao46_metal_delete_tes_state(struct pipe_context *ctx, void *hwcso)
 {
     (void)ctx;
     ao46_metal_destroy_shader_state((struct ao46_metal_shader *)hwcso);
+}
+
+static void
+ao46_metal_set_tess_state(struct pipe_context *ctx,
+                          const float default_outer_level[4],
+                          const float default_inner_level[2])
+{
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
+
+    if (!mc || !default_outer_level || !default_inner_level) {
+        return;
+    }
+    memcpy(mc->tess_outer_level, default_outer_level,
+           sizeof(mc->tess_outer_level));
+    memcpy(mc->tess_inner_level, default_inner_level,
+           sizeof(mc->tess_inner_level));
+    mc->tess_state_set = true;
+}
+
+static void
+ao46_metal_set_patch_vertices(struct pipe_context *ctx,
+                              uint8_t patch_vertices)
+{
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
+
+    if (!mc) {
+        return;
+    }
+    mc->patch_vertices = patch_vertices >= 1 && patch_vertices <= 32
+                             ? patch_vertices
+                             : 0;
 }
 
 static void *
@@ -3248,6 +3448,25 @@ ao46_metal_create_sampler_view(struct pipe_context *ctx,
         if (!size || size > available) {
             size = available;
         }
+        view->base.u.buf.size = size;
+
+        if (ao46_metal_rgb32_buffer_texture_format(view->base.format)) {
+            if (!g_mtl_adapter.gpu_addressable_buffers ||
+                (offset % sizeof(uint32_t)) != 0 ||
+                size == 0 || (size % (3 * sizeof(uint32_t))) != 0 ||
+                view->base.swizzle_r != PIPE_SWIZZLE_X ||
+                view->base.swizzle_g != PIPE_SWIZZLE_Y ||
+                view->base.swizzle_b != PIPE_SWIZZLE_Z ||
+                view->base.swizzle_a != PIPE_SWIZZLE_W) {
+                pipe_resource_reference(&view->base.texture, NULL);
+                FREE(view);
+                return NULL;
+            }
+
+            /* Mesa NIR lowers this packed view through the per-stage address
+             * table when the render pipeline is selected. */
+            return &view->base;
+        }
 
         view->mtl_texture = ao46_metal_create_buffer_texture_view(mr->mtl_buffer,
                                                                   view->base.format,
@@ -3432,7 +3651,6 @@ ao46_metal_get_texture_from_image_view(const struct pipe_image_view *image)
     if (full_view) {
         return [mr->mtl_texture retain];
     }
-
     return ao46_metal_create_texture_view(mr->mtl_texture,
                                           pixel_format,
                                           view_type,
@@ -3665,6 +3883,8 @@ ao46_metal_set_shader_images(struct pipe_context *ctx,
     for (unsigned slot = start_slot, i = 0; slot < limit; slot++, i++) {
         struct pipe_image_view *dst = &mc->image_views[shader][slot];
 
+        [mc->image_binding_textures[shader][slot] release];
+        mc->image_binding_textures[shader][slot] = nil;
         pipe_resource_reference(&dst->resource, NULL);
         memset(dst, 0, sizeof(*dst));
 
@@ -3677,6 +3897,8 @@ ao46_metal_set_shader_images(struct pipe_context *ctx,
     clear_end = MIN2(limit + unbind_num_trailing_slots, AO46_MAX_IMAGE_UNITS);
     for (unsigned slot = limit; slot < clear_end; slot++) {
         struct pipe_image_view *dst = &mc->image_views[shader][slot];
+        [mc->image_binding_textures[shader][slot] release];
+        mc->image_binding_textures[shader][slot] = nil;
         pipe_resource_reference(&dst->resource, NULL);
         memset(dst, 0, sizeof(*dst));
     }
@@ -3721,7 +3943,7 @@ ao46_metal_create_stream_output_target(struct pipe_context *ctx,
     target->base.context = ctx;
     target->base.buffer_offset = buffer_offset;
     target->base.buffer_size = buffer_size;
-    target->write_offset = buffer_offset;
+    target->write_offset = 0;
     return &target->base;
 }
 
@@ -3771,6 +3993,125 @@ ao46_metal_set_stream_output_targets(struct pipe_context *ctx,
     if (getenv("AO46_TRACE_RUNTIME")) {
         fprintf(stderr, "[AO46Metal] stream-output targets=%u primitive=%u\n",
                 num_targets, output_prim);
+    }
+}
+
+static struct pipe_query *
+ao46_metal_create_query(struct pipe_context *ctx, unsigned query_type,
+                        unsigned index)
+{
+    struct ao46_metal_query *query;
+
+    (void)ctx;
+    switch (query_type) {
+        case PIPE_QUERY_PRIMITIVES_GENERATED:
+        case PIPE_QUERY_PRIMITIVES_EMITTED:
+        case PIPE_QUERY_SO_STATISTICS:
+        case PIPE_QUERY_SO_OVERFLOW_PREDICATE:
+            if (index >= 1) {
+                return NULL;
+            }
+            break;
+        case PIPE_QUERY_SO_OVERFLOW_ANY_PREDICATE:
+            index = 0;
+            break;
+        default:
+            return NULL;
+    }
+
+    query = CALLOC_STRUCT(ao46_metal_query);
+    if (!query) {
+        return NULL;
+    }
+    query->type = query_type;
+    query->index = index;
+    return (struct pipe_query *)query;
+}
+
+static void
+ao46_metal_destroy_query(struct pipe_context *ctx, struct pipe_query *query)
+{
+    (void)ctx;
+    FREE(query);
+}
+
+static bool
+ao46_metal_begin_query(struct pipe_context *ctx, struct pipe_query *query)
+{
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
+    struct ao46_metal_query *mq = (struct ao46_metal_query *)query;
+
+    if (!mc || !mq || mq->active || mq->index >= PIPE_MAX_VERTEX_STREAMS) {
+        return false;
+    }
+    mq->start = mc->so_stats[mq->index];
+    memset(&mq->result, 0, sizeof(mq->result));
+    mq->active = true;
+    mq->ended = false;
+    return true;
+}
+
+static bool
+ao46_metal_end_query(struct pipe_context *ctx, struct pipe_query *query)
+{
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
+    struct ao46_metal_query *mq = (struct ao46_metal_query *)query;
+    const struct pipe_query_data_so_statistics *current;
+
+    if (!mc || !mq || !mq->active || mq->index >= PIPE_MAX_VERTEX_STREAMS) {
+        return false;
+    }
+    current = &mc->so_stats[mq->index];
+    mq->result.num_primitives_written =
+        current->num_primitives_written - mq->start.num_primitives_written;
+    mq->result.primitives_storage_needed =
+        current->primitives_storage_needed -
+        mq->start.primitives_storage_needed;
+    mq->active = false;
+    mq->ended = true;
+    return true;
+}
+
+static bool
+ao46_metal_get_query_result(struct pipe_context *ctx, struct pipe_query *query,
+                            bool wait, union pipe_query_result *result)
+{
+    struct ao46_metal_query *mq = (struct ao46_metal_query *)query;
+
+    (void)ctx;
+    (void)wait;
+    if (!mq || !result || !mq->ended) {
+        return false;
+    }
+    memset(result, 0, sizeof(*result));
+    switch (mq->type) {
+        case PIPE_QUERY_PRIMITIVES_GENERATED:
+            result->u64 = mq->result.primitives_storage_needed;
+            break;
+        case PIPE_QUERY_PRIMITIVES_EMITTED:
+            result->u64 = mq->result.num_primitives_written;
+            break;
+        case PIPE_QUERY_SO_STATISTICS:
+            result->so_statistics = mq->result;
+            break;
+        case PIPE_QUERY_SO_OVERFLOW_PREDICATE:
+        case PIPE_QUERY_SO_OVERFLOW_ANY_PREDICATE:
+            result->b = mq->result.primitives_storage_needed >
+                        mq->result.num_primitives_written;
+            break;
+        default:
+            return false;
+    }
+    return true;
+}
+
+static void
+ao46_metal_set_active_query_state(struct pipe_context *ctx, bool enable)
+{
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
+
+    if (mc) {
+        mc->active_query_state = enable;
     }
 }
 
@@ -3840,9 +4181,133 @@ ao46_metal_build_vertex_descriptor(const struct ao46_metal_context *mc)
 /* ----------------------------------------------------------------------
  * Pipeline cache
  * ---------------------------------------------------------------------- */
+static bool
+ao46_metal_lower_clip_halfz_output(nir_builder *builder,
+                                    nir_intrinsic_instr *intrinsic,
+                                    void *data)
+{
+    (void)data;
+    if (intrinsic->intrinsic != nir_intrinsic_store_output ||
+        nir_intrinsic_io_semantics(intrinsic).location != VARYING_SLOT_POS ||
+        nir_intrinsic_component(intrinsic) != 0 ||
+        intrinsic->src[0].ssa->num_components != 4) {
+        return false;
+    }
+
+    builder->cursor = nir_before_instr(&intrinsic->instr);
+    nir_def *position = intrinsic->src[0].ssa;
+    nir_def *half_z = nir_fmul_imm(
+        builder,
+        nir_fadd(builder, nir_channel(builder, position, 2),
+                 nir_channel(builder, position, 3)),
+        0.5f);
+    nir_src_rewrite(&intrinsic->src[0],
+                    nir_vector_insert_imm(builder, position, half_z, 2));
+    return true;
+}
+
+static id<MTLFunction>
+ao46_metal_compile_rgb32_stage_variant(
+    const struct ao46_metal_context *mc,
+    mesa_shader_stage stage,
+    const struct ao46_metal_shader *shader,
+    uint32_t sample_mask,
+    bool *out_requires_variant)
+{
+    struct AO46MesaRGB32BufferTextureBinding bindings[AO46_MAX_SAMPLERS];
+    struct nir_shader *variant;
+    uint16_t texture_slot_mask = 0;
+    uint32_t binding_count = 0;
+    const char *entry_name = "main";
+    nir_function_impl *entrypoint;
+    NSError *error = nil;
+    id<MTLFunction> function;
+    bool uses_rgb32;
+    bool lower_clip_depth;
+    bool lower_stream_output;
+    uint16_t stream_output_buffer_mask = 0;
+
+    if (!out_requires_variant) {
+        return nil;
+    }
+    *out_requires_variant = false;
+    if (!mc || !shader || !shader->nir) {
+        return nil;
+    }
+    (void)AO46MesaNIRCollectRGB32BufferTextureSlots(shader->nir,
+                                                    &texture_slot_mask);
+    lower_clip_depth = stage == MESA_SHADER_VERTEX &&
+                       (!mc->raster || !mc->raster->base.clip_halfz);
+    lower_stream_output =
+        stage == MESA_SHADER_VERTEX && mc->num_stream_output_targets > 0 &&
+        shader->stream_output.num_outputs > 0;
+
+    for (unsigned slot = 0; slot < AO46_MAX_SAMPLERS; ++slot) {
+        struct pipe_sampler_view *view;
+
+        if (!(texture_slot_mask & (UINT16_C(1) << slot))) {
+            continue;
+        }
+        view = mc->sampler_views[stage][slot];
+        if (!view || !ao46_metal_rgb32_buffer_texture_format(view->format)) {
+            continue;
+        }
+        if (!AO46MesaRGB32BufferTextureBindingFromSamplerView(
+                view, slot, AO46_BUFFER_SLOT_RGB32_ADDRESS_TABLE,
+                &bindings[binding_count])) {
+            *out_requires_variant = true;
+            return nil;
+        }
+        ++binding_count;
+    }
+
+    uses_rgb32 = binding_count != 0;
+    if (!uses_rgb32 && !lower_clip_depth && !lower_stream_output) {
+        return nil;
+    }
+    *out_requires_variant = true;
+    variant = nir_shader_clone(NULL, shader->nir);
+    if (!variant ||
+        (uses_rgb32 &&
+         !AO46MesaNIRLowerRGB32BufferTexturesWithAddressTable(
+             variant, bindings, binding_count,
+             AO46_BUFFER_SLOT_RGB32_ADDRESS_TABLE))) {
+        ralloc_free(variant);
+        return nil;
+    }
+    if (lower_clip_depth) {
+        (void)nir_lower_clip_halfz(variant);
+        (void)nir_shader_intrinsics_pass(
+            variant, ao46_metal_lower_clip_halfz_output,
+            nir_metadata_control_flow, NULL);
+    }
+    if (lower_stream_output &&
+        !AO46MesaNIRLowerStreamOutput(variant, &shader->stream_output,
+                                      &stream_output_buffer_mask)) {
+        ralloc_free(variant);
+        return nil;
+    }
+
+    entrypoint = nir_shader_get_entrypoint(variant);
+    if (entrypoint && entrypoint->function && entrypoint->function->name) {
+        entry_name = entrypoint->function->name;
+    }
+    function = stage == MESA_SHADER_FRAGMENT
+                   ? ao46_metal_compile_nir_to_msl_with_static_sample_mask(
+                         variant, entry_name, nil, sample_mask, &error)
+                   : ao46_metal_compile_nir_to_msl(variant, entry_name, nil,
+                                                   &error);
+    if (!function && error) {
+        NSLog(@"AO46 Metal: graphics stage variant compilation failed: %@", error);
+    }
+    ralloc_free(variant);
+    return function;
+}
+
 static uint64_t
 ao46_metal_compute_pipeline_key(struct ao46_metal_context *mc,
-                                enum mesa_prim mode)
+                                enum mesa_prim mode,
+                                bool supports_indirect_commands)
 {
     uint64_t key = 1469598103934665603ULL;
     key = ao46_metal_hash_u64(key, (uintptr_t)mc->vs_shader);
@@ -3850,9 +4315,13 @@ ao46_metal_compute_pipeline_key(struct ao46_metal_context *mc,
     key = ao46_metal_hash_u64(key, mc->sample_mask);
     key = ao46_metal_hash_u64(key, (uintptr_t)mc->blend);
     key = ao46_metal_hash_u64(key, (uintptr_t)mc->raster);
+    key = ao46_metal_hash_u64(
+        key, mc->raster ? mc->raster->base.clip_halfz : false);
+    key = ao46_metal_hash_u64(key, mc->num_stream_output_targets > 0);
     key = ao46_metal_hash_u64(key, (uintptr_t)mc->dsa);
     key = ao46_metal_hash_u64(key, (uintptr_t)mc->vertex_elements_state);
     key = ao46_metal_hash_u64(key, ao46_metal_primitive_topology_class(mode));
+    key = ao46_metal_hash_u64(key, supports_indirect_commands);
     key = ao46_metal_hash_u64(key, ao46_metal_framebuffer_sample_count(&mc->fb_state));
     key = ao46_metal_hash_u64(key, mc->fb_state.nr_cbufs);
     for (unsigned i = 0; i < mc->fb_state.nr_cbufs; i++) {
@@ -3863,23 +4332,134 @@ ao46_metal_compute_pipeline_key(struct ao46_metal_context *mc,
         key, ao46_metal_attachment_pixel_format(&mc->fb_state.zsbuf));
     key = ao46_metal_hash_u64(
         key, ao46_metal_surface_has_stencil(&mc->fb_state.zsbuf));
+    const mesa_shader_stage rgb32_stages[] = {
+        MESA_SHADER_VERTEX,
+        MESA_SHADER_FRAGMENT,
+    };
+    for (unsigned stage_index = 0;
+         stage_index < ARRAY_SIZE(rgb32_stages); ++stage_index) {
+        mesa_shader_stage stage = rgb32_stages[stage_index];
+        for (unsigned slot = 0; slot < AO46_MAX_SAMPLERS; ++slot) {
+            struct pipe_sampler_view *view = mc->sampler_views[stage][slot];
+
+            if (!view || !ao46_metal_rgb32_buffer_texture_format(view->format)) {
+                continue;
+            }
+            key = ao46_metal_hash_u64(key, stage);
+            key = ao46_metal_hash_u64(key, slot);
+            key = ao46_metal_hash_u64(key, (uintptr_t)view->texture);
+            key = ao46_metal_hash_u64(key, view->format);
+            key = ao46_metal_hash_u64(key, view->u.buf.offset);
+            key = ao46_metal_hash_u64(key, view->u.buf.size);
+        }
+    }
     return key;
 }
 
 static void
+ao46_metal_shader_for_stage(struct ao46_metal_context *mc,
+                            mesa_shader_stage stage,
+                            struct ao46_metal_shader **out_shader)
+{
+    struct ao46_metal_shader *shader = NULL;
+
+    if (mc) {
+        switch (stage) {
+            case MESA_SHADER_VERTEX: shader = mc->vs_shader; break;
+            case MESA_SHADER_FRAGMENT: shader = mc->fs_shader; break;
+            case MESA_SHADER_COMPUTE: shader = mc->cs_shader; break;
+            default: break;
+        }
+    }
+    if (out_shader) {
+        *out_shader = shader;
+    }
+}
+
+static bool
+ao46_metal_prepare_image_bindings(struct ao46_metal_context *mc,
+                                  mesa_shader_stage stage)
+{
+    struct ao46_metal_shader *shader = NULL;
+    id<MTLTexture> textures[AO46_MAX_IMAGE_UNITS] = {nil};
+    bool valid = true;
+
+    if (!mc || stage < 0 || stage >= MESA_SHADER_STAGES) {
+        return false;
+    }
+    ao46_metal_shader_for_stage(mc, stage, &shader);
+    if (!shader || !shader->image_mask) {
+        for (unsigned slot = 0; slot < AO46_MAX_IMAGE_UNITS; ++slot) {
+            [mc->image_binding_textures[stage][slot] release];
+            mc->image_binding_textures[stage][slot] = nil;
+        }
+        return true;
+    }
+    for (unsigned slot = 0; slot < AO46_MAX_IMAGE_UNITS; ++slot) {
+        if (!(shader->image_mask & (UINT16_C(1) << slot))) {
+            continue;
+        }
+        if (!(mc->image_views[stage][slot].access &
+              PIPE_IMAGE_ACCESS_READ_WRITE)) {
+            valid = false;
+            break;
+        }
+        textures[slot] = ao46_metal_get_texture_from_image_view(
+            &mc->image_views[stage][slot]);
+        if (!textures[slot]) {
+            valid = false;
+            break;
+        }
+        if (getenv("AO46_TRACE_RUNTIME")) {
+            fprintf(stderr,
+                    "[AO46Metal] image stage=%d slot=%u texture-index=%u access=0x%x\n",
+                    stage, slot, AO46_MESA_IMAGE_TEXTURE_BASE + slot,
+                    mc->image_views[stage][slot].access);
+        }
+    }
+    if (!valid) {
+        for (unsigned slot = 0; slot < AO46_MAX_IMAGE_UNITS; ++slot) {
+            [textures[slot] release];
+        }
+        return false;
+    }
+    for (unsigned slot = 0; slot < AO46_MAX_IMAGE_UNITS; ++slot) {
+        [mc->image_binding_textures[stage][slot] release];
+        mc->image_binding_textures[stage][slot] = textures[slot];
+    }
+    return true;
+}
+
+static bool
 ao46_metal_bind_compute_resources(struct ao46_metal_context *mc)
 {
     id<MTLComputeCommandEncoder> enc = mc ? mc->compute_encoder : nil;
+    id<MTLBuffer> root_buffer;
+    id<MTLBuffer> sampler_table_buffer;
 
     if (!enc) {
-        return;
+        return false;
     }
+
+    root_buffer = (__bridge id<MTLBuffer>)g_mtl_adapter.graphics_root_buffer;
+    sampler_table_buffer =
+        (__bridge id<MTLBuffer>)g_mtl_adapter.graphics_sampler_table_buffer;
+    if (root_buffer)
+        [enc setBuffer:root_buffer offset:0 atIndex:AO46_BUFFER_SLOT_CONST0];
+    if (sampler_table_buffer)
+        [enc setBuffer:sampler_table_buffer
+                offset:0
+               atIndex:AO46_BUFFER_SLOT_SAMPLER_TABLE];
 
     if (mc->const_buffer_mtl[MESA_SHADER_COMPUTE]) {
         [enc setBuffer:mc->const_buffer_mtl[MESA_SHADER_COMPUTE]
                 offset:0
                atIndex:0];
         mc->const_buffer_dirty[MESA_SHADER_COMPUTE] = false;
+    }
+
+    if (!ao46_metal_prepare_image_bindings(mc, MESA_SHADER_COMPUTE)) {
+        return false;
     }
 
     for (uint i = 0; i < mc->num_shader_buffers[MESA_SHADER_COMPUTE] &&
@@ -3895,7 +4475,7 @@ ao46_metal_bind_compute_resources(struct ao46_metal_context *mc)
 
         [enc setBuffer:mr->mtl_buffer
                 offset:binding->buffer_offset
-               atIndex:i + 4];
+               atIndex:i + 2];
     }
 
     for (uint i = 0; i < mc->num_sampler_views[MESA_SHADER_COMPUTE] &&
@@ -3918,42 +4498,158 @@ ao46_metal_bind_compute_resources(struct ao46_metal_context *mc)
 
     for (uint i = 0; i < mc->num_image_views[MESA_SHADER_COMPUTE] &&
                       i < AO46_MAX_IMAGE_UNITS; i++) {
-        id<MTLTexture> tex =
-            ao46_metal_get_texture_from_image_view(&mc->image_views[MESA_SHADER_COMPUTE][i]);
+        id<MTLTexture> tex = mc->image_binding_textures[MESA_SHADER_COMPUTE][i];
         if (!tex) {
             continue;
         }
 
-        [enc setTexture:tex atIndex:AO46_MAX_SAMPLERS + i];
-        [tex release];
+        [enc setTexture:tex atIndex:AO46_MESA_IMAGE_TEXTURE_BASE + i];
+        MTLResourceUsage usage = 0;
+        if (mc->image_views[MESA_SHADER_COMPUTE][i].access &
+            PIPE_IMAGE_ACCESS_READ) {
+            usage |= MTLResourceUsageRead;
+        }
+        if (mc->image_views[MESA_SHADER_COMPUTE][i].access &
+            PIPE_IMAGE_ACCESS_WRITE) {
+            usage |= MTLResourceUsageWrite;
+        }
+        if (usage) {
+            [enc useResource:tex usage:usage | MTLResourceUsageRead];
+        }
     }
+    return true;
+}
+
+static bool
+ao46_metal_bind_rgb32_address_table(struct ao46_metal_context *mc,
+                                    id<MTLRenderCommandEncoder> encoder,
+                                    mesa_shader_stage stage)
+{
+    struct ao46_metal_shader *shader;
+    uint64_t addresses[AO46_MAX_SAMPLERS] = {0};
+    uint16_t texture_slot_mask = 0;
+    bool used = false;
+
+    if (!mc || !encoder ||
+        (stage != MESA_SHADER_VERTEX && stage != MESA_SHADER_FRAGMENT)) {
+        return false;
+    }
+    shader = stage == MESA_SHADER_VERTEX ? mc->vs_shader : mc->fs_shader;
+    if (!shader || !shader->nir ||
+        !AO46MesaNIRCollectRGB32BufferTextureSlots(shader->nir,
+                                                    &texture_slot_mask)) {
+        return true;
+    }
+
+    for (unsigned slot = 0; slot < AO46_MAX_SAMPLERS; ++slot) {
+        struct pipe_sampler_view *view = mc->sampler_views[stage][slot];
+        struct ao46_metal_resource *resource;
+        uint64_t gpu_address;
+
+        if (!(texture_slot_mask & (UINT16_C(1) << slot)) || !view ||
+            !ao46_metal_rgb32_buffer_texture_format(view->format)) {
+            continue;
+        }
+        resource = view->texture ? ao46_metal_resource(view->texture) : NULL;
+        if (!resource || !resource->mtl_buffer ||
+            view->u.buf.offset >= view->texture->width0 ||
+            view->u.buf.size > view->texture->width0 - view->u.buf.offset) {
+            return false;
+        }
+        if (@available(macOS 13.0, *)) {
+            gpu_address = resource->mtl_buffer.gpuAddress;
+        } else {
+            return false;
+        }
+        if (!gpu_address || gpu_address > UINT64_MAX - view->u.buf.offset) {
+            return false;
+        }
+        addresses[slot] = gpu_address + view->u.buf.offset;
+        if (@available(macOS 13.0, *)) {
+            [encoder useResource:resource->mtl_buffer
+                           usage:MTLResourceUsageRead
+                          stages:stage == MESA_SHADER_VERTEX
+                                     ? MTLRenderStageVertex
+                                     : MTLRenderStageFragment];
+        } else {
+            return false;
+        }
+        used = true;
+    }
+
+    if (!used) {
+        return true;
+    }
+    if (!mc->rgb32_address_tables[stage]) {
+        mc->rgb32_address_tables[stage] =
+            [g_mtl_device newBufferWithLength:sizeof(addresses)
+                                      options:MTLResourceStorageModeShared];
+    }
+    if (!mc->rgb32_address_tables[stage] ||
+        !mc->rgb32_address_tables[stage].contents) {
+        return false;
+    }
+    memcpy(mc->rgb32_address_tables[stage].contents, addresses,
+           sizeof(addresses));
+    if (stage == MESA_SHADER_VERTEX) {
+        [encoder setVertexBuffer:mc->rgb32_address_tables[stage]
+                          offset:0
+                         atIndex:AO46_BUFFER_SLOT_RGB32_ADDRESS_TABLE];
+    } else {
+        [encoder setFragmentBuffer:mc->rgb32_address_tables[stage]
+                            offset:0
+                           atIndex:AO46_BUFFER_SLOT_RGB32_ADDRESS_TABLE];
+    }
+    return true;
 }
 
 static id<MTLRenderPipelineState>
-ao46_metal_get_pipeline_state(struct ao46_metal_context *mc, enum mesa_prim mode)
+ao46_metal_get_pipeline_state(struct ao46_metal_context *mc,
+                              enum mesa_prim mode,
+                              bool supports_indirect_commands)
 {
+    id<MTLFunction> vertex_variant = nil;
+    id<MTLFunction> fragment_variant = nil;
     id<MTLFunction> fragment_function = nil;
+    bool vertex_requires_variant = false;
+    bool fragment_requires_variant = false;
+    uint64_t new_key = ao46_metal_compute_pipeline_key(
+        mc, mode, supports_indirect_commands);
+
+    if (mc->pipeline_state && mc->pipeline_key == new_key) {
+        return mc->pipeline_state;
+    }
+    if (!mc->vs_shader) {
+        return nil;
+    }
+
+    vertex_variant = ao46_metal_compile_rgb32_stage_variant(
+        mc, MESA_SHADER_VERTEX, mc->vs_shader, UINT32_MAX,
+        &vertex_requires_variant);
+    if (vertex_requires_variant && !vertex_variant) {
+        return nil;
+    }
     if (mc->fs_shader) {
-        fragment_function = ao46_metal_get_fragment_function(mc->fs_shader,
-                                                              mc->sample_mask);
+        fragment_variant = ao46_metal_compile_rgb32_stage_variant(
+            mc, MESA_SHADER_FRAGMENT, mc->fs_shader, mc->sample_mask,
+            &fragment_requires_variant);
+        if (fragment_requires_variant && !fragment_variant) {
+            [vertex_variant release];
+            return nil;
+        }
+        fragment_function = fragment_variant
+                                ? fragment_variant
+                                : ao46_metal_get_fragment_function(
+                                      mc->fs_shader, mc->sample_mask);
         if (!fragment_function) {
+            [vertex_variant release];
             return nil;
         }
     }
 
-    uint64_t new_key = ao46_metal_compute_pipeline_key(mc, mode);
-    if (mc->pipeline_state && mc->pipeline_key == new_key) {
-        return mc->pipeline_state;
-    }
-
     MTLRenderPipelineDescriptor *desc = [[MTLRenderPipelineDescriptor alloc] init];
-
-    if (mc->vs_shader) {
-        desc.vertexFunction = mc->vs_shader->function;
-    } else {
-        [desc release];
-        return nil;
-    }
+    desc.vertexFunction = vertex_variant ? vertex_variant
+                                         : mc->vs_shader->function;
 
     desc.fragmentFunction = fragment_function;
 
@@ -4014,9 +4710,12 @@ ao46_metal_get_pipeline_state(struct ao46_metal_context *mc, enum mesa_prim mode
     desc.alphaToCoverageEnabled = mc->blend ? mc->blend->base.alpha_to_coverage : NO;
     desc.alphaToOneEnabled = mc->blend ? mc->blend->base.alpha_to_one : NO;
     desc.rasterizationEnabled = mc->raster ? !mc->raster->base.rasterizer_discard : YES;
+    desc.supportIndirectCommandBuffers = supports_indirect_commands;
 
     NSError *error = nil;
     id<MTLRenderPipelineState> ps = [g_mtl_device newRenderPipelineStateWithDescriptor:desc error:&error];
+    [vertex_variant release];
+    [fragment_variant release];
     [vertex_descriptor release];
     [desc release];
     if (!ps) {
@@ -4033,8 +4732,73 @@ ao46_metal_get_pipeline_state(struct ao46_metal_context *mc, enum mesa_prim mode
 static void
 ao46_metal_memory_barrier(struct pipe_context *ctx, unsigned flags)
 {
-    (void)flags;
-    if (!ctx) {
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
+    MTLBarrierScope scope = 0;
+
+    if (!mc || flags == 0 || (flags & ~PIPE_BARRIER_ALL) != 0) {
+        return;
+    }
+
+    if (flags & (PIPE_BARRIER_MAPPED_BUFFER | PIPE_BARRIER_SHADER_BUFFER |
+                 PIPE_BARRIER_QUERY_BUFFER | PIPE_BARRIER_VERTEX_BUFFER |
+                 PIPE_BARRIER_INDEX_BUFFER | PIPE_BARRIER_CONSTANT_BUFFER |
+                 PIPE_BARRIER_INDIRECT_BUFFER |
+                 PIPE_BARRIER_STREAMOUT_BUFFER |
+                 PIPE_BARRIER_UPDATE_BUFFER)) {
+        scope |= MTLBarrierScopeBuffers;
+    }
+    if (flags & (PIPE_BARRIER_TEXTURE | PIPE_BARRIER_IMAGE |
+                 PIPE_BARRIER_UPDATE_TEXTURE)) {
+        scope |= MTLBarrierScopeTextures;
+    }
+    if (flags & PIPE_BARRIER_FRAMEBUFFER) {
+        scope |= MTLBarrierScopeRenderTargets;
+    }
+
+    if (scope != 0 && mc->compute_encoder &&
+        [mc->compute_encoder respondsToSelector:
+            @selector(memoryBarrierWithScope:)]) {
+        [mc->compute_encoder memoryBarrierWithScope:scope];
+        return;
+    }
+    if (scope != 0 && mc->render_encoder &&
+        [mc->render_encoder respondsToSelector:
+            @selector(memoryBarrierWithScope:afterStages:beforeStages:)]) {
+        [mc->render_encoder
+            memoryBarrierWithScope:scope
+                      afterStages:MTLRenderStageVertex | MTLRenderStageFragment
+                     beforeStages:MTLRenderStageVertex | MTLRenderStageFragment];
+        return;
+    }
+
+    ao46_metal_flush_for_resource_op(ctx);
+}
+
+static void
+ao46_metal_texture_barrier(struct pipe_context *ctx, unsigned flags)
+{
+    struct ao46_metal_context *mc = ao46_metal_context(ctx);
+    MTLBarrierScope scope = 0;
+
+    if (!mc || flags == 0 ||
+        (flags & ~(PIPE_TEXTURE_BARRIER_SAMPLER |
+                   PIPE_TEXTURE_BARRIER_FRAMEBUFFER)) != 0) {
+        return;
+    }
+    if (flags & PIPE_TEXTURE_BARRIER_SAMPLER) {
+        scope |= MTLBarrierScopeTextures;
+    }
+    if (flags & PIPE_TEXTURE_BARRIER_FRAMEBUFFER) {
+        scope |= MTLBarrierScopeRenderTargets;
+    }
+
+    if (scope != 0 && mc->render_encoder &&
+        [mc->render_encoder respondsToSelector:
+            @selector(memoryBarrierWithScope:afterStages:beforeStages:)]) {
+        [mc->render_encoder
+            memoryBarrierWithScope:scope
+                      afterStages:MTLRenderStageFragment
+                     beforeStages:MTLRenderStageVertex | MTLRenderStageFragment];
         return;
     }
 
@@ -4137,7 +4901,9 @@ ao46_metal_launch_grid(struct pipe_context *ctx,
     }
 
     [mc->compute_encoder setComputePipelineState:shader->compute_pipeline];
-    ao46_metal_bind_compute_resources(mc);
+    if (!ao46_metal_bind_compute_resources(mc)) {
+        return;
+    }
 
     threadgroup_size = MTLSizeMake(block_x, block_y, block_z);
     if (info->indirect) {
@@ -4467,6 +5233,1282 @@ ao46_metal_primitive_type(enum mesa_prim mode)
     }
 }
 
+struct ao46_metal_draw_indirect_arguments {
+    uint32_t vertex_count;
+    uint32_t instance_count;
+    uint32_t vertex_start;
+    uint32_t base_instance;
+};
+
+struct ao46_metal_draw_indexed_indirect_arguments {
+    uint32_t index_count;
+    uint32_t instance_count;
+    uint32_t index_start;
+    int32_t base_vertex;
+    uint32_t base_instance;
+};
+
+static void
+ao46_metal_bind_draw_parameters(id<MTLRenderCommandEncoder> encoder,
+                                uint32_t draw_id,
+                                uint32_t vertex_count,
+                                uint32_t first_vertex,
+                                uint32_t base_instance,
+                                int32_t base_vertex)
+{
+    const struct AO46MesaDrawParameters parameters = {
+        .draw_id = draw_id,
+        .vertex_count = vertex_count,
+        .first_vertex = first_vertex,
+        .base_instance = base_instance,
+        .base_vertex = base_vertex,
+    };
+
+    [encoder setVertexBytes:&parameters
+                     length:sizeof(parameters)
+                    atIndex:AO46_BUFFER_SLOT_DRAW_PARAMETERS];
+}
+
+static bool
+ao46_metal_bind_stream_output(struct ao46_metal_context *mc,
+                              id<MTLRenderCommandEncoder> encoder,
+                              uint32_t vertex_count,
+                              uint32_t instance_count)
+{
+    uint64_t addresses[PIPE_MAX_SO_BUFFERS] = {0};
+    uint8_t buffers_used = 0;
+
+    if (!mc || !encoder || !mc->vs_shader ||
+        mc->num_stream_output_targets == 0 ||
+        mc->vs_shader->stream_output.num_outputs == 0) {
+        return true;
+    }
+    if (@available(macOS 13.0, *)) {
+        for (unsigned i = 0; i < mc->vs_shader->stream_output.num_outputs; ++i) {
+            const struct pipe_stream_output *output =
+                &mc->vs_shader->stream_output.output[i];
+            struct ao46_metal_stream_output_target *target;
+            struct ao46_metal_resource *resource;
+            uint64_t required;
+
+            if (output->stream != 0 ||
+                output->output_buffer >= mc->num_stream_output_targets ||
+                output->output_buffer >= PIPE_MAX_SO_BUFFERS ||
+                !mc->stream_output_targets[output->output_buffer]) {
+                return false;
+            }
+            if (buffers_used & (UINT8_C(1) << output->output_buffer)) {
+                continue;
+            }
+            target = (struct ao46_metal_stream_output_target *)
+                mc->stream_output_targets[output->output_buffer];
+            resource = ao46_metal_resource(target->base.buffer);
+            required = (uint64_t)vertex_count * instance_count *
+                       mc->vs_shader->stream_output.stride[output->output_buffer] *
+                       sizeof(uint32_t);
+            if (!resource || !resource->mtl_buffer ||
+                resource->mtl_buffer.gpuAddress == 0 ||
+                target->write_offset > target->base.buffer_size ||
+                required > target->base.buffer_size - target->write_offset) {
+                return false;
+            }
+            addresses[output->output_buffer] =
+                resource->mtl_buffer.gpuAddress + target->base.buffer_offset +
+                target->write_offset;
+            target->vertex_stride =
+                mc->vs_shader->stream_output.stride[output->output_buffer] *
+                sizeof(uint32_t);
+            if (getenv("AO46_TRACE_RUNTIME")) {
+                fprintf(stderr,
+                        "[AO46Metal] stream-output buffer=%u gpu-va=0x%llx "
+                        "base=%u offset=%u bytes=%llu\n",
+                        output->output_buffer,
+                        (unsigned long long)addresses[output->output_buffer],
+                        target->base.buffer_offset, target->write_offset,
+                        (unsigned long long)required);
+            }
+            [encoder useResource:resource->mtl_buffer
+                           usage:MTLResourceUsageWrite
+                          stages:MTLRenderStageVertex];
+            buffers_used |= UINT8_C(1) << output->output_buffer;
+        }
+    } else {
+        return false;
+    }
+
+    /* Metal copies these bytes into this draw's command state. A shared table
+     * would let a later draw overwrite addresses before the GPU consumes it. */
+    [encoder setVertexBytes:addresses
+                     length:sizeof(addresses)
+                    atIndex:AO46_BUFFER_SLOT_STREAM_OUTPUT_DESCRIPTORS];
+    return true;
+}
+
+static void
+ao46_metal_record_primitives(struct ao46_metal_context *mc,
+                             enum mesa_prim mode, uint32_t vertex_count,
+                             uint32_t instance_count, bool stream_output)
+{
+    uint64_t primitive_count;
+
+    if (!mc || !mc->active_query_state || instance_count == 0) {
+        return;
+    }
+    primitive_count =
+        (uint64_t)u_decomposed_prims_for_vertices(mode, vertex_count) *
+        instance_count;
+    mc->so_stats[0].primitives_storage_needed += primitive_count;
+    if (stream_output) {
+        mc->so_stats[0].num_primitives_written += primitive_count;
+    }
+}
+
+static void
+ao46_metal_advance_stream_output(struct ao46_metal_context *mc,
+                                 uint32_t vertex_count,
+                                 uint32_t instance_count)
+{
+    uint8_t buffers_used = 0;
+
+    if (!mc || !mc->vs_shader || mc->num_stream_output_targets == 0) {
+        return;
+    }
+    for (unsigned i = 0; i < mc->vs_shader->stream_output.num_outputs; ++i) {
+        const struct pipe_stream_output *output =
+            &mc->vs_shader->stream_output.output[i];
+        struct ao46_metal_stream_output_target *target;
+        uint64_t written;
+
+        if (output->output_buffer >= mc->num_stream_output_targets ||
+            output->output_buffer >= PIPE_MAX_SO_BUFFERS ||
+            (buffers_used & (UINT8_C(1) << output->output_buffer))) {
+            continue;
+        }
+        target = (struct ao46_metal_stream_output_target *)
+            mc->stream_output_targets[output->output_buffer];
+        if (!target) {
+            continue;
+        }
+        written = (uint64_t)vertex_count * instance_count *
+                  mc->vs_shader->stream_output.stride[output->output_buffer] *
+                  sizeof(uint32_t);
+        target->write_offset += (unsigned)written;
+        mc->stream_output_offsets[output->output_buffer] = target->write_offset;
+        buffers_used |= UINT8_C(1) << output->output_buffer;
+    }
+}
+
+static bool
+ao46_mtl_gallium_buffer_for_adapter(
+    struct pipe_resource *resource, const struct AO46MetalAdapter *adapter,
+    struct AO46MetalBuffer *out_buffer)
+{
+    struct ao46_metal_resource *mr;
+    uint64_t gpu_address = 0;
+
+    if (!resource || !adapter || !out_buffer ||
+        resource->target != PIPE_BUFFER ||
+        !AO46MetalAdapterIsCurrent(adapter)) {
+        return false;
+    }
+
+    mr = ao46_metal_resource(resource);
+    if (!mr || !mr->mtl_buffer ||
+        mr->mtl_buffer.device != (__bridge id<MTLDevice>)adapter->device ||
+        !mr->mtl_buffer.contents || mr->mtl_buffer.length != resource->width0) {
+        return false;
+    }
+    if (@available(macOS 13.0, *)) {
+        gpu_address = mr->mtl_buffer.gpuAddress;
+    }
+
+    *out_buffer = (struct AO46MetalBuffer){
+        .adapter = adapter,
+        .native_buffer = (__bridge void *)mr->mtl_buffer,
+        .cpu_mapping = mr->mtl_buffer.contents,
+        .gpu_address = gpu_address,
+        .length = mr->mtl_buffer.length,
+    };
+    return AO46MetalBufferIsCurrent(out_buffer);
+}
+
+static bool
+ao46_mtl_gallium_range(const struct pipe_resource *resource,
+                       size_t offset, size_t size)
+{
+    return resource && resource->target == PIPE_BUFFER && size > 0 &&
+           offset <= resource->width0 && size <= resource->width0 - offset;
+}
+
+static bool
+ao46_mtl_gallium_wait_submission(struct AO46MetalSubmission *submission)
+{
+    bool completed;
+
+    if (!submission || !submission->native_command_buffer) {
+        return false;
+    }
+    completed = AO46MetalSubmissionWait(submission);
+    AO46MetalSubmissionDestroy(submission);
+    return completed;
+}
+
+static bool
+ao46_mtl_gallium_queue_compute(
+    const struct AO46MetalComputePipeline *pipeline,
+    const struct AO46MetalBufferBinding *bindings, size_t binding_count,
+    uint32_t grid_width, uint32_t grid_height, uint32_t grid_depth,
+    uint32_t group_width, uint32_t group_height, uint32_t group_depth,
+    struct AO46MetalSubmission *submission)
+{
+    return pipeline && AO46MetalComputeSubmitClassic(
+               pipeline->adapter, pipeline, bindings, binding_count,
+               grid_width, grid_height, grid_depth, group_width, group_height,
+               group_depth, submission);
+}
+
+static void
+ao46_mtl_gallium_retire_submissions(
+    struct AO46MetalSubmission *submissions, size_t submission_count,
+    bool wait_for_last)
+{
+    if (!submissions) {
+        return;
+    }
+    if (wait_for_last && submission_count != 0) {
+        (void)AO46MetalSubmissionWait(&submissions[submission_count - 1]);
+    }
+    for (size_t i = 0; i < submission_count; ++i) {
+        AO46MetalSubmissionDestroy(&submissions[i]);
+    }
+}
+
+static bool
+ao46_mtl_gallium_poly_topology(
+    const struct AO46MesaPolyTessellationPlan *plan,
+    enum AO46MesaPolyKernel *out_kernel,
+    enum AO46MetalPrimitive *out_primitive,
+    uint32_t *out_minimum_indices)
+{
+    if (!plan || !out_kernel || !out_primitive || !out_minimum_indices) {
+        return false;
+    }
+
+    switch (plan->domain) {
+        case AO46_MESA_POLY_TESSELLATION_TRIANGLES:
+            *out_kernel = AO46_MESA_POLY_KERNEL_TRIANGLE;
+            break;
+        case AO46_MESA_POLY_TESSELLATION_QUADS:
+            *out_kernel = AO46_MESA_POLY_KERNEL_QUAD;
+            break;
+        case AO46_MESA_POLY_TESSELLATION_ISOLINES:
+            *out_kernel = AO46_MESA_POLY_KERNEL_ISOLINE;
+            break;
+        default:
+            return false;
+    }
+
+    switch (plan->output_primitive) {
+        case AO46_MESA_POLY_TESSELLATION_OUTPUT_TRIANGLES:
+            *out_primitive = AO46_METAL_PRIMITIVE_TRIANGLES;
+            *out_minimum_indices = 3;
+            return true;
+        case AO46_MESA_POLY_TESSELLATION_OUTPUT_LINES:
+            *out_primitive = AO46_METAL_PRIMITIVE_LINES;
+            *out_minimum_indices = 2;
+            return true;
+        case AO46_MESA_POLY_TESSELLATION_OUTPUT_POINTS:
+            *out_primitive = AO46_METAL_PRIMITIVE_POINTS;
+            *out_minimum_indices = 1;
+            return true;
+        default:
+            return false;
+    }
+}
+
+struct ao46_metal_poly_pending {
+    struct AO46MetalSubmission compute[5];
+    size_t compute_count;
+    struct AO46MetalSubmission render;
+    bool render_submitted;
+};
+
+static bool ao46_mtl_gallium_queue_poly_tessellation(
+    struct ao46_metal_context *mc, const struct pipe_draw_info *info,
+    const struct pipe_draw_start_count_bias *draw,
+    struct ao46_metal_poly_pending *pending);
+
+static bool
+ao46_mtl_gallium_finish_poly_pending(
+    struct ao46_metal_poly_pending *pending)
+{
+    bool completed = false;
+
+    if (!pending) {
+        return false;
+    }
+    if (pending->render_submitted) {
+        completed = ao46_mtl_gallium_wait_submission(&pending->render);
+    }
+    ao46_mtl_gallium_retire_submissions(
+        pending->compute, pending->compute_count, !pending->render_submitted);
+    *pending = (struct ao46_metal_poly_pending){0};
+    return completed;
+}
+
+static bool
+ao46_mtl_gallium_dispatch_poly_tessellation(
+    struct ao46_metal_context *mc, const struct pipe_draw_info *info,
+    const struct pipe_draw_start_count_bias *draws, unsigned num_draws);
+
+static bool
+ao46_mtl_gallium_poly_reserve(size_t *cursor, size_t alignment,
+                              size_t bytes, size_t *out_offset)
+{
+    size_t aligned;
+
+    if (!cursor || !out_offset || alignment == 0 ||
+        (alignment & (alignment - 1)) != 0 ||
+        *cursor > SIZE_MAX - (alignment - 1)) {
+        return false;
+    }
+    aligned = (*cursor + alignment - 1) & ~(alignment - 1);
+    if (bytes > SIZE_MAX - aligned) {
+        return false;
+    }
+    *out_offset = aligned;
+    *cursor = aligned + bytes;
+    return true;
+}
+
+static bool
+ao46_mtl_gallium_poly_layout(
+    const struct AO46MesaPolyTessellationPlan *plan,
+    uint32_t input_vertex_count, uint32_t instance_count,
+    uint64_t vertex_outputs,
+    struct ao46_metal_poly_package_layout *layout)
+{
+    const size_t root_bytes = sizeof(uint64_t) + sizeof(uint32_t);
+    const size_t heap_bytes_per_patch = 160u * 1024u;
+    uint64_t vertex_output_bytes;
+    size_t per_patch_words;
+    size_t cursor = 0;
+
+    if (!plan || !layout || plan->nr_patches == 0 ||
+        input_vertex_count == 0 || instance_count == 0 ||
+        input_vertex_count > UINT32_MAX / instance_count ||
+        vertex_outputs == 0 ||
+        plan->tcs_buffer_bytes == 0 ||
+        plan->nr_patches > SIZE_MAX / heap_bytes_per_patch) {
+        return false;
+    }
+    vertex_output_bytes = (uint64_t)input_vertex_count * instance_count *
+                          util_bitcount64(vertex_outputs) * 16;
+    if (vertex_output_bytes == 0 || vertex_output_bytes > UINT32_MAX) {
+        return false;
+    }
+    per_patch_words = (size_t)plan->nr_patches * sizeof(uint32_t);
+    *layout = (struct ao46_metal_poly_package_layout){0};
+    layout->vertex_outputs_bytes = (size_t)vertex_output_bytes;
+    layout->vertex_input_root_size = AO46MesaVertexInputRootSize();
+    layout->heap_data_bytes =
+        (size_t)plan->nr_patches * heap_bytes_per_patch;
+    if (layout->heap_data_bytes > UINT32_MAX ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 128, root_bytes,
+                                       &layout->root_offset) ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 128, root_bytes,
+                                       &layout->count_root_offset) ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 256, 16,
+                                       &layout->sampler_table_offset) ||
+        !ao46_mtl_gallium_poly_reserve(
+            &cursor, 256, sizeof(struct poly_vertex_params),
+            &layout->vertex_parameters_offset) ||
+        !ao46_mtl_gallium_poly_reserve(
+            &cursor, 256, layout->vertex_input_root_size,
+            &layout->vertex_input_root_offset) ||
+        !ao46_mtl_gallium_poly_reserve(
+            &cursor, 256, layout->vertex_outputs_bytes,
+            &layout->vertex_outputs_offset) ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 256,
+                                       sizeof(struct poly_tess_params),
+                                       &layout->parameters_offset) ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 256,
+                                       sizeof(struct poly_heap),
+                                       &layout->heap_offset) ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 256,
+                                       layout->heap_data_bytes,
+                                       &layout->heap_data_offset) ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 256, per_patch_words,
+                                       &layout->counts_offset) ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 256,
+                                       5 * sizeof(uint32_t),
+                                       &layout->draws_offset) ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 256,
+                                       plan->tcs_buffer_bytes,
+                                       &layout->factors_offset) ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 256, per_patch_words,
+                                       &layout->coord_allocs_offset) ||
+        !ao46_mtl_gallium_poly_reserve(&cursor, 256, 0,
+                                       &layout->package_bytes) ||
+        layout->package_bytes > UINT32_MAX) {
+        return false;
+    }
+    return true;
+}
+
+static enum poly_tess_partitioning
+ao46_mtl_gallium_poly_partitioning(const struct nir_shader *tcs,
+                                   const struct nir_shader *tes)
+{
+    enum gl_tess_spacing spacing = MAX2(tcs->info.tess.spacing,
+                                        tes->info.tess.spacing);
+
+    switch (spacing) {
+        case TESS_SPACING_FRACTIONAL_ODD:
+            return POLY_TESS_PARTITIONING_FRACTIONAL_ODD;
+        case TESS_SPACING_FRACTIONAL_EVEN:
+            return POLY_TESS_PARTITIONING_FRACTIONAL_EVEN;
+        case TESS_SPACING_UNSPECIFIED:
+        case TESS_SPACING_EQUAL:
+        default:
+            return POLY_TESS_PARTITIONING_INTEGER;
+    }
+}
+
+static void
+ao46_mtl_gallium_poly_runtime_destroy(
+    struct ao46_metal_poly_runtime *runtime)
+{
+    if (!runtime) {
+        return;
+    }
+    pipe_resource_reference(&runtime->package, NULL);
+    AO46MesaPolyKernelExecutorDestroy(&runtime->kernel_executor);
+    AO46MesaRenderPipelineDestroy(&runtime->render_pipeline);
+    AO46MesaComputePipelineDestroy(&runtime->tcs_pipeline);
+    AO46MesaComputePipelineDestroy(&runtime->vs_pipeline);
+    *runtime = (struct ao46_metal_poly_runtime){0};
+}
+
+static bool
+ao46_mtl_gallium_poly_runtime_create(
+    struct ao46_metal_context *mc, const struct pipe_draw_info *info,
+    const struct pipe_draw_start_count_bias *draw,
+    struct ao46_metal_poly_runtime *runtime)
+{
+    const unsigned parameter_binding = 3;
+    const unsigned vertex_parameter_binding = 2;
+    const unsigned vertex_input_root_binding = 4;
+    const size_t root_bytes = sizeof(uint64_t) + sizeof(uint32_t);
+    const struct nir_shader *vs;
+    const struct nir_shader *tcs;
+    const struct nir_shader *tes;
+    struct nir_shader *lowered_vs = NULL;
+    struct nir_shader *lowered_tcs = NULL;
+    struct nir_shader *lowered_tes = NULL;
+    struct nir_shader *fragment = NULL;
+    struct ao46_metal_poly_package_layout layout;
+    struct pipe_resource package_template = {
+        .target = PIPE_BUFFER,
+        .format = PIPE_FORMAT_R8_UNORM,
+        .height0 = 1,
+        .depth0 = 1,
+        .array_size = 1,
+        .usage = PIPE_USAGE_DEFAULT,
+        .bind = PIPE_BIND_VERTEX_BUFFER | PIPE_BIND_INDEX_BUFFER,
+    };
+    const struct AO46MesaStaticBufferRequirement parameter_requirement = {
+        .binding = parameter_binding,
+        .minimum_size = sizeof(struct poly_tess_params),
+    };
+    struct poly_vertex_params *vertex_parameters;
+    struct poly_tess_params *parameters;
+    struct poly_heap *heap;
+    struct AO46MesaVertexBufferRange vertex_buffers[PIPE_MAX_ATTRIBS] = {0};
+    void *mapping = NULL;
+    size_t mapping_length = 0;
+    uint64_t package_address = 0;
+    uint64_t parameter_address;
+    uint32_t count_mode = POLY_TESS_MODE_COUNT;
+    uint32_t emit_mode = POLY_TESS_MODE_WITH_COUNTS;
+    uint32_t vertex_buffer_mask = 0;
+    enum AO46MetalTextureFormat color_format;
+    bool created = false;
+    const char *stage = "input validation";
+
+    if (!mc || !info || !draw || !runtime || mc->poly_render_pipeline ||
+        mc->poly_tess_draw.parameter_resource ||
+        mc->poly_tess_sequence.tcs_pipeline || !mc->vs_shader ||
+        !mc->tcs_shader || !mc->tes_shader || !mc->fs_shader ||
+        !mc->tess_state_set ||
+        mc->patch_vertices == 0 || draw->count == 0 ||
+        info->instance_count == 0 ||
+        info->index_size != 0 || info->primitive_restart ||
+        draw->index_bias != 0 ||
+        mc->fb_state.nr_cbufs != 1 || !mc->fb_state.cbufs[0].texture) {
+        if (getenv("AO46_TRACE_RUNTIME")) {
+            fprintf(stderr,
+                    "[AO46Metal] automatic poly admission rejected: "
+                    "ctx=%d shaders=%d%d%d%d tess=%d patch=%u count=%u "
+                    "instances=%u first-instance=%u index=%u restart=%d "
+                    "start=%u bias=%d cbufs=%u texture=%p\n",
+                    mc != NULL,
+                    mc && mc->vs_shader != NULL,
+                    mc && mc->tcs_shader != NULL,
+                    mc && mc->tes_shader != NULL,
+                    mc && mc->fs_shader != NULL,
+                    mc && mc->tess_state_set,
+                    mc ? mc->patch_vertices : 0,
+                    draw ? draw->count : 0,
+                    info ? info->instance_count : 0,
+                    info ? info->start_instance : 0,
+                    info ? info->index_size : 0,
+                    info && info->primitive_restart,
+                    draw ? draw->start : 0,
+                    draw ? draw->index_bias : 0,
+                    mc ? mc->fb_state.nr_cbufs : 0,
+                    mc && mc->fb_state.nr_cbufs
+                        ? (void *)mc->fb_state.cbufs[0].texture
+                        : NULL);
+        }
+        return false;
+    }
+    vs = mc->vs_shader->nir;
+    tcs = mc->tcs_shader->nir;
+    tes = mc->tes_shader->nir;
+    if (!vs || !tcs || !tes || !mc->fs_shader->nir ||
+        draw->count % mc->patch_vertices != 0) {
+        return false;
+    }
+    switch (mc->fb_state.cbufs[0].format) {
+        case PIPE_FORMAT_R8G8B8A8_UNORM:
+            color_format = AO46_METAL_TEXTURE_FORMAT_RGBA8_UNORM;
+            break;
+        case PIPE_FORMAT_B8G8R8A8_UNORM:
+            color_format = AO46_METAL_TEXTURE_FORMAT_BGRA8_UNORM;
+            break;
+        default:
+            return false;
+    }
+
+    *runtime = (struct ao46_metal_poly_runtime){0};
+    stage = "poly plan and package layout";
+    if (!AO46MesaPolyTessellationPlanCreate(
+            tcs, mc->patch_vertices, draw->count, info->instance_count,
+            parameter_binding, &runtime->plan) ||
+        !AO46MesaPolyTessellationPlanFinalize(&runtime->plan, tes) ||
+        !ao46_mtl_gallium_poly_layout(
+            &runtime->plan, draw->count, info->instance_count,
+            vs->info.outputs_written, &layout)) {
+        goto out;
+    }
+
+    lowered_vs = nir_shader_clone(NULL, vs);
+    lowered_tcs = nir_shader_clone(NULL, tcs);
+    lowered_tes = nir_shader_clone(NULL, tes);
+    fragment = nir_shader_clone(NULL, mc->fs_shader->nir);
+    stage = "Mesa poly shader clones";
+    if (!lowered_vs || !lowered_tcs || !lowered_tes || !fragment) {
+        goto out;
+    }
+    stage = "Mesa VS/TCS/TES poly lowering";
+    if ((vs->info.inputs_read != 0 &&
+         (!mc->vertex_elements_state ||
+          !AO46MesaNIRLowerVertexInputs(
+              lowered_vs, mc->vertex_elements_state->elements,
+              mc->vertex_elements_state->num_elements,
+              vertex_input_root_binding))) ||
+        !AO46MesaPolyVertexTessellationLower(
+            lowered_vs, lowered_tcs, lowered_tes,
+            vertex_parameter_binding, parameter_binding,
+            vs->info.outputs_written, (int32_t)draw->start,
+            info->start_instance, info->index_size)) {
+        goto out;
+    }
+    stage = "Mesa poly VS compute pipeline";
+    if (!AO46MesaComputePipelineCreateWithStaticBuffers(
+            &g_mtl_adapter, lowered_vs,
+            (UINT16_C(1) << vertex_parameter_binding) |
+                (vs->info.inputs_read
+                     ? UINT16_C(1) << vertex_input_root_binding
+                     : 0),
+            &runtime->vs_pipeline)) {
+        goto out;
+    }
+    stage = "Mesa poly TCS compute pipeline";
+    if (!AO46MesaComputePipelineCreateWithStaticBuffers(
+            &g_mtl_adapter, lowered_tcs,
+            (UINT16_C(1) << vertex_parameter_binding) |
+                (UINT16_C(1) << parameter_binding),
+            &runtime->tcs_pipeline)) {
+        goto out;
+    }
+    stage = "Mesa poly TES render pipeline";
+    if (!AO46MesaRenderPipelineCreateWithStageStaticBufferRequirements(
+            &g_mtl_adapter, lowered_tes, fragment, color_format, NULL, 0,
+            UINT16_C(1) << parameter_binding, &parameter_requirement, 1, 0,
+            NULL, 0, &runtime->render_pipeline)) {
+        goto out;
+    }
+    stage = "Mesa poly kernel executor";
+    if (!AO46MesaPolyKernelExecutorCreate(&g_mtl_adapter,
+                                          &runtime->kernel_executor)) {
+        goto out;
+    }
+
+    package_template.width0 = layout.package_bytes;
+    stage = "transient package allocation";
+    runtime->package =
+        mc->base.screen->resource_create(mc->base.screen, &package_template);
+    if (!runtime->package ||
+        !AO46MTLGalliumResourceGetCPUMapping(runtime->package, &mapping,
+                                             &mapping_length) ||
+        mapping_length < layout.package_bytes ||
+        !AO46MTLGalliumResourceGetGPUAddress(runtime->package,
+                                             &package_address)) {
+        goto out;
+    }
+
+    memset(mapping, 0, layout.package_bytes);
+    stage = "transient package construction";
+    if (vs->info.inputs_read) {
+        for (unsigned i = 0;
+             i < mc->vertex_elements_state->num_elements; ++i) {
+            const struct pipe_vertex_element *element =
+                &mc->vertex_elements_state->elements[i];
+            const unsigned index = element->vertex_buffer_index;
+            const struct pipe_vertex_buffer *binding;
+            struct pipe_resource *resource;
+
+            if (!(vs->info.inputs_read &
+                  BITFIELD64_BIT(VERT_ATTRIB_GENERIC0 + i))) {
+                continue;
+            }
+            if (index >= mc->num_vertex_buffers ||
+                index >= PIPE_MAX_ATTRIBS) {
+                goto out;
+            }
+            binding = &mc->vertex_buffers[index];
+            resource = binding->buffer.resource;
+            if (binding->is_user_buffer || !resource ||
+                resource->target != PIPE_BUFFER ||
+                binding->buffer_offset > resource->width0 ||
+                !AO46MTLGalliumResourceGetGPUAddress(
+                    resource, &vertex_buffers[index].gpu_address)) {
+                goto out;
+            }
+            vertex_buffers[index] = (struct AO46MesaVertexBufferRange){
+                .gpu_address = vertex_buffers[index].gpu_address,
+                .offset = binding->buffer_offset,
+                .size = resource->width0,
+                .valid = true,
+            };
+            vertex_buffer_mask |= UINT32_C(1) << index;
+        }
+        if (!AO46MesaVertexInputRootBuild(
+                (uint8_t *)mapping + layout.vertex_input_root_offset,
+                layout.vertex_input_root_size, package_address,
+                vs->info.inputs_read,
+                mc->vertex_elements_state->elements,
+                mc->vertex_elements_state->num_elements, vertex_buffers,
+                mc->num_vertex_buffers)) {
+            goto out;
+        }
+    }
+    parameter_address = package_address + layout.parameters_offset;
+    memcpy((uint8_t *)mapping + layout.root_offset, &parameter_address,
+           sizeof(parameter_address));
+    memcpy((uint8_t *)mapping + layout.root_offset + sizeof(uint64_t),
+           &emit_mode, sizeof(emit_mode));
+    memcpy((uint8_t *)mapping + layout.count_root_offset, &parameter_address,
+           sizeof(parameter_address));
+    memcpy((uint8_t *)mapping + layout.count_root_offset + sizeof(uint64_t),
+           &count_mode, sizeof(count_mode));
+
+    heap = (struct poly_heap *)((uint8_t *)mapping + layout.heap_offset);
+    *heap = (struct poly_heap){
+        .base = package_address + layout.heap_data_offset,
+        .bottom = 0,
+        .size = (uint32_t)layout.heap_data_bytes,
+    };
+    vertex_parameters = (struct poly_vertex_params *)(
+        (uint8_t *)mapping + layout.vertex_parameters_offset);
+    {
+        const uint32_t workgroup_size[3] = {64, 1, 1};
+        poly_vertex_params_init(vertex_parameters, vs->info.outputs_written,
+                                workgroup_size);
+    }
+    poly_vertex_params_set_draw(vertex_parameters, draw->count,
+                                info->instance_count);
+    vertex_parameters->output_buffer =
+        package_address + layout.vertex_outputs_offset;
+    parameters = (struct poly_tess_params *)((uint8_t *)mapping +
+                                             layout.parameters_offset);
+    *parameters = (struct poly_tess_params){
+        .heap = package_address + layout.heap_offset,
+        .patch_coord_buffer = package_address + layout.heap_data_offset,
+        .coord_allocs = package_address + layout.coord_allocs_offset,
+        .out_draws = package_address + layout.draws_offset,
+        .tcs_buffer = package_address + layout.factors_offset,
+        .counts = package_address + layout.counts_offset,
+        .index_buffer = package_address + layout.heap_data_offset,
+        .statistic = 0,
+        .tcs_per_vertex_outputs = poly_tcs_per_vertex_outputs(tcs),
+        .input_patch_size = runtime->plan.input_patch_size,
+        .output_patch_size = runtime->plan.output_patch_size,
+        .tcs_patch_constants = util_last_bit(tcs->info.patch_outputs_written),
+        .patches_per_instance = runtime->plan.patches_per_instance,
+        .tcs_stride_el = runtime->plan.tcs_stride_bytes / sizeof(float),
+        .nr_patches = runtime->plan.nr_patches,
+        .partitioning = ao46_mtl_gallium_poly_partitioning(tcs, tes),
+        .points_mode = runtime->plan.point_mode,
+        .isolines = runtime->plan.domain ==
+                    AO46_MESA_POLY_TESSELLATION_ISOLINES,
+        .ccw = !tes->info.tess.ccw,
+    };
+    memcpy(parameters->tess_level_outer_default, mc->tess_outer_level,
+           sizeof(parameters->tess_level_outer_default));
+    memcpy(parameters->tess_level_inner_default, mc->tess_inner_level,
+           sizeof(parameters->tess_level_inner_default));
+
+    runtime->draw = (struct AO46MetalGalliumPolyTessellationDraw){
+        .parameter_resource = runtime->package,
+        .parameter_offset = layout.parameters_offset,
+        .parameter_size = sizeof(struct poly_tess_params),
+        .index_resource = runtime->package,
+        .index_offset = layout.heap_data_offset,
+        .index_size = layout.heap_data_bytes,
+        .indirect_resource = runtime->package,
+        .indirect_offset = layout.draws_offset,
+        .indirect_size = 5 * sizeof(uint32_t),
+        .maximum_index_count = layout.heap_data_bytes / sizeof(uint32_t),
+        .input_patch_size = runtime->plan.input_patch_size,
+        .input_vertex_count = draw->count,
+    };
+    runtime->sequence = (struct AO46MetalGalliumPolyTessellationSequence){
+        .vs_pipeline = &runtime->vs_pipeline,
+        .tcs_pipeline = &runtime->tcs_pipeline,
+        .kernel_executor = &runtime->kernel_executor,
+        .plan = &runtime->plan,
+        .count_root_offset = layout.count_root_offset,
+        .root_offset = layout.root_offset,
+        .root_size = root_bytes,
+        .sampler_table_offset = layout.sampler_table_offset,
+        .sampler_table_size = 16,
+        .vertex_parameter_offset = layout.vertex_parameters_offset,
+        .vertex_parameter_size = sizeof(struct poly_vertex_params),
+        .vertex_input_root_offset = layout.vertex_input_root_offset,
+        .vertex_input_root_size = vs->info.inputs_read
+                                      ? layout.vertex_input_root_size
+                                      : 0,
+        .vertex_buffer_mask = vertex_buffer_mask,
+    };
+    created = true;
+
+out:
+    ralloc_free(fragment);
+    ralloc_free(lowered_tes);
+    ralloc_free(lowered_tcs);
+    ralloc_free(lowered_vs);
+    if (!created) {
+        if (getenv("AO46_TRACE_RUNTIME")) {
+            fprintf(stderr, "[AO46Metal] automatic poly setup stopped at %s\n",
+                    stage);
+        }
+        ao46_mtl_gallium_poly_runtime_destroy(runtime);
+    }
+    return created;
+}
+
+static bool
+ao46_mtl_gallium_dispatch_state_tracker_poly(
+    struct ao46_metal_context *mc, const struct pipe_draw_info *info,
+    const struct pipe_draw_start_count_bias *draws, unsigned num_draws)
+{
+    struct ao46_metal_poly_runtime *runtimes = NULL;
+    struct ao46_metal_poly_pending *pending = NULL;
+    unsigned queued = 0;
+    bool completed = false;
+
+    if (!mc || !draws || num_draws == 0 ||
+        num_draws > AO46_METAL_MAX_INDIRECT_DRAWS) {
+        return false;
+    }
+    runtimes = calloc(num_draws, sizeof(*runtimes));
+    pending = calloc(num_draws, sizeof(*pending));
+    if (!runtimes || !pending) {
+        goto out;
+    }
+
+    for (; queued < num_draws; ++queued) {
+        if (!ao46_mtl_gallium_poly_runtime_create(
+                mc, info, &draws[queued], &runtimes[queued])) {
+            goto out;
+        }
+        mc->poly_render_pipeline =
+            &runtimes[queued].render_pipeline.metal_pipeline;
+        mc->poly_tess_draw = runtimes[queued].draw;
+        mc->poly_tess_sequence = runtimes[queued].sequence;
+        if (!ao46_mtl_gallium_queue_poly_tessellation(
+                mc, info, &draws[queued], &pending[queued])) {
+            ++queued;
+            goto out;
+        }
+        mc->poly_render_pipeline = NULL;
+        mc->poly_tess_draw =
+            (struct AO46MetalGalliumPolyTessellationDraw){0};
+        mc->poly_tess_sequence =
+            (struct AO46MetalGalliumPolyTessellationSequence){0};
+    }
+    completed = true;
+
+out:
+    mc->poly_render_pipeline = NULL;
+    mc->poly_tess_draw = (struct AO46MetalGalliumPolyTessellationDraw){0};
+    mc->poly_tess_sequence =
+        (struct AO46MetalGalliumPolyTessellationSequence){0};
+    for (unsigned i = 0; i < queued; ++i) {
+        completed = ao46_mtl_gallium_finish_poly_pending(&pending[i]) &&
+                    completed;
+        ao46_mtl_gallium_poly_runtime_destroy(&runtimes[i]);
+    }
+    free(pending);
+    free(runtimes);
+    return completed;
+}
+
+static bool
+ao46_mtl_gallium_dispatch_state_tracker_poly_indirect(
+    struct ao46_metal_context *mc, const struct pipe_draw_info *info,
+    const struct pipe_draw_indirect_info *indirect)
+{
+    const size_t argument_size = 4 * sizeof(uint32_t);
+    struct ao46_metal_resource *arguments;
+    struct ao46_metal_resource *count_resource = NULL;
+    const uint8_t *argument_bytes;
+    unsigned draw_count;
+    size_t stride;
+
+    if (!mc || !info || !indirect || info->index_size != 0 ||
+        info->primitive_restart || !indirect->buffer ||
+        indirect->buffer->target != PIPE_BUFFER || indirect->draw_count == 0 ||
+        indirect->draw_count > AO46_METAL_MAX_INDIRECT_DRAWS ||
+        indirect->offset % sizeof(uint32_t) != 0) {
+        return false;
+    }
+    stride = indirect->stride ? indirect->stride : argument_size;
+    if (stride < argument_size || stride % sizeof(uint32_t) != 0 ||
+        indirect->draw_count - 1 >
+            (SIZE_MAX - argument_size) / stride) {
+        return false;
+    }
+    arguments = ao46_metal_resource(indirect->buffer);
+    if (!arguments || !arguments->mtl_buffer ||
+        !arguments->mtl_buffer.contents ||
+        indirect->offset > indirect->buffer->width0 ||
+        (size_t)(indirect->draw_count - 1) * stride + argument_size >
+            indirect->buffer->width0 - indirect->offset) {
+        return false;
+    }
+
+    /* Indirect parameters may have been produced by an earlier Gallium GPU
+     * command. Finish that producer before reading unified-memory records. */
+    ao46_metal_context_flush(&mc->base, NULL, PIPE_FLUSH_HINT_FINISH);
+    draw_count = indirect->draw_count;
+    if (indirect->indirect_draw_count) {
+        if (indirect->indirect_draw_count->target != PIPE_BUFFER ||
+            indirect->indirect_draw_count_offset % sizeof(uint32_t) != 0 ||
+            indirect->indirect_draw_count_offset >
+                indirect->indirect_draw_count->width0 ||
+            sizeof(uint32_t) >
+                indirect->indirect_draw_count->width0 -
+                    indirect->indirect_draw_count_offset) {
+            return false;
+        }
+        count_resource =
+            ao46_metal_resource(indirect->indirect_draw_count);
+        if (!count_resource || !count_resource->mtl_buffer ||
+            !count_resource->mtl_buffer.contents) {
+            return false;
+        }
+        memcpy(&draw_count,
+               (const uint8_t *)count_resource->mtl_buffer.contents +
+                   indirect->indirect_draw_count_offset,
+               sizeof(draw_count));
+        draw_count = MIN2(draw_count, indirect->draw_count);
+    }
+
+    argument_bytes =
+        (const uint8_t *)arguments->mtl_buffer.contents + indirect->offset;
+    for (unsigned i = 0; i < draw_count; ++i) {
+        uint32_t command[4];
+        struct pipe_draw_info resolved_info = *info;
+        struct pipe_draw_start_count_bias resolved_draw = {0};
+
+        memcpy(command, argument_bytes + (size_t)i * stride, sizeof(command));
+        if (command[0] == 0 || command[1] == 0) {
+            continue;
+        }
+        resolved_info.instance_count = command[1];
+        resolved_info.start_instance = command[3];
+        resolved_draw.start = command[2];
+        resolved_draw.count = command[0];
+        if (!ao46_mtl_gallium_dispatch_state_tracker_poly(
+                mc, &resolved_info, &resolved_draw, 1)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool
+ao46_mtl_gallium_queue_poly_tessellation(
+    struct ao46_metal_context *mc, const struct pipe_draw_info *info,
+    const struct pipe_draw_start_count_bias *draws,
+    struct ao46_metal_poly_pending *pending)
+{
+    const struct AO46MetalGalliumPolyTessellationDraw *draw;
+    const struct AO46MetalGalliumPolyTessellationSequence *sequence;
+    const struct AO46MetalAdapter *adapter;
+    const struct AO46MesaPolyKernelSource *prefix_source;
+    struct AO46MetalBuffer package;
+    struct AO46MetalBufferBinding vs_bindings[4 + PIPE_MAX_ATTRIBS];
+    struct AO46MetalBuffer vertex_buffer_metal[PIPE_MAX_ATTRIBS] = {0};
+    struct AO46MetalBufferBinding tcs_bindings[4];
+    struct AO46MetalBufferBinding kernel_bindings[2];
+    struct AO46MetalBufferBinding vertex_static_binding;
+    struct AO46MetalIndexBufferBinding index_binding;
+    struct AO46MetalIndirectDrawBinding indirect_binding;
+    struct AO46MetalTexture color_target;
+    struct ao46_metal_resource *color_resource;
+    enum AO46MesaPolyKernel tessellation_kernel;
+    enum AO46MetalPrimitive output_primitive;
+    uint32_t minimum_indices;
+    size_t vs_binding_count = 0;
+
+    if (!mc || !info || !draws || !pending || pending->compute_count != 0 ||
+        pending->render_submitted ||
+        info->mode != MESA_PRIM_PATCHES || info->index_size != 0 ||
+        info->instance_count == 0 || info->primitive_restart ||
+        draws[0].index_bias != 0 || draws[0].count == 0 ||
+        !mc->tcs_shader || !mc->tes_shader || !mc->tess_state_set ||
+        !mc->poly_render_pipeline || mc->fb_state.nr_cbufs != 1 ||
+        !mc->fb_state.cbufs[0].texture) {
+        return false;
+    }
+
+    draw = &mc->poly_tess_draw;
+    sequence = &mc->poly_tess_sequence;
+    if (!draw->parameter_resource || !draw->index_resource ||
+        !draw->indirect_resource || !sequence->tcs_pipeline ||
+        !sequence->kernel_executor || !sequence->plan ||
+        !sequence->tcs_pipeline->metal_pipeline.native_pipeline ||
+        !mc->poly_render_pipeline->native_pipeline ||
+        mc->patch_vertices != draw->input_patch_size ||
+        draws[0].count != draw->input_vertex_count ||
+        draw->input_vertex_count % draw->input_patch_size != 0 ||
+        sequence->plan->parameter_buffer_binding != 3 ||
+        sequence->plan->parameter_bytes > draw->parameter_size ||
+        sequence->plan->input_patch_size != draw->input_patch_size ||
+        sequence->plan->nr_patches !=
+            (draw->input_vertex_count / draw->input_patch_size) *
+                info->instance_count ||
+        !sequence->plan->requires_prefix_sum ||
+        !sequence->plan->requires_dynamic_index_heap ||
+        !AO46MesaPolyTessellationPlanMatchesTCS(sequence->plan,
+                                                mc->tcs_shader->nir) ||
+        !AO46MesaPolyTessellationPlanMatchesTES(sequence->plan,
+                                                mc->tes_shader->nir) ||
+        !ao46_mtl_gallium_poly_topology(sequence->plan, &tessellation_kernel,
+                                        &output_primitive, &minimum_indices) ||
+        draw->maximum_index_count < minimum_indices ||
+        !ao46_mtl_gallium_range(draw->parameter_resource,
+                                draw->parameter_offset, draw->parameter_size) ||
+        !ao46_mtl_gallium_range(draw->parameter_resource,
+                                sequence->count_root_offset,
+                                sequence->root_size) ||
+        !ao46_mtl_gallium_range(draw->parameter_resource,
+                                sequence->root_offset, sequence->root_size) ||
+        !ao46_mtl_gallium_range(draw->parameter_resource,
+                                sequence->sampler_table_offset,
+                                sequence->sampler_table_size) ||
+        (sequence->vs_pipeline &&
+         (!sequence->vs_pipeline->metal_pipeline.native_pipeline ||
+          sequence->vertex_parameter_size <
+              sizeof(struct poly_vertex_params) ||
+          !ao46_mtl_gallium_range(draw->parameter_resource,
+                                  sequence->vertex_parameter_offset,
+                                  sequence->vertex_parameter_size) ||
+          (sequence->vertex_buffer_mask &&
+           (!sequence->vertex_input_root_size ||
+            !ao46_mtl_gallium_range(draw->parameter_resource,
+                                    sequence->vertex_input_root_offset,
+                                    sequence->vertex_input_root_size))))) ||
+        !ao46_mtl_gallium_range(draw->index_resource, draw->index_offset,
+                                draw->index_size) ||
+        !ao46_mtl_gallium_range(draw->indirect_resource,
+                                draw->indirect_offset, draw->indirect_size)) {
+        return false;
+    }
+
+    adapter = sequence->tcs_pipeline->metal_pipeline.adapter;
+    if (!adapter || sequence->kernel_executor->adapter != adapter ||
+        (sequence->vs_pipeline &&
+         sequence->vs_pipeline->metal_pipeline.adapter != adapter) ||
+        mc->poly_render_pipeline->adapter != adapter ||
+        !ao46_mtl_gallium_buffer_for_adapter(draw->parameter_resource,
+                                             adapter, &package) ||
+        draw->index_resource != draw->parameter_resource ||
+        draw->indirect_resource != draw->parameter_resource) {
+        return false;
+    }
+
+    prefix_source = &sequence->kernel_executor->sources[
+        AO46_MESA_POLY_KERNEL_PREFIX_SUM];
+    if (!prefix_source->workgroup_size[0] ||
+        !prefix_source->workgroup_size[1] ||
+        !prefix_source->workgroup_size[2]) {
+        return false;
+    }
+
+    /* Keep ordinary Gallium commands ordered before the external poly chain. */
+    ao46_metal_context_flush(&mc->base, NULL, PIPE_FLUSH_HINT_FINISH);
+
+    if (sequence->vs_pipeline) {
+        vs_bindings[vs_binding_count++] = (struct AO46MetalBufferBinding){
+            .buffer = &package,
+            .offset = sequence->root_offset,
+            .size = sequence->root_size,
+            .index = 0,
+            .writable = true,
+        };
+        vs_bindings[vs_binding_count++] = (struct AO46MetalBufferBinding){
+            .buffer = &package,
+            .offset = sequence->sampler_table_offset,
+            .size = sequence->sampler_table_size,
+            .index = 1,
+            .writable = true,
+        };
+        vs_bindings[vs_binding_count++] = (struct AO46MetalBufferBinding){
+            .buffer = &package,
+            .offset = sequence->vertex_parameter_offset,
+            .size = sequence->vertex_parameter_size,
+            .index = 2,
+            .writable = true,
+        };
+        if (sequence->vertex_buffer_mask) {
+            vs_bindings[vs_binding_count++] =
+                (struct AO46MetalBufferBinding){
+                    .buffer = &package,
+                    .offset = sequence->vertex_input_root_offset,
+                    .size = sequence->vertex_input_root_size,
+                    .index = 4,
+                };
+        }
+        for (unsigned i = 0; i < PIPE_MAX_ATTRIBS; ++i) {
+            const struct pipe_vertex_buffer *binding;
+            struct pipe_resource *resource;
+
+            if (!(sequence->vertex_buffer_mask & (UINT32_C(1) << i))) {
+                continue;
+            }
+            if (i >= mc->num_vertex_buffers) {
+                return false;
+            }
+            binding = &mc->vertex_buffers[i];
+            resource = binding->buffer.resource;
+            if (binding->is_user_buffer || !resource ||
+                binding->buffer_offset >= resource->width0 ||
+                !ao46_mtl_gallium_buffer_for_adapter(
+                    resource, adapter, &vertex_buffer_metal[i])) {
+                return false;
+            }
+            vs_bindings[vs_binding_count++] =
+                (struct AO46MetalBufferBinding){
+                    .buffer = &vertex_buffer_metal[i],
+                    .offset = binding->buffer_offset,
+                    .size = resource->width0 - binding->buffer_offset,
+                    /* The shader dereferences the GPU address from root 4.
+                     * This slot only retains the resource for the command. */
+                    .index = 15,
+                };
+        }
+        if (!ao46_mtl_gallium_queue_compute(
+                &sequence->vs_pipeline->metal_pipeline, vs_bindings,
+                vs_binding_count,
+                sequence->plan->vertex_grid_width,
+                sequence->plan->vertex_grid_height, 1,
+                sequence->vs_pipeline->reflection.local_size[0],
+                sequence->vs_pipeline->reflection.local_size[1],
+                sequence->vs_pipeline->reflection.local_size[2],
+                &pending->compute[pending->compute_count])) {
+            goto out;
+        }
+        ++pending->compute_count;
+    }
+
+    tcs_bindings[0] = (struct AO46MetalBufferBinding){
+        .buffer = &package,
+        .offset = sequence->root_offset,
+        .size = sequence->root_size,
+        .index = 0,
+        .writable = true,
+    };
+    tcs_bindings[1] = (struct AO46MetalBufferBinding){
+        .buffer = &package,
+        .offset = sequence->sampler_table_offset,
+        .size = sequence->sampler_table_size,
+        .index = 1,
+        .writable = true,
+    };
+    tcs_bindings[2] = (struct AO46MetalBufferBinding){
+        .buffer = &package,
+        .offset = draw->parameter_offset,
+        .size = draw->parameter_size,
+        .index = 3,
+        .writable = true,
+    };
+    tcs_bindings[3] = (struct AO46MetalBufferBinding){
+        .buffer = &package,
+        .offset = sequence->vertex_parameter_offset,
+        .size = sequence->vertex_parameter_size,
+        .index = 2,
+        .writable = false,
+    };
+    if (!ao46_mtl_gallium_queue_compute(
+            &sequence->tcs_pipeline->metal_pipeline, tcs_bindings,
+            sequence->vs_pipeline ? 4 : 3,
+            sequence->plan->tcs_grid_width,
+            sequence->plan->vertex_grid_height, 1,
+            sequence->tcs_pipeline->reflection.local_size[0],
+            sequence->tcs_pipeline->reflection.local_size[1],
+            sequence->tcs_pipeline->reflection.local_size[2],
+            &pending->compute[pending->compute_count])) {
+        goto out;
+    }
+    ++pending->compute_count;
+
+    kernel_bindings[0] = (struct AO46MetalBufferBinding){
+        .buffer = &package,
+        .offset = sequence->count_root_offset,
+        .size = sequence->root_size,
+        .index = 0,
+        .writable = true,
+    };
+    kernel_bindings[1] = (struct AO46MetalBufferBinding){
+        .buffer = &package,
+        .offset = sequence->sampler_table_offset,
+        .size = sequence->sampler_table_size,
+        .index = 1,
+        .writable = true,
+    };
+    if (!ao46_mtl_gallium_queue_compute(
+            &sequence->kernel_executor->pipelines[tessellation_kernel],
+            kernel_bindings, 2, sequence->plan->tess_grid_width, 1, 1,
+            sequence->kernel_executor->sources[tessellation_kernel]
+                .workgroup_size[0],
+            sequence->kernel_executor->sources[tessellation_kernel]
+                .workgroup_size[1],
+            sequence->kernel_executor->sources[tessellation_kernel]
+                .workgroup_size[2],
+            &pending->compute[pending->compute_count])) {
+        goto out;
+    }
+    ++pending->compute_count;
+
+    kernel_bindings[0].offset = sequence->root_offset;
+    if (!ao46_mtl_gallium_queue_compute(
+            &sequence->kernel_executor
+                 ->pipelines[AO46_MESA_POLY_KERNEL_PREFIX_SUM],
+            kernel_bindings, 2, prefix_source->workgroup_size[0], 1, 1,
+            prefix_source->workgroup_size[0], prefix_source->workgroup_size[1],
+            prefix_source->workgroup_size[2],
+            &pending->compute[pending->compute_count])) {
+        goto out;
+    }
+    ++pending->compute_count;
+    if (!ao46_mtl_gallium_queue_compute(
+            &sequence->kernel_executor->pipelines[tessellation_kernel],
+            kernel_bindings, 2, sequence->plan->tess_grid_width, 1, 1,
+            sequence->kernel_executor->sources[tessellation_kernel]
+                .workgroup_size[0],
+            sequence->kernel_executor->sources[tessellation_kernel]
+                .workgroup_size[1],
+            sequence->kernel_executor->sources[tessellation_kernel]
+                .workgroup_size[2],
+            &pending->compute[pending->compute_count])) {
+        goto out;
+    }
+    ++pending->compute_count;
+
+    color_resource = ao46_metal_resource(mc->fb_state.cbufs[0].texture);
+    if (!color_resource || !color_resource->mtl_texture ||
+        color_resource->mtl_texture.device !=
+            (__bridge id<MTLDevice>)adapter->device ||
+        (mc->fb_state.cbufs[0].format != PIPE_FORMAT_R8G8B8A8_UNORM &&
+         mc->fb_state.cbufs[0].format != PIPE_FORMAT_B8G8R8A8_UNORM)) {
+        goto out;
+    }
+    color_target = (struct AO46MetalTexture){
+        .adapter = adapter,
+        .native_texture = (__bridge void *)color_resource->mtl_texture,
+        .width = mc->fb_state.width,
+        .height = mc->fb_state.height,
+        .format = mc->fb_state.cbufs[0].format == PIPE_FORMAT_B8G8R8A8_UNORM
+                      ? AO46_METAL_TEXTURE_FORMAT_BGRA8_UNORM
+                      : AO46_METAL_TEXTURE_FORMAT_RGBA8_UNORM,
+    };
+    index_binding = (struct AO46MetalIndexBufferBinding){
+        .buffer = &package,
+        .offset = draw->index_offset,
+        .size = draw->index_size,
+        .count = draw->maximum_index_count,
+        .format = AO46_METAL_INDEX_FORMAT_UINT32,
+    };
+    indirect_binding = (struct AO46MetalIndirectDrawBinding){
+        .buffer = &package,
+        .offset = draw->indirect_offset,
+        .draw_count = 1,
+        .gpu_generated = true,
+        .maximum_index_count = draw->maximum_index_count,
+    };
+    vertex_static_binding = (struct AO46MetalBufferBinding){
+        .buffer = &package,
+        .offset = draw->parameter_offset,
+        .size = draw->parameter_size,
+        .index = 3,
+    };
+
+    if (!AO46MetalRenderSubmitWithStaticVertexBuffers(
+            adapter, mc->poly_render_pipeline, &color_target, NULL, 0,
+            &index_binding, &indirect_binding, NULL, 0, NULL, 0, NULL, 0,
+            &vertex_static_binding, 1, NULL, 0, output_primitive, 0, 0, 0, 0,
+            &pending->render)) {
+        goto out;
+    }
+    pending->render_submitted = true;
+    return true;
+
+out:
+    (void)ao46_mtl_gallium_finish_poly_pending(pending);
+    return false;
+}
+
+static bool
+ao46_mtl_gallium_dispatch_poly_tessellation(
+    struct ao46_metal_context *mc, const struct pipe_draw_info *info,
+    const struct pipe_draw_start_count_bias *draws, unsigned num_draws)
+{
+    struct ao46_metal_poly_pending pending = {0};
+
+    if (num_draws != 1 ||
+        !ao46_mtl_gallium_queue_poly_tessellation(
+            mc, info, draws, &pending)) {
+        return false;
+    }
+    return ao46_mtl_gallium_finish_poly_pending(&pending);
+}
+
 /* ----------------------------------------------------------------------
  * Draw call
  * ---------------------------------------------------------------------- */
@@ -4478,21 +6520,82 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
                     const struct pipe_draw_start_count_bias *draws,
                     unsigned num_draws)
 {
-    (void)drawid_offset;
     struct ao46_metal_context *mc = ao46_metal_context(ctx);
     bool needs_emulation;
     bool trace_runtime = getenv("AO46_TRACE_RUNTIME") != NULL;
     struct ao46_metal_resource *indirect_mr = NULL;
+    struct ao46_metal_resource *indirect_count_mr = NULL;
     NSUInteger indirect_offset = 0;
     NSUInteger indirect_stride = 0;
     unsigned indirect_draw_count = 0;
+    struct pipe_draw_start_count_bias stream_output_draw = {0};
+    id<MTLIndirectCommandBuffer> indirect_commands = nil;
+    id<MTLBuffer> indirect_execution_range = nil;
+    id<MTLRenderPipelineState> ps = nil;
+
+    if (trace_runtime) {
+        fprintf(stderr,
+                "[AO46Metal] draw_vbo entry mode=%d indirect=%d draws=%u "
+                "start=%u count=%u\n",
+                info ? (int)info->mode : -1, indirect != NULL, num_draws,
+                draws && num_draws ? draws[0].start : 0,
+                draws && num_draws ? draws[0].count : 0);
+    }
 
     if (!mc || !info || info->has_user_indices ||
         (!indirect && (!draws || num_draws == 0))) {
         return;
     }
 
+    if (info->mode == MESA_PRIM_PATCHES) {
+        const bool has_explicit_poly_package =
+            mc->poly_render_pipeline ||
+            mc->poly_tess_draw.parameter_resource ||
+            mc->poly_tess_draw.index_resource ||
+            mc->poly_tess_draw.indirect_resource ||
+            mc->poly_tess_sequence.tcs_pipeline ||
+            mc->poly_tess_sequence.kernel_executor ||
+            mc->poly_tess_sequence.plan;
+        const bool submitted = indirect
+            ? (!has_explicit_poly_package &&
+               ao46_mtl_gallium_dispatch_state_tracker_poly_indirect(
+                   mc, info, indirect))
+            : (has_explicit_poly_package
+                   ? ao46_mtl_gallium_dispatch_poly_tessellation(
+                         mc, info, draws, num_draws)
+                   : ao46_mtl_gallium_dispatch_state_tracker_poly(
+                         mc, info, draws, num_draws));
+
+        if (!submitted) {
+            return;
+        }
+        return;
+    }
+
+    if (indirect && indirect->count_from_stream_output) {
+        struct ao46_metal_stream_output_target *target =
+            (struct ao46_metal_stream_output_target *)
+                indirect->count_from_stream_output;
+
+        if (indirect->buffer || indirect->indirect_draw_count ||
+            info->index_size || info->primitive_restart || !target ||
+            target->base.context != ctx || target->vertex_stride == 0 ||
+            target->write_offset % target->vertex_stride != 0) {
+            return;
+        }
+        stream_output_draw.count =
+            target->write_offset / target->vertex_stride;
+        draws = &stream_output_draw;
+        num_draws = 1;
+        indirect = NULL;
+    }
+
     needs_emulation = ao46_metal_primitive_needs_emulation(info);
+    if (mc->num_stream_output_targets > 0 && mc->vs_shader &&
+        mc->vs_shader->stream_output.num_outputs > 0 &&
+        (indirect || info->index_size || needs_emulation)) {
+        return;
+    }
     if (indirect) {
         const size_t argument_size = info->index_size ? 5 * sizeof(uint32_t)
                                                        : 4 * sizeof(uint32_t);
@@ -4501,7 +6604,6 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
         if (!indirect->buffer || indirect->offset % sizeof(uint32_t) != 0 ||
             indirect->draw_count == 0 ||
             indirect->draw_count > AO46_METAL_MAX_INDIRECT_DRAWS ||
-            indirect->indirect_draw_count || indirect->count_from_stream_output ||
             info->primitive_restart || needs_emulation ||
             (info->index_size != 0 && info->index_size != 2 &&
              info->index_size != 4)) {
@@ -4527,11 +6629,67 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
 
         indirect_offset = indirect->offset;
         indirect_draw_count = indirect->draw_count;
+
+        if (indirect->indirect_draw_count) {
+            if (indirect->indirect_draw_count->target != PIPE_BUFFER ||
+                indirect->indirect_draw_count_offset % sizeof(uint32_t) != 0 ||
+                indirect->indirect_draw_count_offset >
+                    indirect->indirect_draw_count->width0 ||
+                sizeof(uint32_t) > indirect->indirect_draw_count->width0 -
+                                       indirect->indirect_draw_count_offset) {
+                return;
+            }
+            indirect_count_mr =
+                ao46_metal_resource(indirect->indirect_draw_count);
+            if (!indirect_count_mr || !indirect_count_mr->mtl_buffer) {
+                return;
+            }
+        }
+    }
+
+    /* Metal ICB buffer inheritance cannot vary Mesa's draw-parameter root
+     * per command on this path. Resolve only the count for these shaders,
+     * then use the ordinary indirect records, which bind each draw exactly. */
+    if (indirect_count_mr && mc->vs_shader &&
+        mc->vs_shader->uses_draw_parameters) {
+        uint32_t selected_count = 0;
+
+        ao46_metal_context_flush(ctx, NULL, PIPE_FLUSH_HINT_FINISH);
+        if (!indirect_count_mr->mtl_buffer.contents) {
+            return;
+        }
+        memcpy(&selected_count,
+               (const uint8_t *)indirect_count_mr->mtl_buffer.contents +
+                   indirect->indirect_draw_count_offset,
+               sizeof(selected_count));
+        indirect_draw_count = MIN2(indirect_draw_count, selected_count);
+        indirect_count_mr = NULL;
+        if (indirect_draw_count == 0) {
+            return;
+        }
     }
 
     if (mc->compute_encoder) {
         [mc->compute_encoder endEncoding];
         mc->compute_encoder = nil;
+    }
+    if (indirect_count_mr && mc->render_encoder) {
+        [mc->render_encoder endEncoding];
+        mc->render_encoder = nil;
+        mc->render_pass_started = false;
+    }
+
+    ps = ao46_metal_get_pipeline_state(mc, info->mode,
+                                       indirect_count_mr != NULL);
+    if (!ps) {
+        if (trace_runtime) {
+            fprintf(stderr,
+                    "[AO46Metal] draw dropped: missing pipeline state mode=%d indexed=%u count=%u\n",
+                    (int)info->mode,
+                    info->index_size != 0,
+                    indirect ? indirect_draw_count : draws[0].count);
+        }
+        return;
     }
 
     if (!mc->render_encoder) {
@@ -4540,6 +6698,109 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
         id<MTLTexture> depth_texture = nil;
         if (!mc->cmd_buffer) {
             if (!ao46_metal_context_begin_submission(mc)) return;
+        }
+
+        if (indirect_count_mr) {
+            MTLIndirectCommandBufferDescriptor *descriptor =
+                [[MTLIndirectCommandBufferDescriptor alloc] init];
+            id<MTLComputePipelineState> count_pipeline =
+                (__bridge id<MTLComputePipelineState>)
+                    g_mtl_adapter.indirect_count_range_pipeline;
+            const uint8_t *argument_bytes =
+                (const uint8_t *)indirect_mr->mtl_buffer.contents +
+                indirect_offset;
+
+            descriptor.commandTypes = info->index_size
+                                          ? MTLIndirectCommandTypeDrawIndexed
+                                          : MTLIndirectCommandTypeDraw;
+            descriptor.inheritPipelineState = YES;
+            descriptor.inheritBuffers = YES;
+            indirect_commands =
+                [g_mtl_device newIndirectCommandBufferWithDescriptor:descriptor
+                                                      maxCommandCount:
+                                                          indirect_draw_count
+                                                               options:0];
+            indirect_execution_range =
+                [g_mtl_device newBufferWithLength:
+                                  sizeof(MTLIndirectCommandBufferExecutionRange)
+                                            options:MTLResourceStorageModeShared];
+            [descriptor release];
+            if (!indirect_commands || !indirect_execution_range ||
+                !count_pipeline || !argument_bytes) {
+                [indirect_commands release];
+                [indirect_execution_range release];
+                return;
+            }
+
+            for (unsigned i = 0; i < indirect_draw_count; ++i) {
+                id<MTLIndirectRenderCommand> command =
+                    [indirect_commands indirectRenderCommandAtIndex:i];
+                const uint8_t *record = argument_bytes + i * indirect_stride;
+
+                if (info->index_size) {
+                    struct ao46_metal_draw_indexed_indirect_arguments args;
+                    struct ao46_metal_resource *index_mr =
+                        info->index.resource
+                            ? ao46_metal_resource(info->index.resource)
+                            : NULL;
+                    const NSUInteger index_offset_limit =
+                        info->index.resource ? info->index.resource->width0 : 0;
+                    NSUInteger index_offset;
+
+                    memcpy(&args, record, sizeof(args));
+                    if (!index_mr || !index_mr->mtl_buffer ||
+                        args.index_start >
+                            index_offset_limit / info->index_size ||
+                        args.index_count >
+                            (index_offset_limit -
+                             (NSUInteger)args.index_start * info->index_size) /
+                                info->index_size) {
+                        [indirect_commands release];
+                        [indirect_execution_range release];
+                        return;
+                    }
+                    index_offset = (NSUInteger)args.index_start * info->index_size;
+                    [command drawIndexedPrimitives:
+                                 ao46_metal_primitive_type(info->mode)
+                                           indexCount:args.index_count
+                                            indexType:info->index_size == 2
+                                                          ? MTLIndexTypeUInt16
+                                                          : MTLIndexTypeUInt32
+                                         indexBuffer:index_mr->mtl_buffer
+                                   indexBufferOffset:index_offset
+                                       instanceCount:args.instance_count
+                                         baseVertex:args.base_vertex
+                                       baseInstance:args.base_instance];
+                } else {
+                    struct ao46_metal_draw_indirect_arguments args;
+
+                    memcpy(&args, record, sizeof(args));
+                    [command drawPrimitives:ao46_metal_primitive_type(info->mode)
+                                vertexStart:args.vertex_start
+                                vertexCount:args.vertex_count
+                              instanceCount:args.instance_count
+                               baseInstance:args.base_instance];
+                }
+            }
+
+            id<MTLComputeCommandEncoder> count_encoder =
+                [mc->cmd_buffer computeCommandEncoder];
+            if (!count_encoder) {
+                [indirect_commands release];
+                [indirect_execution_range release];
+                return;
+            }
+            [count_encoder setComputePipelineState:count_pipeline];
+            [count_encoder setBuffer:indirect_count_mr->mtl_buffer
+                               offset:indirect->indirect_draw_count_offset
+                              atIndex:0];
+            [count_encoder setBuffer:indirect_execution_range offset:0 atIndex:1];
+            [count_encoder setBytes:&indirect_draw_count
+                              length:sizeof(indirect_draw_count)
+                             atIndex:2];
+            [count_encoder dispatchThreads:MTLSizeMake(1, 1, 1)
+                     threadsPerThreadgroup:MTLSizeMake(1, 1, 1)];
+            [count_encoder endEncoding];
         }
 
         MTLRenderPassDescriptor *rpd = [[MTLRenderPassDescriptor alloc] init];
@@ -4586,17 +6847,9 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
     }
 
     id<MTLRenderCommandEncoder> enc = mc->render_encoder;
-    if (!enc) return;
-
-    id<MTLRenderPipelineState> ps = ao46_metal_get_pipeline_state(mc, info->mode);
-    if (!ps) {
-        if (trace_runtime) {
-            fprintf(stderr,
-                    "[AO46Metal] draw dropped: missing pipeline state mode=%d indexed=%u count=%u\n",
-                    (int)info->mode,
-                    info->index_size != 0,
-                    indirect ? indirect_draw_count : draws[0].count);
-        }
+    if (!enc) {
+        [indirect_commands release];
+        [indirect_execution_range release];
         return;
     }
 
@@ -4654,7 +6907,9 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
         }
     }
     [enc setRenderPipelineState:ps];
-    [enc setDepthStencilState:mc->dsa ? mc->dsa->mtl_state : nil];
+    if (mc->dsa && mc->dsa->mtl_state) {
+        [enc setDepthStencilState:mc->dsa->mtl_state];
+    }
     [enc setBlendColorRed:mc->blend_color.color[0]
                     green:mc->blend_color.color[1]
                      blue:mc->blend_color.color[2]
@@ -4721,6 +6976,44 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
 
     for (unsigned stage_index = 0; stage_index < ARRAY_SIZE(graphics_stages); stage_index++) {
         mesa_shader_stage stage = graphics_stages[stage_index];
+        if (!ao46_metal_prepare_image_bindings(mc, stage)) {
+            [indirect_commands release];
+            [indirect_execution_range release];
+            return;
+        }
+
+        for (uint i = 0; i < mc->num_image_views[stage] &&
+                         i < AO46_MAX_IMAGE_UNITS; ++i) {
+            id<MTLTexture> texture = mc->image_binding_textures[stage][i];
+            MTLResourceUsage usage = 0;
+
+            if (!texture) {
+                continue;
+            }
+            if (stage == MESA_SHADER_VERTEX) {
+                [enc setVertexTexture:texture
+                              atIndex:AO46_MESA_IMAGE_TEXTURE_BASE + i];
+            } else {
+                [enc setFragmentTexture:texture
+                                atIndex:AO46_MESA_IMAGE_TEXTURE_BASE + i];
+            }
+            if (mc->image_views[stage][i].access & PIPE_IMAGE_ACCESS_READ) {
+                usage |= MTLResourceUsageRead;
+            }
+            if (mc->image_views[stage][i].access & PIPE_IMAGE_ACCESS_WRITE) {
+                usage |= MTLResourceUsageWrite;
+            }
+            if (usage) {
+                if (@available(macOS 13.0, *)) {
+                    [enc useResource:texture
+                               usage:usage | MTLResourceUsageRead
+                              stages:stage == MESA_SHADER_VERTEX
+                                         ? MTLRenderStageVertex
+                                         : MTLRenderStageFragment];
+                }
+            }
+        }
+
         uint num_views = mc->num_sampler_views[stage];
         for (uint i = 0; i < num_views && i < AO46_MAX_SAMPLERS; i++) {
             struct pipe_sampler_view *view = mc->sampler_views[stage][i];
@@ -4744,6 +7037,48 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
                     [enc setFragmentSamplerState:mtl_sampler atIndex:i];
             }
         }
+
+        for (uint i = 0; i < mc->num_shader_buffers[stage] &&
+                         i < AO46_MAX_SHADER_BUFFERS; ++i) {
+            struct ao46_metal_shader_buffer_binding *binding =
+                &mc->shader_buffers[stage][i];
+            struct ao46_metal_resource *mr =
+                binding->buffer ? ao46_metal_resource(binding->buffer) : NULL;
+
+            if (!mr || !mr->mtl_buffer ||
+                binding->buffer_offset >= binding->buffer->width0) {
+                continue;
+            }
+            if (stage == MESA_SHADER_VERTEX) {
+                [enc setVertexBuffer:mr->mtl_buffer
+                              offset:binding->buffer_offset
+                             atIndex:AO46_BUFFER_SLOT_SHADER_BUFFER_BASE + i];
+            } else {
+                [enc setFragmentBuffer:mr->mtl_buffer
+                                offset:binding->buffer_offset
+                               atIndex:AO46_BUFFER_SLOT_SHADER_BUFFER_BASE + i];
+            }
+            if (@available(macOS 13.0, *)) {
+                MTLResourceUsage usage = MTLResourceUsageRead;
+                if (binding->writable) {
+                    usage |= MTLResourceUsageWrite;
+                }
+                [enc useResource:mr->mtl_buffer
+                           usage:usage
+                          stages:stage == MESA_SHADER_VERTEX
+                                     ? MTLRenderStageVertex
+                                     : MTLRenderStageFragment];
+            }
+        }
+    }
+
+    if (!ao46_metal_bind_rgb32_address_table(
+            mc, enc, MESA_SHADER_VERTEX) ||
+        !ao46_metal_bind_rgb32_address_table(
+            mc, enc, MESA_SHADER_FRAGMENT)) {
+        [indirect_commands release];
+        [indirect_execution_range release];
+        return;
     }
 
     for (unsigned stage_index = 0; stage_index < ARRAY_SIZE(graphics_stages); stage_index++) {
@@ -4783,6 +7118,8 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
     }
 
     if (mc->raster && mc->raster->base.cull_face == PIPE_FACE_FRONT_AND_BACK) {
+        [indirect_commands release];
+        [indirect_execution_range release];
         return;
     }
 
@@ -4790,6 +7127,14 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
     NSUInteger instance_count = MAX2(info->instance_count, 1u);
 
     if (indirect) {
+        if (indirect_count_mr) {
+            [enc executeCommandsInBuffer:indirect_commands
+                          indirectBuffer:indirect_execution_range
+                    indirectBufferOffset:0];
+            [indirect_commands release];
+            [indirect_execution_range release];
+            return;
+        }
         if (info->index_size) {
             struct ao46_metal_resource *index_mr =
                 info->index.resource ? ao46_metal_resource(info->index.resource) : NULL;
@@ -4801,18 +7146,42 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
                                                 ? MTLIndexTypeUInt16
                                                 : MTLIndexTypeUInt32;
             for (unsigned i = 0; i < indirect_draw_count; ++i) {
+                struct ao46_metal_draw_indexed_indirect_arguments arguments;
+                const uint8_t *record =
+                    (const uint8_t *)indirect_mr->mtl_buffer.contents +
+                    indirect_offset + i * indirect_stride;
+
+                memcpy(&arguments, record, sizeof(arguments));
+                ao46_metal_bind_draw_parameters(
+                    enc, drawid_offset + i, arguments.index_count, 0,
+                    arguments.base_instance, arguments.base_vertex);
                 [enc drawIndexedPrimitives:prim_type
                                   indexType:index_type
                                 indexBuffer:index_mr->mtl_buffer
                           indexBufferOffset:0
                             indirectBuffer:indirect_mr->mtl_buffer
                       indirectBufferOffset:indirect_offset + i * indirect_stride];
+                ao46_metal_record_primitives(
+                    mc, info->mode, arguments.index_count,
+                    arguments.instance_count, false);
             }
         } else {
             for (unsigned i = 0; i < indirect_draw_count; ++i) {
+                struct ao46_metal_draw_indirect_arguments arguments;
+                const uint8_t *record =
+                    (const uint8_t *)indirect_mr->mtl_buffer.contents +
+                    indirect_offset + i * indirect_stride;
+
+                memcpy(&arguments, record, sizeof(arguments));
+                ao46_metal_bind_draw_parameters(
+                    enc, drawid_offset + i, arguments.vertex_count,
+                    arguments.vertex_start, arguments.base_instance, 0);
                 [enc drawPrimitives:prim_type
                       indirectBuffer:indirect_mr->mtl_buffer
                 indirectBufferOffset:indirect_offset + i * indirect_stride];
+                ao46_metal_record_primitives(
+                    mc, info->mode, arguments.vertex_count,
+                    arguments.instance_count, false);
             }
         }
         return;
@@ -4821,6 +7190,15 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
     for (unsigned draw_index = 0; draw_index < num_draws; draw_index++) {
         const struct pipe_draw_start_count_bias *draw = &draws[draw_index];
         if (!draw->count) {
+            continue;
+        }
+
+        ao46_metal_bind_draw_parameters(
+            enc, drawid_offset + draw_index, draw->count,
+            info->index_size ? 0 : draw->start, info->start_instance,
+            info->index_size ? draw->index_bias : 0);
+        if (!ao46_metal_bind_stream_output(
+                mc, enc, draw->count, (uint32_t)instance_count)) {
             continue;
         }
 
@@ -4849,6 +7227,10 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
                              instanceCount:instance_count
                                 baseVertex:emulated_base_vertex
                               baseInstance:info->start_instance];
+                ao46_metal_record_primitives(
+                    mc, info->mode, draw->count, (uint32_t)instance_count,
+                    mc->num_stream_output_targets > 0 && mc->vs_shader &&
+                        mc->vs_shader->stream_output.num_outputs > 0);
             }
 
             [emulated_indices release];
@@ -4888,6 +7270,12 @@ ao46_metal_draw_vbo(struct pipe_context *ctx,
                   instanceCount:instance_count
                    baseInstance:info->start_instance];
         }
+        ao46_metal_record_primitives(
+            mc, info->mode, draw->count, (uint32_t)instance_count,
+            mc->num_stream_output_targets > 0 && mc->vs_shader &&
+                mc->vs_shader->stream_output.num_outputs > 0);
+        ao46_metal_advance_stream_output(
+            mc, draw->count, (uint32_t)instance_count);
     }
 }
 
@@ -4913,7 +7301,16 @@ ao46_metal_context_flush(struct pipe_context *ctx,
     if (mc->submission.native_command_buffer) {
         const bool wait = (flags & PIPE_FLUSH_HINT_FINISH) &&
                           !(flags & PIPE_FLUSH_ASYNC);
-        (void)AO46MetalSubmissionCommit(&mc->submission, wait);
+        const bool committed =
+            AO46MetalSubmissionCommit(&mc->submission, wait);
+        if (!committed && !mc->submission.uses_mtl4) {
+            id<MTLCommandBuffer> failed_buffer =
+                (__bridge id<MTLCommandBuffer>)mc->submission.native_command_buffer;
+            fprintf(stderr,
+                    "AO46 Metal: command submission failed (status=%ld, error=%s)\n",
+                    (long)failed_buffer.status,
+                    failed_buffer.error.localizedDescription.UTF8String ?: "unknown");
+        }
         AO46MetalSubmissionDestroy(&mc->submission);
         mc->cmd_buffer = nil;
     } else if (mc->cmd_buffer) {
@@ -4948,10 +7345,14 @@ ao46_metal_context_destroy(struct pipe_context *ctx)
     for (int i = 0; i < MESA_SHADER_STAGES; i++) {
         [mc->const_buffer_mtl[i] release];
         mc->const_buffer_mtl[i] = nil;
+        [mc->rgb32_address_tables[i] release];
+        mc->rgb32_address_tables[i] = nil;
         for (unsigned j = 0; j < AO46_MAX_SHADER_BUFFERS; j++) {
             pipe_resource_reference(&mc->shader_buffers[i][j].buffer, NULL);
         }
         for (unsigned j = 0; j < AO46_MAX_IMAGE_UNITS; j++) {
+            [mc->image_binding_textures[i][j] release];
+            mc->image_binding_textures[i][j] = nil;
             pipe_resource_reference(&mc->image_views[i][j].resource, NULL);
         }
         for (unsigned j = 0; j < AO46_MAX_SAMPLERS; j++) {
@@ -4961,6 +7362,9 @@ ao46_metal_context_destroy(struct pipe_context *ctx)
     for (unsigned i = 0; i < PIPE_MAX_SO_BUFFERS; i++) {
         pipe_so_target_reference(&mc->stream_output_targets[i], NULL);
     }
+    pipe_resource_reference(&mc->poly_tess_draw.parameter_resource, NULL);
+    pipe_resource_reference(&mc->poly_tess_draw.index_resource, NULL);
+    pipe_resource_reference(&mc->poly_tess_draw.indirect_resource, NULL);
     if (mc->base.const_uploader &&
         mc->base.const_uploader != mc->base.stream_uploader) {
         u_upload_destroy(mc->base.const_uploader);
@@ -4980,16 +7384,30 @@ ao46_metal_screen_context_create(struct pipe_screen *screen,
                                  void *priv,
                                  unsigned flags)
 {
-    if (!ao46_metal_init()) return NULL;
+    if (!ao46_metal_init()) {
+        if (getenv("AO46_TRACE_RUNTIME")) {
+            fprintf(stderr, "[AO46Metal] pipe_context creation failed: Metal initialization\n");
+        }
+        return NULL;
+    }
 
     struct ao46_metal_context *mc = CALLOC_STRUCT(ao46_metal_context);
-    if (!mc) return NULL;
+    if (!mc) {
+        if (getenv("AO46_TRACE_RUNTIME")) {
+            fprintf(stderr, "[AO46Metal] pipe_context creation failed: context allocation\n");
+        }
+        return NULL;
+    }
 
     mc->base.screen = screen;
     mc->base.priv = priv;
     mc->sample_mask = UINT32_MAX;
+    mc->active_query_state = true;
     mc->base.stream_uploader = u_upload_create_default(&mc->base);
     if (!mc->base.stream_uploader) {
+        if (getenv("AO46_TRACE_RUNTIME")) {
+            fprintf(stderr, "[AO46Metal] pipe_context creation failed: stream uploader\n");
+        }
         FREE(mc);
         return NULL;
     }
@@ -5022,7 +7440,14 @@ ao46_metal_screen_context_create(struct pipe_screen *screen,
     mc->base.stream_output_target_destroy = ao46_metal_stream_output_target_destroy;
     mc->base.set_stream_output_targets = ao46_metal_set_stream_output_targets;
     mc->base.stream_output_target_offset = ao46_metal_stream_output_target_offset;
+    mc->base.create_query = ao46_metal_create_query;
+    mc->base.destroy_query = ao46_metal_destroy_query;
+    mc->base.begin_query = ao46_metal_begin_query;
+    mc->base.end_query = ao46_metal_end_query;
+    mc->base.get_query_result = ao46_metal_get_query_result;
+    mc->base.set_active_query_state = ao46_metal_set_active_query_state;
     mc->base.memory_barrier = ao46_metal_memory_barrier;
+    mc->base.texture_barrier = ao46_metal_texture_barrier;
     mc->base.buffer_map = ao46_metal_buffer_map;
     mc->base.transfer_flush_region = ao46_metal_transfer_flush_region;
     mc->base.buffer_unmap = ao46_metal_buffer_unmap;
@@ -5060,6 +7485,8 @@ ao46_metal_screen_context_create(struct pipe_screen *screen,
     mc->base.create_tes_state = ao46_metal_create_tes_state;
     mc->base.bind_tes_state = ao46_metal_bind_tes_state;
     mc->base.delete_tes_state = ao46_metal_delete_tes_state;
+    mc->base.set_tess_state = ao46_metal_set_tess_state;
+    mc->base.set_patch_vertices = ao46_metal_set_patch_vertices;
     mc->base.create_fs_state = ao46_metal_create_fs_state;
     mc->base.bind_fs_state = ao46_metal_bind_fs_state;
     mc->base.delete_fs_state = ao46_metal_delete_fs_state;
@@ -5079,6 +7506,10 @@ ao46_metal_screen_context_create(struct pipe_screen *screen,
     mc->viewport.translate[2] = 0.0f;
     mc->scissor.minx = 0; mc->scissor.miny = 0;
     mc->scissor.maxx = 0; mc->scissor.maxy = 0;
+
+    if (getenv("AO46_TRACE_RUNTIME")) {
+        fprintf(stderr, "[AO46Metal] pipe_context created successfully\n");
+    }
 
     return &mc->base;
 }
@@ -5140,7 +7571,9 @@ ao46_metal_screen_is_format_supported(struct pipe_screen *screen,
         }
 
         if ((bind & PIPE_BIND_SAMPLER_VIEW) &&
-            !ao46_metal_buffer_texture_format_supported(format)) {
+            !ao46_metal_buffer_texture_format_supported(format) &&
+            !(ao46_metal_rgb32_buffer_texture_format(format) &&
+              g_mtl_adapter.gpu_addressable_buffers)) {
             return false;
         }
 
@@ -5218,6 +7651,8 @@ ao46_metal_init_shader_caps(struct pipe_screen *screen)
             (struct pipe_shader_caps *)&screen->shader_caps[i];
 
         if (i != MESA_SHADER_VERTEX &&
+            i != MESA_SHADER_TESS_CTRL &&
+            i != MESA_SHADER_TESS_EVAL &&
             i != MESA_SHADER_FRAGMENT &&
             i != MESA_SHADER_COMPUTE) {
             continue;
@@ -5283,7 +7718,9 @@ ao46_metal_init_screen_caps(struct pipe_screen *screen)
     caps->texture_mirror_clamp_to_edge = true;
     caps->texture_multisample = true;
     caps->sample_shading = true;
+    caps->clip_halfz = true;
     caps->texture_query_lod = true;
+    caps->texture_barrier = true;
     caps->generate_mipmap = true;
     caps->blend_equation_separate = true;
     caps->primitive_restart = true;
@@ -5315,12 +7752,14 @@ ao46_metal_init_screen_caps(struct pipe_screen *screen)
     caps->texture_buffer_objects = true;
     caps->sampler_view_target = true;
     caps->query_pipeline_statistics = true;
+    caps->stream_output_pause_resume = true;
+    caps->stream_output_interleave_buffers = true;
     caps->fragment_shader_texture_lod = true;
     caps->fragment_shader_derivatives = true;
     caps->vs_layer_viewport = true;
     caps->draw_indirect = true;
     caps->multi_draw_indirect = true;
-    caps->multi_draw_indirect_params = false;
+    caps->multi_draw_indirect_params = true;
     caps->doubles = true;
     caps->int64 = true;
     caps->constant_buffer_offset_alignment = 16;
@@ -5594,6 +8033,172 @@ AO46MTLGalliumScreenCreate(const struct AO46MetalAdapter *adapter)
 {
     if (!ao46_metal_init_from_adapter(adapter)) return NULL;
     return ao46_metal_screen_create_initialized();
+}
+
+bool
+AO46MTLGalliumContextBindRenderPipeline(
+    struct pipe_context *context,
+    const struct AO46MetalRenderPipeline *pipeline)
+{
+    struct ao46_metal_context *mc;
+
+    if (!context || context->draw_vbo != ao46_metal_draw_vbo) {
+        return false;
+    }
+    if (pipeline && (!pipeline->native_pipeline ||
+                     !AO46MetalAdapterIsCurrent(pipeline->adapter))) {
+        return false;
+    }
+
+    mc = ao46_metal_context(context);
+    mc->poly_render_pipeline = pipeline;
+    return true;
+}
+
+bool
+AO46MTLGalliumContextBindPolyTessellationDraw(
+    struct pipe_context *context,
+    const struct AO46MetalGalliumPolyTessellationDraw *draw)
+{
+    struct ao46_metal_context *mc;
+
+    if (!context || context->draw_vbo != ao46_metal_draw_vbo) {
+        return false;
+    }
+    mc = ao46_metal_context(context);
+    if (!draw) {
+        pipe_resource_reference(&mc->poly_tess_draw.parameter_resource, NULL);
+        pipe_resource_reference(&mc->poly_tess_draw.index_resource, NULL);
+        pipe_resource_reference(&mc->poly_tess_draw.indirect_resource, NULL);
+        mc->poly_tess_draw =
+            (struct AO46MetalGalliumPolyTessellationDraw){0};
+        mc->poly_tess_sequence =
+            (struct AO46MetalGalliumPolyTessellationSequence){0};
+        return true;
+    }
+
+    if (!draw->parameter_resource || !draw->index_resource ||
+        !draw->indirect_resource ||
+        draw->parameter_resource->screen != context->screen ||
+        draw->index_resource->screen != context->screen ||
+        draw->indirect_resource->screen != context->screen ||
+        draw->parameter_size == 0 || draw->index_size == 0 ||
+        draw->indirect_size != 5 * sizeof(uint32_t) ||
+        draw->indirect_offset % sizeof(uint32_t) != 0 ||
+        draw->maximum_index_count == 0 || draw->input_patch_size == 0 ||
+        draw->input_patch_size > 32 ||
+        draw->input_vertex_count < draw->input_patch_size ||
+        draw->input_vertex_count % draw->input_patch_size != 0 ||
+        draw->maximum_index_count > draw->index_size / sizeof(uint32_t) ||
+        !ao46_mtl_gallium_range(draw->parameter_resource,
+                                draw->parameter_offset, draw->parameter_size) ||
+        !ao46_mtl_gallium_range(draw->index_resource, draw->index_offset,
+                                draw->index_size) ||
+        !ao46_mtl_gallium_range(draw->indirect_resource,
+                                draw->indirect_offset, draw->indirect_size)) {
+        return false;
+    }
+
+    pipe_resource_reference(&mc->poly_tess_draw.parameter_resource,
+                            draw->parameter_resource);
+    pipe_resource_reference(&mc->poly_tess_draw.index_resource,
+                            draw->index_resource);
+    pipe_resource_reference(&mc->poly_tess_draw.indirect_resource,
+                            draw->indirect_resource);
+    mc->poly_tess_draw = *draw;
+    return true;
+}
+
+bool
+AO46MTLGalliumContextBindPolyTessellationSequence(
+    struct pipe_context *context,
+    const struct AO46MetalGalliumPolyTessellationSequence *sequence)
+{
+    struct ao46_metal_context *mc;
+
+    if (!context || context->draw_vbo != ao46_metal_draw_vbo) {
+        return false;
+    }
+    mc = ao46_metal_context(context);
+    if (!sequence) {
+        mc->poly_tess_sequence =
+            (struct AO46MetalGalliumPolyTessellationSequence){0};
+        return true;
+    }
+    if (!sequence->tcs_pipeline || !sequence->kernel_executor ||
+        !sequence->plan || sequence->root_size == 0 ||
+        sequence->sampler_table_size == 0 ||
+        sequence->plan->output_primitive ==
+            AO46_MESA_POLY_TESSELLATION_OUTPUT_INVALID) {
+        return false;
+    }
+
+    mc->poly_tess_sequence = *sequence;
+    return true;
+}
+
+bool
+AO46MTLGalliumResourceGetCPUMapping(struct pipe_resource *resource,
+                                    void **out_mapping,
+                                    size_t *out_length)
+{
+    struct ao46_metal_resource *mr;
+
+    if (!resource || !out_mapping || !out_length ||
+        resource->target != PIPE_BUFFER) {
+        return false;
+    }
+    mr = ao46_metal_resource(resource);
+    if (!mr || !mr->mtl_buffer || !mr->mtl_buffer.contents) {
+        return false;
+    }
+    *out_mapping = mr->mtl_buffer.contents;
+    *out_length = mr->mtl_buffer.length;
+    return true;
+}
+
+bool
+AO46MTLGalliumResourceGetGPUAddress(struct pipe_resource *resource,
+                                   uint64_t *out_address)
+{
+    struct ao46_metal_resource *mr;
+
+    if (!resource || !out_address || resource->target != PIPE_BUFFER ||
+        !AO46MetalAdapterSupportsGPUAddress(&g_mtl_adapter)) {
+        return false;
+    }
+    mr = ao46_metal_resource(resource);
+    if (!mr || !mr->mtl_buffer) {
+        return false;
+    }
+    if (@available(macOS 13.0, *)) {
+        *out_address = mr->mtl_buffer.gpuAddress;
+        return *out_address != 0;
+    }
+    return false;
+}
+
+bool
+AO46MTLGalliumResourceWriteGPUAddressRoot(
+    struct pipe_resource *root, size_t root_offset,
+    struct pipe_resource *target, size_t target_offset)
+{
+    struct ao46_metal_resource *root_resource;
+    uint64_t address;
+
+    if (!root || !target || root->screen != target->screen ||
+        root_offset % _Alignof(uint64_t) != 0 ||
+        !ao46_mtl_gallium_range(root, root_offset, sizeof(address)) ||
+        target_offset >= target->width0 ||
+        !AO46MTLGalliumResourceGetGPUAddress(target, &address) ||
+        target_offset > UINT64_MAX - address) {
+        return false;
+    }
+    root_resource = ao46_metal_resource(root);
+    address += target_offset;
+    memcpy((uint8_t *)root_resource->mtl_buffer.contents + root_offset,
+           &address, sizeof(address));
+    return true;
 }
 
 struct pipe_screen *

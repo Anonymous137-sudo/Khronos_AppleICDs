@@ -11,9 +11,26 @@
 #include "AO46MetalAdapter.h"
 
 struct nir_shader;
+
+enum {
+   AO46_MESA_MAX_SHADER_BUFFERS = 8,
+   AO46_MESA_MAX_IMAGE_UNITS = 8,
+   AO46_MESA_IMAGE_TEXTURE_BASE = 16,
+   AO46_MESA_DRAW_PARAMETER_BINDING = 11,
+   AO46_MESA_STREAM_OUTPUT_DESCRIPTOR_BINDING = 13,
+};
 struct pipe_context;
 struct pipe_fence_handle;
 struct pipe_resource;
+struct pipe_stream_output_info;
+
+struct AO46MesaDrawParameters {
+   uint32_t draw_id;
+   uint32_t vertex_count;
+   uint32_t first_vertex;
+   uint32_t base_instance;
+   int32_t base_vertex;
+};
 
 /* The interface reconstructed from Mesa NIR and the compiled Metal pipeline. */
 struct AO46MesaComputeReflection {
@@ -29,6 +46,28 @@ struct AO46MesaComputePipeline {
    char *entrypoint;
    struct AO46MesaComputeReflection reflection;
 };
+
+/*
+ * Convert statically bounded Mesa SSBO indices into KosmicKrisp direct-buffer
+ * roots. The returned mask is the exact Metal buffer ABI required by NIR.
+ */
+bool AO46MesaNIRLowerBoundedSSBOs(struct nir_shader *nir,
+                                 uint16_t *out_static_buffer_mask);
+
+/* Lower immutable Gallium image units to direct KK Metal texture bindings. */
+bool AO46MesaNIRLowerStaticImages(struct nir_shader *nir,
+                                 uint16_t *inout_static_buffer_mask,
+                                 uint16_t *out_image_mask);
+
+/* Lower GL draw system values that Metal does not expose as native builtins. */
+bool AO46MesaNIRLowerDrawParameters(struct nir_shader *nir,
+                                   uint16_t *inout_static_buffer_mask,
+                                   bool *out_uses_draw_id);
+
+/* Add bounded vertex-stage transform-feedback stores from Mesa SO metadata. */
+bool AO46MesaNIRLowerStreamOutput(
+   struct nir_shader *nir, const struct pipe_stream_output_info *stream_output,
+   uint16_t *inout_static_buffer_mask);
 
 /*
  * Lowers the caller-owned compute NIR through Mesa KosmicKrisp and compiles

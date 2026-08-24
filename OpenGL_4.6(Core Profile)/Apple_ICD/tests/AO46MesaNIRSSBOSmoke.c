@@ -62,6 +62,37 @@ ao46_build_dynamic_ssbo_shader(void)
 }
 
 static struct nir_shader *
+ao46_build_bounded_dynamic_ssbo_shader(void)
+{
+   nir_builder builder = nir_builder_init_simple_shader(
+      MESA_SHADER_COMPUTE, &kk_nir_options, "ao46_bounded_dynamic_ssbo");
+   nir_def *global_id;
+   nir_def *source_index;
+   nir_def *source_offset;
+   nir_def *destination_offset;
+   nir_def *value;
+
+   builder.shader->info.workgroup_size[0] = 16;
+   builder.shader->info.workgroup_size[1] = 1;
+   builder.shader->info.workgroup_size[2] = 1;
+   global_id = nir_channel(&builder,
+                           nir_load_global_invocation_id(&builder, 32), 0);
+   source_index = nir_iand_imm(&builder, global_id, 1);
+   source_offset = nir_imul_imm(&builder, nir_ushr_imm(&builder, global_id, 1),
+                                sizeof(uint32_t));
+   destination_offset =
+      nir_imul_imm(&builder, global_id, sizeof(uint32_t));
+   value = nir_load_ssbo(&builder, 1, 32, source_index, source_offset,
+                         .align_mul = sizeof(uint32_t),
+                         .access = ACCESS_NON_WRITEABLE);
+   nir_store_ssbo(&builder, value, nir_imm_int(&builder, 2),
+                  destination_offset, .write_mask = 0x1,
+                  .align_mul = sizeof(uint32_t),
+                  .access = ACCESS_NON_READABLE);
+   return builder.shader;
+}
+
+static struct nir_shader *
 ao46_build_static_ssbo_atomic_shader(void)
 {
    nir_builder builder = nir_builder_init_simple_shader(
@@ -117,14 +148,16 @@ main(void)
    struct pipe_resource *rebound_output = NULL;
    struct pipe_resource *atomic_counter = NULL;
    struct pipe_resource *atomic_previous_values = NULL;
-   struct pipe_shader_buffer shader_buffers[4] = {{0}};
+   struct pipe_shader_buffer shader_buffers[5] = {{0}};
    struct pipe_fence_handle *fence = NULL;
    struct pipe_transfer *transfer = NULL;
    struct nir_shader *nir = NULL;
    struct nir_shader *dynamic_nir = NULL;
+   struct nir_shader *bounded_dynamic_nir = NULL;
    struct nir_shader *atomic_nir = NULL;
    struct nir_shader *atomic_swap_nir = NULL;
    void *compute_state = NULL;
+   void *bounded_dynamic_compute_state = NULL;
    void *atomic_compute_state = NULL;
    void *atomic_swap_compute_state = NULL;
    struct pipe_box readback_box = {
@@ -170,15 +203,30 @@ main(void)
       screen ? screen->resource_create(screen, &buffer_template) : NULL;
    nir = ao46_build_static_ssbo_shader();
    dynamic_nir = ao46_build_dynamic_ssbo_shader();
+   bounded_dynamic_nir = ao46_build_bounded_dynamic_ssbo_shader();
    atomic_nir = ao46_build_static_ssbo_atomic_shader();
    atomic_swap_nir = ao46_build_static_ssbo_atomic_swap_shader();
    if (!screen || !context || !root || !sampler_table || !input || !output ||
        !atomic_counter || !atomic_previous_values || !rebound_output || !nir ||
-       !dynamic_nir || !atomic_nir || !atomic_swap_nir ||
+       !dynamic_nir || !bounded_dynamic_nir || !atomic_nir ||
+       !atomic_swap_nir ||
        !context->create_compute_state ||
        !context->bind_compute_state || !context->delete_compute_state ||
        !context->set_shader_buffers || !context->launch_grid) {
       fputs("SSBO smoke Gallium callbacks were unavailable\n", stderr);
+      failed = 1;
+      goto out;
+   }
+
+   {
+      struct pipe_compute_state state = compute_template;
+
+      state.prog = bounded_dynamic_nir;
+      bounded_dynamic_compute_state =
+         context->create_compute_state(context, &state);
+   }
+   if (!bounded_dynamic_compute_state) {
+      fputs("SSBO smoke could not lower bounded dynamic indexing\n", stderr);
       failed = 1;
       goto out;
    }
@@ -232,6 +280,10 @@ main(void)
       input_values[i] = i;
    context->buffer_subdata(context, input, 0, 0, sizeof(input_values),
                            input_values);
+   for (uint32_t i = 0; i < ARRAY_SIZE(input_values); ++i)
+      input_values[i] = 1000 + i;
+   context->buffer_subdata(context, rebound_output, 0, 0,
+                           sizeof(input_values), input_values);
    shader_buffers[0] = (struct pipe_shader_buffer){
       .buffer = root,
       .buffer_size = root->width0,
@@ -293,6 +345,74 @@ main(void)
    }
    if (failed)
       goto out;
+
+   /* A bounded nonuniform SSBO index selects retained direct Metal roots. */
+   {
+      struct pipe_shader_buffer dynamic_buffers[5] = {
+         {.buffer = root, .buffer_size = root->width0},
+         {.buffer = sampler_table, .buffer_size = sampler_table->width0},
+         {.buffer = input, .buffer_size = 8 * sizeof(uint32_t)},
+         {.buffer = rebound_output, .buffer_size = 8 * sizeof(uint32_t)},
+         {.buffer = output,
+          .buffer_offset = 512,
+          .buffer_size = 16 * sizeof(uint32_t)},
+      };
+      const struct pipe_grid_info grid = {
+         .work_dim = 1,
+         .block = {16, 1, 1},
+         .grid = {1, 1, 1},
+      };
+      const struct pipe_box dynamic_readback_box = {
+         .x = 512,
+         .width = 16 * (int)sizeof(uint32_t),
+         .height = 1,
+         .depth = 1,
+      };
+
+      context->bind_compute_state(context, bounded_dynamic_compute_state);
+      context->set_shader_buffers(context, MESA_SHADER_COMPUTE, 0,
+                                  ARRAY_SIZE(dynamic_buffers), dynamic_buffers,
+                                  UINT32_C(1) << 4);
+      context->launch_grid(context, &grid);
+      context->flush(context, &fence, 0);
+      if (!fence || !screen->fence_finish(screen, context, fence, UINT64_MAX)) {
+         fputs("SSBO bounded dynamic dispatch did not complete\n", stderr);
+         failed = 1;
+         goto out;
+      }
+      screen->fence_reference(screen, &fence, NULL);
+
+      {
+         const uint32_t *values = context->buffer_map(
+            context, output, 0, PIPE_MAP_READ, &dynamic_readback_box, &transfer);
+
+         if (!values || !transfer) {
+            fputs("SSBO bounded dynamic output could not map\n", stderr);
+            failed = 1;
+            goto out;
+         }
+         for (uint32_t i = 0; i < 16; ++i) {
+            const uint32_t expected = (i & 1) ? 1000 + (i >> 1) : (i >> 1);
+
+            if (values[i] != expected) {
+               fprintf(stderr,
+                       "SSBO bounded dynamic output %u was %u, expected %u\n",
+                       i, values[i], expected);
+               failed = 1;
+               break;
+            }
+         }
+         context->buffer_unmap(context, transfer);
+         transfer = NULL;
+      }
+      if (failed)
+         goto out;
+
+      context->bind_compute_state(context, compute_state);
+      context->set_shader_buffers(context, MESA_SHADER_COMPUTE, 0,
+                                  ARRAY_SIZE(shader_buffers), shader_buffers,
+                                  UINT32_C(1) << 3);
+   }
 
    /* Rebind one slot and a nonzero range without disturbing the other SSBOs. */
    {
@@ -493,7 +613,8 @@ out:
       context->buffer_unmap(context, transfer);
    if (fence)
       screen->fence_reference(screen, &fence, NULL);
-   if (context && (compute_state || atomic_compute_state || atomic_swap_compute_state)) {
+   if (context && (compute_state || bounded_dynamic_compute_state ||
+                   atomic_compute_state || atomic_swap_compute_state)) {
       context->set_shader_buffers(context, MESA_SHADER_COMPUTE, 0,
                                   ARRAY_SIZE(shader_buffers), NULL, 0);
       context->bind_compute_state(context, NULL);
@@ -502,12 +623,15 @@ out:
       context->delete_compute_state(context, atomic_compute_state);
    if (context && atomic_swap_compute_state)
       context->delete_compute_state(context, atomic_swap_compute_state);
+   if (context && bounded_dynamic_compute_state)
+      context->delete_compute_state(context, bounded_dynamic_compute_state);
    ralloc_free(atomic_swap_nir);
    if (context && compute_state) {
       context->delete_compute_state(context, compute_state);
    }
    ralloc_free(atomic_nir);
    ralloc_free(dynamic_nir);
+   ralloc_free(bounded_dynamic_nir);
    ralloc_free(nir);
    pipe_resource_reference(&atomic_counter, NULL);
    pipe_resource_reference(&atomic_previous_values, NULL);

@@ -7,9 +7,11 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 icd_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 stage_dir=${AVK143_STAGE_DIR:-"$icd_root/../build/AVK143"}
 manifest=${AVK143_KOSMICKRISP_MANIFEST:-"$stage_dir/prefix/share/vulkan/icd.d/kosmickrisp_mesa_icd.aarch64.json"}
-cts_binary=${AVK143_CTS_BINARY:-"$icd_root/../build/cts/build-cts/external/vulkancts/modules/vulkan/deqp-vk"}
-loader_dir=${AVK143_VULKAN_LOADER_DIR:-"$icd_root/../build/cts/prefix/lib"}
-results_dir=${AVK143_EARLY_FRAGMENT_QUALITY_RESULTS_DIR:-"$stage_dir/cts/early-fragment-quality"}
+cts_version=1.4.6.2
+cts_work_root=${AVK143_CTS_WORK_ROOT:-"$icd_root/../build/cts-${cts_version}"}
+cts_binary=${AVK143_CTS_BINARY:-"$cts_work_root/build-cts/external/vulkancts/modules/vulkan/deqp-vk"}
+loader_dir=${AVK143_VULKAN_LOADER_DIR:-"$cts_work_root/prefix/lib"}
+results_dir=${AVK143_EARLY_FRAGMENT_QUALITY_RESULTS_DIR:-"$stage_dir/cts/vulkan-${cts_version}/early-fragment-quality"}
 
 if [ ! -x "$cts_binary" ]; then
    printf '%s\n' "AVK143 CTS binary is missing or not executable: $cts_binary" >&2

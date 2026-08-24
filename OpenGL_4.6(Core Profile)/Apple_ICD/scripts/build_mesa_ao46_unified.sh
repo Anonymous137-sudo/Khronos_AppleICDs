@@ -22,7 +22,7 @@ export PATH
 if [ -f "$mesa_build_dir/build.ninja" ]; then
     meson setup --reconfigure "$mesa_build_dir" "$mesa_root" \
         -Dplatforms=macos \
-        -Dopengl=false \
+        -Dopengl=true \
         -Degl=disabled \
         -Dglx=disabled \
         -Dgallium-drivers=asahi \
@@ -35,7 +35,7 @@ else
         --buildtype=release \
         --default-library=static \
         -Dplatforms=macos \
-        -Dopengl=false \
+        -Dopengl=true \
         -Degl=disabled \
         -Dglx=disabled \
         -Dgallium-drivers=asahi \

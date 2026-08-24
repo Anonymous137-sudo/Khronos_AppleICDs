@@ -3,7 +3,7 @@ set -eu
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 project_root=$(CDPATH= cd -- "$script_dir/../.." && pwd)
-mesa_root=${AVK143_MESA_ROOT:-"$project_root/mesa"}
+headers_root=${AVK143_HEADERS_ROOT:-"$project_root/Apple_ICD/stdvkabi_khr/Vulkan-Headers"}
 stage_dir=${AVK143_STAGE_DIR:-"$project_root/build/AVK143"}
 icd_library=${AVK143_ICD_LIBRARY:-"$stage_dir/prefix/lib/libvulkan_kosmickrisp.dylib"}
 smoke_dir="$stage_dir/smoke"
@@ -17,7 +17,7 @@ fi
 
 mkdir -p "$smoke_dir"
 cc -std=c11 -Wall -Wextra -Werror -DVK_NO_PROTOTYPES \
-   -I "$mesa_root/include" \
+   -I "$headers_root/include" \
    "$project_root/Apple_ICD/tests/AVK143ICDDispatchSmoke.c" \
    -o "$smoke_binary"
 "$smoke_binary" --headers-only

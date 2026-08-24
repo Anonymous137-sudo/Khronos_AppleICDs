@@ -468,6 +468,18 @@ bool AO46MetalComputeSubmit(
    uint32_t threads_per_threadgroup_height,
    uint32_t threads_per_threadgroup_depth,
    struct AO46MetalSubmission *out_submission);
+/* Queue a compute stage on the classic Metal queue. This is used when a
+ * dependent operation, such as GPU-generated indirect rendering, cannot be
+ * encoded by MTL4 yet and all stages must share one ordered queue. */
+bool AO46MetalComputeSubmitClassic(
+   const struct AO46MetalAdapter *adapter,
+   const struct AO46MetalComputePipeline *pipeline,
+   const struct AO46MetalBufferBinding *bindings, size_t binding_count,
+   uint32_t grid_width, uint32_t grid_height, uint32_t grid_depth,
+   uint32_t threads_per_threadgroup_width,
+   uint32_t threads_per_threadgroup_height,
+   uint32_t threads_per_threadgroup_depth,
+   struct AO46MetalSubmission *out_submission);
 
 /*
  * Encodes a Mesa/Gallium indirect compute launch. The three uint32 workgroup

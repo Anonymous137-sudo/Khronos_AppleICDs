@@ -2,13 +2,13 @@
 set -eu
 
 runtime_prefix=${AVK143_RUNTIME_PREFIX:-/usr/local}
+tools_script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 if [ -n "${AVK143_TOOLS_BUILD_ROOT:-}" ]; then
     build_root=$AVK143_TOOLS_BUILD_ROOT
 else
     # In the source tree this resolves to <project>/build/VulkanTools. The
     # installed package runs from /usr/local/libexec, so use the configured
     # repository checkout rather than assuming the source-tree relative path.
-    tools_script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
     case "$tools_script_dir" in
         */Apple_ICD/scripts)
             build_root=$(CDPATH= cd -- "$tools_script_dir/../../build" && pwd)/VulkanTools
@@ -19,9 +19,9 @@ else
             ;;
     esac
 fi
-loader_root="$build_root/Vulkan-Loader"
+loader_root=${AVK143_LOADER_ROOT:-"$tools_script_dir/../Client/Vulkan-Loader"}
 tools_root="$build_root/Vulkan-Tools"
-headers_root="$build_root/Vulkan-Headers"
+headers_root=${AVK143_HEADERS_ROOT:-"$tools_script_dir/../stdvkabi_khr/Vulkan-Headers"}
 
 loader_url=${AVK143_LOADER_REPO_URL:-https://github.com/KhronosGroup/Vulkan-Loader.git}
 tools_url=${AVK143_TOOLS_REPO_URL:-https://github.com/KhronosGroup/Vulkan-Tools.git}
@@ -55,9 +55,13 @@ clone_or_update() {
 }
 
 mkdir -p "$build_root"
-clone_or_update "$loader_url" "$loader_branch" "$loader_root"
+if [ ! -e "$loader_root/.git" ]; then
+    clone_or_update "$loader_url" "$loader_branch" "$loader_root"
+fi
 clone_or_update "$tools_url" "$tools_branch" "$tools_root"
-clone_or_update "$headers_url" "$headers_branch" "$headers_root"
+if [ ! -e "$headers_root/.git" ]; then
+    clone_or_update "$headers_url" "$headers_branch" "$headers_root"
+fi
 if [ "${AVK143_BUILD_VALIDATION_LAYERS:-1}" = 1 ]; then
     layers_root="$build_root/Vulkan-ValidationLayers"
     clone_or_update "$layers_url" "$layers_branch" "$layers_root"

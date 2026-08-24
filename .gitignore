@@ -1,4 +1,9 @@
 dist/
+artifacts/
+build/
+XQuartz/
+Vulkan-Utility-Libraries/
+Vulkan_API_SDK_1.4.354/build/
 OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/build/
 OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/stage/
 OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/packages/
@@ -17,3 +22,4 @@ OpenGL_4.6(Core Profile)/Apple_ICD/artifacts/
 .DS_Store
 __pycache__/
 *.py[cod]
+*.qpa

@@ -4,6 +4,15 @@
 standard Khronos ICD. It does not provide a framework, a custom `CVK` ABI, an
 `NSVulkan_KHR` API, or a second Vulkan object model.
 
+The directory is a complete source assembly rather than a second Mesa fork:
+
+- `Client/Vulkan-Loader` contains the pinned Khronos Loader source.
+- `stdvkabi_khr/Vulkan-Headers` contains the pinned public ABI and registry.
+- `Drivers/KosmicKrisp` exposes the canonical sibling Mesa/KK sources to CMake.
+- `MesaPlatform` records Mesa Vulkan runtime, WSI, NIR, and utility build roots.
+- `ICD` and `Runtime` own discovery metadata and relocatable packaging.
+- `../mesa` remains the complete Mesa source submodule used by Meson.
+
 The public path is:
 
 ```text
@@ -142,6 +151,24 @@ The direct smoke does not replace a Vulkan Loader test. When a Khronos Vulkan
 Loader and `vulkaninfo` are available, run them with `VK_DRIVER_FILES` set to
 the staged JSON manifest for loader discovery and device-level validation.
 
+The default Vulkan CTS target is 1.4.6.2. After preparing it and completing the
+focused `info` and `memory_model` gates, the official default-mustpass inventory
+can be prepared, launched as four asynchronous hidden-FBO phases, and inspected
+without creating onscreen windows:
+
+```sh
+"Vulkan_API_SDK_1.4.354/Apple_ICD/scripts/prepare-avk143-vulkan-cts.sh"
+"Vulkan_API_SDK_1.4.354/Apple_ICD/scripts/run-avk143-vulkan-cts-mega.sh" prepare
+"Vulkan_API_SDK_1.4.354/Apple_ICD/scripts/run-avk143-vulkan-cts-mega.sh" launch
+"Vulkan_API_SDK_1.4.354/Apple_ICD/scripts/run-avk143-vulkan-cts-mega.sh" status
+```
+
+The four workers are owned by per-user `launchd`, so they remain asynchronous
+after the launcher returns. Each phase is resumable and receives a completion
+marker only when no failure, crash, timeout, resource error, or unexpected
+quality warning remains. Logs and summaries live under
+`build/AVK143/cts/vulkan-1.4.6.2/mega-mustpass`.
+
 `AVK143LoaderInstanceSmoke` is also built when CMake receives both
 `AVK143_VULKAN_LOADER` and `AVK143_KOSMICKRISP_MANIFEST`. It uses the standard
 loader to create a Vulkan 1.4 instance through the staged manifest and requires
@@ -165,11 +192,22 @@ Vulkan implementation.
 `scripts/run-avk143-vulkan-cts.sh` runs the official non-experimental
 `dEQP-VK` root groups against the staged ICD. It writes a QPA log and standard
 output per group, marks only successful groups complete, and resumes at root
-group boundaries on the next invocation. A full campaign contains 2,858,036
-cases in the Vulkan CTS 1.4.3.2 inventory, so it is intentionally a long-running
-qualification job rather than a single foreground smoke command.
+group boundaries on the next invocation. The active campaign uses Vulkan CTS
+1.4.6.2, so it is intentionally a long-running qualification job rather than a
+single foreground smoke command.
 
-### Current Release Evidence
+Prepare the extracted `~/Downloads/VK-GL-CTS-vulkan-cts-1.4.6.2` archive,
+its checksummed dependencies, a matching Khronos Loader, and `deqp-vk` with:
+
+```sh
+"Vulkan_API_SDK_1.4.354/Apple_ICD/scripts/prepare-avk143-vulkan-cts.sh"
+```
+
+The source and build locations can be overridden with `AVK143_CTS_ROOT` and
+`AVK143_CTS_WORK_ROOT`. The runner refuses to silently fall back to the old
+1.4.3.2 binary or results directory.
+
+### Previous 1.4.3.2 Release Evidence
 
 The `vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821` engineering
 release includes the source-controlled ledger in
@@ -185,8 +223,7 @@ Khronos certifies a submitted implementation. The `1.4.3.2` release component
 is the CTS suite revision, while the runtime/header package is Vulkan API SDK
 1.4.354.
 
-After the local CTS harness has been built under `build/cts`, the runner
-automatically uses its `VK-GL-CTS` checkout and Khronos Loader prefix:
+After the 1.4.6.2 harness has been prepared under `build/cts-1.4.6.2`, run:
 
 ```sh
 "Vulkan_API_SDK_1.4.354/Apple_ICD/scripts/run-avk143-vulkan-cts.sh"

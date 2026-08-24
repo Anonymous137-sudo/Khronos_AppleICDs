@@ -3,8 +3,48 @@
 #import "nir/nir.h"
 #include "nir_to_msl.h"
 #import "compiler/shader_info.h"
+#include "AO46MesaMSLComputePipeline.h"
 #include "util/ralloc.h"
 #include <stdint.h>
+
+static bool
+ao46_metal_collect_static_buffer_roots(struct nir_shader *nir,
+                                       uint16_t *inout_mask)
+{
+    uint16_t mask;
+
+    if (!nir || !inout_mask) {
+        return false;
+    }
+    mask = *inout_mask;
+    nir_foreach_function_impl(impl, nir) {
+        nir_foreach_block(block, impl) {
+            nir_foreach_instr(instr, block) {
+                nir_intrinsic_instr *intrinsic;
+                unsigned binding;
+
+                if (instr->type != nir_instr_type_intrinsic) {
+                    continue;
+                }
+                intrinsic = nir_instr_as_intrinsic(instr);
+                if (intrinsic->intrinsic != nir_intrinsic_load_buffer_ptr_kk) {
+                    continue;
+                }
+                binding = nir_intrinsic_binding(intrinsic);
+                if (binding == 0) {
+                    continue;
+                }
+                if (binding < 2 || binding >= 16) {
+                    return false;
+                }
+                mask |= UINT16_C(1) << binding;
+            }
+        }
+    }
+
+    *inout_mask = mask;
+    return true;
+}
 
 /**
  * Compile a NIR shader to a Metal function.
@@ -33,6 +73,39 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
     }
 
     nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
+    uint16_t static_buffer_mask = 0;
+    uint16_t static_image_mask = 0;
+    bool uses_draw_id = false;
+    if (!AO46MesaNIRLowerBoundedSSBOs(work_nir, &static_buffer_mask)) {
+        if (error) *error = [NSError errorWithDomain:@"AO46Metal" code:5
+                                             userInfo:@{NSLocalizedDescriptionKey: @"Unbounded SSBO indexing is not supported by the Metal buffer ABI"}];
+        ralloc_free(work_nir);
+        return nil;
+    }
+    if (!AO46MesaNIRLowerStaticImages(work_nir, &static_buffer_mask,
+                                      &static_image_mask)) {
+        if (error) *error = [NSError errorWithDomain:@"AO46Metal" code:7
+                                             userInfo:@{NSLocalizedDescriptionKey: @"Unbounded or unsupported image binding in Metal image ABI"}];
+        ralloc_free(work_nir);
+        return nil;
+    }
+    if (!AO46MesaNIRLowerDrawParameters(work_nir, &static_buffer_mask,
+                                        &uses_draw_id)) {
+        if (error) *error = [NSError errorWithDomain:@"AO46Metal" code:8
+                                             userInfo:@{NSLocalizedDescriptionKey: @"Unsupported shader draw-parameter lowering"}];
+        ralloc_free(work_nir);
+        return nil;
+    }
+    if (!ao46_metal_collect_static_buffer_roots(work_nir,
+                                                &static_buffer_mask)) {
+        if (error) *error = [NSError errorWithDomain:@"AO46Metal" code:6
+                                             userInfo:@{NSLocalizedDescriptionKey: @"NIR uses a Metal buffer root outside the active ABI"}];
+        ralloc_free(work_nir);
+        return nil;
+    }
+    nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
+    (void)static_image_mask;
+    (void)uses_draw_id;
     if (work_nir->info.stage == MESA_SHADER_FRAGMENT) {
         /* Mesa provides the selected fragment variant; lower its MSAA ABI to MSL. */
         if (static_sample_mask != UINT32_MAX) {
@@ -52,6 +125,7 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
     struct nir_to_msl_options translate_options = {
         .mem_ctx = work_nir,
         .disabled_workarounds = 0,
+        .static_buffer_mask = static_buffer_mask,
     };
 
     if (work_nir->info.stage == MESA_SHADER_FRAGMENT) {
@@ -84,13 +158,9 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
                 msl_source);
     }
 
-    MTLCompileOptions *options = [[MTLCompileOptions alloc] init];
-    /* Keep Mesa shader results conservative until a CTS-backed relaxed mode exists. */
-    options.languageVersion = MTLLanguageVersion2_4;
-
     NSError *compileError = nil;
     id<MTLLibrary> lib = [g_mtl_device newLibraryWithSource:sourceStr
-                                                    options:options
+                                                    options:nil
                                                       error:&compileError];
     if (!lib) {
         if (error) *error = compileError;

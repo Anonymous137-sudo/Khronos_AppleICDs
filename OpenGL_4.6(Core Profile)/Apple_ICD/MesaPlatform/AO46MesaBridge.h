@@ -43,6 +43,9 @@ struct AO46MesaCoreCapabilityAudit {
     bool gl40_texture_query_lod;
     bool gl40_transform_feedback2;
     bool gl40_transform_feedback3;
+    bool gl43_shader_storage_buffer_object;
+    bool gl45_clip_control;
+    bool gl46_indirect_parameters;
 };
 
 CGLError AO46MesaAuditCoreCapabilities(

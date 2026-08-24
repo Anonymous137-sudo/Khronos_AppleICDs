@@ -161,7 +161,7 @@ main(void)
    };
    struct pipe_resource rgb32_template = {
       .target = PIPE_BUFFER,
-      .format = PIPE_FORMAT_R32G32B32_UINT,
+      .format = PIPE_FORMAT_R8_UNORM,
       .width0 = sizeof(rgb32_data),
       .height0 = 1,
       .depth0 = 1,
@@ -171,7 +171,7 @@ main(void)
    };
    const struct pipe_resource rgb32_float_template = {
       .target = PIPE_BUFFER,
-      .format = PIPE_FORMAT_R32G32B32_FLOAT,
+      .format = PIPE_FORMAT_R8_UNORM,
       .width0 = sizeof(rgb32_float_data),
       .height0 = 1,
       .depth0 = 1,
@@ -181,7 +181,7 @@ main(void)
    };
    const struct pipe_resource rgb32_sint_template = {
       .target = PIPE_BUFFER,
-      .format = PIPE_FORMAT_R32G32B32_SINT,
+      .format = PIPE_FORMAT_R8_UNORM,
       .width0 = sizeof(rgb32_sint_data),
       .height0 = 1,
       .depth0 = 1,

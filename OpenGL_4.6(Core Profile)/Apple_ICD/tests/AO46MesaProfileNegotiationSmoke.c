@@ -16,7 +16,12 @@ fail(const char *label, CGLError error)
 int
 main(void)
 {
-    const CGLPixelFormatAttribute attributes[] = {
+    const CGLPixelFormatAttribute gl41_attributes[] = {
+        kCGLPFAOpenGLProfile,
+        (CGLPixelFormatAttribute)kCGLOGLPVersion_GL4_Core,
+        0,
+    };
+    const CGLPixelFormatAttribute gl46_attributes[] = {
         kCGLPFAOpenGLProfile,
         (CGLPixelFormatAttribute)kCGLOGLPVersion_GL4_6_Core,
         0,
@@ -37,7 +42,51 @@ main(void)
         return fail("AO46 promoted Metal Gallium screen", kCGLBadContext);
     }
 
-    error = AO46ChoosePixelFormat(attributes, &pixel_format, &pixel_format_count);
+    error = AO46ChoosePixelFormat(gl41_attributes, &pixel_format,
+                                  &pixel_format_count);
+    if (error != kCGLNoError || !pixel_format || pixel_format_count != 1) {
+        return fail("AO46ChoosePixelFormat(GL 4.1 core)", error);
+    }
+
+    error = AO46CreateContext(pixel_format, NULL, &context);
+    if (error != kCGLNoError || !context) {
+        AO46DestroyPixelFormat(pixel_format);
+        return fail("AO46CreateContext(GL 4.1 core)", error);
+    }
+
+    error = AO46SetOffScreen(context, 1, 1, 4, storage);
+    if (error == kCGLNoError)
+        error = AO46SetCurrentContext(context);
+    if (error != kCGLNoError) {
+        AO46DestroyContext(context);
+        AO46DestroyPixelFormat(pixel_format);
+        return fail("AO46SetCurrentContext(GL 4.1 core)", error);
+    }
+
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+    glClearColor(0.25f, 0.5f, 0.75f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+    if (glGetError() != GL_NO_ERROR || major < 4 ||
+        (major == 4 && minor < 1) || pixel[0] < 63 || pixel[0] > 65 ||
+        pixel[1] < 127 || pixel[1] > 129 || pixel[2] < 190 ||
+        pixel[2] > 192 || pixel[3] != 255) {
+        AO46SetCurrentContext(NULL);
+        AO46DestroyContext(context);
+        AO46DestroyPixelFormat(pixel_format);
+        return fail("AO46 GL 4.1 Mesa context and hardware readback",
+                    kCGLBadContext);
+    }
+    AO46SetCurrentContext(NULL);
+    AO46DestroyContext(context);
+    AO46DestroyPixelFormat(pixel_format);
+    context = NULL;
+    pixel_format = NULL;
+    pixel_format_count = 0;
+
+    error = AO46ChoosePixelFormat(gl46_attributes, &pixel_format,
+                                  &pixel_format_count);
     if (error != kCGLNoError || !pixel_format || pixel_format_count != 1) {
         return fail("AO46ChoosePixelFormat(GL 4.6 core)", error);
     }
@@ -66,20 +115,10 @@ main(void)
         AO46DestroyPixelFormat(pixel_format);
         return fail("AO46SetCurrentContext(GL 4.6 core)", error);
     }
-
+    major = 0;
+    minor = 0;
     glGetIntegerv(GL_MAJOR_VERSION, &major);
     glGetIntegerv(GL_MINOR_VERSION, &minor);
-    glClearColor(0.25f, 0.5f, 0.75f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
-    if (glGetError() != GL_NO_ERROR || pixel[0] < 63 || pixel[0] > 65 ||
-        pixel[1] < 127 || pixel[1] > 129 || pixel[2] < 190 ||
-        pixel[2] > 192 || pixel[3] != 255) {
-        AO46SetCurrentContext(NULL);
-        AO46DestroyContext(context);
-        AO46DestroyPixelFormat(pixel_format);
-        return fail("AO46 native Mesa offscreen clear/readback", kCGLBadContext);
-    }
     AO46SetCurrentContext(NULL);
     AO46DestroyContext(context);
     AO46DestroyPixelFormat(pixel_format);

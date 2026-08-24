@@ -2230,9 +2230,9 @@ ao46_metal_gallium_sampler_view_is_supported(
              (template->format == PIPE_FORMAT_R32G32B32_FLOAT ||
               template->format == PIPE_FORMAT_R32G32B32_UINT ||
               template->format == PIPE_FORMAT_R32G32B32_SINT) &&
-             texture->format == template->format &&
              size != 0 && size <= texture->width0 - offset &&
-             offset % rgb32_texel_bytes == 0 && size % rgb32_texel_bytes == 0;
+             offset % sizeof(uint32_t) == 0 &&
+             size % rgb32_texel_bytes == 0;
    }
 
    return texture && template && texture->target == PIPE_TEXTURE_2D &&
@@ -2671,6 +2671,7 @@ AO46MetalGalliumScreenCreate(const struct AO46MetalAdapter *adapter)
 {
    struct AO46MetalGalliumScreen *screen;
    struct pipe_caps *caps;
+   size_t max_rgb32_elements;
 
    if (!AO46MetalAdapterIsCurrent(adapter))
       return NULL;
@@ -2682,12 +2683,22 @@ AO46MetalGalliumScreenCreate(const struct AO46MetalAdapter *adapter)
    screen->adapter = adapter;
    caps = (struct pipe_caps *)&screen->base.caps;
    caps->accelerated = true;
+   caps->graphics = true;
    caps->vendor_id = 0x106b;
    caps->device_id = (uint32_t)adapter->registry_id;
    caps->uma = adapter->unified_memory;
    caps->endianness = PIPE_ENDIAN_LITTLE;
    caps->min_map_buffer_alignment = 64;
    caps->constant_buffer_offset_alignment = 1;
+   caps->texture_buffer_objects = true;
+   caps->texture_buffer_offset_alignment = sizeof(uint32_t);
+   max_rgb32_elements = adapter->max_buffer_length / (3 * sizeof(uint32_t));
+   caps->max_texel_buffer_elements =
+      max_rgb32_elements > UINT32_MAX ? UINT32_MAX
+                                      : (unsigned)max_rgb32_elements;
+   caps->draw_indirect = true;
+   caps->multi_draw_indirect = true;
+   caps->multi_draw_indirect_params = true;
 
    screen->base.destroy = ao46_metal_gallium_destroy;
    screen->base.get_name = ao46_metal_gallium_get_name;

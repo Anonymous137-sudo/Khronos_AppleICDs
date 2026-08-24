@@ -33,7 +33,6 @@ AO46MesaRGB32BufferTextureBindingFromSamplerView(
 
    if (!view || !view->texture || !out_binding ||
        view->target != PIPE_BUFFER || view->texture->target != PIPE_BUFFER ||
-       view->format != view->texture->format ||
        view->swizzle_r != PIPE_SWIZZLE_X ||
        view->swizzle_g != PIPE_SWIZZLE_Y ||
        view->swizzle_b != PIPE_SWIZZLE_Z ||
@@ -61,7 +60,7 @@ AO46MesaRGB32BufferTextureBindingFromSamplerView(
 
    size = view->u.buf.size ? view->u.buf.size : texture_size - offset;
    if (size == 0 || size > texture_size - offset ||
-       offset % (3 * sizeof(uint32_t)) != 0 ||
+       offset % sizeof(uint32_t) != 0 ||
        size % (3 * sizeof(uint32_t)) != 0 ||
        size / (3 * sizeof(uint32_t)) > UINT32_MAX)
       return false;

@@ -36,9 +36,10 @@ work may resume from this recorded boundary.
 The modern product supports surfaceless pbuffers plus public Cocoa
 window surfaces. `eglCreateWindowSurface` accepts a platform-native public
 `CAMetalLayer`, `NSView`, or `NSWindow`; it does not provide Wayland or X11
-surfaces. Its honest current capability ceiling remains the already audited
-OpenGL 3.3 core subset. It is not a GL 4.x advertisement and has not run
-Khronos CTS.
+surfaces. The frontend was frozen after its OpenGL 3.3 pbuffer milestone, but
+the resumed Gallium work has since raised Mesa's selected engineering ceiling
+to OpenGL 4.1 core. This is not an OpenGL 4.6 or Khronos conformance claim;
+OpenGL CTS has not yet been completed.
 
 The legacy framework/CGL/NSOpenGL product remains a separate compatibility
 path. It may share lower AO46 Metal libraries, but its objects, loader names,

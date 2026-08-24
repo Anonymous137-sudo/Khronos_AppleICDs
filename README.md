@@ -15,14 +15,20 @@ application-facing ABIs, loaders, or installation names.
 
 | Product | Current state | Important boundary |
 | --- | --- | --- |
-| **Vulkan API SDK 1.4.354** | Published engineering release, qualified with `vulkan-cts-1.4.3.2` evidence. | Not Khronos certified; `VkConformanceVersion` is `{ 0, 0, 0, 0 }`. |
-| **AO46 standard OpenGL/EGL** | Active Mesa Metal Gallium development, with verified standard EGL/OpenGL 3.3-core smoke coverage. | Not an OpenGL 4.6 or CTS-conformance claim. |
+| **Vulkan API SDK 1.4.354** | Published engineering release plus a CTS 1.4.6.2 engineering prerelease candidate. | Not Khronos certified; `VkConformanceVersion` is `{ 0, 0, 0, 0 }`. |
+| **AO46 standard OpenGL/EGL** | Active Mesa Metal Gallium development. The Mesa-selected engineering ceiling has risen from OpenGL 3.3 to OpenGL 4.1. | OpenGL CTS remains pending; this is not an OpenGL 4.6 or conformance claim. |
 | **AO46 legacy framework path** | Experimental compatibility product for software requiring CGL/NSOpenGL/framework-style interfaces. | Separate from the standard EGL/OpenGL ABI and developer-machine only. |
 
 ## Vulkan Release
 
-The current release is [Vulkan API SDK 1.4.354 - CTS-qualified 1.4.3.2
+The stable engineering release is [Vulkan API SDK 1.4.354 - CTS-qualified 1.4.3.2
 (engineering)](https://github.com/Anonymous137-sudo/Khronos_AppleICDs/releases/tag/vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821).
+
+The current developer prerelease updates both Mesa downstreams to upstream
+`4641f0094f2`, packages a machine-neutral prebuilt Vulkan runtime, and records
+the CTS 1.4.6.2 admission results. Six Vulkan Memory Model cases still fail,
+so the full 3,230,231-case campaign was not admitted and this is not a CTS or
+conformance claim. See the [prerelease record](Vulkan_API_SDK_1.4.354/RELEASES/PRE_RELEASE_CTS_1.4.6.2_20260824.md).
 
 It provides a standard Vulkan ICD route:
 
@@ -75,7 +81,10 @@ The modern path is CGL-free and uses the standard Khronos ABI. It supports
 surfaceless/pbuffer contexts and public Cocoa window drawables through
 `CAMetalLayer`, `NSView`, or `NSWindow`. Current hardware smoke coverage proves
 EGL context creation, Mesa state-tracker rendering, Metal readback, swap, and
-teardown at the audited **OpenGL 3.3 core** ceiling.
+teardown. The original frontend milestone used a 3.3-core context; subsequent
+Gallium capability work has raised the current Mesa-selected engineering
+ceiling to **OpenGL 4.1 core**. The 4.1 ceiling is covered by the project
+regression suite but has not yet been qualified with OpenGL CTS.
 
 The legacy path remains distinct:
 
@@ -96,6 +105,19 @@ and [workflow dashboard](docs/WORKFLOW_PLAN.md).
 ## Quick Start
 
 ### Vulkan ICD
+
+Build the verified prebuilt-runtime package after staging the ICD and tools:
+
+```sh
+"Vulkan_API_SDK_1.4.354/Apple_ICD/scripts/build_vulkan_runtime_preview_pkg.sh"
+```
+
+It produces `dist/Vulkan-1.4.354-Preview.pkg` with the ICD, Loader,
+`vulkaninfo`, the complete macOS `vkcube.app`, validation layer, headers, and
+pkg-config metadata. The builder rejects personal paths and build-machine
+metadata before creating the package.
+
+The source-bootstrap installer remains available for developer rebuilds:
 
 Build the standard source-bootstrap installer:
 

@@ -655,6 +655,7 @@ add_library(AO46MTLGallium SHARED
     MesaPlatform/AO46MetalGalliumScreen.c
     MesaPlatform/AO46MesaRGB32BufferTextureBinding.c
     MesaPlatform/AO46MesaNIRBufferTexture.c
+    MesaPlatform/AO46MesaNIRVertexInput.c
     MesaPlatform/AO46MesaRGB32BufferTexturePipeline.c
     MesaPlatform/AO46MesaPolyTessellation.c
     MesaPlatform/AO46MesaPolyKernelCatalog.c
@@ -667,12 +668,14 @@ target_include_directories(AO46MTLGallium
     PRIVATE
         GL2MTL
         MesaPlatform
+        "${AO46_MESA_LIBKK_GENERATED_DIR}"
         "${MESA_INCLUDE_DIRS}"
 )
 
 target_compile_definitions(AO46MTLGallium
     PRIVATE
         ${MESA_COMPILE_DEFINITIONS}
+        AO46_HAVE_MESA_LIBKK=${AO46_HAVE_MESA_LIBKK}
 )
 
 target_link_libraries(AO46MTLGallium
@@ -1086,11 +1089,23 @@ if(BUILD_TESTING)
                 "${MESA_INCLUDE_DIRS}"
         )
 
-    target_link_libraries(AO46MTLGalliumAdapterSmoke
-        PRIVATE
-            AO46MTLGallium
-            AO46AGXMetalAdapter
-    )
+        target_compile_definitions(AO46MTLGalliumAdapterSmoke
+            PRIVATE
+                ${MESA_COMPILE_DEFINITIONS}
+        )
+
+        target_link_libraries(AO46MTLGalliumAdapterSmoke
+            PRIVATE
+                AO46MTLGallium
+                AO46AGXMetalAdapter
+                ${MESA_NIR_LIB}
+                ${MESA_COMPILER_LIB}
+                ${MESA_GALLIUM_AUX}
+                ${MESA_UTIL_LIB}
+                ${MESA_UTIL_SIMD_LIB}
+                ${MESA_UTIL_C11_LIB}
+                ${MESA_BLAKE3_LIB}
+        )
 
         target_compile_options(AO46MTLGalliumAdapterSmoke PRIVATE -fobjc-arc)
 
@@ -1441,13 +1456,6 @@ if(BUILD_TESTING)
 
         add_executable(AO46MesaPolyGalliumChainSmoke
             tests/AO46MesaPolyGalliumChainSmoke.m
-            MesaPlatform/AO46MesaPolyTessellation.c
-            MesaPlatform/AO46MesaPolyKernelCatalog.c
-            MesaPlatform/AO46MesaPolyKernelExecutor.c
-            MesaPlatform/AO46MetalAdapter.m
-            MesaPlatform/AO46MetalGalliumScreen.c
-            MesaPlatform/AO46MesaMSLComputePipeline.c
-            MesaPlatform/AO46MesaMSLRenderPipeline.c
         )
 
         target_include_directories(AO46MesaPolyGalliumChainSmoke
@@ -1465,6 +1473,8 @@ if(BUILD_TESTING)
 
         target_link_libraries(AO46MesaPolyGalliumChainSmoke
             PRIVATE
+                AO46MTLGallium
+                AO46AGXMetalAdapter
                 AO46MesaPolyKernelArtifacts
                 AO46MesaMSLCompiler
                 ${MESA_POLY_NIR_LIB}

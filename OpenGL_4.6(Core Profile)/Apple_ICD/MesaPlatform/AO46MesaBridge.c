@@ -1089,6 +1089,10 @@ AO46MesaAuditCoreCapabilities(struct AO46MesaCoreCapabilityAudit *out_audit)
         .gl40_texture_query_lod = extensions.ARB_texture_query_lod,
         .gl40_transform_feedback2 = extensions.ARB_transform_feedback2,
         .gl40_transform_feedback3 = extensions.ARB_transform_feedback3,
+        .gl43_shader_storage_buffer_object =
+            extensions.ARB_shader_storage_buffer_object,
+        .gl45_clip_control = extensions.ARB_clip_control,
+        .gl46_indirect_parameters = extensions.ARB_indirect_parameters,
     };
     free(consts.SpirVExtensions);
     pthread_mutex_unlock(&g_gl_screen_lock);
@@ -1189,6 +1193,14 @@ AO46MesaCreateContext(AO46PixelFormatRef pix,
 
     ctx->st = st_api_create_context(&g_frontend_screen.base, &attribs, &error, shared_st);
     if (!ctx->st) {
+        if (getenv("AO46_TRACE_RUNTIME")) {
+            fprintf(stderr,
+                    "[AO46Mesa] st_api_create_context failed: error=%d requested=%d.%d shared=%s\n",
+                    (int)error,
+                    attribs.major,
+                    attribs.minor,
+                    shared_st ? "yes" : "no");
+        }
         AO46DestroyPixelFormat(ctx->pixel_format);
         free(ctx);
         return error == ST_CONTEXT_ERROR_BAD_VERSION ? kCGLBadPixelFormat

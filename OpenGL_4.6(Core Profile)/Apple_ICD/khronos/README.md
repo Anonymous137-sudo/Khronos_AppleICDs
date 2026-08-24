@@ -61,9 +61,10 @@ no WindowServer drawable, so it is not registered as a headless test.
 `NSWindow` as its platform-native `EGLNativeWindowType`. AO46 owns the retained
 layer, resize and backing-scale refresh, swap interval `0`/`1`, drawable loss,
 and completion-based source-resource retirement. The current presentation scope
-is sRGB `RGBA8`/`BGRA8`; it does not provide Wayland or X11 surfaces. The active
-source is now frozen while AVK143 is developed. This is a complete frontend
-boundary, not a claim of GL 4.x or CTS conformance.
+is sRGB `RGBA8`/`BGRA8`; it does not provide Wayland or X11 surfaces. The
+frontend boundary is complete, while the active backend currently exposes the
+Mesa-selected OpenGL 4.1 ceiling. That measured version is not a Khronos CTS
+conformance claim.
 
 From a live desktop session, run the visible smoke after a Mesa build with:
 

@@ -77,3 +77,13 @@ bool AO46MesaNIRLowerRGB32BufferTextures(
    struct nir_shader *nir,
    const struct AO46MesaRGB32BufferTextureBinding *bindings,
    uint32_t binding_count);
+
+/*
+ * Lowers the same bounded views through one table of 64-bit GPU addresses.
+ * This lets every Gallium sampler slot remain available without consuming one
+ * Metal buffer argument per packed RGB32 view.
+ */
+bool AO46MesaNIRLowerRGB32BufferTexturesWithAddressTable(
+   struct nir_shader *nir,
+   const struct AO46MesaRGB32BufferTextureBinding *bindings,
+   uint32_t binding_count, unsigned address_table_binding);

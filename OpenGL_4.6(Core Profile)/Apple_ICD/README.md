@@ -17,8 +17,9 @@ AO46's active backend direction is Mesa-to-Metal:
   reusable NIR-to-MSL compiler machinery.
 - AO46 supplies the shared macOS Metal execution layer and the separate legacy
   framework/CGL/NSOpenGL compatibility path.
-- `GL2MTL` is archived development material, not the active semantic engine or
-  a framework fallback.
+- The promoted `GL2MTL/mtl_driver.m` and `mtl_shader_compiler.m` sources now
+  implement `AO46MTLGallium`, the active Mesa-facing Metal driver. They do not
+  implement OpenGL semantics; Mesa remains the semantic engine.
 - `AO46AGXMac` and the direct AGX/UABI work are archived research. Their
   evidence informs backend decisions but they are not the selected runtime
   route or a conformance claim.
@@ -34,8 +35,9 @@ compiler. The governing design is
 - `backend/`
   Archived development backend interfaces; not part of the production runtime.
 - `GL2MTL/`
-  Archived Metal development code. It is not the production OpenGL semantic
-  engine and is not linked by default.
+  The promoted Metal Gallium screen and NIR-to-MSL connection. Mesa owns GL
+  semantics; these sources own Gallium resource/state translation and Metal
+  execution.
 - `AO46AGXMac/`
   Archived direct-AGX research adapter. See `docs/research/evidence/` for its
   retained observations and raw analysis output.
@@ -102,12 +104,90 @@ Right now this subproject is an early in-development driver:
   bounded non-mipmapped Gallium sampler states. `nearest`/`linear` filtering
   and `clamp-to-edge`/`repeat` addressing map directly to public Metal; a slot
   shared by both stages must retain the same view and sampler or the draw fails
-  closed. This is not yet a broad OpenGL feature claim. The current state
-  tracker reaches an audited OpenGL 3.3 core ceiling, while GL 4.6 requests
-  continue to fail closed.
+  closed. This is not yet a broad conformance claim. Mesa now independently
+  selects an audited OpenGL 4.1 core ceiling from the promoted screen's
+  capability set, while requests above that ceiling continue to fail closed.
 - direct AGX device-profile, BO, queue, submission, and shader-residency work
   is retained as research evidence rather than treated as the active blocker
   for the Metal backend
+
+## Three-Lane Feature Status
+
+The active Metal Gallium driver advances older and modern functionality in
+parallel, but reports only the core version whose complete Mesa capability
+gate is satisfied:
+
+- **Older feature lane:** general `RGB32_FLOAT`, `RGB32_UINT`, and
+  `RGB32_SINT` `PIPE_BUFFER` sampler views carry Mesa-selected byte ranges into
+  direct Metal buffer roots and pass graphics readback. Bounded Mesa stream
+  output now captures two vertex varyings simultaneously into independently
+  ranged Gallium targets, preserves both target-relative offsets across an
+  unbind/rebind pause, appends a second draw, and verifies all twelve GPU
+  records. Gallium stream-output statistics queries report exact
+  generated/written primitive counts, and
+  `count_from_stream_output` drives a fenced two-triangle draw from the retained
+  target. All eleven Mesa OpenGL 4.0 gates are now active, including RGB32
+  buffer textures, transform feedback 2/3, and tessellation. The promoted screen
+  admits validated Mesa TCS/TES state, default tessellation levels, and
+  patch-vertex state. It also executes the bounded Mesa-poly TCS, tessellation-
+  count, prefix-sum, tessellator, generated-index, and TES render sequence
+  through the production `AO46MTLGallium` context. The same hardware smoke now
+  runs against both the retained reference screen and the promoted screen. A
+  second promoted-screen path now derives its plan and checked transient
+  package directly from ordinary Gallium TCS/TES, patch, framebuffer, and
+  `draw_vbo` state; it executes two patches without any AO46-only package or
+  pipeline binding. That path now also clones the bound Mesa VS into a
+  64-thread software vertex prepass, constructs `poly_vertex_params`, retains
+  the packed VS-output allocation, and proves a TCS `gl_in[0]` read through the
+  normal Gallium state path. The compute VS prepass now lowers general Gallium
+  vertex-buffer `load_input`, honors nonzero first vertex and base instance,
+  consumes validated `DrawArraysIndirect` records, and queues retained
+  multi-draw patch packages asynchronously on one ordered Metal queue. Mesa's
+  poly TCS, count, prefix-sum, tessellator, generated-index, and TES stages use
+  one terminal completion wait rather than serial CPU waits between stages.
+- **OpenGL 4.3 lane:** Mesa SSBO NIR lowering is connected to compute, vertex,
+  and fragment compilation. Static graphics bindings and bounded dynamic
+  compute indexing use retained Gallium buffer ranges and pass hardware
+  readback. Constant-index Mesa storage images now lower through KK to typed
+  direct Metal texture arguments; a Gallium image-load/read-modify-write
+  dispatch reads two initialized integer texels, updates them with
+  `imageStore`, and reads the exact results back through a fence. A separate
+  `R32_UINT` workload dispatches two `imageAtomicAdd` operations in separate
+  launches, crosses an encoder-local `PIPE_BARRIER_IMAGE` Metal texture
+  barrier, and verifies the exact final value through Gallium readback. A separate
+  four-invocation SSBO `atomicAdd` workload updates a retained `MTLBuffer` from
+  5 to 17 and verifies it through Gallium mapping. It is now split into two
+  dispatches separated by `pipe_context::memory_barrier`; the promoted driver
+  emits an encoder-local Metal buffer barrier and retains a finished-submission
+  fallback when no compatible encoder is active. General image arrays,
+  image queries, arbitrary descriptor indexing, complete robustness, and full
+  state-tracker conformance remain pending.
+- **OpenGL 4.5/4.6 lane:** clip-control depth modes compile as distinct Mesa
+  NIR/Metal pipeline variants and pass hardware clipping tests. The bounded
+  indirect-parameters path consumes a GPU-produced count buffer after an
+  explicit shader-buffer plus indirect-buffer barrier; both the ordinary and
+  per-record DrawID/BaseInstance paths pass hardware readback. Gallium texture
+  barriers map sampler/framebuffer visibility to encoder-local Metal scopes
+  with a finished-submission fallback. Shaders that
+  do not consume draw parameters keep the asynchronous Metal indirect-command
+  path. DrawID/BaseVertex/BaseInstance shaders use a bounded completion wait to
+  resolve the count, then execute the selected indirect records with exact
+  per-record parameter bindings; Metal's inherited ICB buffer state cannot vary
+  that Mesa root per command on the current path. Mesa `load_draw_id` also reaches a retained
+  per-draw parameter buffer and selects distinct geometry for a validated
+  multi-draw readback. The same ABI now carries signed BaseVertex and
+  BaseInstance explicitly; a nonzero indexed/base-instance hardware draw
+  validates all three shader draw parameters together. Plain indirect
+  multi-draw also binds DrawID and BaseInstance independently for each retained
+  command record, including a nonzero vertex start. Gallium's
+  `texture_barrier` callback is now backed by Metal texture/render-target
+  barriers inside an active render encoder, with conservative finished
+  submission outside that scope; the hardware smoke exercises this callback
+  before fence retirement.
+
+The audited Mesa-selected core ceiling is now OpenGL 4.1. This closes the
+OpenGL 4.0 capability gate, but it is not a Khronos conformance result and does
+not claim complete OpenGL 4.2, 4.3, 4.5, or 4.6 contexts.
 
 ## Build
 
@@ -150,20 +230,21 @@ This tree includes runtime and bridge smoke harnesses:
   and verifies the combined sampled regions after Gallium fence retirement. A
   missing vertex-stage view is rejected before command encoding.
 - `tests/AO46MesaNIRSSBOSmoke.c`
-  Lowers static-index Mesa `load_ssbo`, `store_ssbo`, and atomic operations
-  through Mesa's generic SSBO pass into AO46's direct `MTLBuffer` roots. It
-  verifies a nonzero writable range, a sparse slot-3 rebound range, a
-  32-invocation atomic-add counter, and a serialized atomic exchange with its
-  returned values through Gallium fence-backed readback. Dynamic indexing,
-  robust size queries,
+  Lowers static and bounded-dynamic Mesa `load_ssbo`, `store_ssbo`, and atomic
+  operations through Mesa's generic SSBO pass into AO46's direct `MTLBuffer`
+  roots. It verifies a nonzero writable range, sparse and dynamically selected
+  ranges, a 32-invocation atomic-add counter, and a serialized atomic exchange
+  with its returned values through Gallium fence-backed readback. The active
+  vertex/fragment compiler and binder additionally verify a static fragment
+  SSBO through graphics readback. Unbounded indexing, robust size queries,
   descriptor tables, cross-dispatch barrier semantics, and complete
-  state-tracker SSBO binding remain fail-closed, so this is groundwork rather
-  than a GL 4.3 feature claim.
+  state-tracker SSBO conformance remain fail-closed, so this is a proven
+  feature path rather than a complete GL 4.3 claim.
 - `tests/AO46MesaNIRBufferTextureGraphicsSmoke.c`
-  Compiles static RGB32 `FLOAT`, `UINT`, and `SINT` `PIPE_BUFFER` sampler
-  views through the live Gallium sampler-state path. Its unsigned variant also
-  performs the existing fence-backed hardware draw/readback and binding-reuse
-  validation; generalized Mesa sampler views remain pending.
+  Compiles RGB32 `FLOAT`, `UINT`, and `SINT` `PIPE_BUFFER` sampler views over
+  typeless Gallium buffers through the live sampler-state path. Mesa-selected
+  offsets and sizes feed direct Metal address roots; the unsigned variant
+  performs fence-backed hardware draw/readback and binding-reuse validation.
 - `tests/AO46MesaNIRUniformSmoke.c`
   Loads two fragment-color terms through Mesa NIR `UBO 0` and `UBO 1`, rejects
   missing or undersized bindings, maps nonzero UBO bindings to Metal buffers
@@ -197,6 +278,17 @@ This tree includes runtime and bridge smoke harnesses:
   The plan selects Mesa libkk's triangle, quad, or isoline kernel and the
   adapter derives the matching native triangle/line/point output topology from
   finalized Mesa TES state.
+  The production `AO46MTLGallium` target now compiles with Mesa libkk's
+  generated kernel catalog and owns this complete bounded sequence rather than
+  relying on a test-only or reference-screen copy. Its PIPE_BUFFER resources
+  are registered with the low-level MTL4 residency tracker for the lifetime of
+  the Gallium resource. The terminal fence covers the generated indexed TES
+  draw, while each prerequisite compute stage is ordered and validated before
+  that draw. The driver-owned path reuses Mesa's patch-output count, per-vertex
+  output mask, output stride, partitioning, point/isoline mode, orientation,
+  and default tessellation-level contracts when constructing
+  `poly_tess_params`. Its transient heap is overflow checked and sized from the
+  number of patches rather than from a smoke-test constant.
   Direct indexed/
   non-indexed draws also carry instance count and base instance to Metal and
   support static per-instance vertex divisors. A bounded `1..64` sequence of

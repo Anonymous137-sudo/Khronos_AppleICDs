@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(AVK143ICDAssembly LANGUAGES C)
+project(AVK143ICDAssembly VERSION 1.4.354 LANGUAGES C)
 
 set(AVK143_MESA_ROOT
     "${CMAKE_CURRENT_LIST_DIR}/../mesa"
@@ -18,6 +18,32 @@ set(AVK143_VULKANINFO
     ""
     CACHE FILEPATH "Standard VulkanInfo executable for runtime-discovery tests")
 
+set(AVK143_KHRONOS_HEADERS_ROOT
+    "${CMAKE_CURRENT_LIST_DIR}/stdvkabi_khr/Vulkan-Headers"
+    CACHE PATH "Pinned Khronos Vulkan-Headers checkout")
+set(AVK143_KHRONOS_LOADER_ROOT
+    "${CMAKE_CURRENT_LIST_DIR}/Client/Vulkan-Loader"
+    CACHE PATH "Pinned Khronos Vulkan-Loader checkout")
+
+if(NOT EXISTS "${AVK143_KHRONOS_HEADERS_ROOT}/include/vulkan/vulkan.h")
+    message(FATAL_ERROR
+        "Initialize Apple_ICD's Vulkan-Headers submodule at ${AVK143_KHRONOS_HEADERS_ROOT}")
+endif()
+
+add_library(AVK143KhronosABI INTERFACE)
+add_library(AVK143::KhronosABI ALIAS AVK143KhronosABI)
+target_include_directories(AVK143KhronosABI INTERFACE
+    "${AVK143_KHRONOS_HEADERS_ROOT}/include")
+
+# These subdirectories describe every source-owning layer in IDEs and expose
+# explicit assembly targets. Mesa remains the canonical sibling checkout; the
+# Apple_ICD tree does not carry a stale second copy of KosmicKrisp.
+add_subdirectory(Client)
+add_subdirectory(Drivers)
+add_subdirectory(ICD)
+add_subdirectory(MesaPlatform)
+add_subdirectory(Runtime)
+
 if(NOT EXISTS "${AVK143_MESA_ROOT}/include/vulkan/vk_icd.h")
     message(FATAL_ERROR
         "AVK143_MESA_ROOT must contain Mesa's standard Vulkan headers and ICD ABI")
@@ -26,17 +52,14 @@ endif()
 add_executable(AVK143ICDDispatchSmoke
     tests/AVK143ICDDispatchSmoke.c)
 target_compile_definitions(AVK143ICDDispatchSmoke PRIVATE VK_NO_PROTOTYPES)
-target_include_directories(AVK143ICDDispatchSmoke PRIVATE
-    "${AVK143_MESA_ROOT}/include")
-target_link_libraries(AVK143ICDDispatchSmoke PRIVATE ${CMAKE_DL_LIBS})
+target_link_libraries(AVK143ICDDispatchSmoke PRIVATE
+    AVK143::KhronosABI ${CMAKE_DL_LIBS})
 
 if(AVK143_VULKAN_LOADER)
     add_executable(AVK143LoaderInstanceSmoke
         tests/AVK143LoaderInstanceSmoke.c)
-    target_include_directories(AVK143LoaderInstanceSmoke PRIVATE
-        "${AVK143_MESA_ROOT}/include")
     target_link_libraries(AVK143LoaderInstanceSmoke PRIVATE
-        "${AVK143_VULKAN_LOADER}")
+        AVK143::KhronosABI "${AVK143_VULKAN_LOADER}")
 
     find_program(AVK143_GLSLC_EXECUTABLE NAMES glslc)
     if(AVK143_GLSLC_EXECUTABLE)
@@ -55,10 +78,8 @@ if(AVK143_VULKAN_LOADER)
         add_executable(AVK143ComputeSmoke
             tests/AVK143ComputeSmoke.c)
         add_dependencies(AVK143ComputeSmoke AVK143ComputeShader)
-        target_include_directories(AVK143ComputeSmoke PRIVATE
-            "${AVK143_MESA_ROOT}/include")
         target_link_libraries(AVK143ComputeSmoke PRIVATE
-            "${AVK143_VULKAN_LOADER}")
+            AVK143::KhronosABI "${AVK143_VULKAN_LOADER}")
     endif()
 endif()
 

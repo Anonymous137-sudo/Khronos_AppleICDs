@@ -1,8 +1,9 @@
 # AO46 Mesa Metal Backend Plan
 
 Status: governing work-in-progress architecture. The standard Khronos ABI
-frontend is complete at its surfaceless/pbuffer GL 3.3 boundary, and AO46 work
-resumed on 2026-08-21 after the AVK143 Vulkan engineering release. This plan
+frontend completed its initial surfaceless/pbuffer GL 3.3 milestone, and the
+resumed Gallium work has raised Mesa's selected engineering ceiling to GL 4.1.
+AO46 work resumed on 2026-08-21 after the AVK143 Vulkan engineering release. This plan
 supersedes the direct AGX/UABI route as the active runtime strategy; the direct
 route and its captured evidence remain preserved research.
 
@@ -134,7 +135,7 @@ progress.
 - `[~]` AO46-owned `pipe_screen` now has create/destroy, hardware identity,
   conservative capability reporting, bounded buffer/2D-color-format admission,
   and Metal-backed Gallium resource lifetime. Mesa's audited state tracker
-  currently realizes this set as OpenGL 3.3 core, and accepts bounded compute
+  currently selects OpenGL 4.1 core, raised from the earlier 3.3 milestone, and accepts bounded compute
   or graphics `pipe_context` creation.
 - `[~]` `pipe_context` creation, destruction, buffer upload/map, GPU blit,
   compute dispatch, direct graphics `draw_vbo`, and Metal-backed
@@ -146,8 +147,9 @@ progress.
   `AO46AGXMetalAdapter` device/queue pair and releases its retained references
   with the final screen. The framework creates this screen for CGL/Mesa context
   negotiation, with smoke coverage for screen identity and lifecycle. Mesa
-  currently realizes this capability set as core 3.3 after the standard
-  `u_vbuf` packed-vertex fallback is enabled, so GL 4.6 requests stay
+  currently realizes this capability set as core 4.1 after the standard
+  `u_vbuf` packed-vertex fallback and the remaining 4.0/4.1 gates are enabled,
+  so GL 4.6 requests stay
   fail-closed while their missing Gallium capabilities are audited.
 - Exit: Mesa creates a context through AO46 and reports only capabilities the
   Metal backend has tested.

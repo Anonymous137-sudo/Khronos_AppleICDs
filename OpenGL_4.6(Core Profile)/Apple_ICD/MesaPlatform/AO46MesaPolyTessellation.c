@@ -12,6 +12,7 @@
 #include "poly/tessellator.h"
 
 #include <limits.h>
+#include <string.h>
 
 enum {
    AO46_MESA_POLY_DRAW_WORDS = 5,
@@ -197,6 +198,14 @@ struct AO46MesaPolyParameterBufferLowering {
    unsigned binding;
 };
 
+struct AO46MesaPolyVertexBufferLowering {
+   unsigned binding;
+   uint64_t outputs;
+   int32_t first_vertex;
+   uint32_t base_instance;
+   uint32_t index_size;
+};
+
 static bool
 ao46_mesa_lower_poly_parameter_buffer(nir_builder *builder,
                                       nir_intrinsic_instr *intrinsic,
@@ -225,6 +234,68 @@ ao46_mesa_lower_poly_parameter_buffer_for_shader(
 
    (void)nir_shader_intrinsics_pass(
       nir, ao46_mesa_lower_poly_parameter_buffer, nir_metadata_none,
+      (void *)&lowering);
+   nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
+}
+
+static bool
+ao46_mesa_lower_poly_vertex_buffer(nir_builder *builder,
+                                   nir_intrinsic_instr *intrinsic,
+                                   void *data)
+{
+   const struct AO46MesaPolyVertexBufferLowering *lowering = data;
+   nir_def *replacement = NULL;
+
+   builder->cursor = nir_before_instr(&intrinsic->instr);
+   switch (intrinsic->intrinsic) {
+   case nir_intrinsic_load_vertex_param_buffer_poly:
+      replacement = nir_load_buffer_ptr_kk(builder, 1, 64,
+                                            .binding = lowering->binding);
+      break;
+   case nir_intrinsic_load_vs_outputs_poly:
+      replacement = nir_imm_int64(builder, lowering->outputs);
+      break;
+   case nir_intrinsic_load_index_size_poly:
+      replacement = nir_imm_intN_t(builder, lowering->index_size,
+                                   intrinsic->def.bit_size);
+      break;
+   case nir_intrinsic_load_first_vertex:
+      replacement = nir_imm_intN_t(builder, lowering->first_vertex,
+                                   intrinsic->def.bit_size);
+      break;
+   case nir_intrinsic_load_base_instance:
+      replacement = nir_imm_intN_t(builder, lowering->base_instance,
+                                   intrinsic->def.bit_size);
+      break;
+   case nir_intrinsic_load_vertex_id_zero_base:
+      replacement = nir_channel(
+         builder, nir_load_global_invocation_id(builder, 32), 0);
+      break;
+   default:
+      return false;
+   }
+
+   nir_def_rewrite_uses(&intrinsic->def, replacement);
+   nir_instr_remove(&intrinsic->instr);
+   return true;
+}
+
+static void
+ao46_mesa_lower_poly_vertex_buffer_for_shader(
+   nir_shader *nir, unsigned vertex_parameter_buffer_binding,
+   uint64_t vertex_outputs, int32_t first_vertex, uint32_t base_instance,
+   uint32_t index_size)
+{
+   const struct AO46MesaPolyVertexBufferLowering lowering = {
+      .binding = vertex_parameter_buffer_binding,
+      .outputs = vertex_outputs,
+      .first_vertex = first_vertex,
+      .base_instance = base_instance,
+      .index_size = index_size,
+   };
+
+   (void)nir_shader_intrinsics_pass(
+      nir, ao46_mesa_lower_poly_vertex_buffer, nir_metadata_none,
       (void *)&lowering);
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 }
@@ -271,5 +342,48 @@ AO46MesaPolyTessellationLower(struct nir_shader *tcs, struct nir_shader *tes,
          tes, parameter_buffer_binding);
    }
 
+   return true;
+}
+
+bool
+AO46MesaPolyVertexTessellationLower(
+   struct nir_shader *vs, struct nir_shader *tcs, struct nir_shader *tes,
+   unsigned vertex_parameter_buffer_binding,
+   unsigned tessellation_parameter_buffer_binding, uint64_t vertex_outputs,
+   int32_t first_vertex, uint32_t base_instance, uint32_t index_size)
+{
+   const uint16_t workgroup_size[3] = {64, 1, 1};
+
+   if (!vs || !tcs || !tes || vs->info.stage != MESA_SHADER_VERTEX ||
+       tcs->info.stage != MESA_SHADER_TESS_CTRL ||
+       tes->info.stage != MESA_SHADER_TESS_EVAL || vertex_outputs == 0 ||
+       vertex_outputs != vs->info.outputs_written ||
+       (tcs->info.inputs_read & ~vertex_outputs) != 0 ||
+       vertex_parameter_buffer_binding < 2 ||
+       vertex_parameter_buffer_binding >= 16 ||
+       vertex_parameter_buffer_binding ==
+          tessellation_parameter_buffer_binding)
+      return false;
+
+   (void)poly_nir_lower_vs_before_gs(vs);
+   vs->info.stage = MESA_SHADER_COMPUTE;
+   memset(&vs->info.cs, 0, sizeof(vs->info.cs));
+   vs->xfb_info = NULL;
+   memcpy(vs->info.workgroup_size, workgroup_size,
+          sizeof(vs->info.workgroup_size));
+   (void)poly_nir_lower_sw_vs(vs);
+   ao46_mesa_lower_poly_vertex_buffer_for_shader(
+      vs, vertex_parameter_buffer_binding, vertex_outputs, first_vertex,
+      base_instance, index_size);
+
+   if (!AO46MesaPolyTessellationLower(
+          tcs, tes, tessellation_parameter_buffer_binding))
+      return false;
+
+   ao46_mesa_lower_poly_vertex_buffer_for_shader(
+      tcs, vertex_parameter_buffer_binding, vertex_outputs, first_vertex,
+      base_instance, index_size);
+   memcpy(vs->info.workgroup_size, workgroup_size,
+          sizeof(vs->info.workgroup_size));
    return true;
 }

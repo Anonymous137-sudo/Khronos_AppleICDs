@@ -5,11 +5,13 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 icd_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 stage_dir=${AVK143_STAGE_DIR:-"$icd_root/../build/AVK143"}
 manifest=${AVK143_KOSMICKRISP_MANIFEST:-"$stage_dir/prefix/share/vulkan/icd.d/kosmickrisp_mesa_icd.aarch64.json"}
+cts_version=1.4.6.2
 # Keep disposable test tools with the local build, not in volatile /private/tmp.
-cts_root=${AVK143_CTS_ROOT:-"$icd_root/../build/cts/VK-GL-CTS"}
-cts_binary=${AVK143_CTS_BINARY:-"$icd_root/../build/cts/build-cts/external/vulkancts/modules/vulkan/deqp-vk"}
-loader_dir=${AVK143_VULKAN_LOADER_DIR:-"$icd_root/../build/cts/prefix/lib"}
-results_dir=${AVK143_CTS_RESULTS_DIR:-"$stage_dir/cts/vulkan-1.4.3.2"}
+cts_root=${AVK143_CTS_ROOT:-"${HOME}/Downloads/VK-GL-CTS-vulkan-cts-${cts_version}"}
+cts_work_root=${AVK143_CTS_WORK_ROOT:-"$icd_root/../build/cts-${cts_version}"}
+cts_binary=${AVK143_CTS_BINARY:-"$cts_work_root/build-cts/external/vulkancts/modules/vulkan/deqp-vk"}
+loader_dir=${AVK143_VULKAN_LOADER_DIR:-"$cts_work_root/prefix/lib"}
+results_dir=${AVK143_CTS_RESULTS_DIR:-"$stage_dir/cts/vulkan-${cts_version}"}
 # FBO is the safe default for broad API coverage. Set this to "window" when
 # qualifying the Metal WSI/swapchain path under a live WindowServer session.
 surface_type=${AVK143_CTS_SURFACE_TYPE:-fbo}
@@ -26,8 +28,14 @@ drm_format_modifiers ray_tracing_pipeline ray_query fragment_shading_rate reconv
 mesh_shader fragment_shading_barycentric depth video shader_object dgc cooperative_vector
 '}
 
+if [ ! -f "$cts_root/external/vulkancts/mustpass/main/vk-default.txt" ]; then
+   printf '%s\n' "Vulkan CTS ${cts_version} source is missing: $cts_root" >&2
+   exit 2
+fi
+
 if [ ! -x "$cts_binary" ]; then
    printf '%s\n' "AVK143 CTS binary is missing or not executable: $cts_binary" >&2
+   printf '%s\n' "Run $script_dir/prepare-avk143-vulkan-cts.sh first." >&2
    exit 2
 fi
 
@@ -42,8 +50,9 @@ if [ ! -d "$loader_dir" ]; then
 fi
 
 mkdir -p "$results_dir"
-printf 'CTS binary: %s\nICD manifest: %s\nLoader directory: %s\n' \
-   "$cts_binary" "$manifest" "$loader_dir" > "$results_dir/run-configuration.txt"
+printf 'CTS version: %s\nCTS source: %s\nCTS binary: %s\nICD manifest: %s\nLoader directory: %s\n' \
+   "$cts_version" "$cts_root" "$cts_binary" "$manifest" "$loader_dir" \
+   > "$results_dir/run-configuration.txt"
 
 if [ "$qualify_early_fragment" -eq 1 ]; then
    AVK143_STAGE_DIR="$stage_dir" \
