@@ -1,11 +1,87 @@
 #import <Metal/Metal.h>
 #import "mtl_pub.h"
 #import "nir/nir.h"
+#import "nir/nir_builder.h"
 #include "nir_to_msl.h"
 #import "compiler/shader_info.h"
+#include "AO46MetalAdapter.h"
 #include "AO46MesaMSLComputePipeline.h"
 #include "util/ralloc.h"
 #include <stdint.h>
+
+static bool
+ao46_metal_lower_fine_derivative(nir_builder *builder,
+                                 nir_intrinsic_instr *intrinsic,
+                                 void *data)
+{
+    nir_def *value;
+    nir_def *neighbor;
+    nir_def *lane;
+    nir_def *is_low_lane;
+    nir_def *derivative;
+
+    (void)data;
+    if (intrinsic->intrinsic != nir_intrinsic_ddx_fine &&
+        intrinsic->intrinsic != nir_intrinsic_ddy_fine) {
+        return false;
+    }
+
+    builder->cursor = nir_before_instr(&intrinsic->instr);
+    value = intrinsic->src[0].ssa;
+    lane = nir_load_subgroup_invocation(builder);
+    if (intrinsic->intrinsic == nir_intrinsic_ddx_fine) {
+        neighbor = nir_quad_swap_horizontal(builder, value);
+        is_low_lane = nir_ieq_imm(builder, nir_iand_imm(builder, lane, 1), 0);
+    } else {
+        neighbor = nir_quad_swap_vertical(builder, value);
+        is_low_lane = nir_ieq_imm(builder, nir_iand_imm(builder, lane, 2), 0);
+    }
+    derivative = nir_bcsel(builder, is_low_lane,
+                           nir_fsub(builder, neighbor, value),
+                           nir_fsub(builder, value, neighbor));
+    nir_def_rewrite_uses(&intrinsic->def, derivative);
+    nir_instr_remove(&intrinsic->instr);
+    return true;
+}
+
+static bool
+ao46_metal_collect_static_ubo_roots(struct nir_shader *nir,
+                                    uint16_t *out_mask)
+{
+    uint16_t mask = 0;
+
+    if (!nir || !out_mask) {
+        return false;
+    }
+
+    nir_foreach_function_impl(impl, nir) {
+        nir_foreach_block(block, impl) {
+            nir_foreach_instr(instr, block) {
+                nir_intrinsic_instr *intrinsic;
+                unsigned binding;
+
+                if (instr->type != nir_instr_type_intrinsic) {
+                    continue;
+                }
+                intrinsic = nir_instr_as_intrinsic(instr);
+                if (intrinsic->intrinsic != nir_intrinsic_load_ubo) {
+                    continue;
+                }
+                if (!nir_src_is_const(intrinsic->src[0])) {
+                    return false;
+                }
+                binding = nir_src_as_uint(intrinsic->src[0]);
+                if (binding >= AO46_METAL_MAX_UNIFORM_BINDINGS) {
+                    return false;
+                }
+                mask |= UINT16_C(1) << binding;
+            }
+        }
+    }
+
+    *out_mask = mask;
+    return true;
+}
 
 static bool
 ao46_metal_collect_static_buffer_roots(struct nir_shader *nir,
@@ -74,8 +150,15 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
 
     nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
     uint16_t static_buffer_mask = 0;
+    uint16_t static_ubo_mask = 0;
     uint16_t static_image_mask = 0;
     bool uses_draw_id = false;
+    if (!AO46MesaNIRLowerRobustBufferAccess(work_nir)) {
+        if (error) *error = [NSError errorWithDomain:@"AO46Metal" code:10
+                                             userInfo:@{NSLocalizedDescriptionKey: @"Unsupported robust buffer binding in Metal size-table ABI"}];
+        ralloc_free(work_nir);
+        return nil;
+    }
     if (!AO46MesaNIRLowerBoundedSSBOs(work_nir, &static_buffer_mask)) {
         if (error) *error = [NSError errorWithDomain:@"AO46Metal" code:5
                                              userInfo:@{NSLocalizedDescriptionKey: @"Unbounded SSBO indexing is not supported by the Metal buffer ABI"}];
@@ -103,10 +186,26 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
         ralloc_free(work_nir);
         return nil;
     }
+    if (!ao46_metal_collect_static_ubo_roots(work_nir, &static_ubo_mask)) {
+        if (error) *error = [NSError errorWithDomain:@"AO46Metal" code:9
+                                             userInfo:@{NSLocalizedDescriptionKey: @"Dynamic or out-of-range UBO binding in Metal buffer ABI"}];
+        ralloc_free(work_nir);
+        return nil;
+    }
     nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
     (void)static_image_mask;
     (void)uses_draw_id;
+    if (work_nir->info.cull_distance_array_size > 0 ||
+        work_nir->info.clip_distance_array_size > 0) {
+        msl_nir_lower_clip_cull_distance(
+            work_nir, work_nir->info.cull_distance_array_size);
+        nir_shader_gather_info(work_nir,
+                               nir_shader_get_entrypoint(work_nir));
+    }
     if (work_nir->info.stage == MESA_SHADER_FRAGMENT) {
+        nir_shader_intrinsics_pass(work_nir,
+                                   ao46_metal_lower_fine_derivative,
+                                   nir_metadata_control_flow, NULL);
         /* Mesa provides the selected fragment variant; lower its MSAA ABI to MSL. */
         if (static_sample_mask != UINT32_MAX) {
             msl_lower_static_sample_mask(work_nir, static_sample_mask);
@@ -121,11 +220,15 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
     msl_preprocess_nir(work_nir);
     msl_preprocess_nir_workarounds(work_nir, 0);
     msl_optimize_nir(work_nir);
+    /* Subgroup lowering can introduce Metal system-value inputs. */
+    nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
 
     struct nir_to_msl_options translate_options = {
         .mem_ctx = work_nir,
         .disabled_workarounds = 0,
         .static_buffer_mask = static_buffer_mask,
+        .static_ubo_mask = static_ubo_mask,
+        .static_ubo_first_buffer = AO46_METAL_FIRST_UNIFORM_BUFFER_INDEX,
     };
 
     if (work_nir->info.stage == MESA_SHADER_FRAGMENT) {

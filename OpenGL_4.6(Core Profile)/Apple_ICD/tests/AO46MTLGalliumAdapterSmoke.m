@@ -24,6 +24,19 @@ struct AO46DrawIndirectArguments {
    uint32_t base_instance;
 };
 
+static nir_def *
+ao46_build_vote(nir_builder *builder, nir_intrinsic_op operation,
+                nir_def *condition)
+{
+   nir_intrinsic_instr *vote =
+      nir_intrinsic_instr_create(builder->shader, operation);
+
+   vote->src[0] = nir_src_for_ssa(condition);
+   nir_def_init(&vote->instr, &vote->def, 1, 1);
+   nir_builder_instr_insert(builder, &vote->instr);
+   return &vote->def;
+}
+
 static struct nir_shader *
 ao46_build_vertex_shader(void)
 {
@@ -82,10 +95,46 @@ ao46_build_fragment_shader(void)
       .num_slots = 1,
    };
 
-   nir_store_output(&b, nir_imm_vec4(&b, 1.0f, 0.25f, 0.0f, 1.0f),
+   nir_def *front_facing = nir_load_front_face(&b, 1);
+   nir_def *back_facing = nir_inot(&b, front_facing);
+   nir_def *all_one_facing = nir_ior(
+      &b, ao46_build_vote(&b, nir_intrinsic_vote_all, front_facing),
+      ao46_build_vote(&b, nir_intrinsic_vote_all, back_facing));
+   nir_def *any_facing = nir_ior(
+      &b, ao46_build_vote(&b, nir_intrinsic_vote_any, front_facing),
+      ao46_build_vote(&b, nir_intrinsic_vote_any, back_facing));
+   nir_def *color_value = nir_bcsel(
+      &b, nir_iand(&b, all_one_facing, any_facing),
+      nir_imm_vec4(&b, 1.0f, 0.25f, 0.0f, 1.0f),
+      nir_imm_vec4(&b, 0.0f, 0.0f, 0.0f, 1.0f));
+
+   nir_store_output(&b, color_value,
                     nir_imm_int(&b, 0), .base = 0, .range = 1,
                     .write_mask = 0xf, .src_type = nir_type_float32,
                     .io_semantics = color);
+   b.shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_DATA0);
+   return b.shader;
+}
+
+static struct nir_shader *
+ao46_build_fine_derivative_fragment_shader(void)
+{
+   nir_builder b = nir_builder_init_simple_shader(
+      MESA_SHADER_FRAGMENT, &kk_nir_options, "ao46_fine_derivative_fragment");
+   const struct nir_io_semantics color = {
+      .location = FRAG_RESULT_DATA0,
+      .num_slots = 1,
+   };
+   nir_def *frag_coord = nir_load_frag_coord(&b);
+   nir_def *x = nir_channel(&b, frag_coord, 0);
+   nir_def *y = nir_channel(&b, frag_coord, 1);
+   nir_def *derivatives = nir_vec4(
+      &b, nir_ddx_fine(&b, x), nir_ddy_fine(&b, y),
+      nir_imm_float(&b, 0.0f), nir_imm_float(&b, 1.0f));
+
+   nir_store_output(&b, derivatives, nir_imm_int(&b, 0), .base = 0,
+                    .range = 1, .write_mask = 0xf,
+                    .src_type = nir_type_float32, .io_semantics = color);
    b.shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_DATA0);
    return b.shader;
 }
@@ -104,6 +153,30 @@ ao46_build_ssbo_fragment_shader(void)
       .align_mul = sizeof(float), .access = ACCESS_NON_WRITEABLE);
 
    nir_store_output(&b, value, nir_imm_int(&b, 0), .base = 0, .range = 1,
+                    .write_mask = 0xf, .src_type = nir_type_float32,
+                    .io_semantics = color);
+   b.shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_DATA0);
+   return b.shader;
+}
+
+static struct nir_shader *
+ao46_build_ubo_fragment_shader(void)
+{
+   nir_builder b = nir_builder_init_simple_shader(
+      MESA_SHADER_FRAGMENT, &kk_nir_options, "ao46_active_ubo_fragment");
+   const struct nir_io_semantics color = {
+      .location = FRAG_RESULT_DATA0,
+      .num_slots = 1,
+   };
+   nir_def *color_zero = nir_load_ubo(
+      &b, 4, 32, nir_imm_int(&b, 0), nir_imm_int(&b, 0),
+      .align_mul = 16, .align_offset = 0, .range = 16);
+   nir_def *color_one = nir_load_ubo(
+      &b, 4, 32, nir_imm_int(&b, 1), nir_imm_int(&b, 0),
+      .align_mul = 16, .align_offset = 0, .range = 16);
+
+   nir_store_output(&b, nir_fadd(&b, color_zero, color_one),
+                    nir_imm_int(&b, 0), .base = 0, .range = 1,
                     .write_mask = 0xf, .src_type = nir_type_float32,
                     .io_semantics = color);
    b.shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_DATA0);
@@ -156,6 +229,13 @@ ao46_build_ssbo_atomic_shader(void)
    b.shader->info.workgroup_size[2] = 1;
    (void)nir_ssbo_atomic(&b, 32, nir_imm_int(&b, 0), nir_imm_int(&b, 0),
                          nir_imm_int(&b, 3),
+                         .atomic_op = nir_atomic_op_iadd);
+   nir_store_ssbo(&b, nir_imm_int(&b, 0x12345678), nir_imm_int(&b, 0),
+                  nir_imm_int(&b, sizeof(uint32_t)), .write_mask = 1,
+                  .align_mul = sizeof(uint32_t));
+   (void)nir_ssbo_atomic(&b, 32, nir_imm_int(&b, 0),
+                         nir_imm_int(&b, sizeof(uint32_t)),
+                         nir_imm_int(&b, 1),
                          .atomic_op = nir_atomic_op_iadd);
    return b.shader;
 }
@@ -409,8 +489,13 @@ main(void)
    struct pipe_resource *count = NULL;
    struct pipe_resource *count_scratch = NULL;
    struct pipe_resource *ssbo_atomic = NULL;
+   struct pipe_resource *copy_compressed = NULL;
+   struct pipe_resource *copy_plain = NULL;
+   struct pipe_resource *depth_stencil = NULL;
    struct pipe_resource *rgb32 = NULL;
    struct pipe_resource *graphics_ssbo = NULL;
+   struct pipe_resource *ubo_zero = NULL;
+   struct pipe_resource *ubo_one = NULL;
    struct pipe_resource *storage_image = NULL;
    struct pipe_resource *storage_image_atomic = NULL;
    struct pipe_resource *stream_output_buffer = NULL;
@@ -421,11 +506,13 @@ main(void)
    struct pipe_query *stream_output_query = NULL;
    struct pipe_query *generated_query = NULL;
    struct pipe_sampler_view *rgb32_view = NULL;
+   struct pipe_sampler_view *stencil_view = NULL;
    struct pipe_surface surface = {0};
    struct pipe_surface *surface_ptr = NULL;
    struct pipe_transfer *transfer = NULL;
    struct nir_shader *vertex_nir = NULL;
    struct nir_shader *fragment_nir = NULL;
+   struct nir_shader *fine_derivative_nir = NULL;
    struct nir_shader *count_nir = NULL;
    struct nir_shader *draw_parameter_count_nir = NULL;
    struct nir_shader *ssbo_atomic_nir = NULL;
@@ -433,6 +520,7 @@ main(void)
    struct nir_shader *tes_state_nir = NULL;
    struct nir_shader *rgb32_nir = NULL;
    struct nir_shader *ssbo_fragment_nir = NULL;
+   struct nir_shader *ubo_fragment_nir = NULL;
    struct nir_shader *negative_vertex_nir = NULL;
    struct nir_shader *storage_image_nir = NULL;
    struct nir_shader *storage_image_atomic_nir = NULL;
@@ -440,6 +528,7 @@ main(void)
    struct nir_shader *stream_output_vertex_nir = NULL;
    void *vertex_state = NULL;
    void *fragment_state = NULL;
+   void *fine_derivative_state = NULL;
    void *count_state = NULL;
    void *draw_parameter_count_state = NULL;
    void *ssbo_atomic_state = NULL;
@@ -447,6 +536,7 @@ main(void)
    void *tes_state = NULL;
    void *rgb32_state = NULL;
    void *ssbo_fragment_state = NULL;
+   void *ubo_fragment_state = NULL;
    void *negative_vertex_state = NULL;
    void *storage_image_state = NULL;
    void *storage_image_atomic_state = NULL;
@@ -466,9 +556,15 @@ main(void)
        .base_instance = 8},
    };
    const uint32_t initial_count = 0;
-   const uint32_t ssbo_atomic_initial = 5;
+   const uint32_t ssbo_atomic_initial[2] = {5, 0xdeadbeef};
+   const uint8_t copy_image_block[16] = {
+      0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0,
+      0x0f, 0x1e, 0x2d, 0x3c, 0x4b, 0x5a, 0x69, 0x78,
+   };
    const uint32_t rgb32_texel[3] = {255, 64, 32};
    const float ssbo_color[4] = {0.125f, 0.75f, 0.375f, 1.0f};
+   const float ubo_color_zero[4] = {0.125f, 0.25f, 0.0f, 0.5f};
+   const float ubo_color_one[4] = {0.125f, 0.25f, 0.5f, 0.5f};
    const uint16_t draw_parameter_index_data[3] = {0, 1, 2};
    const uint8_t storage_image_initial[8] = {
       1, 2, 3, 4, 2, 2, 3, 4,
@@ -514,6 +610,36 @@ main(void)
       .usage = PIPE_USAGE_DEFAULT,
       .bind = PIPE_BIND_SHADER_BUFFER,
    };
+   struct pipe_resource copy_compressed_template = {
+      .target = PIPE_TEXTURE_2D,
+      .format = PIPE_FORMAT_BPTC_RGBA_UNORM,
+      .width0 = 4,
+      .height0 = 4,
+      .depth0 = 1,
+      .array_size = 1,
+      .usage = PIPE_USAGE_DEFAULT,
+      .bind = PIPE_BIND_SAMPLER_VIEW,
+   };
+   struct pipe_resource copy_plain_template = {
+      .target = PIPE_TEXTURE_2D,
+      .format = PIPE_FORMAT_R32G32B32A32_UINT,
+      .width0 = 1,
+      .height0 = 1,
+      .depth0 = 1,
+      .array_size = 1,
+      .usage = PIPE_USAGE_DEFAULT,
+      .bind = PIPE_BIND_SAMPLER_VIEW,
+   };
+   struct pipe_resource depth_stencil_template = {
+      .target = PIPE_TEXTURE_2D,
+      .format = PIPE_FORMAT_Z32_FLOAT_S8X24_UINT,
+      .width0 = 8,
+      .height0 = 8,
+      .depth0 = 1,
+      .array_size = 1,
+      .usage = PIPE_USAGE_DEFAULT,
+      .bind = PIPE_BIND_DEPTH_STENCIL | PIPE_BIND_SAMPLER_VIEW,
+   };
    struct pipe_resource rgb32_template = {
       .target = PIPE_BUFFER,
       .format = PIPE_FORMAT_R8_UNORM,
@@ -533,6 +659,16 @@ main(void)
       .array_size = 1,
       .usage = PIPE_USAGE_DEFAULT,
       .bind = PIPE_BIND_SHADER_BUFFER,
+   };
+   struct pipe_resource ubo_template = {
+      .target = PIPE_BUFFER,
+      .format = PIPE_FORMAT_R8_UNORM,
+      .width0 = sizeof(ubo_color_zero),
+      .height0 = 1,
+      .depth0 = 1,
+      .array_size = 1,
+      .usage = PIPE_USAGE_DEFAULT,
+      .bind = PIPE_BIND_CONSTANT_BUFFER,
    };
    struct pipe_resource storage_image_template = {
       .target = PIPE_TEXTURE_2D,
@@ -593,6 +729,16 @@ main(void)
       .swizzle_a = PIPE_SWIZZLE_W,
       .u.buf = {.size = sizeof(rgb32_texel)},
    };
+   const struct pipe_sampler_view stencil_view_template = {
+      .format = PIPE_FORMAT_X24S8_UINT,
+      .target = PIPE_TEXTURE_2D,
+      .swizzle_r = PIPE_SWIZZLE_X,
+      .swizzle_g = PIPE_SWIZZLE_0,
+      .swizzle_b = PIPE_SWIZZLE_0,
+      .swizzle_a = PIPE_SWIZZLE_1,
+      .u.tex = {.first_level = 0, .last_level = 0,
+                .first_layer = 0, .last_layer = 0},
+   };
 
    if (!AO46MetalAdapterCreate(&adapter)) {
       fputs("AO46 Gallium adapter smoke could not create the Metal adapter\n",
@@ -615,9 +761,10 @@ main(void)
 
    vertex_nir = ao46_build_vertex_shader();
    fragment_nir = ao46_build_fragment_shader();
+   fine_derivative_nir = ao46_build_fine_derivative_fragment_shader();
    count_nir = ao46_build_count_shader();
    draw_parameter_count_nir = ao46_build_draw_parameter_count_shader();
-   if (!vertex_nir || !fragment_nir || !count_nir ||
+   if (!vertex_nir || !fragment_nir || !fine_derivative_nir || !count_nir ||
        !draw_parameter_count_nir) {
       failed = 1;
       goto out;
@@ -631,6 +778,10 @@ main(void)
          .type = PIPE_SHADER_IR_NIR,
          .ir.nir = fragment_nir,
       };
+      const struct pipe_shader_state fine_derivative_shader = {
+         .type = PIPE_SHADER_IR_NIR,
+         .ir.nir = fine_derivative_nir,
+      };
       const struct pipe_compute_state compute_shader = {
          .ir_type = PIPE_SHADER_IR_NIR,
          .prog = count_nir,
@@ -642,6 +793,8 @@ main(void)
 
       vertex_state = context->create_vs_state(context, &vertex_shader);
       fragment_state = context->create_fs_state(context, &fragment_shader);
+      fine_derivative_state =
+         context->create_fs_state(context, &fine_derivative_shader);
       count_state = context->create_compute_state(context, &compute_shader);
       draw_parameter_count_state = context->create_compute_state(
          context, &draw_parameter_count_shader);
@@ -651,15 +804,24 @@ main(void)
    count = screen->resource_create(screen, &count_template);
    count_scratch = screen->resource_create(screen, &count_template);
    ssbo_atomic = screen->resource_create(screen, &ssbo_atomic_template);
+   copy_compressed = screen->resource_create(screen, &copy_compressed_template);
+   copy_plain = screen->resource_create(screen, &copy_plain_template);
+   depth_stencil = screen->resource_create(screen, &depth_stencil_template);
+   stencil_view = depth_stencil
+                     ? context->create_sampler_view(context, depth_stencil,
+                                                    &stencil_view_template)
+                     : NULL;
    if (color) {
       surface.texture = color;
       surface.format = color->format;
       surface.nr_samples = color->nr_samples;
       surface_ptr = &surface;
    }
-   if (!vertex_state || !fragment_state || !count_state ||
+   if (!vertex_state || !fragment_state || !fine_derivative_state ||
+       !count_state ||
        !draw_parameter_count_state || !color ||
        !indirect || !count || !count_scratch || !ssbo_atomic ||
+       !copy_compressed || !copy_plain || !depth_stencil || !stencil_view ||
        !surface_ptr) {
       fputs("AO46 active indirect smoke could not create Gallium state\n",
             stderr);
@@ -671,6 +833,35 @@ main(void)
       fputs("AO46 active Gallium barrier callbacks are incomplete\n", stderr);
       failed = 1;
       goto out;
+   }
+
+   /* GL 4.3: copy-image preserves a compressed block in plain storage. */
+   {
+      const struct pipe_box compressed_box = {
+         .x = 0, .y = 0, .z = 0, .width = 4, .height = 4, .depth = 1,
+      };
+      const struct pipe_box plain_box = {
+         .x = 0, .y = 0, .z = 0, .width = 1, .height = 1, .depth = 1,
+      };
+
+      context->texture_subdata(context, copy_compressed, 0, PIPE_MAP_WRITE,
+                               &compressed_box, copy_image_block,
+                               sizeof(copy_image_block),
+                               sizeof(copy_image_block));
+      context->resource_copy_region(context, copy_plain, 0, 0, 0, 0,
+                                    copy_compressed, 0, &compressed_box);
+      const uint8_t *copied = context->texture_map(
+         context, copy_plain, 0, PIPE_MAP_READ, &plain_box, &transfer);
+      if (!screen->caps.copy_between_compressed_and_plain_formats || !copied ||
+          !transfer || memcmp(copied, copy_image_block,
+                              sizeof(copy_image_block)) != 0) {
+         fputs("AO46 compressed/plain copy-image readback mismatched\n", stderr);
+         failed = 1;
+      }
+      if (transfer) {
+         context->texture_unmap(context, transfer);
+         transfer = NULL;
+      }
    }
 
    /* Legacy lane: the active screen now admits Mesa's standard patch state. */
@@ -783,6 +974,75 @@ main(void)
       }
    }
 
+   /* GL 4.2 lane: active Gallium UBO 0/1 bindings reach distinct Metal slots. */
+   ubo_fragment_nir = ao46_build_ubo_fragment_shader();
+   if (ubo_fragment_nir) {
+      const struct pipe_shader_state shader = {
+         .type = PIPE_SHADER_IR_NIR,
+         .ir.nir = ubo_fragment_nir,
+      };
+
+      ubo_fragment_state = context->create_fs_state(context, &shader);
+   }
+   ubo_zero = screen->resource_create(screen, &ubo_template);
+   ubo_one = screen->resource_create(screen, &ubo_template);
+   if (!ubo_fragment_state || !ubo_zero || !ubo_one ||
+       !context->set_constant_buffer) {
+      fputs("AO46 active multi-UBO state creation failed\n", stderr);
+      failed = 1;
+      goto out;
+   }
+   context->buffer_subdata(context, ubo_zero, 0, 0, sizeof(ubo_color_zero),
+                           ubo_color_zero);
+   context->buffer_subdata(context, ubo_one, 0, 0, sizeof(ubo_color_one),
+                           ubo_color_one);
+   {
+      const struct pipe_constant_buffer bindings[2] = {
+         {.buffer = ubo_zero, .buffer_size = sizeof(ubo_color_zero)},
+         {.buffer = ubo_one, .buffer_size = sizeof(ubo_color_one)},
+      };
+      const union pipe_color_union clear = {.f = {0.0f, 0.0f, 0.0f, 1.0f}};
+      const struct pipe_draw_info draw = {
+         .mode = MESA_PRIM_TRIANGLES,
+         .instance_count = 1,
+      };
+      const struct pipe_draw_start_count_bias range = {.count = 3};
+
+      context->clear_render_target(context, surface_ptr, &clear, 0, 0,
+                                   color_template.width0,
+                                   color_template.height0, false);
+      context->set_constant_buffer(context, MESA_SHADER_FRAGMENT, 0,
+                                   &bindings[0]);
+      context->set_constant_buffer(context, MESA_SHADER_FRAGMENT, 1,
+                                   &bindings[1]);
+      context->bind_vs_state(context, vertex_state);
+      context->bind_fs_state(context, ubo_fragment_state);
+      context->draw_vbo(context, &draw, 0, NULL, &range, 1);
+      context->flush(context, NULL, PIPE_FLUSH_HINT_FINISH);
+   }
+   {
+      const struct pipe_box box = {
+         .x = 4, .y = 4, .width = 1, .height = 1, .depth = 1,
+      };
+      const uint8_t *pixel = context->texture_map(
+         context, color, 0, PIPE_MAP_READ, &box, &transfer);
+
+      if (!pixel || !transfer || pixel[0] < 60 || pixel[0] > 68 ||
+          pixel[1] < 124 || pixel[1] > 132 || pixel[2] < 124 ||
+          pixel[2] > 132 || pixel[3] < 250) {
+         fputs("AO46 active multi-UBO draw readback mismatched\n", stderr);
+         failed = 1;
+      }
+      if (transfer) {
+         context->texture_unmap(context, transfer);
+         transfer = NULL;
+      }
+      context->set_constant_buffer(context, MESA_SHADER_FRAGMENT, 0,
+                                   NULL);
+      context->set_constant_buffer(context, MESA_SHADER_FRAGMENT, 1,
+                                   NULL);
+   }
+
    /* GL 4.3 lane: Mesa SSBO atomics execute through direct Metal buffers. */
    ssbo_atomic_nir = ao46_build_ssbo_atomic_shader();
    if (ssbo_atomic_nir) {
@@ -809,7 +1069,8 @@ main(void)
          .grid = {2, 1, 1},
       };
       const struct pipe_box box = {
-         .x = 0, .width = 1, .height = 1, .depth = 1,
+         .x = 0, .width = sizeof(ssbo_atomic_initial),
+         .height = 1, .depth = 1,
       };
 
       context->buffer_subdata(context, ssbo_atomic, 0, 0,
@@ -824,9 +1085,11 @@ main(void)
       context->flush(context, NULL, PIPE_FLUSH_HINT_FINISH);
       const uint32_t *value = context->buffer_map(
          context, ssbo_atomic, 0, PIPE_MAP_READ, &box, &transfer);
-      if (!value || !transfer || *value != 17) {
-         fprintf(stderr, "AO46 SSBO atomic readback mismatched: %u\n",
-                 value ? *value : 0);
+      if (!screen->caps.robust_buffer_access_behavior || !value || !transfer ||
+          value[0] != 17 || value[1] != ssbo_atomic_initial[1]) {
+         fprintf(stderr,
+                 "AO46 robust SSBO readback mismatched: %u guard=%08x\n",
+                 value ? value[0] : 0, value ? value[1] : 0);
          failed = 1;
       }
       if (transfer) {
@@ -1128,6 +1391,10 @@ main(void)
       }
       context->set_shader_images(context, MESA_SHADER_COMPUTE, 0, 0, 1,
                                  NULL);
+      context->set_constant_buffer(context, MESA_SHADER_FRAGMENT, 0,
+                                   NULL);
+      context->set_constant_buffer(context, MESA_SHADER_FRAGMENT, 1,
+                                   NULL);
    }
 
    /* GL 4.3 lane: typed image atomics execute against a real Metal texture. */
@@ -1561,6 +1828,80 @@ main(void)
          failed = 1;
       }
    }
+   /* GL 4.4/4.5: query-buffer writes and inverted conditions share a query. */
+   {
+      const struct pipe_box query_box = {
+         .x = 0, .width = sizeof(uint64_t), .height = 1, .depth = 1,
+      };
+      const struct pipe_draw_info draw = {
+         .mode = MESA_PRIM_TRIANGLES,
+         .instance_count = 1,
+      };
+      const struct pipe_draw_start_count_bias range = {.count = 3};
+      const union pipe_color_union clear = {.f = {0.0f, 0.0f, 0.0f, 1.0f}};
+      const uint64_t zero = 0;
+
+      context->buffer_subdata(context, count_scratch, 0, 0, sizeof(zero),
+                              &zero);
+      context->get_query_result_resource(
+         context, stream_output_query, PIPE_QUERY_WAIT, PIPE_QUERY_TYPE_U64,
+         0, count_scratch, 0);
+      const uint64_t *query_value = context->buffer_map(
+         context, count_scratch, 0, PIPE_MAP_READ, &query_box, &transfer);
+      if (!screen->caps.query_buffer_object || !query_value || !transfer ||
+          *query_value != 2) {
+         fprintf(stderr, "AO46 query-buffer result mismatched: %llu\n",
+                 (unsigned long long)(query_value ? *query_value : 0));
+         failed = 1;
+      }
+      if (transfer) {
+         context->buffer_unmap(context, transfer);
+         transfer = NULL;
+      }
+
+      context->bind_vs_state(context, vertex_state);
+      context->bind_fs_state(context, fragment_state);
+      context->clear_render_target(context, surface_ptr, &clear, 0, 0,
+                                   color_template.width0,
+                                   color_template.height0, false);
+      context->render_condition(context, stream_output_query, true,
+                                PIPE_RENDER_COND_WAIT);
+      context->draw_vbo(context, &draw, 0, NULL, &range, 1);
+      context->render_condition(context, NULL, false, PIPE_RENDER_COND_WAIT);
+      context->flush(context, NULL, PIPE_FLUSH_HINT_FINISH);
+
+      const struct pipe_box pixel_box = {
+         .x = 4, .y = 4, .width = 1, .height = 1, .depth = 1,
+      };
+      const uint8_t *pixel = context->texture_map(
+         context, color, 0, PIPE_MAP_READ, &pixel_box, &transfer);
+      if (!screen->caps.conditional_render_inverted || !pixel || !transfer ||
+          pixel[0] != 0 || pixel[1] != 0 || pixel[2] != 0 || pixel[3] < 250) {
+         fputs("AO46 inverted conditional draw was not suppressed\n", stderr);
+         failed = 1;
+      }
+      if (transfer) {
+         context->texture_unmap(context, transfer);
+         transfer = NULL;
+      }
+
+      context->render_condition(context, stream_output_query, false,
+                                PIPE_RENDER_COND_WAIT);
+      context->draw_vbo(context, &draw, 0, NULL, &range, 1);
+      context->render_condition(context, NULL, false, PIPE_RENDER_COND_WAIT);
+      context->flush(context, NULL, PIPE_FLUSH_HINT_FINISH);
+      pixel = context->texture_map(context, color, 0, PIPE_MAP_READ,
+                                   &pixel_box, &transfer);
+      if (!pixel || !transfer || pixel[0] < 250 || pixel[1] < 60 ||
+          pixel[1] > 70 || pixel[2] != 0 || pixel[3] < 250) {
+         fputs("AO46 normal conditional draw was not admitted\n", stderr);
+         failed = 1;
+      }
+      if (transfer) {
+         context->texture_unmap(context, transfer);
+         transfer = NULL;
+      }
+   }
    {
       const struct pipe_box box = {
          .x = 16,
@@ -1692,10 +2033,14 @@ out:
          context->delete_vs_state(context, vertex_state);
       if (fragment_state)
          context->delete_fs_state(context, fragment_state);
+      if (fine_derivative_state)
+         context->delete_fs_state(context, fine_derivative_state);
       if (rgb32_state)
          context->delete_fs_state(context, rgb32_state);
       if (ssbo_fragment_state)
          context->delete_fs_state(context, ssbo_fragment_state);
+      if (ubo_fragment_state)
+         context->delete_fs_state(context, ubo_fragment_state);
       if (negative_vertex_state)
          context->delete_vs_state(context, negative_vertex_state);
       if (storage_image_state)
@@ -1723,10 +2068,16 @@ out:
    pipe_resource_reference(&storage_image, NULL);
    pipe_resource_reference(&storage_image_atomic, NULL);
    pipe_resource_reference(&graphics_ssbo, NULL);
+   pipe_resource_reference(&ubo_one, NULL);
+   pipe_resource_reference(&ubo_zero, NULL);
    pipe_sampler_view_reference(&rgb32_view, NULL);
+   pipe_sampler_view_reference(&stencil_view, NULL);
+   pipe_resource_reference(&depth_stencil, NULL);
    pipe_resource_reference(&rgb32, NULL);
    pipe_resource_reference(&count_scratch, NULL);
    pipe_resource_reference(&ssbo_atomic, NULL);
+   pipe_resource_reference(&copy_plain, NULL);
+   pipe_resource_reference(&copy_compressed, NULL);
    pipe_resource_reference(&count, NULL);
    pipe_resource_reference(&indirect, NULL);
    pipe_resource_reference(&color, NULL);
@@ -1737,12 +2088,14 @@ out:
    ralloc_free(tes_state_nir);
    ralloc_free(rgb32_nir);
    ralloc_free(ssbo_fragment_nir);
+   ralloc_free(ubo_fragment_nir);
    ralloc_free(negative_vertex_nir);
    ralloc_free(storage_image_nir);
    ralloc_free(storage_image_atomic_nir);
    ralloc_free(draw_id_vertex_nir);
    ralloc_free(stream_output_vertex_nir);
    ralloc_free(fragment_nir);
+   ralloc_free(fine_derivative_nir);
    ralloc_free(vertex_nir);
    if (context)
       context->destroy(context);

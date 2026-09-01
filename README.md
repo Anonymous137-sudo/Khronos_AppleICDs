@@ -16,7 +16,7 @@ application-facing ABIs, loaders, or installation names.
 | Product | Current state | Important boundary |
 | --- | --- | --- |
 | **Vulkan API SDK 1.4.354** | Published engineering release plus an experimental CTS 1.4.6.2 developer prerelease. | Not Khronos certified; `VkConformanceVersion` is `{ 0, 0, 0, 0 }`. |
-| **AO46 standard OpenGL/EGL** | Active Mesa Metal Gallium development. The Mesa-selected engineering ceiling has risen from OpenGL 3.3 to OpenGL 4.1. | OpenGL CTS remains pending; this is not an OpenGL 4.6 or conformance claim. |
+| **AO46 standard OpenGL/EGL** | Active Mesa Metal Gallium development. The Mesa-selected engineering ceiling has risen from OpenGL 3.3 to OpenGL 4.6. | The complete Mesa 4.6 predicate and local 29-test suite pass; OpenGL CTS and Khronos conformance remain pending. |
 | **AO46 legacy framework path** | Experimental compatibility product for software requiring CGL/NSOpenGL/framework-style interfaces. | Separate from the standard EGL/OpenGL ABI and developer-machine only. |
 
 ## Vulkan Release
@@ -83,8 +83,9 @@ surfaceless/pbuffer contexts and public Cocoa window drawables through
 EGL context creation, Mesa state-tracker rendering, Metal readback, swap, and
 teardown. The original frontend milestone used a 3.3-core context; subsequent
 Gallium capability work has raised the current Mesa-selected engineering
-ceiling to **OpenGL 4.1 core**. The 4.1 ceiling is covered by the project
-regression suite but has not yet been qualified with OpenGL CTS.
+ceiling to **OpenGL 4.6 core**. Mesa's complete 4.4, 4.5, and 4.6 predicates
+and the project's 29-test regression suite pass, but the result has not yet
+been qualified with OpenGL CTS.
 
 The legacy path remains distinct:
 

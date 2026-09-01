@@ -35,6 +35,99 @@ ao46_mesa_compute_pipeline_is_empty(const struct AO46MesaComputePipeline *pipeli
           pipeline->reflection.max_threads_per_threadgroup == 0;
 }
 
+static bool
+ao46_mesa_robust_buffer_intrinsic(const nir_intrinsic_instr *intrinsic,
+                                  const void *data)
+{
+   (void)data;
+
+   switch (intrinsic->intrinsic) {
+   case nir_intrinsic_load_ubo:
+   case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_store_ssbo:
+   case nir_intrinsic_ssbo_atomic:
+   case nir_intrinsic_ssbo_atomic_swap:
+      return true;
+   default:
+      return false;
+   }
+}
+
+struct AO46MesaRobustSizeLowering {
+   bool valid;
+};
+
+static bool
+ao46_mesa_lower_robust_size(nir_builder *builder,
+                            nir_intrinsic_instr *intrinsic, void *data)
+{
+   struct AO46MesaRobustSizeLowering *lowering = data;
+   unsigned table_index;
+   unsigned binding;
+   nir_def *root;
+   nir_def *size;
+
+   if (intrinsic->intrinsic != nir_intrinsic_get_ssbo_size &&
+       intrinsic->intrinsic != nir_intrinsic_get_ubo_size)
+      return false;
+
+   binding = nir_src_is_const(intrinsic->src[0])
+                ? nir_src_as_uint(intrinsic->src[0]) : 0;
+   if (intrinsic->intrinsic == nir_intrinsic_get_ssbo_size) {
+      if (nir_src_is_const(intrinsic->src[0]) &&
+          binding >= AO46_MESA_MAX_SHADER_BUFFERS) {
+         lowering->valid = false;
+         return false;
+      }
+      table_index = binding;
+   } else {
+      if (!nir_src_is_const(intrinsic->src[0]) ||
+          binding >= AO46_METAL_MAX_UNIFORM_BINDINGS) {
+         lowering->valid = false;
+         return false;
+      }
+      table_index = AO46_MESA_MAX_SHADER_BUFFERS + binding;
+   }
+
+   builder->cursor = nir_before_instr(&intrinsic->instr);
+   root = nir_load_buffer_ptr_kk(
+      builder, 1, 64, .binding = AO46_MESA_ROBUST_SIZE_TABLE_BINDING);
+   size = nir_load_global(builder, 1, 32,
+                          nir_iadd_imm(builder, root,
+                                       table_index * sizeof(uint32_t)),
+                          .align_mul = sizeof(uint32_t));
+   if (intrinsic->intrinsic == nir_intrinsic_get_ssbo_size &&
+       !nir_src_is_const(intrinsic->src[0])) {
+      nir_def *index = nir_u2u32(builder, intrinsic->src[0].ssa);
+
+      for (unsigned i = 1; i < AO46_MESA_MAX_SHADER_BUFFERS; ++i) {
+         nir_def *candidate = nir_load_global(
+            builder, 1, 32,
+            nir_iadd_imm(builder, root, i * sizeof(uint32_t)),
+            .align_mul = sizeof(uint32_t));
+         size = nir_bcsel(builder, nir_ieq_imm(builder, index, i),
+                          candidate, size);
+      }
+   }
+   nir_def_rewrite_uses(&intrinsic->def, size);
+   nir_instr_remove(&intrinsic->instr);
+   return true;
+}
+
+bool
+AO46MesaNIRLowerRobustBufferAccess(struct nir_shader *nir)
+{
+   struct AO46MesaRobustSizeLowering lowering = {.valid = true};
+
+   if (!nir)
+      return false;
+
+   (void)nir_lower_robust_access(nir, ao46_mesa_robust_buffer_intrinsic, NULL);
+   (void)nir_shader_intrinsics_pass(nir, ao46_mesa_lower_robust_size,
+                                    nir_metadata_control_flow, &lowering);
+   return lowering.valid;
+}
+
 /* Reflect every direct KK buffer root before NIR-to-MSL fixes its ABI. */
 static bool
 ao46_mesa_compute_collect_static_buffer_bindings(const struct nir_shader *nir,

@@ -38,8 +38,9 @@ window surfaces. `eglCreateWindowSurface` accepts a platform-native public
 `CAMetalLayer`, `NSView`, or `NSWindow`; it does not provide Wayland or X11
 surfaces. The frontend was frozen after its OpenGL 3.3 pbuffer milestone, but
 the resumed Gallium work has since raised Mesa's selected engineering ceiling
-to OpenGL 4.1 core. This is not an OpenGL 4.6 or Khronos conformance claim;
-OpenGL CTS has not yet been completed.
+to OpenGL 4.6 core. Mesa's complete 4.6 predicate and the local 29-test suite
+pass, but OpenGL CTS has not yet been completed, so this is not a Khronos
+conformance claim.
 
 The legacy framework/CGL/NSOpenGL product remains a separate compatibility
 path. It may share lower AO46 Metal libraries, but its objects, loader names,
@@ -48,8 +49,9 @@ Khronos ABI.
 
 ## Resume Rule
 
-The AVK143 release has explicitly returned the project to the AO46 phase. The
-next modern-frontend items are expanded Gallium capabilities and staged CTS.
+The AVK143 release explicitly returned the project to the AO46 phase. The
+modern frontend and Mesa 4.6 engineering admission are complete; staged CTS is
+the next qualification phase.
 They must not reopen the completed standard ABI boundary or add a CGL/GLX
 fallback. Legacy framework/CGL/NSOpenGL compatibility remains a separate
 product and must not be mixed into the standard EGL/OpenGL execution path.

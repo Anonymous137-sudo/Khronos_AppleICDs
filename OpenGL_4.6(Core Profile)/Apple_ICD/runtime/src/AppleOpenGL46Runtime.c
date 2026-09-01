@@ -45,7 +45,7 @@ static void ao46_profile_version(GLint profile, GLint *major, GLint *minor)
 
         case kCGLOGLPVersion_GL4_Core:
             *major = 4;
-            *minor = 1;
+            *minor = 6;
             break;
 
         case kCGLOGLPVersion_GL4_6_Core:

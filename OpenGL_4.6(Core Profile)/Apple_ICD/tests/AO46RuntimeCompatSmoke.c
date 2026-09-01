@@ -1554,6 +1554,13 @@ int main(void)
                 glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniform_buffer_offset_alignment);
                 glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT,
                               &shader_storage_buffer_offset_alignment);
+                if (indexed_uniform_buffer_start64 != 0 ||
+                    indexed_uniform_buffer_size64 != 0) {
+                    fprintf(stderr,
+                            "indexed UBO base binding query: start=%lld size=%lld\n",
+                            (long long)indexed_uniform_buffer_start64,
+                            (long long)indexed_uniform_buffer_size64);
+                }
                 if (expect_true("broader buffer target queries leave no GL error", glGetError() == GL_NO_ERROR) ||
                     expect_true("GL_PIXEL_PACK_BUFFER_BINDING reflects bindful state",
                                 pixel_pack_buffer_binding == (GLint)dsa_vbo) ||
@@ -1579,17 +1586,15 @@ int main(void)
                                 indexed_atomic_counter_buffer_binding == (GLint)dsa_immutable_vbo) ||
                     expect_true("glGetIntegeri_v reports indexed shader-storage binding",
                                 indexed_shader_storage_buffer_binding == (GLint)dsa_immutable_vbo) ||
-                    expect_true("glGetInteger64i_v reports indexed uniform full-range state",
+                    expect_true("glGetInteger64i_v reports unspecified uniform base range",
                                 indexed_uniform_buffer_start64 == 0 &&
-                                indexed_uniform_buffer_size64 ==
-                                    (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
+                                indexed_uniform_buffer_size64 == 0) ||
                     expect_true("glGetInteger64i_v reports indexed transform-feedback range state",
                                 indexed_transform_feedback_buffer_start64 == 8 &&
                                 indexed_transform_feedback_buffer_size64 == 24) ||
-                    expect_true("glGetInteger64i_v reports indexed atomic-counter full-range state",
+                    expect_true("glGetInteger64i_v reports unspecified atomic-counter base range",
                                 indexed_atomic_counter_buffer_start64 == 0 &&
-                                indexed_atomic_counter_buffer_size64 ==
-                                    (GLint64)sizeof(mapped_storage_triangle_vertices)) ||
+                                indexed_atomic_counter_buffer_size64 == 0) ||
                     expect_true("glGetInteger64i_v reports indexed shader-storage range state",
                                 indexed_shader_storage_buffer_start64 == 0 &&
                                 indexed_shader_storage_buffer_size64 == 32) ||
@@ -1621,6 +1626,11 @@ int main(void)
                 }
             }
         }
+
+        /* Keep the following client-memory texture tests independent from the
+         * DSA buffer-target coverage above. */
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
         {
             static const GLchar *textured_vertex_shader_source =

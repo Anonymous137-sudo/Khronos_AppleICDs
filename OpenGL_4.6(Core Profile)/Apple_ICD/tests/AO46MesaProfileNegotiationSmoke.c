@@ -16,7 +16,7 @@ fail(const char *label, CGLError error)
 int
 main(void)
 {
-    const CGLPixelFormatAttribute gl41_attributes[] = {
+    const CGLPixelFormatAttribute gl4_attributes[] = {
         kCGLPFAOpenGLProfile,
         (CGLPixelFormatAttribute)kCGLOGLPVersion_GL4_Core,
         0,
@@ -42,16 +42,16 @@ main(void)
         return fail("AO46 promoted Metal Gallium screen", kCGLBadContext);
     }
 
-    error = AO46ChoosePixelFormat(gl41_attributes, &pixel_format,
+    error = AO46ChoosePixelFormat(gl4_attributes, &pixel_format,
                                   &pixel_format_count);
     if (error != kCGLNoError || !pixel_format || pixel_format_count != 1) {
-        return fail("AO46ChoosePixelFormat(GL 4.1 core)", error);
+        return fail("AO46ChoosePixelFormat(GL4 core selector)", error);
     }
 
     error = AO46CreateContext(pixel_format, NULL, &context);
     if (error != kCGLNoError || !context) {
         AO46DestroyPixelFormat(pixel_format);
-        return fail("AO46CreateContext(GL 4.1 core)", error);
+        return fail("AO46CreateContext(GL4 core selector)", error);
     }
 
     error = AO46SetOffScreen(context, 1, 1, 4, storage);
@@ -60,7 +60,7 @@ main(void)
     if (error != kCGLNoError) {
         AO46DestroyContext(context);
         AO46DestroyPixelFormat(pixel_format);
-        return fail("AO46SetCurrentContext(GL 4.1 core)", error);
+        return fail("AO46SetCurrentContext(GL4 core selector)", error);
     }
 
     glGetIntegerv(GL_MAJOR_VERSION, &major);
@@ -69,13 +69,13 @@ main(void)
     glClear(GL_COLOR_BUFFER_BIT);
     glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
     if (glGetError() != GL_NO_ERROR || major < 4 ||
-        (major == 4 && minor < 1) || pixel[0] < 63 || pixel[0] > 65 ||
+        (major == 4 && minor < 6) || pixel[0] < 63 || pixel[0] > 65 ||
         pixel[1] < 127 || pixel[1] > 129 || pixel[2] < 190 ||
         pixel[2] > 192 || pixel[3] != 255) {
         AO46SetCurrentContext(NULL);
         AO46DestroyContext(context);
         AO46DestroyPixelFormat(pixel_format);
-        return fail("AO46 GL 4.1 Mesa context and hardware readback",
+        return fail("AO46 GL 4.6 Mesa context and hardware readback",
                     kCGLBadContext);
     }
     AO46SetCurrentContext(NULL);

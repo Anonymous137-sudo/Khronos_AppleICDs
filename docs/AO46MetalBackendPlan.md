@@ -2,7 +2,7 @@
 
 Status: governing work-in-progress architecture. The standard Khronos ABI
 frontend completed its initial surfaceless/pbuffer GL 3.3 milestone, and the
-resumed Gallium work has raised Mesa's selected engineering ceiling to GL 4.1.
+resumed Gallium work has raised Mesa's selected engineering ceiling to GL 4.6.
 AO46 work resumed on 2026-08-21 after the AVK143 Vulkan engineering release. This plan
 supersedes the direct AGX/UABI route as the active runtime strategy; the direct
 route and its captured evidence remain preserved research.
@@ -97,8 +97,8 @@ or raw AGX submission as an AO46 runtime path.
    through that context, and verified through a Gallium fence-backed readback.
    The screen also supports bounded `RGBA8`/`BGRA8` 2D textures, color
    surfaces, full-surface render-pass clears, and aligned texture-to-buffer
-   readback. Normal GL contexts remain blocked until general graphics state,
-   shader, texture-view, and render-pass callbacks are live.
+   readback. Normal GL 4.6 contexts are now admitted after the complete Mesa
+   capability predicate passes; CTS remains the qualification boundary.
 
 2. **Resource and pipeline execution**
    Implement Mesa-owned buffer, texture, sampler, framebuffer, shader, and
@@ -111,8 +111,8 @@ or raw AGX submission as an AO46 runtime path.
    loss to the live Mesa/Metal screen.
 
 4. **Feature exposure and CTS**
-   Enable only capabilities proven by Mesa plus the Metal backend. Start with
-   offscreen Mesa tests, then targeted GL CTS groups, then progressively wider
+   The complete Mesa OpenGL 4.6 predicate and local 29-test suite now pass.
+   Continue with targeted GL CTS groups, then progressively wider
    CTS runs. Fix framework/ICD correctness and performance regressions as each
    capability becomes live.
 
@@ -131,26 +131,25 @@ progress.
 
 ### Lane 1: Mesa Gallium Contract
 
-- `[~]` Mesa state tracker, GL API, and NIR libraries link into the framework.
-- `[~]` AO46-owned `pipe_screen` now has create/destroy, hardware identity,
+- `[x]` Mesa state tracker, GL API, and NIR libraries link into the framework.
+- `[x]` AO46-owned `pipe_screen` now has create/destroy, hardware identity,
   conservative capability reporting, bounded buffer/2D-color-format admission,
   and Metal-backed Gallium resource lifetime. Mesa's audited state tracker
-  currently selects OpenGL 4.1 core, raised from the earlier 3.3 milestone, and accepts bounded compute
+  currently selects OpenGL 4.6 core, raised from the earlier 3.3 milestone, and accepts compute
   or graphics `pipe_context` creation.
 - `[~]` `pipe_context` creation, destruction, buffer upload/map, GPU blit,
   compute dispatch, direct graphics `draw_vbo`, and Metal-backed
   `pipe_fence_handle` completion are implemented. Submitted resources are
-  retained through fence retirement. General Mesa state-tracker admission
-  remains blocked.
-- `[~]` `AO46MTLGallium` now builds as the promoted Mesa-facing Gallium target.
+  retained through fence retirement. Mesa OpenGL 4.6 state-tracker admission
+  is active.
+- `[x]` `AO46MTLGallium` now builds as the promoted Mesa-facing Gallium target.
   Its adapter-backed screen entry point borrows one live
   `AO46AGXMetalAdapter` device/queue pair and releases its retained references
   with the final screen. The framework creates this screen for CGL/Mesa context
   negotiation, with smoke coverage for screen identity and lifecycle. Mesa
-  currently realizes this capability set as core 4.1 after the standard
-  `u_vbuf` packed-vertex fallback and the remaining 4.0/4.1 gates are enabled,
-  so GL 4.6 requests stay
-  fail-closed while their missing Gallium capabilities are audited.
+  currently realizes this capability set as core 4.6 after the complete Mesa
+  4.4/4.5/4.6 predicate audit passes. Missing or regressed capabilities remain
+  fail-closed.
 - Exit: Mesa creates a context through AO46 and reports only capabilities the
   Metal backend has tested.
 
@@ -417,9 +416,9 @@ progress.
 
 - `[~]` Framework, CGL, NSOpenGL, ICD, `libGL`, and `libGLContext` surfaces
   build and retain fail-closed context handling.
-- `[~]` Route supported-core offscreen CGL contexts through the promoted
-  Gallium screen. GL 4.6 and window-drawable admission remain fail-closed until
-  their Gallium capability and IOSurface/CAMetalLayer paths are live.
+- `[x]` Route supported-core offscreen and window CGL contexts through the
+  promoted Gallium screen. GL 4.6 and public CAMetalLayer drawable admission
+  are live and covered by the local regression suite.
 - `[~]` CGL now accepts an `NSView`, `NSWindow`, or caller-owned `CAMetalLayer`,
   resolves it to a public AO46 device layer, and creates a Mesa-owned color
   target with matching `RGBA8`/`BGRA8` dimensions. At swap it copies that target
@@ -463,9 +462,9 @@ conditions.
 
 | Milestone | Current confidence | Why |
 | --- | --- | --- |
-| Mesa context plus deterministic Metal offscreen clear/readback | 55-70% | Mesa owns the GL semantics and AO46 has a working Metal command/readback foundation, but the Gallium screen, resources, and real NIR pipeline are still new driver work. |
-| Early targeted CTS groups | 35-50% | Requires the first three lanes plus correct fences and format behavior, not merely a working clear. |
-| Broad OpenGL 4.6 Core CTS conformance | 15-30% | Mesa removes the semantic-engine burden, but a production-quality Gallium Metal driver still needs broad resource, shader, synchronization, presentation, and edge-case coverage. |
+| Mesa context plus deterministic Metal offscreen clear/readback | Complete locally | OpenGL 4.6 context admission, hardware execution, readback, and the 29-test suite pass. |
+| Early targeted CTS groups | Ready to begin | The version predicate and regression foundation are complete; CTS will identify remaining semantic gaps. |
+| Broad OpenGL 4.6 Core CTS conformance | Unmeasured | No confidence percentage is meaningful until representative CTS groups have run. |
 
 The new Metal route is materially more tractable than the direct AGX/UABI
 route because it removes opaque carrier, executable-code admission, and custom
@@ -489,7 +488,7 @@ runtime backend or a conformance claim.
 
 AO46 is an in-development macOS OpenGL framework project. The framework,
 router, CGL/NSOpenGL bridge, user-space ICD libraries, generated dispatch, and
-test scaffolding are useful foundations. The Metal execution backend is not yet
-complete, no full OpenGL 4.6 conformance claim is made, and system-wide
-installation remains a developer-only experiment until staged CTS establishes
-real capability coverage.
+test scaffolding and Metal execution backend now satisfy Mesa's OpenGL 4.6
+engineering predicate and local regression suite. No Khronos conformance claim
+is made, and system-wide installation remains a developer experiment until
+staged CTS establishes broader capability coverage.

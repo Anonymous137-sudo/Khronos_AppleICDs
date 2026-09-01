@@ -271,6 +271,34 @@ set(MESA_COMPILE_DEFINITIONS
 # -------------------------------------------------------------
 # 2. Find Mesa static libraries (built via Meson)
 # -------------------------------------------------------------
+set(_ao46_mesa_cached_libraries
+    MESA_GLAPI_LIB
+    MESA_ST_MESA_LIB
+    MESA_GALLIUM_AUX
+    MESA_UTIL_LIB
+    MESA_UTIL_C11_LIB
+    MESA_UTIL_SIMD_LIB
+    MESA_COMPILER_LIB
+    MESA_NIR_LIB
+    MESA_POLY_NIR_LIB
+    MESA_GLSL_UTIL_LIB
+    MESA_GLSL_LIB
+    MESA_BLAKE3_LIB
+    AO46_MESA_ASAHI_GALLIUM_REFERENCE_LIB
+)
+foreach(_ao46_library IN LISTS _ao46_mesa_cached_libraries)
+    if(DEFINED ${_ao46_library} AND NOT "${${_ao46_library}}" STREQUAL "")
+        cmake_path(IS_PREFIX MESA_BUILD_DIR "${${_ao46_library}}"
+                   NORMALIZE _ao46_library_uses_selected_build)
+        if(NOT _ao46_library_uses_selected_build)
+            unset(${_ao46_library} CACHE)
+        endif()
+    endif()
+endforeach()
+unset(_ao46_library)
+unset(_ao46_library_uses_selected_build)
+unset(_ao46_mesa_cached_libraries)
+
 find_library(MESA_GLAPI_LIB       NAMES glapi          PATHS "${MESA_BUILD_DIR}/src/mesa/glapi/shared-glapi" NO_DEFAULT_PATH)
 find_library(MESA_ST_MESA_LIB     NAMES mesa           PATHS "${MESA_BUILD_DIR}/src/mesa" NO_DEFAULT_PATH)
 find_library(MESA_GALLIUM_AUX     NAMES gallium        PATHS "${MESA_BUILD_DIR}/src/gallium/auxiliary" NO_DEFAULT_PATH)

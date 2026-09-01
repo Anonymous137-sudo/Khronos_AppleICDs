@@ -63,8 +63,9 @@ layer, resize and backing-scale refresh, swap interval `0`/`1`, drawable loss,
 and completion-based source-resource retirement. The current presentation scope
 is sRGB `RGBA8`/`BGRA8`; it does not provide Wayland or X11 surfaces. The
 frontend boundary is complete, while the active backend currently exposes the
-Mesa-selected OpenGL 4.1 ceiling. That measured version is not a Khronos CTS
-conformance claim.
+Mesa-selected OpenGL 4.6 engineering ceiling. That measured version satisfies
+Mesa's version predicate and the local regression suite; it is not a Khronos
+CTS conformance claim.
 
 From a live desktop session, run the visible smoke after a Mesa build with:
 

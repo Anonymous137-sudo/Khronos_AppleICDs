@@ -44,7 +44,9 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
 - Every new implementation pass starts with a bug sweep and build/test verification.
 - Binding-based APIs and DSA APIs must share one internal object implementation.
 - Capability exposure must be driven by real backend support, not aspirational version strings.
-- The driver must not advertise full OpenGL 4.6 until required behavior passes deeper semantic and conformance coverage.
+- The driver may expose the Mesa-selected OpenGL 4.6 engineering ceiling only
+  while its complete predicate and regression suite pass; Khronos conformance
+  remains separately gated on CTS.
 - System replacement, installer behavior, and rollback safety remain first-class workstreams, not afterthoughts.
 
 ## Frontend Split
@@ -64,17 +66,17 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
   `vulkan-api-sdk-1.4.354-cts-qualified-1.4.3.2-20260821` engineering release.
   The completed modern ABI remains surfaceless/pbuffer plus public Cocoa window
   presentation. Gallium feature work has since raised the Mesa-selected
-  engineering ceiling from GL 3.3 to GL 4.1; staged OpenGL CTS remains pending
+  engineering ceiling from GL 3.3 to GL 4.6; staged OpenGL CTS remains pending
   and must not reopen that ABI boundary.
 
 ## Active Mesa Metal Backend Dashboard
 
-- `[~]` Mesa semantic and compiler reuse: Mesa OpenGL, state tracker, GLSL,
+- `[x]` Mesa semantic and compiler reuse: Mesa OpenGL, state tracker, GLSL,
   SPIR-V, NIR, and KosmicKrisp NIR-to-MSL sources are present. Real Mesa NIR
   compute, vertex, and fragment shaders now lower through KosmicKrisp, compile
   as MSL, and execute through AO46's bounded Mesa Metal context. The framework
-  now creates supported-core state-tracker contexts through that screen; broad
-  state-tracker graphics coverage remains incomplete.
+  now creates OpenGL 4.6 state-tracker contexts through that screen. Mesa's
+  complete 4.6 predicate and the local regression suite pass.
 - `[x]` Metal adapter bootstrap: AO46 owns one `MTLDevice`/command queue,
   shared buffer allocation, MSL compute-pipeline creation, direct command
   encoding, completion wait, and GPU readback. The hardware smoke test passes.
@@ -83,8 +85,8 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
   borrows the adapter-owned Metal device/queue rather than creating a second
   pair; lifecycle smoke coverage proves the identity and teardown contract.
   The framework selects this driver for supported-core CGL admission. Mesa
-  currently realizes it as core 4.1, raised from the earlier 3.3 milestone, so GL 4.6 remains
-  profile-gated until their missing capabilities are complete.
+  currently realizes it as core 4.6, raised from the earlier 3.3 milestone.
+  The remaining version-level gate is CTS qualification, not context admission.
 - `[~]` Mesa Metal screen and context: AO46 has a Metal-backed `pipe_screen`
   and graphics-capable `pipe_context` with buffer and bounded 2D color
   resources, upload/blit/compute/full-surface-clear/vertex-buffer-triangle
@@ -93,8 +95,8 @@ existing `GL2MTL/mtl_driver.m` is now the audited migration baseline for
   triangle lists now consume retained framebuffer and vertex-buffer state.
   Direct draws carry base-instance/count state and static per-instance vertex
   divisors. Supported-core Mesa state-tracker contexts now use the promoted
-  driver; GL 4.6 capability admission, general graphics state, and window
-  presentation remain.
+  driver. GL 4.6 capability admission and window presentation are active;
+  broader semantic coverage now proceeds through staged CTS.
 - `[~]` Metal resources and pipelines: `RGBA8`/`BGRA8` renderable 2D textures,
   color surfaces, aligned staging upload/readback, and Mesa-generated
   vertex/fragment render pipelines with interleaved `float4` position plus

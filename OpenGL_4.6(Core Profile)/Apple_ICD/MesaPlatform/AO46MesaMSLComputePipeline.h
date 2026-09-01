@@ -17,6 +17,7 @@ enum {
    AO46_MESA_MAX_IMAGE_UNITS = 8,
    AO46_MESA_IMAGE_TEXTURE_BASE = 16,
    AO46_MESA_DRAW_PARAMETER_BINDING = 11,
+   AO46_MESA_ROBUST_SIZE_TABLE_BINDING = 12,
    AO46_MESA_STREAM_OUTPUT_DESCRIPTOR_BINDING = 13,
 };
 struct pipe_context;
@@ -52,7 +53,8 @@ struct AO46MesaComputePipeline {
  * roots. The returned mask is the exact Metal buffer ABI required by NIR.
  */
 bool AO46MesaNIRLowerBoundedSSBOs(struct nir_shader *nir,
-                                 uint16_t *out_static_buffer_mask);
+                                  uint16_t *out_static_buffer_mask);
+bool AO46MesaNIRLowerRobustBufferAccess(struct nir_shader *nir);
 
 /* Lower immutable Gallium image units to direct KK Metal texture bindings. */
 bool AO46MesaNIRLowerStaticImages(struct nir_shader *nir,

@@ -43,9 +43,9 @@ GLX bridge, or a software renderer. Standard EGL window surfaces accept public
 `CAMetalLayer`, `NSView`, or `NSWindow` handles, retain resources until the
 Metal presentation copy completes, and rebuild after a drawable size/loss
 transition. The original standard-ABI smoke used an OpenGL 3.3-core context;
-the current Mesa-selected engineering ceiling has since risen to OpenGL 4.1
-core. OpenGL CTS remains pending, so this is not an OpenGL 4.6 or conformance
-claim.
+the current Mesa-selected engineering ceiling has since risen to OpenGL 4.6
+core. Mesa's complete 4.6 predicate and local regression suite pass. OpenGL CTS
+remains pending, so this is not a Khronos conformance claim.
 
 The installer also builds upstream Mesa Demos `glxinfo` when X11/GLX development
 packages are available. `glxinfo` is an X11/GLX terminal diagnostic, not an EGL

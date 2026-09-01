@@ -85,9 +85,9 @@ Right now this subproject is an early in-development driver:
 - `gl*` entrypoints and the backend proc table are generated from a vendored Khronos-facing registry snapshot stored in this repo
 - old handwritten GL2MTL state, texture, buffer, pbuffer, and raster paths are archived only; their feature lists are not claims about the production framework
 - when a standard Khronos OpenGL token or function name already exists, the code now prefers that Khronos spelling directly; `AO46*` names are reserved for private driver plumbing
-- supported-core offscreen CGL contexts create through the promoted Mesa Metal
-  screen; GL 4.6 and native-window admission remain fail-closed rather than
-  silently selecting archived GL2MTL code or claiming a direct AGX runtime
+- supported-core offscreen and native-window contexts create through the
+  promoted Mesa Metal screen; OpenGL 4.6 admission is capability-audited and
+  never silently selects archived GL2MTL code or a direct AGX runtime
 - the active Metal bootstrap owns a native device, queue, shared buffer,
   compute pipeline, command buffer, completion wait, and GPU readback path;
   it now includes a bounded Mesa `pipe_screen` and graphics-capable
@@ -105,7 +105,7 @@ Right now this subproject is an early in-development driver:
   and `clamp-to-edge`/`repeat` addressing map directly to public Metal; a slot
   shared by both stages must retain the same view and sampler or the draw fails
   closed. This is not yet a broad conformance claim. Mesa now independently
-  selects an audited OpenGL 4.1 core ceiling from the promoted screen's
+  selects an audited OpenGL 4.6 core engineering ceiling from the promoted screen's
   capability set, while requests above that ceiling continue to fail closed.
 - direct AGX device-profile, BO, queue, submission, and shader-residency work
   is retained as research evidence rather than treated as the active blocker
@@ -160,8 +160,9 @@ gate is satisfied:
   dispatches separated by `pipe_context::memory_barrier`; the promoted driver
   emits an encoder-local Metal buffer barrier and retains a finished-submission
   fallback when no compatible encoder is active. General image arrays,
-  image queries, arbitrary descriptor indexing, complete robustness, and full
-  state-tracker conformance remain pending.
+  arbitrary descriptor indexing, and full state-tracker CTS coverage remain
+  pending. Robust SSBO/UBO range guards,
+  size queries, and out-of-range write/atomic suppression are active.
 - **OpenGL 4.5/4.6 lane:** clip-control depth modes compile as distinct Mesa
   NIR/Metal pipeline variants and pass hardware clipping tests. The bounded
   indirect-parameters path consumes a GPU-produced count buffer after an
@@ -183,11 +184,19 @@ gate is satisfied:
   `texture_barrier` callback is now backed by Metal texture/render-target
   barriers inside an active render encoder, with conservative finished
   submission outside that scope; the hardware smoke exercises this callback
-  before fence retirement.
+  before fence retirement. Query results can be written into retained Gallium
+  buffers, and inverted conditional rendering suppresses or admits real Metal
+  draws from those results. Cull-distance lowering is connected to the Metal
+  shader path, while `ddx_fine`/`ddy_fine` lower to explicit quad-neighbor
+  operations and are compiled by the adapter smoke. Mesa's SPIR-V frontend
+  remains the owner of SPIR-V-to-NIR conversion; AO46 accepts the resulting
+  NIR through the same Metal compiler path.
 
-The audited Mesa-selected core ceiling is now OpenGL 4.1. This closes the
-OpenGL 4.0 capability gate, but it is not a Khronos conformance result and does
-not claim complete OpenGL 4.2, 4.3, 4.5, or 4.6 contexts.
+The audited Mesa-selected engineering ceiling is now OpenGL 4.6. Mesa's exact
+4.4, 4.5, and 4.6 version predicates are live, and both the generic GL4
+selector and explicit 4.6 selector realize a 4.6 Mesa context. The local
+29-test regression suite passes, but this is not a Khronos conformance result;
+OpenGL CTS remains the next qualification boundary.
 
 ## Build
 
@@ -237,9 +246,9 @@ This tree includes runtime and bridge smoke harnesses:
   with its returned values through Gallium fence-backed readback. The active
   vertex/fragment compiler and binder additionally verify a static fragment
   SSBO through graphics readback. Unbounded indexing, robust size queries,
-  descriptor tables, cross-dispatch barrier semantics, and complete
-  state-tracker SSBO conformance remain fail-closed, so this is a proven
-  feature path rather than a complete GL 4.3 claim.
+  descriptor tables and complete CTS coverage remain pending. Robust static
+  and dynamic range guards, size queries, and cross-dispatch barriers are
+  covered by the promoted-driver hardware regression.
 - `tests/AO46MesaNIRBufferTextureGraphicsSmoke.c`
   Compiles RGB32 `FLOAT`, `UINT`, and `SINT` `PIPE_BUFFER` sampler views over
   typeless Gallium buffers through the live sampler-state path. Mesa-selected

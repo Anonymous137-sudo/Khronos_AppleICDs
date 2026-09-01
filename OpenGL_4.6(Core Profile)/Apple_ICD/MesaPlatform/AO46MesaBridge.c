@@ -312,7 +312,7 @@ ao46_mesa_profile_version(GLint profile, int *major, int *minor)
         return true;
     case kCGLOGLPVersion_GL4_Core:
         *major = 4;
-        *minor = 1;
+        *minor = 6;
         return true;
     case kCGLOGLPVersion_GL4_6_Core:
         *major = 4;
@@ -1068,6 +1068,56 @@ AO46MesaAuditCoreCapabilities(struct AO46MesaCoreCapabilityAudit *out_audit)
         .core_version = _mesa_get_version(&extensions, &consts,
                                           API_OPENGL_CORE),
         .glsl_version = consts.GLSLVersion,
+        .max_texture_size = consts.MaxTextureSize,
+        .max_renderbuffer_size = consts.MaxRenderbufferSize,
+        .max_cube_texture_levels = consts.MaxCubeTextureLevels,
+        .max_3d_texture_levels = consts.Max3DTextureLevels,
+        .max_array_texture_layers = consts.MaxArrayTextureLayers,
+        .max_color_attachments = consts.MaxColorAttachments,
+        .max_samples = consts.MaxSamples,
+        .max_vertex_texture_units =
+            consts.Program[MESA_SHADER_VERTEX].MaxTextureImageUnits,
+        .max_vertex_uniform_blocks =
+            consts.Program[MESA_SHADER_VERTEX].MaxUniformBlocks,
+        .max_vertex_attrib_stride = consts.MaxVertexAttribStride,
+        .gl14_shadow = extensions.ARB_shadow,
+        .gl20_vertex_shader = extensions.ARB_vertex_shader,
+        .gl20_fragment_shader = extensions.ARB_fragment_shader,
+        .gl20_texture_npot = extensions.ARB_texture_non_power_of_two,
+        .gl20_blend_equation_separate = extensions.EXT_blend_equation_separate,
+        .gl20_stencil_two_side = extensions.EXT_stencil_two_side,
+        .gl21_texture_srgb = extensions.EXT_texture_sRGB,
+        .gl30_depth_buffer_float = extensions.ARB_depth_buffer_float,
+        .gl30_half_float_vertex = extensions.ARB_half_float_vertex,
+        .gl30_map_buffer_range = extensions.ARB_map_buffer_range,
+        .gl30_shader_texture_lod = extensions.ARB_shader_texture_lod,
+        .gl30_texture_float = extensions.ARB_texture_float,
+        .gl30_texture_rg = extensions.ARB_texture_rg,
+        .gl30_texture_compression_rgtc = extensions.ARB_texture_compression_rgtc,
+        .gl30_draw_buffers2 = extensions.EXT_draw_buffers2,
+        .gl30_framebuffer_object = extensions.ARB_framebuffer_object,
+        .gl30_framebuffer_srgb = extensions.EXT_framebuffer_sRGB,
+        .gl30_packed_float = extensions.EXT_packed_float,
+        .gl30_texture_array = extensions.EXT_texture_array,
+        .gl30_texture_integer = extensions.EXT_texture_integer,
+        .gl30_texture_shared_exponent = extensions.EXT_texture_shared_exponent,
+        .gl30_transform_feedback = extensions.EXT_transform_feedback,
+        .gl30_conditional_render = extensions.NV_conditional_render,
+        .gl31_draw_instanced = extensions.ARB_draw_instanced,
+        .gl31_uniform_buffer_object = extensions.ARB_uniform_buffer_object,
+        .gl31_texture_snorm = extensions.EXT_texture_snorm,
+        .gl31_primitive_restart = extensions.NV_primitive_restart,
+        .gl31_texture_rectangle = extensions.NV_texture_rectangle,
+        .gl32_depth_clamp = extensions.ARB_depth_clamp,
+        .gl32_draw_elements_base_vertex =
+            extensions.ARB_draw_elements_base_vertex,
+        .gl32_fragment_coord_conventions =
+            extensions.ARB_fragment_coord_conventions,
+        .gl32_provoking_vertex = extensions.EXT_provoking_vertex,
+        .gl32_seamless_cube_map = extensions.ARB_seamless_cube_map,
+        .gl32_sync = extensions.ARB_sync,
+        .gl32_texture_multisample = extensions.ARB_texture_multisample,
+        .gl32_vertex_array_bgra = extensions.EXT_vertex_array_bgra,
         .gl33_blend_func_extended = extensions.ARB_blend_func_extended,
         .gl33_explicit_attrib_location = extensions.ARB_explicit_attrib_location,
         .gl33_instanced_arrays = extensions.ARB_instanced_arrays,
@@ -1089,10 +1139,68 @@ AO46MesaAuditCoreCapabilities(struct AO46MesaCoreCapabilityAudit *out_audit)
         .gl40_texture_query_lod = extensions.ARB_texture_query_lod,
         .gl40_transform_feedback2 = extensions.ARB_transform_feedback2,
         .gl40_transform_feedback3 = extensions.ARB_transform_feedback3,
+        .gl41_es2_compatibility = extensions.ARB_ES2_compatibility,
+        .gl41_shader_precision = extensions.ARB_shader_precision,
+        .gl41_vertex_attrib_64bit = extensions.ARB_vertex_attrib_64bit,
+        .gl41_viewport_array = extensions.ARB_viewport_array,
+        .gl42_base_instance = extensions.ARB_base_instance,
+        .gl42_conservative_depth = extensions.ARB_conservative_depth,
+        .gl42_internalformat_query = extensions.ARB_internalformat_query,
+        .gl42_shader_atomic_counters = extensions.ARB_shader_atomic_counters,
+        .gl42_shader_image_load_store = extensions.ARB_shader_image_load_store,
+        .gl42_shading_language_420pack = extensions.ARB_shading_language_420pack,
+        .gl42_shading_language_packing = extensions.ARB_shading_language_packing,
+        .gl42_texture_compression_bptc = extensions.ARB_texture_compression_bptc,
+        .gl42_transform_feedback_instanced =
+            extensions.ARB_transform_feedback_instanced,
+        .gl43_compute_shader = extensions.ARB_compute_shader,
+        .gl43_copy_image = extensions.ARB_copy_image,
+        .gl43_es3_compatibility = extensions.ARB_ES3_compatibility,
+        .gl43_arrays_of_arrays = extensions.ARB_arrays_of_arrays,
+        .gl43_explicit_uniform_location =
+            extensions.ARB_explicit_uniform_location,
+        .gl43_fragment_layer_viewport =
+            extensions.ARB_fragment_layer_viewport,
+        .gl43_framebuffer_no_attachments =
+            extensions.ARB_framebuffer_no_attachments,
+        .gl43_internalformat_query2 = extensions.ARB_internalformat_query2,
+        .gl43_robust_buffer_access_behavior =
+            extensions.ARB_robust_buffer_access_behavior,
+        .gl43_shader_image_size = extensions.ARB_shader_image_size,
         .gl43_shader_storage_buffer_object =
             extensions.ARB_shader_storage_buffer_object,
+        .gl43_stencil_texturing = extensions.ARB_stencil_texturing,
+        .gl43_texture_buffer_range = extensions.ARB_texture_buffer_range,
+        .gl43_texture_query_levels = extensions.ARB_texture_query_levels,
+        .gl43_texture_view = extensions.ARB_texture_view,
+        .gl44_buffer_storage = extensions.ARB_buffer_storage,
+        .gl44_enhanced_layouts = extensions.ARB_enhanced_layouts,
+        .gl44_query_buffer_object = extensions.ARB_query_buffer_object,
+        .gl44_texture_mirror_clamp_to_edge =
+            extensions.ARB_texture_mirror_clamp_to_edge,
+        .gl44_texture_stencil8 = extensions.ARB_texture_stencil8,
+        .gl44_vertex_type_10f_11f_11f_rev =
+            extensions.ARB_vertex_type_10f_11f_11f_rev,
+        .gl45_es3_1_compatibility = extensions.ARB_ES3_1_compatibility,
         .gl45_clip_control = extensions.ARB_clip_control,
+        .gl45_conditional_render_inverted =
+            extensions.ARB_conditional_render_inverted,
+        .gl45_cull_distance = extensions.ARB_cull_distance,
+        .gl45_derivative_control = extensions.ARB_derivative_control,
+        .gl45_shader_texture_image_samples =
+            extensions.ARB_shader_texture_image_samples,
+        .gl45_texture_barrier = extensions.NV_texture_barrier,
+        .gl46_gl_spirv = extensions.ARB_gl_spirv,
+        .gl46_spirv_extensions = extensions.ARB_spirv_extensions,
         .gl46_indirect_parameters = extensions.ARB_indirect_parameters,
+        .gl46_polygon_offset_clamp = extensions.ARB_polygon_offset_clamp,
+        .gl46_shader_atomic_counter_ops = extensions.ARB_shader_atomic_counter_ops,
+        .gl46_shader_draw_parameters = extensions.ARB_shader_draw_parameters,
+        .gl46_shader_group_vote = extensions.ARB_shader_group_vote,
+        .gl46_texture_filter_anisotropic =
+            extensions.ARB_texture_filter_anisotropic,
+        .gl46_transform_feedback_overflow_query =
+            extensions.ARB_transform_feedback_overflow_query,
     };
     free(consts.SpirVExtensions);
     pthread_mutex_unlock(&g_gl_screen_lock);
