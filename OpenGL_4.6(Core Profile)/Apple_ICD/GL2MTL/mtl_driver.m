@@ -4,6 +4,7 @@
 #import <AppKit/NSWindow.h>
 #import <Foundation/Foundation.h>
 #import <pthread.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -2865,6 +2866,82 @@ ao46_metal_resource_copy_region(struct pipe_context *ctx,
 }
 
 static void
+ao46_metal_translate_cross_integer(enum pipe_format dst_format,
+                                   void *dst,
+                                   unsigned dst_stride,
+                                   enum pipe_format src_format,
+                                   const void *src,
+                                   unsigned src_stride,
+                                   unsigned width,
+                                   unsigned height)
+{
+    uint32_t *rgba = malloc((size_t)width * 4u * sizeof(*rgba));
+
+    if (!rgba) {
+        return;
+    }
+
+    for (unsigned y = 0; y < height; ++y) {
+        util_format_unpack_rgba(src_format, rgba,
+                                (const uint8_t *)src + (size_t)y * src_stride,
+                                width);
+
+        if (util_format_is_pure_sint(src_format)) {
+            int32_t *signed_rgba = (int32_t *)rgba;
+            for (unsigned i = 0; i < width * 4u; ++i) {
+                rgba[i] = signed_rgba[i] < 0 ? 0u : (uint32_t)signed_rgba[i];
+            }
+        } else {
+            for (unsigned i = 0; i < width * 4u; ++i) {
+                rgba[i] = MIN2(rgba[i], (uint32_t)INT32_MAX);
+            }
+        }
+
+        util_format_pack_rgba(dst_format,
+                              (uint8_t *)dst + (size_t)y * dst_stride,
+                              rgba, width);
+    }
+
+    free(rgba);
+}
+
+static bool
+ao46_metal_translate_compressed_float(enum pipe_format dst_format,
+                                      void *dst,
+                                      unsigned dst_stride,
+                                      enum pipe_format src_format,
+                                      const void *src,
+                                      unsigned src_stride,
+                                      unsigned width,
+                                      unsigned height)
+{
+    const size_t row_size = (size_t)width * 4u * sizeof(float);
+    float *rgba;
+
+    if (!width || !height || row_size / (4u * sizeof(float)) != width ||
+        (size_t)height > SIZE_MAX / row_size) {
+        return false;
+    }
+
+    rgba = malloc(row_size * height);
+    if (!rgba) {
+        return false;
+    }
+
+    util_format_unpack_rgba_rect(src_format, rgba, (unsigned)row_size,
+                                 src, src_stride, width, height);
+    for (unsigned y = 0; y < height; ++y) {
+        util_format_pack_rgba(dst_format,
+                              (uint8_t *)dst + (size_t)y * dst_stride,
+                              (const uint8_t *)rgba + (size_t)y * row_size,
+                              width);
+    }
+
+    free(rgba);
+    return true;
+}
+
+static void
 ao46_metal_blit_cpu_color_convert(struct pipe_context *ctx,
                                   const struct pipe_blit_info *info)
 {
@@ -2873,27 +2950,40 @@ ao46_metal_blit_cpu_color_convert(struct pipe_context *ctx,
     void *src;
     void *dst;
 
+    if (getenv("AO46_TRACE_RUNTIME") && info && info->src.resource &&
+        info->dst.resource) {
+        fprintf(stderr,
+                "[AO46Metal] enter CPU color convert %s/%s -> %s/%s\n",
+                util_format_name(info->src.resource->format),
+                util_format_name(info->src.format),
+                util_format_name(info->dst.resource->format),
+                util_format_name(info->dst.format));
+    }
+
+    const bool src_depth = info &&
+        util_format_is_depth_or_stencil(info->src.format);
+    const bool dst_depth = info &&
+        util_format_is_depth_or_stencil(info->dst.format);
+    const bool depth_only = info && info->mask == PIPE_MASK_Z &&
+        src_depth && dst_depth &&
+        !util_format_has_stencil(util_format_description(info->src.format)) &&
+        !util_format_has_stencil(util_format_description(info->dst.format));
+    const bool color = info && info->mask == PIPE_MASK_RGBA &&
+        !src_depth && !dst_depth;
+
     if (!ctx || !info || !info->src.resource || !info->dst.resource ||
         info->src.resource->target == PIPE_BUFFER ||
         info->dst.resource->target == PIPE_BUFFER ||
         info->src.resource->nr_samples > 1 || info->dst.resource->nr_samples > 1 ||
-        info->src.resource->format != info->src.format ||
-        info->dst.resource->format != info->dst.format ||
         info->src.box.x < 0 || info->src.box.y < 0 || info->src.box.z < 0 ||
         info->dst.box.x < 0 || info->dst.box.y < 0 || info->dst.box.z < 0 ||
         info->src.box.width <= 0 || info->src.box.height <= 0 ||
         info->src.box.depth != 1 || info->dst.box.depth != 1 ||
         info->src.box.width != info->dst.box.width ||
         info->src.box.height != info->dst.box.height ||
-        info->mask != PIPE_MASK_RGBA ||
-        util_format_is_compressed(info->src.format) ||
+        (!color && !depth_only) ||
         util_format_is_compressed(info->dst.format) ||
-        util_format_is_depth_or_stencil(info->src.format) ||
-        util_format_is_depth_or_stencil(info->dst.format) ||
-        util_format_is_pure_sint(info->src.format) !=
-            util_format_is_pure_sint(info->dst.format) ||
-        util_format_is_pure_uint(info->src.format) !=
-            util_format_is_pure_uint(info->dst.format)) {
+        src_depth != dst_depth) {
         return;
     }
 
@@ -2910,6 +3000,8 @@ ao46_metal_blit_cpu_color_convert(struct pipe_context *ctx,
                                   &info->src.box,
                                   &src_transfer);
     if (!src) {
+        if (getenv("AO46_TRACE_RUNTIME"))
+            fprintf(stderr, "[AO46Metal] CPU color convert source map failed\n");
         return;
     }
 
@@ -2920,17 +3012,55 @@ ao46_metal_blit_cpu_color_convert(struct pipe_context *ctx,
                                   &info->dst.box,
                                   &dst_transfer);
     if (!dst) {
+        if (getenv("AO46_TRACE_RUNTIME"))
+            fprintf(stderr, "[AO46Metal] CPU color convert destination map failed\n");
         ao46_metal_resource_unmap(info->src.resource->screen, src_transfer);
         return;
     }
 
     /* ReadPixels staging conversions must preserve integer values and float
      * range/precision. Reuse Mesa's typed unpack/pack path, not an RGBA8 hop. */
-    if (!util_format_translate(info->dst.format, dst, dst_transfer->stride, 0, 0,
-                               info->src.format, src, src_transfer->stride, 0, 0,
-                               info->src.box.width, info->src.box.height)) {
+    const bool cross_integer =
+        (util_format_is_pure_sint(info->src.format) &&
+         util_format_is_pure_uint(info->dst.format)) ||
+        (util_format_is_pure_uint(info->src.format) &&
+         util_format_is_pure_sint(info->dst.format));
+    bool translated = true;
+    if (util_format_is_compressed(info->src.format)) {
+        translated = ao46_metal_translate_compressed_float(
+            info->dst.format, dst, dst_transfer->stride,
+            info->src.format, src, src_transfer->stride,
+            info->src.box.width, info->src.box.height);
+    } else if (cross_integer) {
+        ao46_metal_translate_cross_integer(info->dst.format, dst,
+                                           dst_transfer->stride,
+                                           info->src.format, src,
+                                           src_transfer->stride,
+                                           info->src.box.width,
+                                           info->src.box.height);
+    } else {
+        translated = util_format_translate(
+            info->dst.format, dst, dst_transfer->stride, 0, 0,
+            info->src.format, src, src_transfer->stride, 0, 0,
+            info->src.box.width, info->src.box.height);
+    }
+    if (!translated) {
         fprintf(stderr, "AO46 Metal: Mesa color format translation failed (%u -> %u)\n",
                 info->src.format, info->dst.format);
+    } else if (getenv("AO46_TRACE_RUNTIME") &&
+               !util_format_is_compressed(info->src.format) &&
+               !util_format_is_compressed(info->dst.format)) {
+        float src_rgba[4] = {0};
+        float dst_rgba[4] = {0};
+        util_format_unpack_rgba(info->src.format, src_rgba, src, 1);
+        util_format_unpack_rgba(info->dst.format, dst_rgba, dst, 1);
+        fprintf(stderr,
+                "[AO46Metal] CPU color convert %s -> %s first="
+                "(%g,%g,%g,%g)->(%g,%g,%g,%g)\n",
+                util_format_name(info->src.format),
+                util_format_name(info->dst.format),
+                src_rgba[0], src_rgba[1], src_rgba[2], src_rgba[3],
+                dst_rgba[0], dst_rgba[1], dst_rgba[2], dst_rgba[3]);
     }
 
     ao46_metal_resource_unmap(info->dst.resource->screen, dst_transfer);
@@ -2999,7 +3129,7 @@ static bool
 ao46_metal_expand_color_blit(struct pipe_context *ctx,
                              const struct pipe_blit_info *info)
 {
-    static const char *source_template =
+    static const char *read_source_template =
         "#include <metal_stdlib>\n"
         "using namespace metal;\n"
         "struct VOut { float4 position [[position]]; };\n"
@@ -3012,6 +3142,22 @@ ao46_metal_expand_color_blit(struct pipe_context *ctx,
         "    constant int4 &region [[buffer(0)]]) {\n"
         "  int2 coord = int2(in.position.xy) - region.zw + region.xy;\n"
         "  return src.read(uint2(coord));\n"
+        "}\n";
+    static const char *sample_source_template =
+        "#include <metal_stdlib>\n"
+        "using namespace metal;\n"
+        "struct VOut { float4 position [[position]]; };\n"
+        "vertex VOut ao46_expand_vs(uint vid [[vertex_id]]) {\n"
+        "  const float2 p[3] = {float2(-1,-1), float2(3,-1), float2(-1,3)};\n"
+        "  VOut out; out.position = float4(p[vid], 0, 1); return out;\n"
+        "}\n"
+        "fragment float4 ao46_expand_fs(VOut in [[stage_in]],\n"
+        "    texture2d<float, access::sample> src [[texture(0)]],\n"
+        "    constant int4 &region [[buffer(0)]]) {\n"
+        "  constexpr sampler nearest_pixel(coord::pixel, filter::nearest,\n"
+        "                                  address::clamp_to_edge);\n"
+        "  float2 coord = float2(int2(in.position.xy) - region.zw + region.xy);\n"
+        "  return src.sample(nearest_pixel, coord + 0.5);\n"
         "}\n";
     struct ao46_metal_resource *src_mr;
     struct ao46_metal_resource *dst_mr;
@@ -3031,12 +3177,26 @@ ao46_metal_expand_color_blit(struct pipe_context *ctx,
     int32_t region[4];
     int source_length;
     bool submitted = false;
+    bool multisample_expand;
+    bool compressed_snorm_decode;
 
-    if (!ctx || !info || !info->src.resource || !info->dst.resource ||
-        info->src.resource->nr_samples > 1 ||
-        info->dst.resource->nr_samples <= 1 ||
-        info->src.resource->format != info->dst.resource->format ||
-        info->src.format != info->dst.format || info->mask != PIPE_MASK_RGBA ||
+    if (!ctx || !info || !info->src.resource || !info->dst.resource) {
+        return false;
+    }
+
+    multisample_expand = info->src.resource->nr_samples <= 1 &&
+        info->dst.resource->nr_samples > 1 &&
+        info->src.resource->format == info->dst.resource->format &&
+        info->src.format == info->dst.format;
+    compressed_snorm_decode = info->src.resource->nr_samples <= 1 &&
+        info->dst.resource->nr_samples <= 1 &&
+        ((info->src.format == PIPE_FORMAT_RGTC1_SNORM &&
+          info->dst.format == PIPE_FORMAT_R8_SNORM) ||
+         (info->src.format == PIPE_FORMAT_RGTC2_SNORM &&
+          info->dst.format == PIPE_FORMAT_R8G8_SNORM));
+
+    if ((!multisample_expand && !compressed_snorm_decode) ||
+        info->mask != PIPE_MASK_RGBA ||
         info->filter != PIPE_TEX_FILTER_NEAREST || info->scissor_enable ||
         info->swizzle_enable || info->alpha_blend ||
         info->src.box.x < 0 || info->src.box.y < 0 || info->src.box.z != 0 ||
@@ -3051,19 +3211,28 @@ ao46_metal_expand_color_blit(struct pipe_context *ctx,
     dst_mr = ao46_metal_resource(info->dst.resource);
     if (!src_mr->mtl_texture || !dst_mr->mtl_texture ||
         src_mr->mtl_texture.textureType != MTLTextureType2D ||
-        dst_mr->mtl_texture.textureType != MTLTextureType2DMultisample ||
+        dst_mr->mtl_texture.textureType !=
+            (multisample_expand ? MTLTextureType2DMultisample : MTLTextureType2D) ||
         src_mr->mtl_texture.sampleCount != 1 ||
-        dst_mr->mtl_texture.sampleCount <= 1 ||
+        (multisample_expand ? dst_mr->mtl_texture.sampleCount <= 1
+                            : dst_mr->mtl_texture.sampleCount != 1) ||
         info->src.level >= src_mr->mtl_texture.mipmapLevelCount ||
-        info->dst.level != 0) {
+        (multisample_expand && info->dst.level != 0) ||
+        info->dst.level >= dst_mr->mtl_texture.mipmapLevelCount) {
         return false;
     }
 
-    source_view = [src_mr->mtl_texture
-        newTextureViewWithPixelFormat:ao46_metal_pixel_format(info->src.format)
-                          textureType:MTLTextureType2D
-                               levels:NSMakeRange(info->src.level, 1)
-                               slices:NSMakeRange(0, 1)];
+    if (src_mr->mtl_texture.pixelFormat ==
+        ao46_metal_pixel_format(info->src.format) && info->src.level == 0 &&
+        src_mr->mtl_texture.mipmapLevelCount == 1) {
+        source_view = [src_mr->mtl_texture retain];
+    } else {
+        source_view = [src_mr->mtl_texture
+            newTextureViewWithPixelFormat:ao46_metal_pixel_format(info->src.format)
+                              textureType:MTLTextureType2D
+                                   levels:NSMakeRange(info->src.level, 1)
+                                   slices:NSMakeRange(0, 1)];
+    }
     if (!source_view) {
         return false;
     }
@@ -3071,15 +3240,17 @@ ao46_metal_expand_color_blit(struct pipe_context *ctx,
     scalar_type = util_format_is_pure_sint(info->src.format) ? "int" :
                   util_format_is_pure_uint(info->src.format) ? "uint" :
                                                                "float";
-    source_length = snprintf(source, sizeof(source), source_template,
-                             scalar_type, scalar_type);
+    source_length = compressed_snorm_decode ?
+        snprintf(source, sizeof(source), "%s", sample_source_template) :
+        snprintf(source, sizeof(source), read_source_template,
+                 scalar_type, scalar_type);
     if (source_length < 0 || (size_t)source_length >= sizeof(source)) {
         goto out;
     }
     msl = [NSString stringWithUTF8String:source];
     library = [g_mtl_device newLibraryWithSource:msl options:nil error:&error];
     if (!library) {
-        NSLog(@"AO46 Metal: multisample expansion library failed: %@", error);
+        NSLog(@"AO46 Metal: color expansion library failed: %@", error);
         goto out;
     }
     vertex = [library newFunctionWithName:@"ao46_expand_vs"];
@@ -3091,14 +3262,22 @@ ao46_metal_expand_color_blit(struct pipe_context *ctx,
     pipeline_desc = [[MTLRenderPipelineDescriptor alloc] init];
     pipeline_desc.vertexFunction = vertex;
     pipeline_desc.fragmentFunction = fragment;
-    pipeline_desc.rasterSampleCount = dst_mr->mtl_texture.sampleCount;
+    pipeline_desc.rasterSampleCount =
+        MAX2((NSUInteger)dst_mr->mtl_texture.sampleCount, 1u);
     pipeline_desc.colorAttachments[0].pixelFormat =
         dst_mr->mtl_texture.pixelFormat;
     pipeline = [g_mtl_device newRenderPipelineStateWithDescriptor:pipeline_desc
                                                              error:&error];
     if (!pipeline) {
-        NSLog(@"AO46 Metal: multisample expansion pipeline failed: %@", error);
+        NSLog(@"AO46 Metal: color expansion pipeline failed: %@", error);
         goto out;
+    }
+
+    if (getenv("AO46_TRACE_RUNTIME")) {
+        fprintf(stderr, "[AO46Metal] GPU color %s %s -> %s\n",
+                compressed_snorm_decode ? "compressed decode" : "expansion",
+                util_format_name(info->src.format),
+                util_format_name(info->dst.format));
     }
 
     ao46_metal_flush_for_resource_op(ctx);
@@ -3174,14 +3353,17 @@ ao46_metal_blit(struct pipe_context *ctx, const struct pipe_blit_info *info)
 
     if (getenv("AO46_TRACE_RUNTIME")) {
         fprintf(stderr,
-                "[AO46Metal] blit src(fmt=%u samples=%u level=%u "
+                "[AO46Metal] blit src(fmt=%u resource-fmt=%u samples=%u level=%u "
                 "box=%d,%d,%d %dx%dx%d) dst(fmt=%u samples=%u level=%u "
-                "box=%d,%d,%d %dx%dx%d) mask=0x%x filter=%u scissor=%u\n",
-                info->src.format, info->src.resource->nr_samples,
+                "resource-fmt=%u box=%d,%d,%d %dx%dx%d) mask=0x%x "
+                "filter=%u scissor=%u\n",
+                info->src.format, info->src.resource->format,
+                info->src.resource->nr_samples,
                 info->src.level, info->src.box.x, info->src.box.y,
                 info->src.box.z, info->src.box.width, info->src.box.height,
                 info->src.box.depth, info->dst.format,
                 info->dst.resource->nr_samples, info->dst.level,
+                info->dst.resource->format,
                 info->dst.box.x, info->dst.box.y, info->dst.box.z,
                 info->dst.box.width, info->dst.box.height,
                 info->dst.box.depth, info->mask, info->filter,
@@ -3199,11 +3381,6 @@ ao46_metal_blit(struct pipe_context *ctx, const struct pipe_blit_info *info)
         (info->mask & PIPE_MASK_RGBA) != PIPE_MASK_RGBA) {
         return;
     }
-    if ((info->mask & PIPE_MASK_ZS) &&
-        (info->mask & PIPE_MASK_ZS) != PIPE_MASK_ZS) {
-        return;
-    }
-
     if (ao46_metal_resolve_color_blit(ctx, info)) {
         return;
     }
@@ -3415,8 +3592,19 @@ ao46_metal_clear_render_target(struct pipe_context *ctx,
         } else {
             rpd.colorAttachments[0].storeAction = MTLStoreActionStore;
         }
-        rpd.colorAttachments[0].clearColor =
-            MTLClearColorMake(color->f[0], color->f[1], color->f[2], color->f[3]);
+        if (util_format_is_pure_uint(dst->format)) {
+            rpd.colorAttachments[0].clearColor =
+                MTLClearColorMake((double)color->ui[0], (double)color->ui[1],
+                                  (double)color->ui[2], (double)color->ui[3]);
+        } else if (util_format_is_pure_sint(dst->format)) {
+            rpd.colorAttachments[0].clearColor =
+                MTLClearColorMake((double)color->i[0], (double)color->i[1],
+                                  (double)color->i[2], (double)color->i[3]);
+        } else {
+            rpd.colorAttachments[0].clearColor =
+                MTLClearColorMake(color->f[0], color->f[1], color->f[2],
+                                  color->f[3]);
+        }
         encoder = [cmd_buffer renderCommandEncoderWithDescriptor:rpd];
         [encoder endEncoding];
         [rpd release];
@@ -5794,6 +5982,39 @@ ao46_metal_remove_point_size_output(nir_builder *builder,
 }
 
 static bool
+ao46_metal_remove_single_sample_mask_output(nir_builder *builder,
+                                             nir_intrinsic_instr *intrinsic,
+                                             void *data)
+{
+    (void)builder;
+    (void)data;
+
+    switch (intrinsic->intrinsic) {
+        case nir_intrinsic_store_output:
+            if (nir_intrinsic_io_semantics(intrinsic).location !=
+                FRAG_RESULT_SAMPLE_MASK) {
+                return false;
+            }
+            break;
+        case nir_intrinsic_store_deref: {
+            nir_deref_instr *deref = nir_src_as_deref(intrinsic->src[0]);
+            nir_variable *variable = nir_deref_instr_get_variable(deref);
+            if (!variable || !(variable->data.mode & nir_var_shader_out) ||
+                variable->data.location != FRAG_RESULT_SAMPLE_MASK) {
+                return false;
+            }
+            break;
+        }
+        default:
+            return false;
+    }
+
+    /* OpenGL ignores fragment sample-mask writes when multisampling is off. */
+    nir_instr_remove(&intrinsic->instr);
+    return true;
+}
+
+static bool
 ao46_metal_clip_raster_output(nir_builder *builder,
                               nir_intrinsic_instr *intrinsic,
                               void *data)
@@ -5944,6 +6165,7 @@ ao46_metal_compile_rgb32_stage_variant(
     bool lower_raster_discard;
     bool lower_stream_output;
     bool lower_clip_enable;
+    bool lower_single_sample_mask;
     uint16_t stream_output_buffer_mask = 0;
 
     if (!out_requires_variant) {
@@ -5964,6 +6186,9 @@ ao46_metal_compile_rgb32_stage_variant(
         shader->stream_output.num_outputs > 0;
     lower_clip_enable = stage == MESA_SHADER_VERTEX &&
                         shader->nir->info.clip_distance_array_size > 0;
+    lower_single_sample_mask =
+        stage == MESA_SHADER_FRAGMENT &&
+        ao46_metal_framebuffer_sample_count(&mc->fb_state) <= 1;
 
     if (lower_stream_output && getenv("AO46_TRACE_RUNTIME")) {
         fprintf(stderr, "[AO46Metal] stream-output metadata outputs=%u\n",
@@ -6003,7 +6228,7 @@ ao46_metal_compile_rgb32_stage_variant(
     uses_rgb32 = binding_count != 0;
     if (!uses_rgb32 && !lower_clip_depth && !lower_raster_discard &&
         !lower_clip_enable &&
-        !lower_stream_output &&
+        !lower_stream_output && !lower_single_sample_mask &&
         !lower_point_size) {
         return nil;
     }
@@ -6050,6 +6275,14 @@ ao46_metal_compile_rgb32_stage_variant(
         (void)nir_shader_intrinsics_pass(
             variant, ao46_metal_clip_raster_output,
             nir_metadata_control_flow, NULL);
+    }
+    if (lower_single_sample_mask) {
+        (void)nir_shader_intrinsics_pass(
+            variant, ao46_metal_remove_single_sample_mask_output,
+            nir_metadata_control_flow, NULL);
+        variant->info.outputs_written &=
+            ~BITFIELD64_BIT(FRAG_RESULT_SAMPLE_MASK);
+        (void)nir_remove_dead_variables(variant, nir_var_shader_out, NULL);
     }
     (void)ao46_metal_ensure_vertex_position(variant);
 
