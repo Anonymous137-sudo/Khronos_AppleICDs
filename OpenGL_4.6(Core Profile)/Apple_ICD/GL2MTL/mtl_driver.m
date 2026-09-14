@@ -316,10 +316,12 @@ ao46_metal_pixel_format(enum pipe_format format)
         case PIPE_FORMAT_B8G8R8A8_UNORM:
             return MTLPixelFormatBGRA8Unorm;
         case PIPE_FORMAT_B8G8R8A8_SRGB:
+        case PIPE_FORMAT_B8G8R8X8_SRGB:
             return MTLPixelFormatBGRA8Unorm_sRGB;
         case PIPE_FORMAT_R8G8B8A8_UNORM:
             return MTLPixelFormatRGBA8Unorm;
         case PIPE_FORMAT_R8G8B8A8_SRGB:
+        case PIPE_FORMAT_R8G8B8X8_SRGB:
             return MTLPixelFormatRGBA8Unorm_sRGB;
         case PIPE_FORMAT_R8G8B8A8_SNORM:
             return MTLPixelFormatRGBA8Snorm;
@@ -411,12 +413,32 @@ ao46_metal_pixel_format(enum pipe_format format)
     }
 }
 
+/* OpenGL texture uploads preserve encoded sRGB bytes. Keep the allocation
+ * linear and select an sRGB Metal view only when a shader samples it. This
+ * also avoids implicit encode-on-write for the default framebuffer state. */
+static MTLPixelFormat
+ao46_metal_resource_pixel_format(enum pipe_format format)
+{
+    switch (format) {
+        case PIPE_FORMAT_B8G8R8A8_SRGB:
+        case PIPE_FORMAT_B8G8R8X8_SRGB:
+            return MTLPixelFormatBGRA8Unorm;
+        case PIPE_FORMAT_R8G8B8A8_SRGB:
+        case PIPE_FORMAT_R8G8B8X8_SRGB:
+            return MTLPixelFormatRGBA8Unorm;
+        default:
+            return ao46_metal_pixel_format(format);
+    }
+}
+
 static MTLPixelFormat
 ao46_metal_sampler_view_pixel_format(MTLPixelFormat resource_format,
                                      enum pipe_format view_format)
 {
     if (view_format == PIPE_FORMAT_X24S8_UINT ||
-        view_format == PIPE_FORMAT_S8X24_UINT) {
+        view_format == PIPE_FORMAT_S8X24_UINT ||
+        view_format == PIPE_FORMAT_S8_UINT ||
+        view_format == PIPE_FORMAT_X32_S8X24_UINT) {
         switch (resource_format) {
             case MTLPixelFormatDepth32Float_Stencil8:
                 return MTLPixelFormatX32_Stencil8;
@@ -856,7 +878,7 @@ ao46_metal_attachment_pixel_format(const struct pipe_surface *surf)
         return MTLPixelFormatInvalid;
     }
 
-    return ao46_metal_pixel_format(surf->format);
+    return ao46_metal_resource_pixel_format(surf->format);
 }
 
 static unsigned
@@ -1258,6 +1280,91 @@ ao46_metal_create_texture_view(id<MTLTexture> texture,
                                       textureType:texture_type
                                            levels:NSMakeRange(first_level, level_count)
                                            slices:NSMakeRange(first_slice, slice_count)];
+}
+
+static MTLTextureSwizzle
+ao46_metal_texture_swizzle(unsigned swizzle)
+{
+    switch (swizzle) {
+        case PIPE_SWIZZLE_X: return MTLTextureSwizzleRed;
+        case PIPE_SWIZZLE_Y: return MTLTextureSwizzleGreen;
+        case PIPE_SWIZZLE_Z: return MTLTextureSwizzleBlue;
+        case PIPE_SWIZZLE_W: return MTLTextureSwizzleAlpha;
+        case PIPE_SWIZZLE_0: return MTLTextureSwizzleZero;
+        case PIPE_SWIZZLE_1: return MTLTextureSwizzleOne;
+        default: return MTLTextureSwizzleZero;
+    }
+}
+
+static unsigned
+ao46_metal_compose_view_swizzle(const struct pipe_sampler_view *view,
+                                unsigned swizzle)
+{
+    const struct util_format_description *description;
+
+    if (!view || swizzle > PIPE_SWIZZLE_W) {
+        return swizzle;
+    }
+
+    description = util_format_description(view->format);
+    return description ? description->swizzle[swizzle] : swizzle;
+}
+
+static bool
+ao46_metal_sampler_view_has_identity_swizzle(
+    const struct pipe_sampler_view *view)
+{
+    return view && view->swizzle_r == PIPE_SWIZZLE_X &&
+        view->swizzle_g == PIPE_SWIZZLE_Y &&
+        view->swizzle_b == PIPE_SWIZZLE_Z &&
+        view->swizzle_a == PIPE_SWIZZLE_W;
+}
+
+static id<MTLTexture>
+ao46_metal_create_swizzled_texture_view(
+    id<MTLTexture> texture,
+    MTLPixelFormat pixel_format,
+    MTLTextureType texture_type,
+    unsigned first_level,
+    unsigned level_count,
+    unsigned first_slice,
+    unsigned slice_count,
+    const struct pipe_sampler_view *view)
+{
+    if (!texture || !view || !level_count || !slice_count) {
+        return nil;
+    }
+    if (texture_type == MTLTextureType1D &&
+        (first_level != 0 || level_count != 1)) {
+        return nil;
+    }
+
+    MTLTextureSwizzleChannels swizzle = MTLTextureSwizzleChannelsMake(
+        ao46_metal_texture_swizzle(
+            ao46_metal_compose_view_swizzle(view, view->swizzle_r)),
+        ao46_metal_texture_swizzle(
+            ao46_metal_compose_view_swizzle(view, view->swizzle_g)),
+        ao46_metal_texture_swizzle(
+            ao46_metal_compose_view_swizzle(view, view->swizzle_b)),
+        ao46_metal_texture_swizzle(
+            ao46_metal_compose_view_swizzle(view, view->swizzle_a)));
+    id<MTLTexture> result =
+        [texture newTextureViewWithPixelFormat:pixel_format
+                                   textureType:texture_type
+                                        levels:NSMakeRange(first_level,
+                                                           level_count)
+                                        slices:NSMakeRange(first_slice,
+                                                           slice_count)
+                                       swizzle:swizzle];
+    if (!result && getenv("AO46_TRACE_RUNTIME")) {
+        fprintf(stderr,
+                "[AO46Metal] failed swizzled texture view format=%lu "
+                "type=%lu samples=%lu usage=%lu\n",
+                (unsigned long)pixel_format, (unsigned long)texture_type,
+                (unsigned long)texture.sampleCount,
+                (unsigned long)texture.usage);
+    }
+    return result;
 }
 
 static bool
@@ -1817,7 +1924,7 @@ ao46_metal_resource_create(struct pipe_screen *screen,
         res->base.nr_storage_samples = storage_samples;
     }
 
-    mtl_format = ao46_metal_pixel_format(templ->format);
+    mtl_format = ao46_metal_resource_pixel_format(templ->format);
     if (mtl_format == MTLPixelFormatInvalid) {
         FREE(res);
         return NULL;
@@ -1877,9 +1984,10 @@ ao46_metal_resource_create(struct pipe_screen *screen,
                                PIPE_BIND_DEPTH_STENCIL)) {
                 desc.usage |= MTLTextureUsageRenderTarget;
             }
-            if (res->base.nr_samples <= 1) {
-                desc.usage |= MTLTextureUsagePixelFormatView;
-            }
+            /* Sampler views may select a compatible format or swizzle for
+             * multisample textures too. Metal requires this usage at
+             * allocation time before any such view can be created. */
+            desc.usage |= MTLTextureUsagePixelFormatView;
             /* GL texture objects may become image bindings after allocation.
              * Metal usage is immutable, so reserve shader-write capability for
              * every compatible single-sample texture rather than relying on the
@@ -4653,6 +4761,14 @@ ao46_metal_create_sampler_view(struct pipe_context *ctx,
                                                                   view->base.format,
                                                                   offset,
                                                                   size, false);
+        if (view->mtl_texture &&
+            !ao46_metal_sampler_view_has_identity_swizzle(&view->base)) {
+            id<MTLTexture> swizzled = ao46_metal_create_swizzled_texture_view(
+                view->mtl_texture, view->mtl_texture.pixelFormat,
+                view->mtl_texture.textureType, 0, 1, 0, 1, &view->base);
+            [view->mtl_texture release];
+            view->mtl_texture = swizzled;
+        }
         if (!view->mtl_texture) {
             pipe_resource_reference(&view->base.texture, NULL);
             FREE(view);
@@ -4666,6 +4782,17 @@ ao46_metal_create_sampler_view(struct pipe_context *ctx,
         ao46_metal_sampler_view_pixel_format(mr->mtl_texture.pixelFormat,
                                              view->base.format);
     if (pixel_format == MTLPixelFormatInvalid) {
+        if (getenv("AO46_TRACE_RUNTIME")) {
+            fprintf(stderr,
+                    "[AO46Metal] reject sampler-view resource=%p "
+                    "resource-format=%lu view-format=%u target=%u "
+                    "swizzle=%u/%u/%u/%u\n",
+                    (void *)texture,
+                    (unsigned long)mr->mtl_texture.pixelFormat,
+                    view->base.format, view->base.target,
+                    view->base.swizzle_r, view->base.swizzle_g,
+                    view->base.swizzle_b, view->base.swizzle_a);
+        }
         pipe_resource_reference(&view->base.texture, NULL);
         FREE(view);
         return NULL;
@@ -4685,30 +4812,29 @@ ao46_metal_create_sampler_view(struct pipe_context *ctx,
         fprintf(stderr,
                 "[AO46Metal] sampler-view resource=%p target=%u view-target=%u "
                 "format=%u->%lu levels=%u..%u layers=%u..%u "
-                "view-type=%lu native-type=%lu full=%u/%u\n",
+                "view-type=%lu native-type=%lu full=%u/%u swizzle=%u/%u/%u/%u\n",
                 (void *)texture, texture->target, view->base.target,
                 view->base.format, (unsigned long)pixel_format,
                 view->base.u.tex.first_level, view->base.u.tex.last_level,
                 view->base.u.tex.first_layer, view->base.u.tex.last_layer,
                 (unsigned long)view_type,
                 (unsigned long)mr->mtl_texture.textureType,
-                full_levels, full_slices);
+                full_levels, full_slices,
+                view->base.swizzle_r, view->base.swizzle_g,
+                view->base.swizzle_b, view->base.swizzle_a);
     }
 
     if (pixel_format == mr->mtl_texture.pixelFormat &&
         view_type == mr->mtl_texture.textureType &&
-        full_levels && full_slices) {
+        full_levels && full_slices &&
+        ao46_metal_sampler_view_has_identity_swizzle(&view->base)) {
         view->mtl_texture = [mr->mtl_texture retain];
-    } else if (texture->nr_samples > 1) {
-        view->mtl_texture = nil;
     } else {
-        view->mtl_texture = ao46_metal_create_texture_view(mr->mtl_texture,
-                                                           pixel_format,
-                                                           view_type,
-                                                           view->base.u.tex.first_level,
-                                                           MAX2(level_count, 1u),
-                                                           view->base.u.tex.first_layer,
-                                                           MAX2(slice_count, 1u));
+        view->mtl_texture = ao46_metal_create_swizzled_texture_view(
+            mr->mtl_texture, pixel_format, view_type,
+            view->base.u.tex.first_level, MAX2(level_count, 1u),
+            view->base.u.tex.first_layer, MAX2(slice_count, 1u),
+            &view->base);
     }
 
     if (!view->mtl_texture) {
@@ -10311,7 +10437,9 @@ ao46_metal_screen_is_format_supported(struct pipe_screen *screen,
     }
 
     if (format == PIPE_FORMAT_X24S8_UINT ||
-        format == PIPE_FORMAT_S8X24_UINT) {
+        format == PIPE_FORMAT_S8X24_UINT ||
+        format == PIPE_FORMAT_S8_UINT ||
+        format == PIPE_FORMAT_X32_S8X24_UINT) {
         return !multisampled && bind == PIPE_BIND_SAMPLER_VIEW;
     }
 
@@ -10326,8 +10454,10 @@ ao46_metal_screen_is_format_supported(struct pipe_screen *screen,
         case PIPE_FORMAT_R8G8_SINT:
         case PIPE_FORMAT_B8G8R8A8_UNORM:
         case PIPE_FORMAT_B8G8R8A8_SRGB:
+        case PIPE_FORMAT_B8G8R8X8_SRGB:
         case PIPE_FORMAT_R8G8B8A8_UNORM:
         case PIPE_FORMAT_R8G8B8A8_SRGB:
+        case PIPE_FORMAT_R8G8B8X8_SRGB:
         case PIPE_FORMAT_R8G8B8A8_SNORM:
         case PIPE_FORMAT_R8G8B8A8_UINT:
         case PIPE_FORMAT_R8G8B8A8_SINT:
