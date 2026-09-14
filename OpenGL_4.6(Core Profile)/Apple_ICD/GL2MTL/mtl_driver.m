@@ -1306,6 +1306,16 @@ ao46_metal_compose_view_swizzle(const struct pipe_sampler_view *view,
         return swizzle;
     }
 
+    /* Stencil-only Metal views expose their scalar value as the source
+     * component. The Gallium sampler view is already final for that aspect.
+     * Ordinary color views still need the format's implicit component map. */
+    if (view->format == PIPE_FORMAT_X24S8_UINT ||
+        view->format == PIPE_FORMAT_S8X24_UINT ||
+        view->format == PIPE_FORMAT_S8_UINT ||
+        view->format == PIPE_FORMAT_X32_S8X24_UINT) {
+        return swizzle;
+    }
+
     description = util_format_description(view->format);
     return description ? description->swizzle[swizzle] : swizzle;
 }
