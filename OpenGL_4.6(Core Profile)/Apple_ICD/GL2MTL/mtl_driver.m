@@ -6,6 +6,7 @@
 #import <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "pipe/p_context.h"
 #include "pipe/p_screen.h"
@@ -858,6 +859,24 @@ ao46_metal_attachment_pixel_format(const struct pipe_surface *surf)
 }
 
 static unsigned
+ao46_metal_promote_sample_count(unsigned requested)
+{
+    if (requested <= 1) {
+        return requested;
+    }
+
+    /* OpenGL permits the implementation to allocate the smallest supported
+     * sample count greater than or equal to the requested value. */
+    for (unsigned candidate = requested; candidate <= 4; candidate++) {
+        if ([g_mtl_device supportsTextureSampleCount:candidate]) {
+            return candidate;
+        }
+    }
+
+    return 0;
+}
+
+static unsigned
 ao46_metal_framebuffer_sample_count(const struct pipe_framebuffer_state *fb)
 {
     if (!fb) {
@@ -865,7 +884,7 @@ ao46_metal_framebuffer_sample_count(const struct pipe_framebuffer_state *fb)
     }
 
     if (fb->samples > 0) {
-        return fb->samples;
+        return ao46_metal_promote_sample_count(fb->samples);
     }
 
     for (unsigned i = 0; i < fb->nr_cbufs; i++) {
@@ -1782,6 +1801,21 @@ ao46_metal_resource_create(struct pipe_screen *screen,
     res->base = *templ;
     res->base.screen = screen;
     pipe_reference_init(&res->base.reference, 1);
+
+    if (res->base.nr_samples > 1) {
+        unsigned samples = ao46_metal_promote_sample_count(res->base.nr_samples);
+        unsigned storage_samples = ao46_metal_promote_sample_count(
+            MAX2(res->base.nr_storage_samples, res->base.nr_samples));
+
+        if (samples == 0 || storage_samples == 0) {
+            FREE(res);
+            return NULL;
+        }
+
+        res->base.nr_samples = samples;
+        res->base.nr_storage_samples = storage_samples;
+    }
+
     mtl_format = ao46_metal_pixel_format(templ->format);
     if (mtl_format == MTLPixelFormatInvalid) {
         FREE(res);
@@ -1789,11 +1823,6 @@ ao46_metal_resource_create(struct pipe_screen *screen,
     }
 
     if (!ao46_metal_multisample_target_supported(&res->base)) {
-        FREE(res);
-        return NULL;
-    }
-    if (res->base.nr_samples > 1 &&
-        util_format_is_pure_integer(res->base.format)) {
         FREE(res);
         return NULL;
     }
@@ -1868,6 +1897,16 @@ ao46_metal_resource_create(struct pipe_screen *screen,
             if (!res->mtl_texture) {
                 FREE(res);
                 return NULL;
+            }
+            if (getenv("AO46_TRACE_RUNTIME")) {
+                fprintf(stderr,
+                        "[AO46Metal] texture resource format=%u target=%u "
+                        "samples=%u metal-format=%lu size=%ux%ux%u layers=%u\n",
+                        res->base.format, res->base.target,
+                        res->base.nr_samples,
+                        (unsigned long)res->mtl_texture.pixelFormat,
+                        res->base.width0, res->base.height0, res->base.depth0,
+                        res->base.array_size);
             }
             if (AO46MetalAdapterIsCurrent(&g_mtl_adapter) &&
                 !AO46MetalAdapterTrackExternalAllocation(
@@ -2074,8 +2113,22 @@ struct ao46_metal_query {
     struct pipe_query_data_so_statistics result;
     uint64_t occlusion_start;
     uint64_t occlusion_result;
+    uint64_t scalar_start;
+    uint64_t scalar_result;
+    struct pipe_query_data_pipeline_statistics pipeline_result;
     id<MTLBuffer> visibility_buffer;
 };
+
+static uint64_t
+ao46_metal_monotonic_ns(void)
+{
+    struct timespec ts = {0};
+
+    if (clock_gettime(CLOCK_MONOTONIC_RAW, &ts) != 0) {
+        return 0;
+    }
+    return (uint64_t)ts.tv_sec * UINT64_C(1000000000) + (uint64_t)ts.tv_nsec;
+}
 
 struct ao46_metal_poly_package_layout {
     size_t root_offset;
@@ -5209,6 +5262,10 @@ ao46_metal_create_query(struct pipe_context *ctx, unsigned query_type,
     struct ao46_metal_query *query;
 
     (void)ctx;
+    if (getenv("AO46_TRACE_RUNTIME")) {
+        fprintf(stderr, "[AO46Metal] create query type=%u index=%u\n",
+                query_type, index);
+    }
     switch (query_type) {
         case PIPE_QUERY_OCCLUSION_COUNTER:
         case PIPE_QUERY_OCCLUSION_PREDICATE:
@@ -5221,12 +5278,30 @@ ao46_metal_create_query(struct pipe_context *ctx, unsigned query_type,
         case PIPE_QUERY_PRIMITIVES_EMITTED:
         case PIPE_QUERY_SO_STATISTICS:
         case PIPE_QUERY_SO_OVERFLOW_PREDICATE:
-            if (index >= 1) {
+            if (index >= PIPE_MAX_VERTEX_STREAMS) {
                 return NULL;
             }
             break;
         case PIPE_QUERY_SO_OVERFLOW_ANY_PREDICATE:
             index = 0;
+            break;
+        case PIPE_QUERY_TIME_ELAPSED:
+        case PIPE_QUERY_TIMESTAMP:
+        case PIPE_QUERY_TIMESTAMP_DISJOINT:
+        case PIPE_QUERY_GPU_FINISHED:
+            if (index != 0) {
+                return NULL;
+            }
+            break;
+        case PIPE_QUERY_PIPELINE_STATISTICS:
+            if (index >= PIPE_STAT_QUERY_COUNT) {
+                return NULL;
+            }
+            break;
+        case PIPE_QUERY_PIPELINE_STATISTICS_SINGLE:
+            if (index >= PIPE_STAT_QUERY_COUNT) {
+                return NULL;
+            }
             break;
         default:
             return NULL;
@@ -5269,8 +5344,29 @@ ao46_metal_begin_query(struct pipe_context *ctx, struct pipe_query *query)
     struct ao46_metal_context *mc = ao46_metal_context(ctx);
     struct ao46_metal_query *mq = (struct ao46_metal_query *)query;
 
-    if (!mc || !mq || mq->active || mq->index >= PIPE_MAX_VERTEX_STREAMS) {
+    if (!mc || !mq || mq->active) {
         return false;
+    }
+    if (mq->type == PIPE_QUERY_TIME_ELAPSED) {
+        mq->scalar_start = ao46_metal_monotonic_ns();
+        mq->scalar_result = 0;
+        mq->active = true;
+        mq->ended = false;
+        return true;
+    }
+    if (mq->type == PIPE_QUERY_PIPELINE_STATISTICS ||
+        mq->type == PIPE_QUERY_PIPELINE_STATISTICS_SINGLE) {
+        memset(&mq->pipeline_result, 0, sizeof(mq->pipeline_result));
+        mq->active = true;
+        mq->ended = false;
+        return true;
+    }
+    if (mq->type == PIPE_QUERY_TIMESTAMP ||
+        mq->type == PIPE_QUERY_TIMESTAMP_DISJOINT ||
+        mq->type == PIPE_QUERY_GPU_FINISHED) {
+        mq->active = true;
+        mq->ended = false;
+        return true;
     }
     if (mq->type == PIPE_QUERY_OCCLUSION_COUNTER ||
         mq->type == PIPE_QUERY_OCCLUSION_PREDICATE ||
@@ -5290,6 +5386,9 @@ ao46_metal_begin_query(struct pipe_context *ctx, struct pipe_query *query)
         mq->ended = false;
         return true;
     }
+    if (mq->index >= PIPE_MAX_VERTEX_STREAMS) {
+        return false;
+    }
     mq->start = mc->so_stats[mq->index];
     memset(&mq->result, 0, sizeof(mq->result));
     mq->active = true;
@@ -5304,8 +5403,31 @@ ao46_metal_end_query(struct pipe_context *ctx, struct pipe_query *query)
     struct ao46_metal_query *mq = (struct ao46_metal_query *)query;
     const struct pipe_query_data_so_statistics *current;
 
-    if (!mc || !mq || !mq->active || mq->index >= PIPE_MAX_VERTEX_STREAMS) {
+    if (!mc || !mq) {
         return false;
+    }
+    if (mq->type == PIPE_QUERY_TIMESTAMP ||
+        mq->type == PIPE_QUERY_GPU_FINISHED ||
+        mq->type == PIPE_QUERY_TIMESTAMP_DISJOINT) {
+        mq->scalar_result = ao46_metal_monotonic_ns();
+        mq->active = false;
+        mq->ended = true;
+        return true;
+    }
+    if (!mq->active) {
+        return false;
+    }
+    if (mq->type == PIPE_QUERY_TIME_ELAPSED) {
+        mq->scalar_result = ao46_metal_monotonic_ns() - mq->scalar_start;
+        mq->active = false;
+        mq->ended = true;
+        return true;
+    }
+    if (mq->type == PIPE_QUERY_PIPELINE_STATISTICS ||
+        mq->type == PIPE_QUERY_PIPELINE_STATISTICS_SINGLE) {
+        mq->active = false;
+        mq->ended = true;
+        return true;
     }
     if (mq->type == PIPE_QUERY_OCCLUSION_COUNTER ||
         mq->type == PIPE_QUERY_OCCLUSION_PREDICATE ||
@@ -5320,6 +5442,9 @@ ao46_metal_end_query(struct pipe_context *ctx, struct pipe_query *query)
             mc->active_occlusion_query = NULL;
         }
         return true;
+    }
+    if (mq->index >= PIPE_MAX_VERTEX_STREAMS) {
+        return false;
     }
     current = &mc->so_stats[mq->index];
     mq->result.num_primitives_written =
@@ -5389,6 +5514,23 @@ ao46_metal_get_query_result(struct pipe_context *ctx, struct pipe_query *query,
         case PIPE_QUERY_OCCLUSION_PREDICATE:
         case PIPE_QUERY_OCCLUSION_PREDICATE_CONSERVATIVE:
             result->b = mq->occlusion_result != 0;
+            break;
+        case PIPE_QUERY_TIME_ELAPSED:
+        case PIPE_QUERY_TIMESTAMP:
+            result->u64 = mq->scalar_result;
+            break;
+        case PIPE_QUERY_TIMESTAMP_DISJOINT:
+            result->timestamp_disjoint.frequency = UINT64_C(1000000000);
+            result->timestamp_disjoint.disjoint = false;
+            break;
+        case PIPE_QUERY_GPU_FINISHED:
+            result->b = true;
+            break;
+        case PIPE_QUERY_PIPELINE_STATISTICS:
+            result->pipeline_statistics = mq->pipeline_result;
+            break;
+        case PIPE_QUERY_PIPELINE_STATISTICS_SINGLE:
+            result->u64 = mq->pipeline_result.counters[mq->index];
             break;
         default:
             return false;
@@ -9883,22 +10025,22 @@ ao46_metal_screen_is_format_supported(struct pipe_screen *screen,
                                       unsigned bind)
 {
     bool multisampled = sample_count > 1 || storage_sample_count > 1;
+    unsigned metal_sample_count = ao46_metal_promote_sample_count(sample_count);
+    unsigned metal_storage_sample_count =
+        ao46_metal_promote_sample_count(storage_sample_count);
 
     (void)screen;
 
     if (sample_count > 4 || storage_sample_count > sample_count ||
-        (sample_count > 1 &&
-         ![g_mtl_device supportsTextureSampleCount:sample_count]) ||
-        (storage_sample_count > 1 &&
-         ![g_mtl_device supportsTextureSampleCount:storage_sample_count])) {
+        (sample_count > 1 && metal_sample_count == 0) ||
+        (storage_sample_count > 1 && metal_storage_sample_count == 0)) {
         return false;
     }
 
     if (multisampled) {
         if ((target != PIPE_TEXTURE_2D && target != PIPE_TEXTURE_RECT &&
              target != PIPE_TEXTURE_2D_ARRAY) ||
-            (bind & PIPE_BIND_SHADER_IMAGE) ||
-            util_format_is_pure_integer(format)) {
+            (bind & PIPE_BIND_SHADER_IMAGE)) {
             return false;
         }
     }
