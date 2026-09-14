@@ -207,8 +207,8 @@ main(void)
                "constant Buffer &buf0 [[buffer(0)]]") ||
        !strstr(pipeline.fragment_msl_source, "&buf0.contents[0]") ||
        !strstr(pipeline.fragment_msl_source,
-               "constant Buffer &buf1 [[buffer(16)]]") ||
-       !strstr(pipeline.fragment_msl_source, "&buf1.contents[0]") ||
+               "constant UboBuffer &ubo1 [[buffer(16)]]") ||
+       !strstr(pipeline.fragment_msl_source, "&ubo1.contents[0]") ||
        pipeline.vertex_reflection.uniform_mask != 0 ||
        pipeline.fragment_reflection.uniform_mask != UINT16_C(0x3) ||
        pipeline.fragment_reflection.uniform_bytes[0] !=

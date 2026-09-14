@@ -19,6 +19,7 @@ enum {
    AO46_MESA_DRAW_PARAMETER_BINDING = 11,
    AO46_MESA_ROBUST_SIZE_TABLE_BINDING = 12,
    AO46_MESA_STREAM_OUTPUT_DESCRIPTOR_BINDING = 13,
+   AO46_MESA_INDEX_REMAP_BINDING = 14,
 };
 struct pipe_context;
 struct pipe_fence_handle;
@@ -37,6 +38,7 @@ struct AO46MesaDrawParameters {
 struct AO46MesaComputeReflection {
    uint32_t local_size[3];
    uint32_t required_buffer_mask;
+   uint16_t required_image_mask;
    uint32_t thread_execution_width;
    uint32_t max_threads_per_threadgroup;
 };
@@ -71,6 +73,11 @@ bool AO46MesaNIRLowerStreamOutput(
    struct nir_shader *nir, const struct pipe_stream_output_info *stream_output,
    uint16_t *inout_static_buffer_mask);
 
+/* Preserve GL vertex IDs while a linear Metal draw captures indexed XFB. */
+bool AO46MesaNIRLowerIndexedVertexID(struct nir_shader *nir,
+                                    unsigned index_size,
+                                    uint16_t *inout_static_buffer_mask);
+
 /*
  * Lowers the caller-owned compute NIR through Mesa KosmicKrisp and compiles
  * the resulting MSL. The NIR is consumed by the standard MSL lowering pass.
@@ -89,6 +96,7 @@ bool AO46MesaComputePipelineCreateWithStaticBuffers(
    struct AO46MesaComputePipeline *out_pipeline);
 void AO46MesaComputePipelineDestroy(struct AO46MesaComputePipeline *pipeline);
 
+/* Buffer-only dispatch helpers reject pipelines requiring image bindings. */
 bool AO46MesaComputePipelineDispatch(
    const struct AO46MesaComputePipeline *pipeline, struct pipe_context *context,
    struct pipe_resource *const *resources, const uint32_t *offsets,

@@ -5,6 +5,7 @@
 
 #include "AO46MetalAdapter.h"
 #include "AO46MetalGalliumScreen.h"
+#include "AO46MesaMSLComputePipeline.h"
 
 #include "kosmickrisp/compiler/nir_to_msl.h"
 #include "nir_builder.h"
@@ -34,11 +35,13 @@ ao46_build_static_ssbo_shader(void)
    global_id = nir_channel(&builder,
                            nir_load_global_invocation_id(&builder, 32), 0);
    offset = nir_imul_imm(&builder, global_id, sizeof(uint32_t));
-   value = nir_load_ssbo(&builder, 1, 32, nir_imm_int(&builder, 0), offset,
+   nir_def *address = nir_vec2(&builder, nir_imm_int(&builder, 0), offset);
+   nir_def *binding = nir_channel(&builder, address, 0);
+   value = nir_load_ssbo(&builder, 1, 32, binding, offset,
                          .align_mul = sizeof(uint32_t),
                          .access = ACCESS_NON_WRITEABLE);
    nir_store_ssbo(&builder, nir_iadd_imm(&builder, value, 0x4a00),
-                  nir_imm_int(&builder, 1), offset,
+                  nir_iadd_imm(&builder, binding, 1), offset,
                   .write_mask = 0x1, .align_mul = sizeof(uint32_t),
                   .access = ACCESS_NON_READABLE);
    return builder.shader;
@@ -56,8 +59,12 @@ ao46_build_dynamic_ssbo_shader(void)
    builder.shader->info.workgroup_size[2] = 1;
    global_id = nir_channel(&builder,
                            nir_load_global_invocation_id(&builder, 32), 0);
-   (void)nir_load_ssbo(&builder, 1, 32, global_id, nir_imm_int(&builder, 0),
-                       .align_mul = sizeof(uint32_t));
+   nir_def *value = nir_load_ssbo(&builder, 1, 32, global_id, nir_imm_int(&builder, 0),
+                                  .align_mul = sizeof(uint32_t));
+   /* Keep the unbounded access observable through optimization. */
+   nir_store_ssbo(&builder, value, nir_imm_int(&builder, 0),
+                  nir_imm_int(&builder, 0), .write_mask = 1,
+                  .align_mul = sizeof(uint32_t));
    return builder.shader;
 }
 
@@ -138,6 +145,35 @@ ao46_build_static_ssbo_atomic_swap_shader(void)
 int
 main(void)
 {
+   /* A swizzled mov of distinct vector components used to be rebuilt forever
+    * by the copy-propagation/constant-folding fixed-point loop. */
+   nir_builder swizzle = nir_builder_init_simple_shader(
+      MESA_SHADER_COMPUTE, &kk_nir_options, "ao46_buffer_index_convergence");
+   nir_def *id = nir_channel(&swizzle, nir_load_global_invocation_id(&swizzle, 32), 0);
+   nir_def *vector = nir_vec3(&swizzle, id, nir_iadd_imm(&swizzle, id, 1),
+                              nir_iadd_imm(&swizzle, id, 2));
+   nir_store_ssbo(&swizzle, nir_channels(&swizzle, vector, 5),
+                  nir_imm_int(&swizzle, 0), nir_imm_int(&swizzle, 0),
+                  .write_mask = 3, .align_mul = sizeof(uint32_t));
+   bool converged = AO46MesaNIRLowerRobustBufferAccess(swizzle.shader);
+   ralloc_free(swizzle.shader);
+   if (!converged) {
+      fputs("Mesa buffer-index normalization did not converge\n", stderr);
+      return 1;
+   }
+
+   /* Exercise the pre-optimization shape produced by Mesa explicit I/O. */
+   nir_shader *index_nir = ao46_build_static_ssbo_shader();
+   uint16_t index_mask = 0;
+   bool indices_valid = AO46MesaNIRLowerRobustBufferAccess(index_nir) &&
+      AO46MesaNIRLowerBoundedSSBOs(index_nir, &index_mask) &&
+      index_mask == ((1u << 2) | (1u << 3) |
+                     (1u << AO46_MESA_ROBUST_SIZE_TABLE_BINDING));
+   ralloc_free(index_nir);
+   if (!indices_valid) {
+      fputs("Mesa packed constant SSBO indices were not resolved\n", stderr);
+      return 1;
+   }
    struct AO46MetalAdapter adapter = {0};
    struct pipe_screen *screen = NULL;
    struct pipe_context *context = NULL;

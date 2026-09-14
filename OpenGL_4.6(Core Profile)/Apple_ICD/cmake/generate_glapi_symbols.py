@@ -4,6 +4,9 @@ import sys
 import xml.etree.ElementTree as ET
 
 EXCLUDED_SYMBOLS = {
+    # Mesa's mapi XML types the indirect command offset as GLintptr, while the
+    # Khronos headers expose const void *. AO46 supplies typed forwarding entry
+    # points for these aliases instead of generating conflicting declarations.
     "glMultiDrawArraysIndirectCount",
     "glMultiDrawArraysIndirectCountARB",
     "glMultiDrawElementsIndirectCount",

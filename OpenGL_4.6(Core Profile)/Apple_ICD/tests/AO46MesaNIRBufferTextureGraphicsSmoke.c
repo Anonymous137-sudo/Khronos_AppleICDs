@@ -464,11 +464,11 @@ main(void)
           context, vertex_nir, fragment_nir,
           AO46_METAL_TEXTURE_FORMAT_RGBA8_UNORM, &attribute, 1, &pipeline) ||
        !strstr(pipeline.fragment_msl_source,
-               "constant Buffer &buf2 [[buffer(2)]]") ||
+               "constant RawBuffer &buf2 [[buffer(2)]]") ||
        !strstr(pipeline.fragment_msl_source,
-               "constant Buffer &buf4 [[buffer(4)]]") ||
+               "constant RawBuffer &buf4 [[buffer(4)]]") ||
        !strstr(pipeline.vertex_msl_source,
-               "constant Buffer &buf3 [[buffer(3)]]") ||
+               "constant RawBuffer &buf3 [[buffer(3)]]") ||
        pipeline.vertex_reflection.static_buffer_mask !=
           vertex_static_buffer_mask ||
        pipeline.vertex_reflection.static_buffer_bytes[3] !=

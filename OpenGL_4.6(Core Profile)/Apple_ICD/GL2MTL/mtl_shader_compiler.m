@@ -4,10 +4,23 @@
 #import "nir/nir_builder.h"
 #include "nir_to_msl.h"
 #import "compiler/shader_info.h"
+#include "compiler/glsl_types.h"
 #include "AO46MetalAdapter.h"
 #include "AO46MesaMSLComputePipeline.h"
 #include "util/ralloc.h"
 #include <stdint.h>
+#include <pthread.h>
+
+static pthread_once_t ao46_metal_glsl_types_once = PTHREAD_ONCE_INIT;
+
+static void
+ao46_metal_retain_glsl_types(void)
+{
+    /* KK clip/cull lowering creates replacement array types after Mesa has
+     * handed the shader to the driver. Keep the shared compiler type cache
+     * alive for the lifetime of the AO46 process. */
+    glsl_type_singleton_init_or_ref();
+}
 
 static bool
 ao46_metal_lower_fine_derivative(nir_builder *builder,
@@ -126,14 +139,83 @@ ao46_metal_collect_static_buffer_roots(struct nir_shader *nir,
  * Compile a NIR shader to a Metal function.
  * Returns nil on error; sets error if provided.
  */
+struct ao46_clip_distance_mask_state {
+    uint32_t enabled;
+    uint32_t seen;
+};
+
+static bool
+ao46_metal_lower_clip_distance_mask(nir_builder *builder,
+                                    nir_intrinsic_instr *intrinsic,
+                                    void *data)
+{
+    struct ao46_clip_distance_mask_state *mask = data;
+    unsigned component;
+
+    if (intrinsic->intrinsic != nir_intrinsic_store_clip_distance_kk) {
+        return false;
+    }
+    component = nir_intrinsic_base(intrinsic);
+    if (component >= 32) {
+        return false;
+    }
+    /* Mesa has already resolved conditional output writes into one SSA value
+     * before this pass. A later store for the same lane is the disabled-plane
+     * initializer and must not overwrite the resolved value. */
+    if (mask->seen & BITFIELD_BIT(component)) {
+        nir_instr_remove(&intrinsic->instr);
+        return true;
+    }
+    mask->seen |= BITFIELD_BIT(component);
+    if (!(mask->enabled & BITFIELD_BIT(component))) {
+        builder->cursor = nir_before_instr(&intrinsic->instr);
+        nir_src_rewrite(&intrinsic->src[0],
+                        nir_imm_floatN_t(builder, 0,
+                            intrinsic->src[0].ssa->bit_size));
+    }
+    return true;
+}
+
+static bool
+ao46_metal_remove_vertex_output(nir_builder *builder,
+                                nir_intrinsic_instr *intrinsic,
+                                void *data)
+{
+    (void)builder;
+    (void)data;
+
+    switch (intrinsic->intrinsic) {
+    case nir_intrinsic_store_output:
+    case nir_intrinsic_store_per_vertex_output:
+    case nir_intrinsic_store_per_primitive_output:
+    case nir_intrinsic_store_per_view_output:
+        nir_instr_remove(&intrinsic->instr);
+        return true;
+    case nir_intrinsic_store_deref: {
+        nir_deref_instr *deref = nir_src_as_deref(intrinsic->src[0]);
+        if (deref && nir_deref_mode_is(deref, nir_var_shader_out)) {
+            nir_instr_remove(&intrinsic->instr);
+            return true;
+        }
+        return false;
+    }
+    default:
+        return false;
+    }
+}
+
 static id<MTLFunction>
 ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
                                        const char *entry_name,
                                        MTLFunctionConstantValues *constants,
                                        uint32_t static_sample_mask,
+                                       uint32_t clip_distance_enable_mask,
+                                       bool vertex_void_output,
                                        NSError **error)
 {
     (void)constants;
+
+    pthread_once(&ao46_metal_glsl_types_once, ao46_metal_retain_glsl_types);
 
     if (!nir) {
         if (error) *error = [NSError errorWithDomain:@"AO46Metal" code:1
@@ -148,6 +230,16 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
         return nil;
     }
 
+    if (vertex_void_output && work_nir->info.stage == MESA_SHADER_VERTEX) {
+        (void)nir_shader_intrinsics_pass(
+            work_nir, ao46_metal_remove_vertex_output,
+            nir_metadata_control_flow, NULL);
+        work_nir->info.outputs_written = 0;
+        work_nir->info.clip_distance_array_size = 0;
+        work_nir->info.cull_distance_array_size = 0;
+        (void)nir_remove_dead_variables(work_nir, nir_var_shader_out, NULL);
+    }
+
     nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
     uint16_t static_buffer_mask = 0;
     uint16_t static_ubo_mask = 0;
@@ -160,6 +252,8 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
         return nil;
     }
     if (!AO46MesaNIRLowerBoundedSSBOs(work_nir, &static_buffer_mask)) {
+        if (getenv("AO46_DEBUG_NIR_ON_ERROR"))
+            nir_print_shader(work_nir, stderr);
         if (error) *error = [NSError errorWithDomain:@"AO46Metal" code:5
                                              userInfo:@{NSLocalizedDescriptionKey: @"Unbounded SSBO indexing is not supported by the Metal buffer ABI"}];
         ralloc_free(work_nir);
@@ -195,13 +289,6 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
     nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
     (void)static_image_mask;
     (void)uses_draw_id;
-    if (work_nir->info.cull_distance_array_size > 0 ||
-        work_nir->info.clip_distance_array_size > 0) {
-        msl_nir_lower_clip_cull_distance(
-            work_nir, work_nir->info.cull_distance_array_size);
-        nir_shader_gather_info(work_nir,
-                               nir_shader_get_entrypoint(work_nir));
-    }
     if (work_nir->info.stage == MESA_SHADER_FRAGMENT) {
         nir_shader_intrinsics_pass(work_nir,
                                    ao46_metal_lower_fine_derivative,
@@ -217,7 +304,57 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
         /* The lowering may add FRAG_RESULT_SAMPLE_MASK and system-value inputs. */
         nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
     }
+    if (work_nir->info.stage == MESA_SHADER_VERTEX && !vertex_void_output) {
+        (void)msl_ensure_vertex_position_output(work_nir);
+        nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
+    }
+    if (work_nir->info.cull_distance_array_size > 0 ||
+        work_nir->info.clip_distance_array_size > 0) {
+        /* Lower the OpenGL-owned array variables while their originating Mesa
+         * type cache is still authoritative. KK then receives plain I/O
+         * intrinsics and does not attempt to reconstruct foreign array types. */
+        (void)nir_lower_io(work_nir,
+                           nir_var_shader_in | nir_var_shader_out,
+                           glsl_count_attribute_slots,
+                           nir_lower_io_lower_64bit_to_32 |
+                               nir_lower_io_use_interpolated_input_intrinsics);
+    }
+    /* Reuse Mesa's Metal texture lowering without KK Vulkan's descriptor-
+     * sourced sampler LOD bias. Gallium already carries explicit shader bias,
+     * while nir_texop_lod_bias requires KK's Vulkan descriptor layout. */
+    const nir_lower_tex_options texture_options = {
+        .lower_txp = ~0u,
+        .lower_1d = true,
+        .lower_tg4_offsets = true,
+        .lower_txf_offset = true,
+        .lower_txd_cube_map = true,
+    };
+    (void)nir_lower_tex(work_nir, &texture_options);
     msl_preprocess_nir(work_nir);
+    if (work_nir->info.cull_distance_array_size > 0 ||
+        work_nir->info.clip_distance_array_size > 0) {
+        const nir_shader_compiler_options *source_options = work_nir->options;
+        nir_shader_compiler_options clip_options = *source_options;
+
+        /* Gallium supplies deref-based OpenGL arrays while KK's native path
+         * supplies compact scalar I/O. First let KK lower all shader I/O to
+         * intrinsics, then apply its compact clip/cull separation contract. */
+        clip_options.compact_arrays = true;
+        work_nir->options = &clip_options;
+        msl_nir_lower_clip_cull_distance(
+            work_nir, work_nir->info.cull_distance_array_size);
+        work_nir->options = source_options;
+        if (work_nir->info.stage == MESA_SHADER_VERTEX) {
+            struct ao46_clip_distance_mask_state state = {
+                clip_distance_enable_mask, 0
+            };
+            (void)nir_shader_intrinsics_pass(
+                work_nir, ao46_metal_lower_clip_distance_mask,
+                nir_metadata_control_flow, &state);
+        }
+        nir_shader_gather_info(work_nir,
+                               nir_shader_get_entrypoint(work_nir));
+    }
     msl_preprocess_nir_workarounds(work_nir, 0);
     msl_optimize_nir(work_nir);
     /* Subgroup lowering can introduce Metal system-value inputs. */
@@ -226,6 +363,8 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
     struct nir_to_msl_options translate_options = {
         .mem_ctx = work_nir,
         .disabled_workarounds = 0,
+        .use_static_sampler_bindings = true,
+        .vertex_void_output = vertex_void_output,
         .static_buffer_mask = static_buffer_mask,
         .static_ubo_mask = static_ubo_mask,
         .static_ubo_first_buffer = AO46_METAL_FIRST_UNIFORM_BUFFER_INDEX,
@@ -243,6 +382,19 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
                                              userInfo:@{NSLocalizedDescriptionKey: @"NIR->MSL translation failed"}];
         ralloc_free(work_nir);
         return nil;
+    }
+
+    /* KK reflects a partial Mesa position store as a partial Metal member.
+     * Metal rejects float2/float3 values carrying the [[position]] attribute,
+     * even though the corresponding .xy/.xyz store is otherwise legal. The
+     * position ABI is always float4; widening only the declaration preserves
+     * the generated store semantics and keeps this fix local to AO46. */
+    if (work_nir->info.stage == MESA_SHADER_VERTEX) {
+        char *position_decl = strstr(msl_source,
+                                     "float2 position [[position]];");
+        if (position_decl) {
+            position_decl[5] = '4';
+        }
     }
 
     const char *translated_entry_name = nir_shader_get_entrypoint(work_nir)->function->name;
@@ -291,7 +443,9 @@ ao46_metal_compile_nir_to_msl(struct nir_shader *nir,
                               NSError **error)
 {
     return ao46_metal_compile_nir_to_msl_internal(nir, entry_name, constants,
-                                                   UINT32_MAX, error);
+                                                   UINT32_MAX, UINT32_MAX,
+                                                   false,
+                                                   error);
 }
 
 id<MTLFunction>
@@ -303,5 +457,31 @@ ao46_metal_compile_nir_to_msl_with_static_sample_mask(
     NSError **error)
 {
     return ao46_metal_compile_nir_to_msl_internal(nir, entry_name, constants,
-                                                   sample_mask, error);
+                                                   sample_mask, UINT32_MAX,
+                                                   false,
+                                                   error);
+}
+
+id<MTLFunction>
+ao46_metal_compile_nir_to_msl_with_clip_mask(
+    struct nir_shader *nir,
+    const char *entry_name,
+    MTLFunctionConstantValues *constants,
+    uint32_t clip_distance_enable_mask,
+    NSError **error)
+{
+    return ao46_metal_compile_nir_to_msl_internal(
+        nir, entry_name, constants, UINT32_MAX,
+        clip_distance_enable_mask, false, error);
+}
+
+id<MTLFunction>
+ao46_metal_compile_nir_to_msl_raster_discard(
+    struct nir_shader *nir,
+    const char *entry_name,
+    MTLFunctionConstantValues *constants,
+    NSError **error)
+{
+    return ao46_metal_compile_nir_to_msl_internal(
+        nir, entry_name, constants, UINT32_MAX, UINT32_MAX, true, error);
 }

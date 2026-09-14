@@ -677,7 +677,7 @@ target_compile_definitions(AO46MesaVTN
 # -------------------------------------------------------------
 # `mtl_driver.m` is the audited migration baseline for the required,
 # promoted AO46 Mesa-facing Gallium implementation.
-add_library(AO46MTLGallium SHARED
+set(AO46_MTL_GALLIUM_SOURCES
     GL2MTL/mtl_driver.m
     GL2MTL/mtl_shader_compiler.m
     MesaPlatform/AO46MetalGalliumScreen.c
@@ -685,12 +685,15 @@ add_library(AO46MTLGallium SHARED
     MesaPlatform/AO46MesaNIRBufferTexture.c
     MesaPlatform/AO46MesaNIRVertexInput.c
     MesaPlatform/AO46MesaRGB32BufferTexturePipeline.c
+    MesaPlatform/AO46MesaPolyGeometry.c
     MesaPlatform/AO46MesaPolyTessellation.c
     MesaPlatform/AO46MesaPolyKernelCatalog.c
     MesaPlatform/AO46MesaPolyKernelExecutor.c
     MesaPlatform/AO46MesaMSLComputePipeline.c
     MesaPlatform/AO46MesaMSLRenderPipeline.c
 )
+
+add_library(AO46MTLGallium SHARED ${AO46_MTL_GALLIUM_SOURCES})
 
 target_include_directories(AO46MTLGallium
     PRIVATE
@@ -734,6 +737,42 @@ set_target_properties(AO46MTLGallium PROPERTIES
     BUILD_WITH_INSTALL_RPATH TRUE
 )
 add_dependencies(AO46MTLGallium AO46MesaUpstreamPortingArtifacts)
+
+# The legacy CGL state tracker creates NIR with AO46Core's statically linked
+# Mesa runtime. Keep its Gallium consumer in that same Mach-O image so Mesa's
+# process-local GLSL type singletons never cross a dylib boundary. The
+# standalone AO46MTLGallium target remains the screen used by Khronos GL/EGL.
+add_library(AO46LegacyMTLGalliumObjects OBJECT ${AO46_MTL_GALLIUM_SOURCES})
+target_include_directories(AO46LegacyMTLGalliumObjects
+    PRIVATE
+        GL2MTL
+        MesaPlatform
+        "${AO46_MESA_LIBKK_GENERATED_DIR}"
+        "${MESA_INCLUDE_DIRS}"
+)
+target_compile_definitions(AO46LegacyMTLGalliumObjects
+    PRIVATE
+        ${MESA_COMPILE_DEFINITIONS}
+        AO46_HAVE_MESA_LIBKK=${AO46_HAVE_MESA_LIBKK}
+)
+add_dependencies(AO46LegacyMTLGalliumObjects
+    AO46MesaUpstreamPortingArtifacts
+    AO46MesaPolyKernelArtifacts
+)
+
+add_library(AO46LegacyMetalBackendObject OBJECT
+    MesaPlatform/AO46MetalBackend.m
+)
+target_include_directories(AO46LegacyMetalBackendObject
+    PRIVATE
+        MesaPlatform
+        "${MESA_INCLUDE_DIRS}"
+)
+target_compile_definitions(AO46LegacyMetalBackendObject
+    PRIVATE
+        ${MESA_COMPILE_DEFINITIONS}
+)
+target_compile_options(AO46LegacyMetalBackendObject PRIVATE -fobjc-arc)
 
 # This is the shared hardware-facing layer.  It deliberately contains no CGL,
 # NSOpenGL, or framework ABI entry points, so Mesa's standard GL/EGL frontend
@@ -782,8 +821,11 @@ set_target_properties(AO46MesaMetalBackend PROPERTIES
 # library and not any CGL object.
 add_library(AO46Core SHARED
     "${MESA_ROOT}/src/mesa/glapi/glapi/libgl_public.c"
+    MesaPlatform/AO46GL46EntryPoints.c
     "${GLAPI_PUBLIC_MAPI_HEADER}"
     $<TARGET_OBJECTS:OpenGL46RuntimeObjects>
+    $<TARGET_OBJECTS:AO46LegacyMTLGalliumObjects>
+    $<TARGET_OBJECTS:AO46LegacyMetalBackendObject>
 )
 
 target_include_directories(AO46Core
@@ -801,9 +843,7 @@ target_compile_definitions(AO46Core
 
 target_link_libraries(AO46Core
     PRIVATE
-        AO46MesaMetalBackend
         AO46AGXMetalAdapter
-        AO46MTLGallium
         ${MESA_ST_MESA_LIB}
         ${MESA_GLAPI_LIB}
         ${MESA_GLSL_LIB}
@@ -1042,6 +1082,12 @@ if(BUILD_TESTING)
         NAME AO46LegacyStageSmoke
         COMMAND sh "${ROOT_DIR}/tests/AO46LegacyStageSmoke.sh"
                    "${ROOT_DIR}/scripts/stage_personal_layout.sh"
+    )
+
+    add_test(
+        NAME AO46LegacyMesaRuntimeOwnership
+        COMMAND sh "${ROOT_DIR}/tests/AO46LegacyMesaRuntimeOwnership.sh"
+                   $<TARGET_FILE:AO46Core>
     )
 
     add_executable(AO46MesaMetalBackendSmoke

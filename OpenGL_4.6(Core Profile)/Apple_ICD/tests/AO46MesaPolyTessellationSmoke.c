@@ -511,7 +511,7 @@ main(void)
    options.static_buffer_mask = UINT16_C(1) << 3;
    msl = nir_to_msl(tes, &options);
    if (!msl || !strstr(msl, "vertex VertexOut") ||
-       !strstr(msl, "constant Buffer &buf3 [[buffer(3)]]")) {
+       !strstr(msl, "constant RawBuffer &buf3 [[buffer(3)]]")) {
       fputs("Mesa poly tessellation MSL contract was unexpected\n", stderr);
       failed = 1;
    }

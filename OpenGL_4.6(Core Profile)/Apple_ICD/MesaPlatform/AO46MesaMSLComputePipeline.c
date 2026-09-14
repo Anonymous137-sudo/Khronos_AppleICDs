@@ -16,6 +16,7 @@
 #include "util/ralloc.h"
 
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -56,6 +57,22 @@ ao46_mesa_robust_buffer_intrinsic(const nir_intrinsic_instr *intrinsic,
 struct AO46MesaRobustSizeLowering {
    bool valid;
 };
+
+static void
+ao46_mesa_simplify_buffer_indices(nir_shader *nir)
+{
+   /* Explicit-I/O lowering packs binding/offset into vectors. Fold extracts
+    * before range analysis; an unfurled constant is not an unbounded index. */
+   bool progress;
+   do {
+      progress = nir_opt_copy_prop(nir);
+      progress |= nir_opt_constant_folding(nir);
+      /* Copy propagation can replace a swizzled mov with a vector but leave
+       * the dead mov behind. Remove it before repeating or it is rebuilt on
+       * every iteration, so this fixed-point loop never converges. */
+      progress |= nir_opt_dce(nir);
+   } while (progress);
+}
 
 static bool
 ao46_mesa_lower_robust_size(nir_builder *builder,
@@ -122,6 +139,7 @@ AO46MesaNIRLowerRobustBufferAccess(struct nir_shader *nir)
    if (!nir)
       return false;
 
+   ao46_mesa_simplify_buffer_indices(nir);
    (void)nir_lower_robust_access(nir, ao46_mesa_robust_buffer_intrinsic, NULL);
    (void)nir_shader_intrinsics_pass(nir, ao46_mesa_lower_robust_size,
                                     nir_metadata_control_flow, &lowering);
@@ -255,6 +273,7 @@ ao46_mesa_compute_lower_bounded_ssbo(nir_shader *nir)
    if (!nir || !lowering.range_ht)
       return false;
 
+   ao46_mesa_simplify_buffer_indices(nir);
    nir_foreach_function_impl(impl, nir) {
       nir_foreach_block(block, impl) {
          nir_foreach_instr(instr, block) {
@@ -340,10 +359,32 @@ ao46_mesa_lower_static_image(nir_builder *builder,
    unsigned binding;
 
    switch (intrinsic->intrinsic) {
+   case nir_intrinsic_image_load:
+   case nir_intrinsic_image_store:
+   case nir_intrinsic_image_atomic:
+   case nir_intrinsic_image_atomic_swap:
+   case nir_intrinsic_image_size:
+   case nir_intrinsic_image_samples:
+      /* Retain reflection when a caller already lowered this shader. */
+      if (!nir_src_is_const(intrinsic->src[0])) {
+         lowering->valid = false;
+         return false;
+      }
+      binding = nir_src_as_uint(intrinsic->src[0]);
+      if (binding < AO46_MESA_IMAGE_TEXTURE_BASE ||
+          binding >= AO46_MESA_IMAGE_TEXTURE_BASE + AO46_MESA_MAX_IMAGE_UNITS) {
+         lowering->valid = false;
+         return false;
+      }
+      lowering->image_mask |= UINT16_C(1) <<
+                             (binding - AO46_MESA_IMAGE_TEXTURE_BASE);
+      return false;
    case nir_intrinsic_image_deref_load:
    case nir_intrinsic_image_deref_store:
    case nir_intrinsic_image_deref_atomic:
    case nir_intrinsic_image_deref_atomic_swap:
+   case nir_intrinsic_image_deref_size:
+   case nir_intrinsic_image_deref_samples:
       break;
    default:
       return false;
@@ -363,6 +404,9 @@ ao46_mesa_lower_static_image(nir_builder *builder,
    texture_index = nir_imm_int(builder, AO46_MESA_IMAGE_TEXTURE_BASE + binding);
    nir_rewrite_image_intrinsic(intrinsic, texture_index,
                                nir_image_intrinsic_type_default);
+   /* Rectangle images use integer texel coordinates, just like 2D images. */
+   if (nir_intrinsic_image_dim(intrinsic) == GLSL_SAMPLER_DIM_RECT)
+      nir_intrinsic_set_image_dim(intrinsic, GLSL_SAMPLER_DIM_2D);
    lowering->image_mask |= UINT16_C(1) << binding;
    return true;
 }
@@ -462,9 +506,62 @@ AO46MesaNIRLowerDrawParameters(struct nir_shader *nir,
 
 struct AO46MesaStreamOutputLowering {
    const struct pipe_stream_output_info *info;
+   uint64_t generic_register_mask;
    bool valid;
    bool lowered;
 };
+
+static bool
+ao46_mesa_is_generic_varying(unsigned location)
+{
+   return location >= VARYING_SLOT_VAR0 && location <= VARYING_SLOT_VAR31;
+}
+
+static uint64_t
+ao46_mesa_collect_generic_output_registers(nir_shader *nir)
+{
+   uint64_t mask = 0;
+
+   nir_foreach_function_impl(impl, nir) {
+      nir_foreach_block(block, impl) {
+         nir_foreach_instr(instr, block) {
+            nir_intrinsic_instr *intrinsic;
+            unsigned register_index;
+            unsigned location;
+
+            if (instr->type != nir_instr_type_intrinsic)
+               continue;
+            intrinsic = nir_instr_as_intrinsic(instr);
+            if (intrinsic->intrinsic == nir_intrinsic_store_deref) {
+               nir_deref_instr *deref =
+                  nir_src_as_deref(intrinsic->src[0]);
+               nir_variable *variable;
+
+               if (!nir_deref_mode_is(deref, nir_var_shader_out))
+                  continue;
+               variable = nir_deref_instr_get_variable(deref);
+               if (!variable)
+                  continue;
+               register_index = variable->data.driver_location;
+               location = variable->data.location;
+            } else if (intrinsic->intrinsic ==
+                       nir_intrinsic_store_output) {
+               if (!nir_src_is_const(intrinsic->src[1]))
+                  continue;
+               register_index = nir_intrinsic_base(intrinsic) +
+                  (unsigned)nir_src_as_uint(intrinsic->src[1]);
+               location = nir_intrinsic_io_semantics(intrinsic).location;
+            } else {
+               continue;
+            }
+
+            if (register_index < 64 && ao46_mesa_is_generic_varying(location))
+               mask |= UINT64_C(1) << register_index;
+         }
+      }
+   }
+   return mask;
+}
 
 static bool
 ao46_mesa_lower_stream_output_store(nir_builder *builder,
@@ -472,20 +569,56 @@ ao46_mesa_lower_stream_output_store(nir_builder *builder,
 {
    struct AO46MesaStreamOutputLowering *lowering = data;
    unsigned register_index;
+   unsigned semantic_location = VARYING_SLOT_MAX;
+   unsigned store_component = 0;
+   nir_def *store_value;
 
-   if (intrinsic->intrinsic != nir_intrinsic_store_output)
+   if (intrinsic->intrinsic == nir_intrinsic_store_deref) {
+      nir_deref_instr *deref = nir_src_as_deref(intrinsic->src[0]);
+      nir_variable *variable;
+
+      if (!nir_deref_mode_is(deref, nir_var_shader_out))
+         return false;
+      variable = nir_deref_instr_get_variable(deref);
+      if (!variable)
+         return false;
+      register_index = variable->data.driver_location;
+      semantic_location = variable->data.location;
+      store_value = intrinsic->src[1].ssa;
+   } else if (intrinsic->intrinsic == nir_intrinsic_store_output) {
+      if (!nir_src_is_const(intrinsic->src[1]))
+         return false;
+      register_index = nir_intrinsic_base(intrinsic) +
+                       (unsigned)nir_src_as_uint(intrinsic->src[1]);
+      semantic_location = nir_intrinsic_io_semantics(intrinsic).location;
+      store_component = nir_intrinsic_component(intrinsic);
+      store_value = intrinsic->src[0].ssa;
+   } else {
+      return false;
+   }
+
+   /* Mesa's packed transform-feedback register indices describe user
+    * varyings.  After I/O lowering, Metal-required built-ins such as
+    * gl_Position can share driver location zero.  Do not let such a built-in
+    * overwrite a matching user varying in the XFB destination. */
+   if (!ao46_mesa_is_generic_varying(semantic_location) &&
+       register_index < 64 &&
+       (lowering->generic_register_mask & (UINT64_C(1) << register_index)))
       return false;
 
-   if (!nir_src_is_const(intrinsic->src[1]))
-      return false;
-
-   register_index = nir_intrinsic_base(intrinsic) +
-                    nir_src_as_uint(intrinsic->src[1]);
+   if (getenv("AO46_TRACE_RUNTIME")) {
+      fprintf(stderr,
+              "[AO46Mesa] stream-output store intrinsic=%u register=%u "
+              "semantic=%u component=%u components=%u\n",
+              intrinsic->intrinsic, register_index, semantic_location,
+              store_component, store_value->num_components);
+   }
 
    for (unsigned i = 0; i < lowering->info->num_outputs; ++i) {
       const struct pipe_stream_output *output = &lowering->info->output[i];
       nir_def *descriptor_root;
       nir_def *target_address;
+      nir_def *target_capacity;
       nir_def *draw_root;
       nir_def *vertex_count;
       nir_def *first_vertex;
@@ -498,12 +631,12 @@ ao46_mesa_lower_stream_output_store(nir_builder *builder,
 
       if (output->register_index != register_index)
          continue;
-      if (nir_intrinsic_component(intrinsic) != 0 ||
-          intrinsic->src[0].ssa->num_components > 4 || output->stream != 0 ||
+      if (store_component != 0 || store_value->num_components > 4 ||
+          output->stream != 0 ||
           output->output_buffer >= PIPE_MAX_SO_BUFFERS ||
           output->num_components == 0 ||
           output->start_component + output->num_components >
-             intrinsic->src[0].ssa->num_components ||
+             store_value->num_components ||
           lowering->info->stride[output->output_buffer] == 0) {
          lowering->valid = false;
          return false;
@@ -517,6 +650,12 @@ ao46_mesa_lower_stream_output_store(nir_builder *builder,
          builder, 1, 64,
          nir_iadd_imm(builder, descriptor_root,
                       output->output_buffer * sizeof(uint64_t)),
+         .align_mul = sizeof(uint64_t));
+      target_capacity = nir_load_global(
+         builder, 1, 64,
+         nir_iadd_imm(builder, descriptor_root,
+                      (PIPE_MAX_SO_BUFFERS + output->output_buffer) *
+                         sizeof(uint64_t)),
          .align_mul = sizeof(uint64_t));
       draw_root = nir_load_buffer_ptr_kk(
          builder, 1, 64, .binding = AO46_MESA_DRAW_PARAMETER_BINDING);
@@ -544,12 +683,16 @@ ao46_mesa_lower_stream_output_store(nir_builder *builder,
                          sizeof(uint32_t)),
          output->dst_offset * sizeof(uint32_t));
       value = nir_channels(
-         builder, intrinsic->src[0].ssa,
+         builder, store_value,
          BITFIELD_RANGE(output->start_component, output->num_components));
+      nir_push_if(builder,
+                  nir_ult(builder, nir_u2u64(builder, linear_index),
+                          target_capacity));
       nir_store_global(builder, value,
                        nir_iadd(builder, target_address, byte_offset),
                        .align_mul = sizeof(uint32_t),
                        .access = ACCESS_NON_READABLE);
+      nir_pop_if(builder, NULL);
       lowering->lowered = true;
    }
 
@@ -563,6 +706,7 @@ AO46MesaNIRLowerStreamOutput(
 {
    struct AO46MesaStreamOutputLowering lowering = {
       .info = stream_output,
+      .generic_register_mask = ao46_mesa_collect_generic_output_registers(nir),
       .valid = true,
    };
 
@@ -582,6 +726,74 @@ AO46MesaNIRLowerStreamOutput(
    *inout_static_buffer_mask |=
       (UINT16_C(1) << AO46_MESA_DRAW_PARAMETER_BINDING) |
       (UINT16_C(1) << AO46_MESA_STREAM_OUTPUT_DESCRIPTOR_BINDING);
+   return true;
+}
+
+struct AO46MesaIndexedVertexIDLowering {
+   unsigned index_size;
+   bool lowered;
+};
+
+static bool
+ao46_mesa_lower_indexed_vertex_id(nir_builder *builder,
+                                  nir_intrinsic_instr *intrinsic, void *data)
+{
+   struct AO46MesaIndexedVertexIDLowering *lowering = data;
+   nir_def *index_root;
+   nir_def *draw_root;
+   nir_def *ordinal;
+   nir_def *address;
+   nir_def *index;
+   nir_def *base_vertex;
+
+   if (intrinsic->intrinsic != nir_intrinsic_load_vertex_id)
+      return false;
+
+   builder->cursor = nir_before_instr(&intrinsic->instr);
+   ordinal = nir_load_vertex_id(builder);
+   index_root = nir_load_buffer_ptr_kk(
+      builder, 1, 64, .binding = AO46_MESA_INDEX_REMAP_BINDING);
+   address = nir_iadd(
+      builder, index_root,
+      nir_u2u64(builder, nir_imul_imm(builder, ordinal,
+                                     lowering->index_size)));
+   index = nir_load_global(builder, 1, lowering->index_size * 8, address,
+                           .align_mul = lowering->index_size);
+   draw_root = nir_load_buffer_ptr_kk(
+      builder, 1, 64, .binding = AO46_MESA_DRAW_PARAMETER_BINDING);
+   base_vertex = nir_load_global(
+      builder, 1, 32,
+      nir_iadd_imm(builder, draw_root,
+                   offsetof(struct AO46MesaDrawParameters, base_vertex)),
+      .align_mul = sizeof(uint32_t));
+   index = nir_iadd(builder, nir_u2u32(builder, index), base_vertex);
+   nir_def_rewrite_uses(&intrinsic->def, index);
+   nir_instr_remove(&intrinsic->instr);
+   lowering->lowered = true;
+   return true;
+}
+
+bool
+AO46MesaNIRLowerIndexedVertexID(struct nir_shader *nir, unsigned index_size,
+                               uint16_t *inout_static_buffer_mask)
+{
+   struct AO46MesaIndexedVertexIDLowering lowering = {
+      .index_size = index_size,
+   };
+
+   if (!nir || !inout_static_buffer_mask ||
+       nir->info.stage != MESA_SHADER_VERTEX ||
+       (index_size != 2 && index_size != 4))
+      return false;
+
+   (void)nir_shader_intrinsics_pass(
+      nir, ao46_mesa_lower_indexed_vertex_id, nir_metadata_control_flow,
+      &lowering);
+   if (lowering.lowered) {
+      *inout_static_buffer_mask |=
+         (UINT16_C(1) << AO46_MESA_DRAW_PARAMETER_BINDING) |
+         (UINT16_C(1) << AO46_MESA_INDEX_REMAP_BINDING);
+   }
    return true;
 }
 
@@ -612,12 +824,16 @@ AO46MesaComputePipelineCreateWithStaticBuffers(
    char *source = NULL;
    char *entrypoint_name = NULL;
    bool created = false;
+   uint16_t image_mask = 0;
 
    if (!AO46MetalAdapterIsCurrent(adapter) || !nir ||
        nir->info.stage != MESA_SHADER_COMPUTE || !out_pipeline ||
        !ao46_mesa_compute_pipeline_is_empty(out_pipeline) ||
        nir->info.workgroup_size[0] == 0 || nir->info.workgroup_size[1] == 0 ||
        nir->info.workgroup_size[2] == 0 || (static_buffer_mask & UINT16_C(0x0003)))
+      return false;
+
+   if (!AO46MesaNIRLowerStaticImages(nir, &static_buffer_mask, &image_mask))
       return false;
 
    /* These are Mesa's standard KosmicKrisp preprocessing and SSA-lowering passes. */
@@ -655,6 +871,7 @@ AO46MesaComputePipelineCreateWithStaticBuffers(
       },
       /* KosmicKrisp emits the root and sampler-table ABI plus direct buffers. */
       .required_buffer_mask = (1u << 0) | (1u << 1) | static_buffer_mask,
+      .required_image_mask = image_mask,
       .thread_execution_width = out_pipeline->metal_pipeline.thread_execution_width,
       .max_threads_per_threadgroup =
          out_pipeline->metal_pipeline.max_threads_per_threadgroup,
@@ -707,6 +924,7 @@ AO46MesaComputePipelineDispatchWithAccess(
    bool submitted;
 
    if (!pipeline || !pipeline->metal_pipeline.native_pipeline || !context ||
+       pipeline->reflection.required_image_mask ||
        !resources || !offsets || !indices || resource_count == 0 ||
        resource_count > 32 || grid_width == 0 || grid_height == 0 ||
        grid_depth == 0 || !out_fence)
@@ -747,6 +965,7 @@ AO46MesaComputePipelineDispatchIndirectWithAccess(
    bool submitted;
 
    if (!pipeline || !pipeline->metal_pipeline.native_classic_pipeline ||
+       pipeline->reflection.required_image_mask ||
        !context || !resources || !offsets || !indices || resource_count == 0 ||
        resource_count > 32 || !indirect_resource || !out_fence)
       return false;

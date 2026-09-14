@@ -21,6 +21,112 @@
 #include <stdio.h>
 #include <string.h>
 
+static bool
+ao46_check_builtin_io_abi(void)
+{
+   nir_builder vs = nir_builder_init_simple_shader(
+      MESA_SHADER_VERTEX, &kk_nir_options, "ao46_builtin_io_vs");
+   nir_def *zero = nir_imm_int(&vs, 0);
+   nir_store_output(&vs, nir_imm_ivec2(&vs, 0, 0x3f800000), zero,
+                    .component = 1, .write_mask = 3,
+                    .src_type = nir_type_uint32,
+                    .io_semantics = {.location = VARYING_SLOT_POS, .num_slots = 1});
+   nir_def *position = nir_load_output(
+      &vs, 1, 32, zero, .component = 2, .dest_type = nir_type_uint32,
+      .io_semantics = {.location = VARYING_SLOT_POS, .num_slots = 1});
+   nir_store_output(&vs, position, zero, .write_mask = 1,
+                    .src_type = nir_type_uint32,
+                    .io_semantics = {.location = VARYING_SLOT_PSIZ, .num_slots = 1});
+   const unsigned uint_slots[] = {
+      VARYING_SLOT_LAYER, VARYING_SLOT_VIEWPORT, VARYING_SLOT_PRIMITIVE_ID,
+   };
+   for (unsigned i = 0; i < ARRAY_SIZE(uint_slots); ++i)
+      nir_store_output(&vs, nir_imm_int(&vs, -1), zero, .write_mask = 1,
+                       .src_type = nir_type_int32,
+                       .io_semantics = {.location = uint_slots[i], .num_slots = 1});
+   nir_shader_gather_info(vs.shader, nir_shader_get_entrypoint(vs.shader));
+   struct nir_to_msl_options options = {.mem_ctx = vs.shader};
+   char *source = nir_to_msl(vs.shader, &options);
+   bool valid = source &&
+      strstr(source, "float4 position [[position]]") &&
+      strstr(source, "float point_size [[point_size]]") &&
+      strstr(source, "uint render_target_array_index") &&
+      strstr(source, "uint viewport_array_index") &&
+      strstr(source, "uint primitive_id") &&
+      strstr(source, "out.position.yz = as_type<float2>(") &&
+      strstr(source, "as_type<uint>(out.position.z)") &&
+      strstr(source, "out.point_size = as_type<float>(") &&
+      strstr(source, "out.render_target_array_index = as_type<uint>(");
+   if (!valid && source)
+      fprintf(stderr, "Built-in vertex ABI mismatch:\n%s\n", source);
+   ralloc_free(vs.shader);
+
+   nir_builder fs = nir_builder_init_simple_shader(
+      MESA_SHADER_FRAGMENT, &kk_nir_options, "ao46_builtin_io_fs");
+   zero = nir_imm_int(&fs, 0);
+   nir_def *layer = nir_load_input(
+      &fs, 1, 32, zero, .dest_type = nir_type_int32,
+      .io_semantics = {.location = VARYING_SLOT_LAYER, .num_slots = 1});
+   nir_store_output(&fs, layer, zero, .write_mask = 1,
+                    .src_type = nir_type_int32,
+                    .io_semantics = {.location = FRAG_RESULT_STENCIL, .num_slots = 1});
+   nir_store_output(&fs, nir_imm_int(&fs, -1), zero, .write_mask = 1,
+                    .src_type = nir_type_int32,
+                    .io_semantics = {.location = FRAG_RESULT_SAMPLE_MASK, .num_slots = 1});
+   nir_store_output(&fs, nir_imm_int(&fs, 0x3f800000), zero, .write_mask = 1,
+                    .src_type = nir_type_uint32,
+                    .io_semantics = {.location = FRAG_RESULT_DEPTH, .num_slots = 1});
+   nir_shader_gather_info(fs.shader, nir_shader_get_entrypoint(fs.shader));
+   options.mem_ctx = fs.shader;
+   source = nir_to_msl(fs.shader, &options);
+   bool fs_valid = source &&
+      strstr(source, "float depth_out [[depth(any)]]") &&
+      strstr(source, "uint stencil_out [[stencil]]") &&
+      strstr(source, "uint sample_mask_out [[sample_mask]]") &&
+      strstr(source, "as_type<int>(in.render_target_array_index)") &&
+      strstr(source, "out.depth_out = as_type<float>(") &&
+      strstr(source, "out.sample_mask_out = as_type<uint>(");
+   if (!fs_valid && source)
+      fprintf(stderr, "Built-in fragment ABI mismatch:\n%s\n", source);
+   ralloc_free(fs.shader);
+   return valid && fs_valid;
+}
+
+static bool
+ao46_check_mediump_conversions(void)
+{
+   const nir_op ops[] = {nir_op_i2imp, nir_op_f2fmp, nir_op_f2imp,
+                         nir_op_f2ump, nir_op_i2fmp, nir_op_u2fmp};
+   const char *casts[] = {"short4(", "half4(", "short4(",
+                          "ushort4(", "half4(", "half4("};
+   bool valid = true;
+   for (unsigned i = 0; i < ARRAY_SIZE(ops); ++i) {
+      nir_builder b = nir_builder_init_simple_shader(
+         MESA_SHADER_FRAGMENT, &kk_nir_options, "ao46_mediump_conversions");
+      nir_def *input = nir_load_input(
+         &b, 4, 32, nir_imm_int(&b, 0),
+         .dest_type = nir_op_infos[ops[i]].input_types[0],
+         .io_semantics = {.location = VARYING_SLOT_VAR0, .num_slots = 1});
+      nir_def *value = nir_build_alu(&b, ops[i], input, NULL, NULL, NULL);
+      nir_alu_type type = nir_alu_type_get_base_type(nir_op_infos[ops[i]].output_type);
+      value = type == nir_type_float ? nir_f2f32(&b, value) :
+              type == nir_type_uint ? nir_u2u32(&b, value) : nir_i2i32(&b, value);
+      nir_store_output(&b, value, nir_imm_int(&b, 0), .write_mask = 0xf,
+                       .src_type = type | 32,
+                       .io_semantics = {.location = FRAG_RESULT_DATA0, .num_slots = 1});
+      nir_shader_gather_info(b.shader, nir_shader_get_entrypoint(b.shader));
+      struct nir_to_msl_options options = {.mem_ctx = b.shader};
+      char *source = nir_to_msl(b.shader, &options);
+      if (!source || strstr(source, "ALU ") || !strstr(source, casts[i])) {
+         fprintf(stderr, "Mediump conversion %s failed:\n%s\n",
+                 nir_op_infos[ops[i]].name, source ? source : "no source");
+         valid = false;
+      }
+      ralloc_free(b.shader);
+   }
+   return valid;
+}
+
 static struct nir_shader *
 ao46_build_mesa_vertex_shader(void)
 {
@@ -49,9 +155,15 @@ ao46_build_mesa_vertex_shader(void)
       &builder, 4, 32, nir_imm_int(&builder, 0), .base = 1, .range = 1,
       .dest_type = nir_type_float32, .io_semantics = color_attribute);
 
-   nir_store_output(&builder, position_value, nir_imm_int(&builder, 0),
-                    .base = 0, .range = 1, .write_mask = 0xf,
-                    .src_type = nir_type_float32, .io_semantics = position);
+   /* NIR's bitwise storage must preserve float positions across split stores. */
+   nir_store_output(&builder, nir_channels(&builder, position_value, 3),
+                    nir_imm_int(&builder, 0), .base = 0, .range = 1,
+                    .write_mask = 3, .src_type = nir_type_uint32,
+                    .io_semantics = position);
+   nir_store_output(&builder, nir_channels(&builder, position_value, 12),
+                    nir_imm_int(&builder, 0), .base = 0, .range = 1,
+                    .component = 2, .write_mask = 3,
+                    .src_type = nir_type_uint32, .io_semantics = position);
    nir_store_output(&builder, color_value, nir_imm_int(&builder, 0),
                     .base = 0, .range = 1, .write_mask = 0xf,
                     .src_type = nir_type_float32, .io_semantics = varying);
@@ -84,8 +196,13 @@ ao46_build_mesa_fragment_shader(void)
    nir_store_output(&builder, vertex_color, nir_imm_int(&builder, 0), .base = 0,
                     .range = 1, .write_mask = 0xf,
                     .src_type = nir_type_float32, .io_semantics = color);
+   nir_store_output(&builder, nir_imm_int(&builder, -1),
+                    nir_imm_int(&builder, 0), .write_mask = 1,
+                    .src_type = nir_type_int32,
+                    .io_semantics = {.location = FRAG_RESULT_SAMPLE_MASK, .num_slots = 1});
    builder.shader->info.inputs_read |= BITFIELD64_BIT(VARYING_SLOT_VAR0);
    builder.shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_DATA0);
+   builder.shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_SAMPLE_MASK);
    return builder.shader;
 }
 
@@ -100,6 +217,10 @@ struct AO46SmokeInstance {
 int
 main(void)
 {
+   if (!ao46_check_builtin_io_abi() || !ao46_check_mediump_conversions()) {
+      fputs("Mesa built-in I/O ABI regression failed\n", stderr);
+      return 1;
+   }
    struct AO46MetalAdapter adapter = {0};
    struct AO46MesaRenderPipeline pipeline = {0};
    struct nir_shader *vertex_nir = NULL;
@@ -243,6 +364,8 @@ main(void)
    if (!pipeline.vertex_msl_source || !pipeline.fragment_msl_source ||
        !pipeline.vertex_entrypoint || !pipeline.fragment_entrypoint ||
        !strstr(pipeline.vertex_msl_source, "vertex VertexOut") ||
+       !strstr(pipeline.vertex_msl_source, "float4 position [[position]]") ||
+       !strstr(pipeline.fragment_msl_source, "uint sample_mask_out [[sample_mask]]") ||
        !strstr(pipeline.vertex_msl_source, "position_in [[attribute(0)]]") ||
        !strstr(pipeline.vertex_msl_source, "attrib_01 [[attribute(1)]]") ||
        strstr(pipeline.vertex_msl_source, "gl_VertexID") ||

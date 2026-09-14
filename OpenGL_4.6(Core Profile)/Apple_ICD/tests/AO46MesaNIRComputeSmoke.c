@@ -75,9 +75,62 @@ ao46_build_rgb32_buffer_texture_shader(void)
    return builder.shader;
 }
 
+static bool
+ao46_check_image_pipeline(const struct AO46MetalAdapter *adapter)
+{
+   nir_builder b = nir_builder_init_simple_shader(
+      MESA_SHADER_COMPUTE, &kk_nir_options, "ao46_image_reflection_smoke");
+   struct AO46MesaComputePipeline pipeline = {0};
+   uint16_t buffers = 0, images = 0;
+   bool valid;
+
+   b.shader->info.workgroup_size[0] = 1;
+   b.shader->info.workgroup_size[1] = 1;
+   b.shader->info.workgroup_size[2] = 1;
+   nir_variable *image = nir_variable_create(
+      b.shader, nir_var_image,
+      glsl_image_type(GLSL_SAMPLER_DIM_2D, false, GLSL_TYPE_UINT), "image3");
+   image->data.binding = 3;
+   image->data.image.format = PIPE_FORMAT_R32_UINT;
+   nir_def *size = nir_image_deref_size(
+      &b, 2, 32, &nir_build_deref_var(&b, image)->def, nir_imm_int(&b, 0),
+      .image_dim = GLSL_SAMPLER_DIM_2D, .format = PIPE_FORMAT_R32_UINT);
+   nir_store_global(&b, size, nir_load_buffer_ptr_kk(&b, 1, 64, .binding = 0),
+                    .align_mul = 4, .access = ACCESS_NON_READABLE);
+
+   valid = AO46MesaNIRLowerStaticImages(b.shader, &buffers, &images) &&
+           images == (1u << 3) &&
+           AO46MesaComputePipelineCreateWithStaticBuffers(
+              adapter, b.shader, buffers, &pipeline) &&
+           pipeline.reflection.required_image_mask == (1u << 3) &&
+           strstr(pipeline.msl_source, "image_19 [[texture(19)]]") &&
+           strstr(pipeline.msl_source, "image_19.get_width()");
+   AO46MesaComputePipelineDestroy(&pipeline);
+   ralloc_free(b.shader);
+   return valid;
+}
+
 int
 main(void)
 {
+   /* Exercise emission directly: preprocessing must not hide dead ALU chains. */
+   nir_builder dead = nir_builder_init_simple_shader(
+      MESA_SHADER_COMPUTE, &kk_nir_options, "ao46_dead_vector_smoke");
+   dead.shader->info.workgroup_size[0] = 1;
+   dead.shader->info.workgroup_size[1] = 1;
+   dead.shader->info.workgroup_size[2] = 1;
+   nir_def *constant = nir_imm_int(&dead, 7);
+   nir_def *vector = nir_vec4(&dead, constant, constant, constant, constant);
+   (void)nir_channels(&dead, vector, 3);
+   struct nir_to_msl_options dead_options = {.mem_ctx = dead.shader};
+   char *dead_msl = nir_to_msl(dead.shader, &dead_options);
+   bool dead_valid = dead_msl && !strstr(dead_msl, "UNTYPED");
+   ralloc_free(dead.shader);
+   if (!dead_valid) {
+      fputs("AO46 dead vector emission failed\n", stderr);
+      return 1;
+   }
+
    struct AO46MetalAdapter adapter = {0};
    struct AO46MesaComputePipeline pipeline = {0};
    struct AO46MesaComputePipeline rgb32_pipeline = {0};
@@ -134,6 +187,12 @@ main(void)
       return 1;
    }
 
+   if (!ao46_check_image_pipeline(&adapter)) {
+      fputs("Repeated image lowering lost compute pipeline reflection\n", stderr);
+      failed = 1;
+      goto out;
+   }
+
    nir = ao46_build_mesa_compute_shader();
    if (!nir || !AO46MesaComputePipelineCreate(&adapter, nir, &pipeline) ||
        !pipeline.msl_source || !pipeline.entrypoint ||
@@ -158,7 +217,7 @@ main(void)
           &adapter, rgb32_nir, rgb32_mask, &rgb32_pipeline) ||
        !rgb32_pipeline.msl_source ||
        !strstr(rgb32_pipeline.msl_source,
-               "constant Buffer &buf2 [[buffer(2)]]") ||
+               "constant RawBuffer &buf2 [[buffer(2)]]") ||
        strstr(rgb32_pipeline.msl_source, "texture_buffer") ||
        rgb32_pipeline.reflection.required_buffer_mask != 0x7) {
       fputs("RGB32 buffer-texture NIR lowering contract was unexpected\n", stderr);

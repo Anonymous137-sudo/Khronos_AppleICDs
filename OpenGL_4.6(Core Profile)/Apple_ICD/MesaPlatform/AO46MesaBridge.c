@@ -79,6 +79,10 @@ static CGLError ao46_mesa_attach_existing_texture(
     AO46ContextRef ctx, struct AO46MesaDrawable *drawable,
     struct pipe_resource *texture, struct pipe_resource *resolve_texture,
     unsigned width, unsigned height, unsigned rowbytes, void *baseaddr);
+static bool ao46_mesa_validate_drawable(
+    struct st_context *st, struct pipe_frontend_drawable *pdrawable,
+    const enum st_attachment_type *statts, unsigned count,
+    struct pipe_resource **out, struct pipe_resource **resolve);
 
 static void
 ao46_mesa_query_versions(int *gl_core_version,
@@ -656,7 +660,7 @@ ao46_mesa_create_drawable(const struct st_visual *visual,
     drawable->base.fscreen = &g_frontend_screen.base;
     drawable->base.flush_front = ao46_mesa_flush_front;
     drawable->base.flush_swapbuffers = ao46_mesa_flush_swapbuffers;
-    drawable->base.validate = NULL;
+    drawable->base.validate = ao46_mesa_validate_drawable;
     p_atomic_set(&drawable->base.stamp, 1);
     drawable->base.ID = p_atomic_inc_return((int32_t *)&g_next_drawable_id);
 
@@ -1016,6 +1020,48 @@ ao46_mesa_create_color_texture(const struct AO46MesaDrawable *drawable)
                                              PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW);
 }
 
+static bool
+ao46_mesa_attach_fallback_drawable(AO46ContextRef ctx)
+{
+    struct AO46MesaDrawable *drawable;
+    struct pipe_resource *color = NULL;
+    struct pipe_resource *resolve = NULL;
+    struct st_visual visual;
+
+    if (!ctx || !ctx->st || !ctx->pipe || !ctx->pixel_format) {
+        return false;
+    }
+
+    ao46_mesa_fill_visual(ctx->pixel_format, &visual);
+    drawable = ao46_mesa_create_drawable(&visual, false,
+                                         (visual.buffer_mask &
+                                          ST_ATTACHMENT_BACK_LEFT_MASK) != 0);
+    if (!drawable) {
+        return false;
+    }
+
+    drawable->width = 1;
+    drawable->height = 1;
+    drawable->rowbytes = 4;
+    color = ao46_mesa_create_color_texture(drawable);
+    resolve = ao46_mesa_create_resolve_texture(
+        drawable, visual.color_format,
+        PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW);
+    if (!color || (visual.samples > 1 && !resolve) ||
+        ao46_mesa_attach_existing_texture(ctx, drawable, color, resolve,
+                                         1, 1, 4, NULL) != kCGLNoError) {
+        pipe_resource_reference(&color, NULL);
+        pipe_resource_reference(&resolve, NULL);
+        ao46_mesa_destroy_drawable(drawable);
+        return false;
+    }
+
+    pipe_resource_reference(&color, NULL);
+    pipe_resource_reference(&resolve, NULL);
+    ctx->drawable = drawable;
+    return true;
+}
+
 CGLError
 AO46MesaInit(void)
 {
@@ -1317,6 +1363,12 @@ AO46MesaCreateContext(AO46PixelFormatRef pix,
 
     ctx->pipe = ctx->st->pipe;
     ctx->st->frontend_context = ctx;
+    if (!ao46_mesa_attach_fallback_drawable(ctx)) {
+        st_destroy_context(ctx->st);
+        AO46DestroyPixelFormat(ctx->pixel_format);
+        free(ctx);
+        return kCGLBadAlloc;
+    }
     realized_core_version = ctx->st->ctx->Version;
     if (realized_core_version < requested_core_version) {
         st_destroy_context(ctx->st);
