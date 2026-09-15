@@ -375,3 +375,80 @@ The current source passes all 30 CTest regressions with Metal validation,
 all eight Python CTS bookkeeping tests, and both parent and Mesa `diff --check`.
 No commit, push, installer update, release, or conformance claim is performed
 by this checkpoint.
+
+## 2026-09-15 descriptor and binding repair follow-up
+
+The next grouped repair pass addressed the first and third clusters in the
+isolated qualification inventory without treating a historical crash as a
+conformance result. `PIPE_TEXTURE_1D` and `PIPE_TEXTURE_1D_ARRAY` resources
+continue to use Metal 2D and 2D-array storage, respectively, which is required
+for depth/stencil formats and mipmaps. A hardware smoke now creates mipmapped
+depth/stencil resources for both targets, creates valid subresource views, and
+verifies that an out-of-range view returns `NULL` instead of invoking Metal's
+descriptor assertion. This directly guards the old native-1D depth/stencil,
+native-1D-array mipmap, and 1D-to-2D view crash shapes. A companion negative
+test rejects 3D-to-2D-array aliasing before Metal receives the incompatible
+view descriptor that caused the layered-framebuffer crashes.
+
+The same pass adds rectangle-sampler coordinate normalization to the
+KosmicKrisp NIR-to-MSL emitter. GL rectangle sampling uses pixel-space
+coordinates while Metal `texture2d` sampling uses normalized coordinates; the
+new hardware readback samples pixel-space `(2.5, 1.5)` and verifies texel
+`(2, 1)`. It also keeps texture fetch coordinates unnormalized and normalizes
+explicit gradients, preserving the distinct GLSL operations.
+
+For the binding-side clusters, shader image slots are bounded before any state
+array mutation, an out-of-range image ABI is rejected during shader creation,
+and the static buffer/UBO masks are recomputed after late NIR lowering before
+MSL emission. These changes target the historical unbounded-image and
+duplicate-static-UBO assertion clusters while preserving the existing valid
+image and UBO paths.
+
+All 30 local CTest regressions pass after the changes. The historic
+`gl46-isolated-candidate-20260913-r2` aggregate is intentionally left
+unchanged: no current `glcts` binary is available in this workspace, so a new
+CTS pass is still required to measure which targeted cases become Pass, Fail,
+or NotSupported.
+
+## 2026-09-15 texture-buffer fetch repair follow-up
+
+The 36 historical texture-buffer compiler failures shared one invalid emitted
+MSL shape: a buffer fetch was written as `.read(index, uint(0u))`. Metal
+`texture_buffer::read` accepts only the integer element index; Gallium NIR can
+legitimately retain an explicit zero LOD for a buffer fetch even though buffer
+textures have no mip levels. The active KosmicKrisp emitter therefore omits
+the LOD argument whenever `nir_texop_txf` targets `GLSL_SAMPLER_DIM_BUF`.
+
+The adapter smoke now constructs that exact NIR shape with an explicit zero
+LOD, binds actual Gallium `PIPE_BUFFER` sampler views, and performs fenced
+hardware readbacks for signed integer, unsigned integer, and float texture
+buffers. Runtime MSL traces confirm all three variants emit the legal
+one-argument form: `texture_buffer<T>.read(uint(1u))`.
+
+This confirms the current build is not affected by the old three-signature
+compiler crash pattern. It is not a retroactive CTS result: the retained
+isolated aggregate remains unchanged until the targeted `glcts` cases run
+against this build.
+
+## 2026-09-15 Batch 1-3 targeted CTS requalification
+
+An arm64 `glcts` binary built from upstream VK-GL-CTS was run against the
+current AO46 build, after a loader preflight confirmed that the test process
+loaded AO46's staged `OpenGL.framework` shim and `libGLICD.dylib` rather than
+the system OpenGL framework. The exact 100 cases from the first nine crash
+signatures in `gl46-isolated-candidate-20260913-r2` were scheduled in 13
+bounded asynchronous shards on four workers with Metal validation enabled.
+
+All 100 cases completed without a crash, timeout, resource error, or missing
+result. Eighty cases passed and 20 returned ordinary CTS failures. The
+previously fatal depth/stencil descriptor group is now 18/18 Pass, all 36
+texture-buffer read-overload cases are Pass, both 1D-array mipmap cases are
+Pass, and 16 of the 20 historically texture-dimension-invalid cases are Pass.
+The remaining ordinary failures are deliberately retained as feature work:
+four current texture or sampler semantic gaps, nine unsupported image-binding
+shapes, one late-static-UBO workload, and six Metal texture-view or broader
+semantic shapes.
+
+This is a process-safety and targeted-regression result, not a full CTS or
+conformance claim. The historic full-suite aggregate remains the baseline
+until a fresh complete isolated campaign is run.

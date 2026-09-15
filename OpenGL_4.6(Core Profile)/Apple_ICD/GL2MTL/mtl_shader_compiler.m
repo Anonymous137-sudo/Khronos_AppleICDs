@@ -360,6 +360,20 @@ ao46_metal_compile_nir_to_msl_internal(struct nir_shader *nir,
     /* Subgroup lowering can introduce Metal system-value inputs. */
     nir_shader_gather_info(work_nir, nir_shader_get_entrypoint(work_nir));
 
+    /* The static root masks are an emitter contract, not merely an early
+     * lowering hint. Rebuild them from the final NIR so a late Mesa/KK pass
+     * cannot leave a load_ubo without the matching MSL entry-point argument. */
+    static_buffer_mask = 0;
+    static_ubo_mask = 0;
+    if (!ao46_metal_collect_static_buffer_roots(work_nir,
+                                                &static_buffer_mask) ||
+        !ao46_metal_collect_static_ubo_roots(work_nir, &static_ubo_mask)) {
+        if (error) *error = [NSError errorWithDomain:@"AO46Metal" code:9
+                                             userInfo:@{NSLocalizedDescriptionKey: @"Final NIR has a dynamic or out-of-range Metal buffer binding"}];
+        ralloc_free(work_nir);
+        return nil;
+    }
+
     struct nir_to_msl_options translate_options = {
         .mem_ctx = work_nir,
         .disabled_workarounds = 0,

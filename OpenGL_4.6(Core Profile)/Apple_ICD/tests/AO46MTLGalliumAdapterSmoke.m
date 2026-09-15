@@ -301,6 +301,46 @@ ao46_build_rgb32_fragment_shader(void)
    return b.shader;
 }
 
+static nir_shader *
+ao46_build_buffer_fetch_shader(nir_alu_type type)
+{
+   nir_builder b = nir_builder_init_simple_shader(
+      MESA_SHADER_FRAGMENT, &kk_nir_options, "ao46_buffer_fetch_fragment");
+   const struct nir_io_semantics color = {
+      .location = FRAG_RESULT_DATA0,
+      .num_slots = 1,
+   };
+   nir_tex_instr *tex = nir_tex_instr_create(b.shader, 2);
+   nir_def *value;
+
+   tex->op = nir_texop_txf;
+   tex->sampler_dim = GLSL_SAMPLER_DIM_BUF;
+   tex->dest_type = type;
+   tex->coord_components = 1;
+   tex->texture_index = 0;
+   tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_coord, nir_imm_int(&b, 1));
+   /* Mesa may preserve an explicit zero LOD for samplerBuffer fetches. Metal
+    * texture_buffer::read accepts only the texel coordinate. */
+   tex->src[1] = nir_tex_src_for_ssa(nir_tex_src_lod, nir_imm_int(&b, 0));
+   nir_def_init(&tex->instr, &tex->def, 4, 32);
+   nir_builder_instr_insert(&b, &tex->instr);
+
+   value = nir_channel(&b, &tex->def, 0);
+   if (type == nir_type_int32)
+      value = nir_i2f32(&b, value);
+   else if (type == nir_type_uint32)
+      value = nir_u2f32(&b, value);
+   value = nir_fmul_imm(&b, value, 1.0f / 256.0f);
+   nir_store_output(&b,
+                    nir_vec4(&b, value, nir_imm_float(&b, 0.0f),
+                             nir_imm_float(&b, 0.0f), nir_imm_float(&b, 1.0f)),
+                    nir_imm_int(&b, 0), .base = 0, .range = 1,
+                    .write_mask = 0xf, .src_type = nir_type_float32,
+                    .io_semantics = color);
+   b.shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_DATA0);
+   return b.shader;
+}
+
 static struct nir_shader *
 ao46_build_storage_image_shader(void)
 {
@@ -345,6 +385,16 @@ ao46_build_storage_image_shader(void)
                          .image_dim = GLSL_SAMPLER_DIM_2D);
    nir_pop_if(&b, NULL);
    return b.shader;
+}
+
+static void
+ao46_set_storage_image_binding(struct nir_shader *nir, unsigned binding)
+{
+   if (!nir)
+      return;
+
+   nir_foreach_variable_with_modes(image, nir, nir_var_image)
+      image->data.binding = binding;
 }
 
 static struct nir_shader *
@@ -720,6 +770,32 @@ ao46_build_array_sampler_shader(mesa_shader_stage stage, enum glsl_sampler_dim d
    return b.shader;
 }
 
+static nir_shader *
+ao46_build_rectangle_sampler_shader(void)
+{
+   nir_builder b = nir_builder_init_simple_shader(
+      MESA_SHADER_FRAGMENT, &kk_nir_options, "ao46_rectangle_sampler");
+   const struct nir_io_semantics color = {
+      .location = FRAG_RESULT_DATA0,
+      .num_slots = 1,
+   };
+   nir_tex_instr *tex = nir_tex_instr_create(b.shader, 1);
+
+   tex->op = nir_texop_tex;
+   tex->sampler_dim = GLSL_SAMPLER_DIM_RECT;
+   tex->dest_type = nir_type_float32;
+   tex->coord_components = 2;
+   tex->src[0] = nir_tex_src_for_ssa(
+      nir_tex_src_coord, nir_imm_vec2(&b, 2.5f, 1.5f));
+   nir_def_init(&tex->instr, &tex->def, 4, 32);
+   nir_builder_instr_insert(&b, &tex->instr);
+   nir_store_output(&b, &tex->def, nir_imm_int(&b, 0), .base = 0,
+                    .range = 1, .write_mask = 0xf,
+                    .src_type = nir_type_float32, .io_semantics = color);
+   b.shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_DATA0);
+   return b.shader;
+}
+
 static bool
 ao46_check_single_member_array_views(struct pipe_screen *screen,
                                      struct pipe_context *context,
@@ -826,6 +902,259 @@ ao46_check_single_member_array_views(struct pipe_screen *screen,
       pipe_resource_reference(&texture, NULL);
    }
    context->delete_sampler_state(context, sampler);
+   return valid;
+}
+
+static bool
+ao46_check_rectangle_sampler(struct pipe_screen *screen,
+                             struct pipe_context *context,
+                             struct pipe_resource *color,
+                             struct pipe_surface *surface)
+{
+   const struct pipe_resource texture_template = {
+      .target = PIPE_TEXTURE_RECT,
+      .format = PIPE_FORMAT_R8G8B8A8_UNORM,
+      .width0 = 4,
+      .height0 = 4,
+      .depth0 = 1,
+      .array_size = 1,
+      .usage = PIPE_USAGE_DEFAULT,
+      .bind = PIPE_BIND_SAMPLER_VIEW,
+   };
+   const struct pipe_sampler_view view_template = {
+      .target = PIPE_TEXTURE_RECT,
+      .format = PIPE_FORMAT_R8G8B8A8_UNORM,
+      .swizzle_r = PIPE_SWIZZLE_X,
+      .swizzle_g = PIPE_SWIZZLE_Y,
+      .swizzle_b = PIPE_SWIZZLE_Z,
+      .swizzle_a = PIPE_SWIZZLE_W,
+      .u.tex = {.first_level = 0, .last_level = 0,
+                .first_layer = 0, .last_layer = 0},
+   };
+   const struct pipe_sampler_state sampler_template = {
+      .wrap_s = PIPE_TEX_WRAP_CLAMP_TO_EDGE,
+      .wrap_t = PIPE_TEX_WRAP_CLAMP_TO_EDGE,
+      .wrap_r = PIPE_TEX_WRAP_CLAMP_TO_EDGE,
+      .min_img_filter = PIPE_TEX_FILTER_NEAREST,
+      .mag_img_filter = PIPE_TEX_FILTER_NEAREST,
+      .min_mip_filter = PIPE_TEX_MIPFILTER_NONE,
+   };
+   const struct pipe_box texture_box = {
+      .width = 4, .height = 4, .depth = 1,
+   };
+   const struct pipe_box readback_box = {
+      .x = 4, .y = 4, .width = 1, .height = 1, .depth = 1,
+   };
+   const union pipe_color_union clear = {.f = {0.0f, 0.0f, 0.0f, 0.0f}};
+   const struct pipe_draw_info draw = {
+      .mode = MESA_PRIM_TRIANGLES,
+      .instance_count = 1,
+   };
+   const struct pipe_draw_start_count_bias range = {.count = 3};
+   uint8_t texels[4 * 4 * 4];
+   struct pipe_resource *texture = NULL;
+   struct pipe_sampler_view *view = NULL;
+   struct pipe_transfer *transfer = NULL;
+   nir_shader *vs = NULL;
+   nir_shader *fs = NULL;
+   void *vs_state = NULL;
+   void *fs_state = NULL;
+   void *sampler = NULL;
+   bool valid = false;
+
+   if (!screen || !context || !color || !surface)
+      return false;
+
+   for (unsigned y = 0; y < 4; ++y) {
+      for (unsigned x = 0; x < 4; ++x) {
+         uint8_t *pixel = &texels[(y * 4 + x) * 4];
+         pixel[0] = x * 64;
+         pixel[1] = y * 64;
+         pixel[2] = 32;
+         pixel[3] = 255;
+      }
+   }
+
+   texture = screen->resource_create(screen, &texture_template);
+   view = texture ? context->create_sampler_view(context, texture, &view_template) : NULL;
+   sampler = context->create_sampler_state(context, &sampler_template);
+   vs = ao46_build_negative_z_vertex_shader();
+   fs = ao46_build_rectangle_sampler_shader();
+   if (!texture || !view || !sampler || !vs || !fs)
+      goto out;
+
+   context->texture_subdata(context, texture, 0, PIPE_MAP_WRITE, &texture_box,
+                            texels, 4 * 4, sizeof(texels));
+   {
+      struct pipe_shader_state vs_template = {
+         .type = PIPE_SHADER_IR_NIR,
+         .ir.nir = vs,
+      };
+      struct pipe_shader_state fs_template = {
+         .type = PIPE_SHADER_IR_NIR,
+         .ir.nir = fs,
+      };
+      vs_state = context->create_vs_state(context, &vs_template);
+      fs_state = context->create_fs_state(context, &fs_template);
+   }
+   if (!vs_state || !fs_state)
+      goto out;
+
+   context->clear_render_target(context, surface, &clear, 0, 0, 8, 8, false);
+   context->bind_vs_state(context, vs_state);
+   context->bind_fs_state(context, fs_state);
+   context->bind_sampler_states(context, MESA_SHADER_FRAGMENT, 0, 1, &sampler);
+   context->set_sampler_views(context, MESA_SHADER_FRAGMENT, 0, 1, 0, &view);
+   context->draw_vbo(context, &draw, 0, NULL, &range, 1);
+   context->flush(context, NULL, PIPE_FLUSH_HINT_FINISH);
+
+   {
+      const uint8_t *pixel = context->texture_map(
+         context, color, 0, PIPE_MAP_READ, &readback_box, &transfer);
+      /* Pixel-space (2.5, 1.5) selects texel (2, 1), not Metal's clamped
+       * normalized-coordinate edge texel. */
+      valid = pixel && transfer && pixel[0] >= 120 && pixel[0] <= 136 &&
+              pixel[1] >= 56 && pixel[1] <= 72 && pixel[2] >= 24 &&
+              pixel[2] <= 40 && pixel[3] >= 250;
+   }
+
+out:
+   if (transfer)
+      context->texture_unmap(context, transfer);
+   {
+      void *none = NULL;
+      context->set_sampler_views(context, MESA_SHADER_FRAGMENT, 0, 0, 1, NULL);
+      context->bind_sampler_states(context, MESA_SHADER_FRAGMENT, 0, 1, &none);
+      context->bind_vs_state(context, NULL);
+      context->bind_fs_state(context, NULL);
+   }
+   if (vs_state)
+      context->delete_vs_state(context, vs_state);
+   if (fs_state)
+      context->delete_fs_state(context, fs_state);
+   if (sampler)
+      context->delete_sampler_state(context, sampler);
+   if (view)
+      pipe_sampler_view_reference(&view, NULL);
+   pipe_resource_reference(&texture, NULL);
+   ralloc_free(vs);
+   ralloc_free(fs);
+   return valid;
+}
+
+static bool
+ao46_check_buffer_texture_fetches(struct pipe_screen *screen,
+                                  struct pipe_context *context,
+                                  struct pipe_resource *color,
+                                  struct pipe_surface *surface)
+{
+   const int16_t signed_texels[] = {0, 64, 0, 0};
+   const uint16_t unsigned_texels[] = {0, 64, 0, 0};
+   const float float_texels[] = {0.0f, 64.0f, 0.0f, 0.0f};
+   const struct {
+      enum pipe_format format;
+      nir_alu_type type;
+      const void *data;
+      size_t size;
+   } cases[] = {
+      {PIPE_FORMAT_R16_SINT, nir_type_int32, signed_texels, sizeof(signed_texels)},
+      {PIPE_FORMAT_R16_UINT, nir_type_uint32, unsigned_texels, sizeof(unsigned_texels)},
+      {PIPE_FORMAT_R32_FLOAT, nir_type_float32, float_texels, sizeof(float_texels)},
+   };
+   const struct pipe_resource buffer_template = {
+      .target = PIPE_BUFFER,
+      .format = PIPE_FORMAT_R8_UNORM,
+      .width0 = sizeof(float_texels),
+      .height0 = 1,
+      .depth0 = 1,
+      .array_size = 1,
+      .usage = PIPE_USAGE_DEFAULT,
+      .bind = PIPE_BIND_SAMPLER_VIEW,
+   };
+   const union pipe_color_union clear = {.f = {0.0f, 0.0f, 0.0f, 0.0f}};
+   const struct pipe_draw_info draw = {
+      .mode = MESA_PRIM_TRIANGLES,
+      .instance_count = 1,
+   };
+   const struct pipe_draw_start_count_bias range = {.count = 3};
+   const struct pipe_box readback_box = {
+      .x = 4, .y = 4, .width = 1, .height = 1, .depth = 1,
+   };
+   bool valid = screen != NULL && context != NULL && color != NULL && surface != NULL;
+
+   for (unsigned i = 0; valid && i < ARRAY_SIZE(cases); ++i) {
+      struct pipe_sampler_view view_template = {
+         .target = PIPE_BUFFER,
+         .format = cases[i].format,
+         .swizzle_r = PIPE_SWIZZLE_X,
+         .swizzle_g = PIPE_SWIZZLE_Y,
+         .swizzle_b = PIPE_SWIZZLE_Z,
+         .swizzle_a = PIPE_SWIZZLE_W,
+         .u.buf = {.size = cases[i].size},
+      };
+      struct pipe_resource *buffer = NULL;
+      struct pipe_sampler_view *view = NULL;
+      struct pipe_transfer *transfer = NULL;
+      nir_shader *vs = NULL;
+      nir_shader *fs = NULL;
+      void *vs_state = NULL;
+      void *fs_state = NULL;
+
+      buffer = screen->resource_create(screen, &buffer_template);
+      view = buffer ? context->create_sampler_view(context, buffer, &view_template) : NULL;
+      vs = ao46_build_negative_z_vertex_shader();
+      fs = ao46_build_buffer_fetch_shader(cases[i].type);
+      if (!buffer || !view || !vs || !fs)
+         valid = false;
+
+      if (valid) {
+         const struct pipe_shader_state vs_template = {
+            .type = PIPE_SHADER_IR_NIR,
+            .ir.nir = vs,
+         };
+         const struct pipe_shader_state fs_template = {
+            .type = PIPE_SHADER_IR_NIR,
+            .ir.nir = fs,
+         };
+         vs_state = context->create_vs_state(context, &vs_template);
+         fs_state = context->create_fs_state(context, &fs_template);
+         if (!vs_state || !fs_state)
+            valid = false;
+      }
+
+      if (valid) {
+         context->buffer_subdata(context, buffer, 0, 0, cases[i].size, cases[i].data);
+         context->clear_render_target(context, surface, &clear, 0, 0, 8, 8, false);
+         context->bind_vs_state(context, vs_state);
+         context->bind_fs_state(context, fs_state);
+         context->set_sampler_views(context, MESA_SHADER_FRAGMENT, 0, 1, 0, &view);
+         context->draw_vbo(context, &draw, 0, NULL, &range, 1);
+         context->flush(context, NULL, PIPE_FLUSH_HINT_FINISH);
+
+         const uint8_t *pixel = context->texture_map(
+            context, color, 0, PIPE_MAP_READ, &readback_box, &transfer);
+         if (!pixel || !transfer || pixel[0] < 56 || pixel[0] > 72 ||
+             pixel[1] != 0 || pixel[2] != 0 || pixel[3] < 250) {
+            fprintf(stderr, "AO46 texture-buffer fetch %u readback failed\n", cases[i].format);
+            valid = false;
+         }
+      }
+
+      if (transfer)
+         context->texture_unmap(context, transfer);
+      context->set_sampler_views(context, MESA_SHADER_FRAGMENT, 0, 0, 1, NULL);
+      context->bind_vs_state(context, NULL);
+      context->bind_fs_state(context, NULL);
+      if (vs_state)
+         context->delete_vs_state(context, vs_state);
+      if (fs_state)
+         context->delete_fs_state(context, fs_state);
+      pipe_sampler_view_reference(&view, NULL);
+      pipe_resource_reference(&buffer, NULL);
+      ralloc_free(vs);
+      ralloc_free(fs);
+   }
+
    return valid;
 }
 
@@ -1189,6 +1518,120 @@ ao46_check_packed_depth_stencil_transfer(struct pipe_screen *screen)
    return valid;
 }
 
+static bool
+ao46_check_1d_depth_stencil_views(struct pipe_screen *screen,
+                                  struct pipe_context *context)
+{
+   const enum pipe_texture_target targets[] = {
+      PIPE_TEXTURE_1D,
+      PIPE_TEXTURE_1D_ARRAY,
+   };
+   bool valid = screen != NULL && context != NULL;
+
+   for (unsigned i = 0; valid && i < ARRAY_SIZE(targets); ++i) {
+      const bool is_array = targets[i] == PIPE_TEXTURE_1D_ARRAY;
+      const struct pipe_resource resource_template = {
+         .target = targets[i],
+         .format = PIPE_FORMAT_Z24_UNORM_S8_UINT,
+         .width0 = 64,
+         .height0 = 1,
+         .depth0 = 1,
+         .array_size = is_array ? 2 : 1,
+         .last_level = 5,
+         .usage = PIPE_USAGE_DEFAULT,
+         .bind = PIPE_BIND_DEPTH_STENCIL | PIPE_BIND_SAMPLER_VIEW,
+      };
+      const struct pipe_sampler_view view_template = {
+         .target = targets[i],
+         .format = PIPE_FORMAT_Z24_UNORM_S8_UINT,
+         .swizzle_r = PIPE_SWIZZLE_X,
+         .swizzle_g = PIPE_SWIZZLE_Y,
+         .swizzle_b = PIPE_SWIZZLE_Z,
+         .swizzle_a = PIPE_SWIZZLE_W,
+         .u.tex = {
+            .first_level = 1,
+            .last_level = 4,
+            .first_layer = is_array ? 1 : 0,
+            .last_layer = is_array ? 1 : 0,
+         },
+      };
+      struct pipe_sampler_view invalid_template = view_template;
+      struct pipe_resource *texture = screen->resource_create(screen,
+                                                               &resource_template);
+      struct pipe_sampler_view *view = NULL;
+      struct pipe_sampler_view *invalid_view = NULL;
+
+      if (!texture) {
+         fprintf(stderr, "AO46 1D depth/stencil resource %u creation failed\n",
+                 targets[i]);
+         valid = false;
+         continue;
+      }
+
+      view = context->create_sampler_view(context, texture, &view_template);
+      invalid_template.u.tex.first_level = resource_template.last_level + 1;
+      invalid_template.u.tex.last_level = resource_template.last_level + 1;
+      invalid_view = context->create_sampler_view(context, texture,
+                                                   &invalid_template);
+      if (!view || invalid_view) {
+         fprintf(stderr,
+                 "AO46 1D depth/stencil view %u did not preserve valid/invalid "
+                 "descriptor behavior\n", targets[i]);
+         valid = false;
+      }
+
+      pipe_sampler_view_reference(&invalid_view, NULL);
+      pipe_sampler_view_reference(&view, NULL);
+      pipe_resource_reference(&texture, NULL);
+   }
+
+   return valid;
+}
+
+static bool
+ao46_check_rejected_3d_array_view(struct pipe_screen *screen,
+                                  struct pipe_context *context)
+{
+   const struct pipe_resource resource_template = {
+      .target = PIPE_TEXTURE_3D,
+      .format = PIPE_FORMAT_R8G8B8A8_UNORM,
+      .width0 = 4,
+      .height0 = 4,
+      .depth0 = 4,
+      .array_size = 1,
+      .usage = PIPE_USAGE_DEFAULT,
+      .bind = PIPE_BIND_SAMPLER_VIEW,
+   };
+   const struct pipe_sampler_view view_template = {
+      .target = PIPE_TEXTURE_2D_ARRAY,
+      .format = PIPE_FORMAT_R8G8B8A8_UNORM,
+      .swizzle_r = PIPE_SWIZZLE_X,
+      .swizzle_g = PIPE_SWIZZLE_Y,
+      .swizzle_b = PIPE_SWIZZLE_Z,
+      .swizzle_a = PIPE_SWIZZLE_W,
+      .u.tex = {.first_level = 0, .last_level = 0,
+                .first_layer = 0, .last_layer = 3},
+   };
+   struct pipe_resource *texture = NULL;
+   struct pipe_sampler_view *view = NULL;
+   bool valid = screen != NULL && context != NULL;
+
+   if (!valid)
+      return false;
+
+   texture = screen->resource_create(screen, &resource_template);
+   view = texture ? context->create_sampler_view(context, texture, &view_template) : NULL;
+   /* Metal cannot expose 3D depth planes as a 2D-array texture view. The
+    * Gallium request must fail normally, before the native descriptor call. */
+   valid = texture != NULL && view == NULL;
+   if (!valid)
+      fputs("AO46 accepted an unsupported 3D-to-2D-array texture view\n", stderr);
+
+   pipe_sampler_view_reference(&view, NULL);
+   pipe_resource_reference(&texture, NULL);
+   return valid;
+}
+
 int
 main(void)
 {
@@ -1234,6 +1677,7 @@ main(void)
    struct nir_shader *ubo_fragment_nir = NULL;
    struct nir_shader *negative_vertex_nir = NULL;
    struct nir_shader *storage_image_nir = NULL;
+   struct nir_shader *invalid_storage_image_nir = NULL;
    struct nir_shader *storage_image_atomic_nir = NULL;
    struct nir_shader *draw_id_vertex_nir = NULL;
    struct nir_shader *stream_output_vertex_nir = NULL;
@@ -1252,6 +1696,7 @@ main(void)
    void *ubo_fragment_state = NULL;
    void *negative_vertex_state = NULL;
    void *storage_image_state = NULL;
+   void *invalid_storage_image_state = NULL;
    void *storage_image_atomic_state = NULL;
    void *draw_id_vertex_state = NULL;
    void *stream_output_vertex_state = NULL;
@@ -1480,7 +1925,9 @@ main(void)
    if (!ao46_check_point_integer_output(screen) ||
        !ao46_check_typed_color_blits(screen) ||
        !ao46_check_multisample_expansion(screen) ||
-       !ao46_check_packed_depth_stencil_transfer(screen)) {
+       !ao46_check_packed_depth_stencil_transfer(screen) ||
+       !ao46_check_1d_depth_stencil_views(screen, context) ||
+       !ao46_check_rejected_3d_array_view(screen, context)) {
       failed = 1;
       goto out;
    }
@@ -2047,6 +2494,14 @@ main(void)
       fputs("AO46 single-member array sampler regression failed\n", stderr);
       failed = 1;
    }
+   if (!ao46_check_rectangle_sampler(screen, context, color, surface_ptr)) {
+      fputs("AO46 rectangle sampler regression failed\n", stderr);
+      failed = 1;
+   }
+   if (!ao46_check_buffer_texture_fetches(screen, context, color, surface_ptr)) {
+      fputs("AO46 texture-buffer fetch regression failed\n", stderr);
+      failed = 1;
+   }
 
    /* GL 4.5 lane: negative Z is clipped only in zero-to-one mode. */
    {
@@ -2134,6 +2589,27 @@ main(void)
                                     storage_image_template.target, 1, 1,
                                     PIPE_BIND_SHADER_IMAGE)) {
       fputs("AO46 storage-image state creation failed\n", stderr);
+      failed = 1;
+      goto out;
+   }
+
+   /* An invalid image slot must be rejected while compiling state. It must
+    * not be truncated into an incomplete resource table or reach Metal. */
+   invalid_storage_image_nir = ao46_build_storage_image_shader();
+   if (invalid_storage_image_nir) {
+      const struct pipe_compute_state invalid_compute_shader = {
+         .ir_type = PIPE_SHADER_IR_NIR,
+         .prog = invalid_storage_image_nir,
+      };
+
+      ao46_set_storage_image_binding(invalid_storage_image_nir, 8);
+      invalid_storage_image_state =
+         context->create_compute_state(context, &invalid_compute_shader);
+   }
+   if (invalid_storage_image_state) {
+      fputs("AO46 accepted an out-of-range image binding\n", stderr);
+      context->delete_compute_state(context, invalid_storage_image_state);
+      invalid_storage_image_state = NULL;
       failed = 1;
       goto out;
    }
@@ -2915,6 +3391,7 @@ out:
    ralloc_free(ubo_fragment_nir);
    ralloc_free(negative_vertex_nir);
    ralloc_free(storage_image_nir);
+   ralloc_free(invalid_storage_image_nir);
    ralloc_free(storage_image_atomic_nir);
    ralloc_free(draw_id_vertex_nir);
    ralloc_free(stream_output_vertex_nir);

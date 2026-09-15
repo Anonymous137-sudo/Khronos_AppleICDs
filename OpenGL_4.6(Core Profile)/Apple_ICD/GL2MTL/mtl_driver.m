@@ -1256,6 +1256,68 @@ ao46_metal_default_box_for_resource(const struct pipe_resource *res,
         (int32_t)ao46_metal_texture_slice_count(res, level);
 }
 
+/* Texture views are created from Gallium state that may describe a narrower
+ * target than the backing Metal texture. Keep invalid ranges out of Metal's
+ * descriptor validator so unsupported CTS shapes fail normally, not by
+ * aborting the process. */
+static bool
+ao46_metal_texture_view_range_is_valid(id<MTLTexture> texture,
+                                       MTLTextureType texture_type,
+                                       unsigned first_level,
+                                       unsigned level_count,
+                                       unsigned first_slice,
+                                       unsigned slice_count)
+{
+    NSUInteger available_slices;
+
+    if (!texture || !level_count || !slice_count ||
+        first_level >= texture.mipmapLevelCount ||
+        level_count > texture.mipmapLevelCount - first_level) {
+        return false;
+    }
+
+    switch (texture.textureType) {
+    case MTLTextureType1DArray:
+    case MTLTextureType2DArray:
+    case MTLTextureType2DMultisampleArray:
+        available_slices = texture.arrayLength;
+        break;
+    case MTLTextureTypeCube:
+        available_slices = 6;
+        break;
+    case MTLTextureTypeCubeArray:
+        if (texture.arrayLength > NSUIntegerMax / 6u) {
+            return false;
+        }
+        available_slices = texture.arrayLength * 6u;
+        break;
+    case MTLTextureType3D:
+        /* Metal 3D views retain their depth planes; they have no slice range. */
+        available_slices = 1;
+        if (texture_type != MTLTextureType3D) {
+            return false;
+        }
+        break;
+    default:
+        available_slices = 1;
+        break;
+    }
+
+    if (first_slice >= available_slices ||
+        slice_count > available_slices - first_slice) {
+        return false;
+    }
+
+    if ((texture_type == MTLTextureTypeCube &&
+         ((first_slice % 6u) != 0 || slice_count != 6u)) ||
+        (texture_type == MTLTextureTypeCubeArray &&
+         ((first_slice % 6u) != 0 || (slice_count % 6u) != 0))) {
+        return false;
+    }
+
+    return true;
+}
+
 static id<MTLTexture>
 ao46_metal_create_texture_view(id<MTLTexture> texture,
                                MTLPixelFormat pixel_format,
@@ -1265,7 +1327,10 @@ ao46_metal_create_texture_view(id<MTLTexture> texture,
                                unsigned first_slice,
                                unsigned slice_count)
 {
-    if (!texture || !level_count || !slice_count) {
+    if (pixel_format == MTLPixelFormatInvalid ||
+        !ao46_metal_texture_view_range_is_valid(texture, texture_type,
+                                                 first_level, level_count,
+                                                 first_slice, slice_count)) {
         return nil;
     }
 
@@ -1341,7 +1406,10 @@ ao46_metal_create_swizzled_texture_view(
     unsigned slice_count,
     const struct pipe_sampler_view *view)
 {
-    if (!texture || !view || !level_count || !slice_count) {
+    if (!view || pixel_format == MTLPixelFormatInvalid ||
+        !ao46_metal_texture_view_range_is_valid(texture, texture_type,
+                                                 first_level, level_count,
+                                                 first_slice, slice_count)) {
         return nil;
     }
     if (texture_type == MTLTextureType1D &&
@@ -4007,6 +4075,17 @@ ao46_metal_trim_image_count(struct ao46_metal_context *mc,
     mc->num_image_views[shader] = (uint)count;
 }
 
+static unsigned
+ao46_metal_bounded_slot_count(unsigned start_slot, unsigned count,
+                              unsigned slot_limit)
+{
+    if (start_slot >= slot_limit) {
+        return 0;
+    }
+
+    return MIN2(count, slot_limit - start_slot);
+}
+
 static bool
 ao46_metal_nir_uses_draw_parameters(const struct nir_shader *nir,
                                     bool *out_uses_draw_id)
@@ -4040,20 +4119,22 @@ ao46_metal_nir_uses_draw_parameters(const struct nir_shader *nir,
     return uses_parameters;
 }
 
-static uint16_t
-ao46_metal_nir_image_mask(const struct nir_shader *nir)
+static bool
+ao46_metal_nir_image_mask(const struct nir_shader *nir, uint16_t *out_mask)
 {
     uint16_t mask = 0;
 
-    if (!nir) {
-        return 0;
+    if (!nir || !out_mask) {
+        return false;
     }
     nir_foreach_variable_with_modes(variable, nir, nir_var_image) {
-        if (variable->data.binding < AO46_MAX_IMAGE_UNITS) {
-            mask |= UINT16_C(1) << variable->data.binding;
+        if (variable->data.binding >= AO46_MAX_IMAGE_UNITS) {
+            return false;
         }
+        mask |= UINT16_C(1) << variable->data.binding;
     }
-    return mask;
+    *out_mask = mask;
+    return true;
 }
 
 /* ----------------------------------------------------------------------
@@ -4110,7 +4191,16 @@ ao46_metal_create_shader_state(const struct pipe_shader_state *shader)
     ms->stream_output = shader->stream_output;
     ms->uses_draw_parameters =
         ao46_metal_nir_uses_draw_parameters(nir, &ms->uses_draw_id);
-    ms->image_mask = ao46_metal_nir_image_mask(nir);
+    if (!ao46_metal_nir_image_mask(nir, &ms->image_mask)) {
+        if (getenv("AO46_TRACE_RUNTIME")) {
+            fprintf(stderr,
+                    "[AO46Metal] image binding exceeds the supported %u slots\n",
+                    AO46_MAX_IMAGE_UNITS);
+        }
+        [ms->function release];
+        FREE(ms);
+        return NULL;
+    }
     return ms;
 }
 
@@ -4889,9 +4979,14 @@ ao46_metal_bind_sampler_states(struct pipe_context *ctx,
                                void **samplers)
 {
     struct ao46_metal_context *mc = ao46_metal_context(ctx);
-    if (!mc || shader < 0 || shader >= MESA_SHADER_STAGES) return;
+    unsigned count;
 
-    unsigned limit = MIN2(start_slot + num_samplers, AO46_MAX_SAMPLERS);
+    if (!mc || shader < 0 || shader >= MESA_SHADER_STAGES ||
+        start_slot >= AO46_MAX_SAMPLERS) return;
+
+    count = ao46_metal_bounded_slot_count(start_slot, num_samplers,
+                                          AO46_MAX_SAMPLERS);
+    unsigned limit = start_slot + count;
     for (unsigned slot = start_slot, i = 0; slot < limit; slot++, i++) {
         mc->samplers[shader][slot] =
             samplers ? (struct ao46_metal_sampler_state *)samplers[i] : NULL;
@@ -5271,15 +5366,21 @@ ao46_metal_set_sampler_views(struct pipe_context *ctx,
                              struct pipe_sampler_view **views)
 {
     struct ao46_metal_context *mc = ao46_metal_context(ctx);
-    if (!mc || shader < 0 || shader >= MESA_SHADER_STAGES) return;
+    unsigned count;
 
-    unsigned limit = MIN2(start_slot + num_views, AO46_MAX_SAMPLERS);
+    if (!mc || shader < 0 || shader >= MESA_SHADER_STAGES ||
+        start_slot >= AO46_MAX_SAMPLERS) return;
+
+    count = ao46_metal_bounded_slot_count(start_slot, num_views,
+                                          AO46_MAX_SAMPLERS);
+    unsigned limit = start_slot + count;
     for (unsigned slot = start_slot, i = 0; slot < limit; slot++, i++) {
         pipe_sampler_view_reference(&mc->sampler_views[shader][slot],
                                     views ? views[i] : NULL);
     }
 
-    unsigned clear_end = MIN2(limit + unbind_num_trailing_slots, AO46_MAX_SAMPLERS);
+    unsigned clear_end = limit + ao46_metal_bounded_slot_count(
+        limit, unbind_num_trailing_slots, AO46_MAX_SAMPLERS);
     for (unsigned slot = limit; slot < clear_end; slot++) {
         pipe_sampler_view_reference(&mc->sampler_views[shader][slot], NULL);
     }
@@ -5368,7 +5469,8 @@ ao46_metal_set_shader_buffers(struct pipe_context *ctx,
         return;
     }
 
-    limit = MIN2(start_slot + count, AO46_MAX_SHADER_BUFFERS);
+    limit = start_slot + ao46_metal_bounded_slot_count(
+        start_slot, count, AO46_MAX_SHADER_BUFFERS);
     for (unsigned slot = start_slot, i = 0; slot < limit; slot++, i++) {
         struct ao46_metal_shader_buffer_binding *dst = &mc->shader_buffers[shader][slot];
 
@@ -5448,7 +5550,8 @@ ao46_metal_set_shader_images(struct pipe_context *ctx,
         return;
     }
 
-    limit = MIN2(start_slot + count, AO46_MAX_IMAGE_UNITS);
+    limit = start_slot + ao46_metal_bounded_slot_count(
+        start_slot, count, AO46_MAX_IMAGE_UNITS);
     for (unsigned slot = start_slot, i = 0; slot < limit; slot++, i++) {
         struct pipe_image_view *dst = &mc->image_views[shader][slot];
 
@@ -5465,7 +5568,8 @@ ao46_metal_set_shader_images(struct pipe_context *ctx,
         }
     }
 
-    clear_end = MIN2(limit + unbind_num_trailing_slots, AO46_MAX_IMAGE_UNITS);
+    clear_end = limit + ao46_metal_bounded_slot_count(
+        limit, unbind_num_trailing_slots, AO46_MAX_IMAGE_UNITS);
     for (unsigned slot = limit; slot < clear_end; slot++) {
         struct pipe_image_view *dst = &mc->image_views[shader][slot];
         [mc->image_binding_textures[shader][slot] release];
